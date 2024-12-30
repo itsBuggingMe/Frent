@@ -10,7 +10,7 @@ namespace Frent.Updating.Runners;
 public class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<TComp, TUniform>, TComp>
     where TComp : IUniformUpdateComponent<TUniform>
 {
-    internal override void Run(Archetype b)
+    public override void Run(Archetype b)
     {
         var uniform = b.World.UniformProvider.GetUniform<TUniform>();
         var chunks = Span;
@@ -32,17 +32,18 @@ public class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<
 [Variadic(GetCompSpanFrom, GetCompSpanPattern)]
 [Variadic(GetChunkFrom, GetChunkPattern)]
 [Variadic(CallArgFrom, CallArgPattern)]
+[Variadic(GetChunkLastFrom, GetChunkLastPattern)]
+[Variadic(CallArgLastFrom, CallArgLastPattern)]
 public class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformUpdate<TComp, TUniform, TArg>, TComp>
     where TComp : IUniformUpdateComponent<TUniform, TArg>
-    where TArg : IComponent
 {
-    internal override void Run(Archetype b)
+    public override void Run(Archetype b)
     {
         var uniform = b.World.UniformProvider.GetUniform<TUniform>();
         var chunks = Span;
         var a1 = b.GetComponentSpan<TArg>();
 
-        for (int i = 0; i < chunks.Length; i++)
+        for (int i = 0; i < chunks.Length - 1; i++)
         {
             ref Chunk<TComp> chunk = ref chunks[i];
             ref Chunk<TArg> ca = ref a1[i];
@@ -51,6 +52,14 @@ public class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformU
             {
                 chunk[j].Update(in uniform, ref ca[j]);
             }
+        }
+
+        var chunkLast = chunks[^1].AsSpan(0, b.LastChunkComponentCount);
+        var caLast = a1[^1].AsSpan(0, b.LastChunkComponentCount);
+
+        for(int j = 0; j < chunkLast.Length; j++)
+        {
+            chunkLast[j].Update(in uniform, ref caLast[j]);
         }
     }
 }

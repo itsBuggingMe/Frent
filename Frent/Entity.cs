@@ -88,6 +88,8 @@ public readonly struct Entity(byte worldID, byte worldVersion, ushort version, i
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
         }
     }
+
+    public bool IsNull => WorldID == 0 && WorldVersion == 0 && EntityID == 0 && EntityVersion == 0;
     #endregion
 
     #region Private Helpers

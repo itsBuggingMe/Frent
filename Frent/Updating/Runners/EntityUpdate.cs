@@ -9,7 +9,7 @@ namespace Frent.Updating.Runners;
 public class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TComp>
     where TComp : IEntityUpdateComponent
 {
-    internal override void Run(Archetype b)
+    public override void Run(Archetype b)
     {
         var chunks = Span;
 
@@ -34,11 +34,12 @@ public class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TCom
 [Variadic(GetCompSpanFrom, GetCompSpanPattern)]
 [Variadic(GetChunkFrom, GetChunkPattern)]
 [Variadic(CallArgFrom, CallArgPattern)]
+[Variadic(GetChunkLastFrom, GetChunkLastPattern)]
+[Variadic(CallArgLastFrom, CallArgLastPattern)]
 public class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TComp, TArg>, TComp>
     where TComp : IEntityUpdateComponent<TArg>
-    where TArg : IComponent
 {
-    internal override void Run(Archetype b)
+    public override void Run(Archetype b)
     {
         var chunks = Span;
 
@@ -57,6 +58,16 @@ public class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TComp,
             {
                 chunk[j].Update(eChunk[j], ref ca[j]);
             }
+        }
+
+        var chunkLast = chunks[^1].AsSpan(0, b.LastChunkComponentCount);
+        var entityLast = entity[^1].AsSpan(0, b.LastChunkComponentCount);
+
+        var caLast = a1[^1].AsSpan(0, b.LastChunkComponentCount);
+
+        for (int j = 0; j < chunkLast.Length; j++)
+        {
+            chunkLast[j].Update(entityLast[j], ref caLast[j]);
         }
     }
 }

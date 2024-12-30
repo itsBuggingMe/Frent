@@ -11,9 +11,9 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
     public Span<Chunk<TComponent>> AsSpan() => _chunks.AsSpan();
     public IComponentRunner Clone() => new TSelf();
     public IComponentRunner<TComponent> CloneStronglyTyped() => new TSelf();
-    internal abstract void Run(Archetype b);
+    public abstract void Run(Archetype b);
     protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
-
+    public void AllocateNextChunk() => Chunk<TComponent>.NextChunk(ref _chunks);
     internal void Clear()
     {
         if(_chunks.Length == 1)
@@ -24,6 +24,14 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
         {
             _chunks = [new Chunk<TComponent>(1)];
         }
+    }
+
+    public void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom)
+    {
+        ref var from = ref _chunks[chunkFrom][compFrom];
+        _chunks[chunkTo][compTo] = from;
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+            from = default;
     }
 
 

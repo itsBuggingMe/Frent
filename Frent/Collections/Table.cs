@@ -26,8 +26,10 @@ internal struct Table<T>(int size)
     [MethodImpl(MethodImplOptions.NoInlining)]
     private ref T ResizeGet(uint index)
     {
-        uint nextSize = BitOperations.RoundUpToPowerOf2(index);
+        uint nextSize = BitOperations.RoundUpToPowerOf2(index + 1);
         Array.Resize(ref _buffer, (int)nextSize);
         return ref _buffer[index];
     }
+
+    public Span<T> AsSpan() => _buffer.AsSpan();
 }
