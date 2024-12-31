@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using ArchWorld = Arch.Core.World;
 
 namespace Frent.Benchmarks;
 
