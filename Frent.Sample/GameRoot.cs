@@ -52,13 +52,15 @@ namespace Frent.Sample
 
             Entities = FastStack<Entity>.Create(128);
 
-            for (int i = 0; i < 200_000; i++)
-            {
-                Entities.Push(_world.Create<Position, Velocity, Sprite>(
-                    new() { X = 1, Y = 1 },
-                    new(Vector2.One),
-                    new(_texture, colors[Random.Shared.Next(colors.Length)], Vector2.One * 4)));
-            }
+            var e1 = _world.Create<Position, Sprite>(
+                new() { X = 1, Y = 1 },
+                new(_texture, colors[Random.Shared.Next(colors.Length)], Vector2.One * 4));
+            var e2 = _world.Create<Position, Sprite>(
+                new() { X = 1, Y = 1 },
+                new(_texture, colors[Random.Shared.Next(colors.Length)], Vector2.One * 4));
+
+            e1.Add<Velocity>(default);
+            e2.Add<Velocity>(default);
 
             SpriteBatch = new SpriteBatch(GraphicsDevice);
 
@@ -69,34 +71,6 @@ namespace Frent.Sample
         {
             MouseState = Mouse.GetState();
             Window.Title = $"FPS: {1000 / gameTime.ElapsedGameTime.TotalMilliseconds}";
-            for(int i = 0; i < 100; i++)
-            {
-                if (Entities.TryPop(out Entity entity))
-                {
-                    entity.Delete();
-                }
-
-                if(Entities.Count < 10)
-                {
-                    for (int j = 0; j < 200_000; j++)
-                    {
-                        Entities.Push(_world.Create<Position, Sprite>(
-                            default,
-                            new(_texture, colors[Random.Shared.Next(colors.Length)], Vector2.One * 4)));
-                    }
-                }
-            }
-
-            for(int i = 0; i < 1000; i++)
-            {
-                Span<Entity> e = Entities.AsSpan();
-                var rand = e[Random.Shared.Next(e.Length)];
-
-                if (!rand.Has<Velocity>())
-                {
-                    rand.Add<Velocity>(new(Vector2.One));
-                }
-            }
 
             DeltaTime = (float)(gameTime.ElapsedGameTime.TotalMilliseconds / 16.666);
             base.Update(gameTime);

@@ -62,7 +62,7 @@ public partial class World : IDisposable
 
     public void Dispose()
     {
-        _recycledWorldIDs.Push((ID, (byte)(Version - 1)));
+        _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
     }
 
     internal class NullUniformProvider : IUniformProvider

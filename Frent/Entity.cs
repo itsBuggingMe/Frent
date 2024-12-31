@@ -20,9 +20,13 @@ public readonly partial struct Entity(byte worldID, byte worldVersion, ushort ve
     #endregion
 
     #region Interactions
-    public bool Has<T>() => IsAlive(out _, out EntityLocation loc) ? 
-        GlobalWorldTables.ComponentLocationTable[loc.Archetype.ArchetypeID][Component<T>.ID] != byte.MaxValue : 
-        FrentExceptions.Throw_InvalidOperationException<bool>(EntityIsDeadMessage);
+    public bool Has<T>()
+    {
+        if (!IsAlive(out _, out var entityLocation))
+            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+        int compid = Component<T>.ID;
+        return GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][compid] != byte.MaxValue;
+    }
 
     public ref T Get<T>()
     {
@@ -74,8 +78,9 @@ public readonly partial struct Entity(byte worldID, byte worldVersion, ushort ve
         IComponentRunner<T> last = (IComponentRunner<T>)destination.Components[^1];
         last.AsSpan()[nextLocation.ChunkIndex][nextLocation.ComponentIndex] = component;
 
-        from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
+        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         world.EntityTable[(uint)EntityID].Location = nextLocation;
 
         static Type[] Concat(Type[] types, Type type)
@@ -167,7 +172,7 @@ public readonly partial struct Entity(byte worldID, byte worldVersion, ushort ve
         return new(ref ((IComponentRunner<TComp>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex]);
     }
 
-    internal string DebuggerDisplayString => $"World: {WorldID}, Version: {EntityVersion}, ID: {EntityID}";
+    internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {EntityVersion}, ID: {EntityID}, Version {EntityVersion}";
     internal const string EntityIsDeadMessage = "Entity is Dead";
     #endregion
 

@@ -11,7 +11,7 @@ using System.Diagnostics;
 
 namespace Frent.Sample;
 
-internal struct Position : IComponent
+internal struct Position
 {
     public float X;
     public float Y;
@@ -67,8 +67,11 @@ internal record struct Sprite(Texture2D Texture, Color Color, Vector2 Scale) : I
     {
         if(Texture is null)
         {
-            Debugger.Break();
+            //Debugger.Break();
         }
-        game.SpriteBatch.Draw(Texture, pos.XY, null, Color, 0, default, Scale, SpriteEffects.None, 0);
+        else
+        {
+            game.SpriteBatch.Draw(Texture, pos.XY, null, Color, 0, default, Scale, SpriteEffects.None, 0);
+        }
     }
 }
