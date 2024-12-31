@@ -24,6 +24,7 @@ public struct Chunk<TData>
 
     TData[] _buffer;
     public Span<TData> AsSpan() => _buffer;
+    [DebuggerHidden]
     public Span<TData> AsSpan(int start, int length) => _buffer.AsSpan(start, length);
 
     public Chunk<TData> CreateNext()

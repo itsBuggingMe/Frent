@@ -1,5 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Components;
+using Frent.Updating;
+using Frent.Updating.Runners;
 using System.Numerics;
 
 namespace Frent.Core;
@@ -7,6 +9,24 @@ namespace Frent.Core;
 internal static class Component<T>
 {
     public static readonly int ID = Component.GetComponentID(typeof(T));
+    public static IComponentRunner<T> CreateInstance() => RunnerInstance.CloneStronglyTyped();
+
+    private static readonly IComponentRunner<T> RunnerInstance;
+    static Component()
+    {
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out IComponentRunner? type))
+        {
+            if (type is IComponentRunner<T> casted)
+            {
+                RunnerInstance = casted;
+                return;
+            }
+
+            throw new InvalidOperationException($"{typeof(T).FullName} is not initalized. (Is the source generator working?)");
+        }
+
+        Component.NoneComponentRunnerTable[typeof(T)] = RunnerInstance =  new None<T>();
+    }
 }
 
 internal static class Component
@@ -15,6 +35,20 @@ internal static class Component
     internal static FastStack<Type> AllComponentTypesOrdered = FastStack<Type>.Create(16);
     private static int NextComponentID = -1;
     private static Dictionary<Type, int> ExistingComponentIDs = [];
+
+    internal static Dictionary<Type, IComponentRunner> NoneComponentRunnerTable = [];
+    internal static IComponentRunner GetComponentRunnerFromType(Type t)
+    {
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out IComponentRunner? type))
+        {
+            return type.Clone();
+        }
+        if (NoneComponentRunnerTable.TryGetValue(t, out type))
+        {
+            return type.Clone();
+        }
+        throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
+    }
 
     public static int GetComponentID(Type t)
     {

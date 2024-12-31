@@ -3,7 +3,6 @@
 namespace Frent;
 
 public ref struct Option<T>(bool exists, ref T value)
-    where T : IComponent
 {
     public readonly bool Exists = exists;
     private ref T _value = ref value;

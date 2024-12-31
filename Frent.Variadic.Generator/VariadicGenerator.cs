@@ -18,7 +18,7 @@ namespace Frent.Variadic.Generator
 {
     [Generator(LanguageNames.CSharp)]
     public class VariadicGenerator : IIncrementalGenerator
-    {
+    {   
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             context.RegisterPostInitializationOutput(

@@ -46,7 +46,7 @@ public class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<En
         var entity = b.GetEntitySpan();
         var a1 = b.GetComponentSpan<TArg>();
 
-        for (int i = 0; i < chunks.Length; i++)
+        for (int i = 0; i < b.ChunkCount; i++)
         {
             ref Chunk<TComp> chunk = ref chunks[i];
             ref Chunk<Entity> eChunk = ref entity[i];
@@ -60,7 +60,7 @@ public class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<En
 
         var chunkLast = chunks[^1].AsSpan(0, b.LastChunkComponentCount);
         var entityLast = entity[^1].AsSpan(0, b.LastChunkComponentCount);
-        var caLast = a1[^1].AsSpan(0, b.LastChunkComponentCount);
+        var caLast = a1[..(b.ChunkCount + 1)][^1].AsSpan(0, b.LastChunkComponentCount);
 
         for (int j = 0; j < chunkLast.Length; j++)
         {

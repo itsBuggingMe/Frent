@@ -14,6 +14,15 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
     public abstract void Run(Archetype b);
     protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
     public void AllocateNextChunk() => Chunk<TComponent>.NextChunk(ref _chunks);
+    public int ComponentID => Component<TComponent>.ID;
+    public void PullComponentFrom(IComponentRunner otherRunner, ref readonly EntityLocation me, ref readonly EntityLocation other)
+    {
+        IComponentRunner<TComponent> componentRunner = (IComponentRunner<TComponent>)otherRunner;
+        ref var left = ref _chunks[me.ChunkIndex][me.ComponentIndex];
+        ref var right = ref componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
+        _chunks[me.ChunkIndex][me.ComponentIndex] = componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
+    }
+
     internal void Clear()
     {
         if(_chunks.Length == 1)
@@ -33,7 +42,6 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
         if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
-
 
     //    Chunk<T>.NextChunk(ref _cBuffer1);
 

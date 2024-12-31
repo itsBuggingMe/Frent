@@ -3,12 +3,13 @@ using Frent.Collections;
 using Frent.Variadic.Generator;
 using System.Runtime.InteropServices;
 using Frent.Buffers;
+using System.Diagnostics;
 
 namespace Frent.Core;
 
 [Variadic("Archetype<T>", "Archetype<|T$, |>")]
 [Variadic("[typeof(T)]", "[|typeof(T$), |]")]
-[Variadic("[UpdateHelper<T>.CreateInstance()]", "[|UpdateHelper<T$>.CreateInstance(), |]")]
+[Variadic("[Component<T>.CreateInstance()]", "[|Component<T$>.CreateInstance(), |]")]
 internal class Archetype<T>
 {
     public static readonly Type[] ArchetypeTypes = [typeof(T)];
@@ -18,28 +19,34 @@ internal class Archetype<T>
 
     public static Archetype CreateArchetype(World world)
     {
-        IComponentRunner[] runners = [UpdateHelper<T>.CreateInstance()];
-        var ache = new Archetype(ID, runners, world);
+        IComponentRunner[] runners = [Component<T>.CreateInstance()];
+        var ache = new Archetype(ID, runners, world, ArchetypeTypes);
         world.AddArchetype(ache);
         return ache;
     }
 }
 
-public class Archetype(int id, IComponentRunner[] components, World world)
+[DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
+public class Archetype(int id, IComponentRunner[] components, World world, Type[] types)
 {
     internal int ArchetypeID = id;
-    private Chunk<Entity>[] _entities = [new Chunk<Entity>(1)];
-    internal IComponentRunner[] Components = components;
     internal readonly World World = world;
+    internal readonly Type[] ArchetypeTypeArray = types;
+    internal readonly Dictionary<int, ArchetypeEdge> Graph = [];
 
+    internal IComponentRunner[] Components = components;
+    private Chunk<Entity>[] _entities = [new Chunk<Entity>(1)];
     private ushort _chunkIndex;
     private ushort _componentIndex;
 
+    internal string DebuggerDisplayString => $"Archetype: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))}";
+
     internal ushort LastChunkComponentCount => _componentIndex;
+    internal ushort ChunkCount => _chunkIndex;
 
     internal Span<Chunk<T>> GetComponentSpan<T>() => ((IComponentRunner<T>)Components[GlobalWorldTables.ComponentLocationTable[ArchetypeID][Component<T>.ID]]).AsSpan();
 
-    internal void CreateEntityLocation(out EntityLocation entityLocation)
+    internal ref Entity CreateEntityLocation(out EntityLocation entityLocation)
     {
         if (_entities[_chunkIndex].Length == _componentIndex)
         {
@@ -52,7 +59,7 @@ public class Archetype(int id, IComponentRunner[] components, World world)
         }
 
         entityLocation = new EntityLocation(this, _chunkIndex, _componentIndex);
-        _componentIndex++;
+        return ref _entities[_chunkIndex][_componentIndex++];
     }
 
     internal Entity DeleteEntity(ushort chunk, ushort comp)
@@ -87,8 +94,8 @@ public class Archetype(int id, IComponentRunner[] components, World world)
     {
         IComponentRunner[] componentRunners = new IComponentRunner[types.Length];
         for (int i = 0; i < types.Length; i++)
-            componentRunners[i] = UpdateHelper.GetComponentRunnerFromType(types[i]);
-        var arche = new Archetype(GetArchetypeID(types.AsSpan(), types), componentRunners, world);
+            componentRunners[i] = Component.GetComponentRunnerFromType(types[i]);
+        var arche = new Archetype(GetArchetypeID(types.AsSpan(), types), componentRunners, world, types);
         world.AddArchetype(arche);
         return arche;
     }

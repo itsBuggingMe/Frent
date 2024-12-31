@@ -36,7 +36,7 @@ public class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TCom
 
         Debug.Assert(a1.Length == chunks.Length);
 
-        for(int i = 0; i < chunks.Length; i++)
+        for(int i = 0; i < b.ChunkCount; i++)
         {
             ref Chunk<TComp> chunk = ref chunks[i];
             ref Chunk<TArg> ca = ref a1[i];
@@ -48,7 +48,7 @@ public class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TCom
         }
 
         var chunkLast = chunks[^1].AsSpan(0, b.LastChunkComponentCount);
-        var caLast = a1[^1].AsSpan(0, b.LastChunkComponentCount);
+        var caLast = a1[..(b.ChunkCount + 1)][^1].AsSpan(0, b.LastChunkComponentCount);
 
         for (int j = 0; j < chunkLast.Length; j++)
         {

@@ -23,46 +23,52 @@ internal struct Velocity(Vector2 v) : IUniformUpdateComponent<GameRoot, Position
     public float DX = v.X;
     public float DY = v.Y;
 
-    public void Update(in GameRoot game, ref Position arg, ref Sprite sprite)
+    public void Update(in GameRoot game, ref Position position, ref Sprite sprite)
     {
-        if(game.MouseState.RightButton == ButtonState.Pressed)
+        if (game.MouseState.RightButton == ButtonState.Pressed)
         {
             DX += Random.Shared.NextSingle() - 0.5f;
             DY += Random.Shared.NextSingle() - 0.5f;
         }
 
-        arg.X += DX;
-        arg.Y += DY;
+        position.X += DX * game.DeltaTime;
+        position.Y += DY * game.DeltaTime;
 
         Rectangle bounds = game.GraphicsDevice.Viewport.Bounds;
 
-        if (arg.X < 0)
+        if (position.X < 0)
         {
-            arg.X = 0;
-            DX *= -1;
+            position.X = 0;
+            DX = -DX;
         }
-        if (arg.Y < 0)
+        else if (position.X > bounds.Right - sprite.Scale.X)
         {
-            arg.Y = 0;
-            DY *= -1;
+            position.X = bounds.Right - sprite.Scale.X;
+            DX = -DX;
         }
-        if (arg.X > bounds.Right - sprite.Scale.X)
+
+        if (position.Y < 0)
         {
-            arg.X = bounds.Right - sprite.Scale.X;
-            DX *= -1;
+            position.Y = 0;
+            DY = -DY;
         }
-        if (arg.Y > bounds.Bottom - sprite.Scale.Y)
+        else if (position.Y > bounds.Bottom - sprite.Scale.Y)
         {
-            arg.Y = bounds.Bottom - sprite.Scale.Y;
-            DY *= -1;
+            position.Y = bounds.Bottom - sprite.Scale.Y;
+            DY = -DY;
         }
     }
+
 }
 
 internal record struct Sprite(Texture2D Texture, Color Color, Vector2 Scale) : IUniformUpdateComponent<GameRoot, Position>
 {
     public void Update(in GameRoot game, ref Position pos)
     {
+        if(Texture is null)
+        {
+            Debugger.Break();
+        }
         game.SpriteBatch.Draw(Texture, pos.XY, null, Color, 0, default, Scale, SpriteEffects.None, 0);
     }
 }

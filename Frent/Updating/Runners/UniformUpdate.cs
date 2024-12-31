@@ -43,7 +43,7 @@ public class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformU
         var chunks = Span;
         var a1 = b.GetComponentSpan<TArg>();
 
-        for (int i = 0; i < chunks.Length - 1; i++)
+        for (int i = 0; i < b.ChunkCount; i++)
         {
             ref Chunk<TComp> chunk = ref chunks[i];
             ref Chunk<TArg> ca = ref a1[i];
@@ -54,10 +54,10 @@ public class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformU
             }
         }
 
-        var chunkLast = chunks[^1].AsSpan(0, b.LastChunkComponentCount);
-        var caLast = a1[^1].AsSpan(0, b.LastChunkComponentCount);
+        var chunkLast = chunks[..(b.ChunkCount + 1)][^1].AsSpan(0, b.LastChunkComponentCount);
+        var caLast = a1[..(b.ChunkCount + 1)][^1].AsSpan(0, b.LastChunkComponentCount);
 
-        for(int j = 0; j < chunkLast.Length; j++)
+        for (int j = 0; j < chunkLast.Length; j++)
         {
             chunkLast[j].Update(in uniform, ref caLast[j]);
         }
