@@ -1,79 +1,51 @@
-﻿using Frent.Components;
-using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CommandLine;
+using Frent.Components;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using System.Diagnostics;
 
 namespace Frent.Sample;
 
-internal struct Position
+internal struct Position(Vector2 xy)
 {
-    public float X;
-    public float Y;
-    public Vector2 XY => new Vector2(X, Y);
+    public Vector2 XY = xy;
+    public static implicit operator Position(Vector2 xy) => new(xy);
 }
-
-internal struct Velocity(Vector2 v) : IUniformUpdateComponent<GameRoot, Position, Sprite>
+internal record struct Friction(float Coefficient)
 {
-    public float DX = v.X;
-    public float DY = v.Y;
-
-    public void Update(in GameRoot game, ref Position position, ref Sprite sprite)
+    public static implicit operator Friction(float co) => new(co);
+}
+internal record struct Bounds(Vector2 Size)
+{
+    public static implicit operator Bounds(Vector2 s) => new(s);
+}
+internal record struct SinglePixel(Color Color)
+{
+    public static implicit operator SinglePixel(Color co) => new(co);
+}
+internal record struct Velocity(Vector2 dxy) : IUniformUpdateComponent<GameRoot, Position, Friction>
+{
+    public Vector2 DXY = dxy;
+    public static implicit operator Velocity(Vector2 dxy) => new(dxy);
+    public void Update(in GameRoot uniform, ref Position pos, ref Friction friction)
     {
-        if (game.MouseState.RightButton == ButtonState.Pressed)
-        {
-            DX += Random.Shared.NextSingle() - 0.5f;
-            DY += Random.Shared.NextSingle() - 0.5f;
-        }
-
-        position.X += DX * game.DeltaTime;
-        position.Y += DY * game.DeltaTime;
-        DX *= 0.99f;
-        DY *= 0.99f;
-
-        Rectangle bounds = game.GraphicsDevice.Viewport.Bounds;
-
-        if (position.X < 0)
-        {
-            position.X = 0;
-            DX = -DX;
-        }
-        else if (position.X > bounds.Right - sprite.Scale.X)
-        {
-            position.X = bounds.Right - sprite.Scale.X;
-            DX = -DX;
-        }
-
-        if (position.Y < 0)
-        {
-            position.Y = 0;
-            DY = -DY;
-        }
-        else if (position.Y > bounds.Bottom - sprite.Scale.Y)
-        {
-            position.Y = bounds.Bottom - sprite.Scale.Y;
-            DY = -DY;
-        }
+        pos.XY += DXY * uniform.DeltaTime;
+        DXY *= friction.Coefficient;
+    }
+}
+internal record struct MouseController : IUniformUpdateComponent<GameRoot, Velocity, Position>
+{
+    public void Update(in GameRoot uniform, ref Velocity vel, ref Position arg)
+    {
+        if (uniform.MouseState.RightButton == ButtonState.Pressed)
+            vel.DXY += NormalizeSafe(arg.XY - uniform.MouseState.Position.ToVector2()) * 0.1f;
+        if (uniform.MouseState.LeftButton == ButtonState.Pressed)
+            vel.DXY -= NormalizeSafe(arg.XY - uniform.MouseState.Position.ToVector2()) * 0.1f;
     }
 
-}
-
-internal record struct Sprite(Texture2D Texture, Color Color, Vector2 Scale) : IUniformUpdateComponent<GameRoot, Position>
-{
-    public void Update(in GameRoot game, ref Position pos)
+    private static Vector2 NormalizeSafe(Vector2 vector)
     {
-        if(Texture is null)
-        {
-            //Debugger.Break();
-        }
-        else
-        {
-            game.SpriteBatch.Draw(Texture, pos.XY, null, Color, 0, default, Scale, SpriteEffects.None, 0);
-        }
+        if (vector == default)
+            return Vector2.Zero;
+        return Vector2.Normalize(vector);
     }
 }

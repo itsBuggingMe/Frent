@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Systems;
 
 namespace Frent;
 
@@ -19,6 +20,8 @@ public partial class World : IDisposable
     internal readonly uint IDAsUInt;
     internal readonly byte ID;
     internal readonly byte Version;
+
+    internal Dictionary<int, Query> QueryCache = [];
 
     public IUniformProvider UniformProvider { get; set; }
 
@@ -58,6 +61,23 @@ public partial class World : IDisposable
     internal ref Archetype GetArchetype(uint archetypeID)
     {
         return ref WorldArchetypeTable[archetypeID];
+    }
+
+    internal void ArchetypeAdded(Archetype archetype)
+    {
+        foreach(var qkvp in QueryCache)
+        {
+            qkvp.Value.TryAttachArchetype(archetype);
+        }
+    }   
+
+    internal Query CreateQuery(params Rule[] rules)
+    {
+        Query q = new Query(rules);
+        foreach (var element in WorldArchetypeTable.AsSpan())
+            if (element is not null)
+                q.TryAttachArchetype(element);
+        return q;
     }
 
     public void Dispose()
