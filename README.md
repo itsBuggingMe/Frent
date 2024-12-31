@@ -1,10 +1,12 @@
-# Frent
+# [Frent](https://github.com/itsBuggingMe/Frent)
 
 A high preformance archetyped based **[ECS](https://github.com/SanderMertens/ecs-faq)/ECF**  library for C#. Zero unsafe code and optimized to be just as fast.
 
 *Whaaaat?! Isn't there enough ECS libraries out there!*
 
 While Frent at its core is an archetype based ECS library, thats not why Frent was made. Frent is also an **ECF** - Entity Component Framework - that allows you to easily use composition for code reuse rather than inheritance with minimal boilerplate. Think Unity's Monobehavior but powered by the principles and speed of an ECS.
+## 🚧 Warning
+Frent is still in alpha, with an incomplete feature set. I'll try my best to not change any APIs and squash as many bugs, but no guarantees
 ## Quick Example
 
 ```csharp
@@ -40,7 +42,7 @@ record struct Velocity(Vector2 Delta) : IUpdateComponent<Position>
 - [x]  Structs as components
 - [x]  Deconstructing entities
 - [x]  Component memory stored contiguously (when using structs)
-- [x]  All entity functions are O(1) and highlt optimised
+- [x]  All entity functions are O(1) and highly optimised
 - [x]  Pass in uniform data e.g., `deltaTime`
 - [x]  Deconstructing entities
 - [x]  Zero reflection
