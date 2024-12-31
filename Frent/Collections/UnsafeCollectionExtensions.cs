@@ -5,6 +5,9 @@ namespace Frent.Collections;
 
 internal static class UnsafeCollectionExtensions
 {
+    //no actual unsafe code please
+
+#if DEBUG
     public static ref T UnsafeArrayIndex<T>(this T[] array, int index)
     {
         ref T start = ref MemoryMarshal.GetArrayDataReference(array);
@@ -16,4 +19,5 @@ internal static class UnsafeCollectionExtensions
         ref T start = ref MemoryMarshal.GetReference(span);
         return ref Unsafe.Add(ref start, index);
     }
+#endif
 }

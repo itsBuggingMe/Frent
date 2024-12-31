@@ -8,6 +8,7 @@ namespace Frent.Updating;
 
 internal static class UpdateHelper
 {
+#if DEBUG
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<Chunk<TTo>> SpanCast<TTo, TFrom>(Span<Chunk<TFrom>> from)
     {
@@ -20,4 +21,5 @@ internal static class UpdateHelper
 
         return self;
     }
+#endif
 }

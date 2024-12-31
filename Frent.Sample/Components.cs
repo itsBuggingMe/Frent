@@ -33,6 +33,8 @@ internal struct Velocity(Vector2 v) : IUniformUpdateComponent<GameRoot, Position
 
         position.X += DX * game.DeltaTime;
         position.Y += DY * game.DeltaTime;
+        DX *= 0.99f;
+        DY *= 0.99f;
 
         Rectangle bounds = game.GraphicsDevice.Viewport.Bounds;
 

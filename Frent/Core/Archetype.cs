@@ -19,10 +19,13 @@ internal class Archetype<T>
 
     public static Archetype CreateArchetype(World world)
     {
+        ref Archetype archetype = ref world.GetArchetype(IDasUInt);
+        if(archetype is not null)
+            return archetype;
+
         IComponentRunner[] runners = [Component<T>.CreateInstance()];
-        var ache = new Archetype(ID, runners, world, ArchetypeTypes);
-        world.AddArchetype(ache);
-        return ache;
+        archetype = new Archetype(ID, runners, world, ArchetypeTypes);
+        return archetype;
     }
 }
 
@@ -90,14 +93,18 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
     internal static int NextArchetypeID = -1;
     private static readonly Dictionary<long, int> ExistingArchetypes = [];
 
-    internal static Archetype CreateArchetype(Type[] types, World world)
+    internal static Archetype CreateOrGetExistingArchetype(Type[] types, World world)
     {
+        int id = GetArchetypeID(types.AsSpan(), types);
+        ref Archetype archetype = ref world.GetArchetype((uint)id);
+        if (archetype is not null)
+            return archetype;
+
         IComponentRunner[] componentRunners = new IComponentRunner[types.Length];
         for (int i = 0; i < types.Length; i++)
             componentRunners[i] = Component.GetComponentRunnerFromType(types[i]);
-        var arche = new Archetype(GetArchetypeID(types.AsSpan(), types), componentRunners, world, types);
-        world.AddArchetype(arche);
-        return arche;
+        archetype = new Archetype(id, componentRunners, world, types);
+        return archetype;
     }
 
     internal static int GetArchetypeID(Span<Type> types, Type[]? typesArray = null)

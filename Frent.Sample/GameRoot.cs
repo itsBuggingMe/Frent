@@ -52,15 +52,10 @@ namespace Frent.Sample
 
             Entities = FastStack<Entity>.Create(128);
 
-            var e1 = _world.Create<Position, Sprite>(
-                new() { X = 1, Y = 1 },
-                new(_texture, colors[Random.Shared.Next(colors.Length)], Vector2.One * 4));
-            var e2 = _world.Create<Position, Sprite>(
-                new() { X = 1, Y = 1 },
-                new(_texture, colors[Random.Shared.Next(colors.Length)], Vector2.One * 4));
+            for(int i = 0; i < 200_000; i++)
+            {
 
-            e1.Add<Velocity>(default);
-            e2.Add<Velocity>(default);
+            }
 
             SpriteBatch = new SpriteBatch(GraphicsDevice);
 
@@ -71,7 +66,10 @@ namespace Frent.Sample
         {
             MouseState = Mouse.GetState();
             Window.Title = $"FPS: {1000 / gameTime.ElapsedGameTime.TotalMilliseconds}";
-
+            var e1 = _world.Create<Position, Velocity, Sprite>(
+                new() { X = 1, Y = 1 },
+                default(Velocity),
+                new(_texture, colors[Random.Shared.Next(colors.Length)], Vector2.One * 4));
             DeltaTime = (float)(gameTime.ElapsedGameTime.TotalMilliseconds / 16.666);
             base.Update(gameTime);
         }

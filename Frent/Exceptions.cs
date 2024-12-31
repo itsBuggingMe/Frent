@@ -20,6 +20,7 @@ internal class FrentExceptions
     {
         throw new InvalidOperationException(message);
     }
+
     [DoesNotReturn]
     [StackTraceHidden]
     [MethodImpl(MethodImplOptions.NoInlining)]

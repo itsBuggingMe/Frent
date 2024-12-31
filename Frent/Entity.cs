@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 using Frent.Updating;
+using System.ComponentModel;
 
 namespace Frent;
 
@@ -65,9 +66,9 @@ public readonly partial struct Entity(byte worldID, byte worldVersion, ushort ve
 
         Archetype from = entityLocation.Archetype;
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, Component<T>.ID, out bool exists);
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, Component<T>.ID, out _);
 
-        Archetype destination = edge.Add ??= Archetype.CreateArchetype(Concat(from.ArchetypeTypeArray, typeof(T)), world);
+        Archetype destination = edge.Add ??= Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, typeof(T)), world);
         destination.CreateEntityLocation(out EntityLocation nextLocation) = this;
 
         for(int i = 0; i < from.Components.Length; i++)
@@ -97,7 +98,52 @@ public readonly partial struct Entity(byte worldID, byte worldVersion, ushort ve
         if (!IsAlive(out World? world, out EntityLocation entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
 
-        throw null!;
+        Archetype from = entityLocation.Archetype;
+
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, Component<T>.ID, out _);
+        Archetype destination = edge.Remove ??= Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, typeof(T)), world);
+
+        destination.CreateEntityLocation(out EntityLocation nextLocation) = this;
+
+        int skipIndex = GlobalWorldTables.ComponentLocationTable[from.ArchetypeID][Component<T>.ID];
+        int j = 0;
+
+        if (skipIndex == byte.MaxValue)
+            FrentExceptions.Throw_ComponentNotFoundException<T>();
+
+        T result = default!;
+        for (int i = 0; i < from.Components.Length; i++)
+        {
+            if (i == skipIndex)
+            {
+                result = ((IComponentRunner<T>)from.Components[i]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
+                continue;
+            }
+            destination.Components[j++].PullComponentFrom(from.Components[i], ref nextLocation, ref entityLocation);
+        }
+
+        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+
+        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
+        world.EntityTable[(uint)EntityID].Location = nextLocation;
+
+        return result;
+
+        static Type[] Remove(Type[] types, Type type)
+        {
+            Type[] arr = new Type[types.Length - 1];
+            int j = 0;
+
+            for (int i = 0; i < types.Length; i++)
+            {
+                if (types[i] == type)
+                    continue;
+
+                arr[j++] = types[i];
+            }
+
+            return arr;
+        }
     }
 
     public void Delete()

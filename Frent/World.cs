@@ -55,9 +55,9 @@ public partial class World : IDisposable
         }
     }
 
-    internal void AddArchetype(Archetype archetype)
+    internal ref Archetype GetArchetype(uint archetypeID)
     {
-        WorldArchetypeTable[(uint)archetype.ArchetypeID] = archetype;
+        return ref WorldArchetypeTable[archetypeID];
     }
 
     public void Dispose()
