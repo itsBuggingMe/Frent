@@ -22,6 +22,12 @@ public static class QueryHashes<T>
         .ToHashCode();
 }
 
+public static class QueryHashes
+{
+    //https://xkcd.com/221/
+    public static readonly int Hash = 221;
+}
+
 partial class QueryDelegates
 {
     public delegate void QueryEntityOnly(Entity entity);

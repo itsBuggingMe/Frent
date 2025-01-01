@@ -42,16 +42,4 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
-
-    //    Chunk<T>.NextChunk(ref _cBuffer1);
-
-    //public void DeleteComponent(ref readonly DeleteComponentData delete)
-    //{
-    //    var chunks = _chunks;
-    //    ref var componentToBeMovedDown = ref chunks[delete.TopChunkIndex][delete.TopEntityIndex];
-    //    chunks[delete.ChunkIndex][delete.EntityIndex] = componentToBeMovedDown;
-    //
-    //    if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
-    //        componentToBeMovedDown = default!;
-    //}
 }

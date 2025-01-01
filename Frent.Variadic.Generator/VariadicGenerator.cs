@@ -35,7 +35,7 @@ namespace Frent.Variadic.Generator
         }
 
         [ThreadStatic]
-        private static Dictionary<(TypeDeclarationSyntax, ISymbol), (string From, string Pattern)[]> _classTable = new();
+        private static Dictionary<(TypeDeclarationSyntax, ISymbol), (string From, string Pattern, int Count)[]> _classTable = new();
 
         static ImmutableArray<GenerationModel> GroupAttributesIntoModels(ImmutableArray<(ISymbol Symbol, SyntaxNode Node, SemanticModel Model)> variadics, CancellationToken ct)
         {
@@ -80,7 +80,7 @@ namespace Frent.Variadic.Generator
                 {
                     SourceCode = cb.ToString(),
                     FileName = fileSafeTypeName,
-                    Attributes = new EquatableArray<(string From, string Pattern)>(kvp.Value)
+                    Attributes = new EquatableArray<(string From, string Pattern, int Count)>(kvp.Value)
                 };
             }).ToImmutableArray();
             table.Clear();
@@ -88,15 +88,15 @@ namespace Frent.Variadic.Generator
             return arr;
         }
 
-        static (string, string)[] ExtractArguments(ISymbol symbol)
+        static (string, string, int)[] ExtractArguments(ISymbol symbol)
         {
             var att = symbol.GetAttributes();
-            (string, string)[] output = new (string, string)[att.Length];
+            (string, string, int)[] output = new (string, string, int)[att.Length];
 
             for (int i = 0; i < att.Length; i++)
             {
                 AttributeData @this = att[i];
-                output[i] = ((string)@this.ConstructorArguments[0].Value!, (string)@this.ConstructorArguments[1].Value!);
+                output[i] = ((string)@this.ConstructorArguments[0].Value!, (string)@this.ConstructorArguments[1].Value!, (int)@this.ConstructorArguments[2].Value!);
             }
 
             return output;
@@ -106,8 +106,9 @@ namespace Frent.Variadic.Generator
         {
             string code = ctx.SourceCode;
 
-            const int MaxArity = 16;
+            int MaxArity = ctx.Attributes.Items[0].Count;
             var builder = ImmutableArray.CreateBuilder<(string, string)>(MaxArity - 1);
+
             for (int arity = 2; arity <= MaxArity; arity++)
             {
                 string thisRunCode = code;
@@ -169,7 +170,7 @@ namespace Frent.Variadic.Generator
         {
             public string SourceCode;
             public string FileName;
-            public EquatableArray<(string From, string Pattern)> Attributes;
+            public EquatableArray<(string From, string Pattern, int Count)> Attributes;
         }
 
         static bool Launched = false;

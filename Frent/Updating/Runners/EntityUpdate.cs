@@ -16,12 +16,16 @@ public class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TCom
     }
 }
 
+[Variadic(GetSpanFrom, GetSpanPattern, 15)]
+[Variadic(GenArgFrom, GenArgPattern)]
+[Variadic(GetArgFrom, GetArgPattern)]
+[Variadic(PutArgFrom, PutArgPattern)]
 public class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TComp, TArg>, TComp>
     where TComp : IEntityUpdateComponent<TArg>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetEntitySpan(), b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
     internal struct Action : ChunkHelpers<TComp, TArg>.IEntityAction
     {
-        public void Run(in Entity entity, ref TComp t1, ref TArg t2) => t1.Update(entity, ref t2);
+        public void Run(in Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, ref t1);
     }
 }

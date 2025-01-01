@@ -74,3 +74,52 @@ internal static class ChunkHelpers<T>
         public void Run(in Entity entity, ref T t);
     }
 }
+
+internal static class ChunkHelpers
+{
+    public static void EnumerateChunkSpanEntity<TAction>(int currentChunk, int lastChunkComponentCount, TAction action, Span<Chunk<Entity>> entityChunks)
+        where TAction : IQueryEntity
+    {
+        var entityLast = entityChunks[currentChunk].AsSpan()[..lastChunkComponentCount];
+
+        for (int j = 0; j < entityLast.Length; j++)
+        {
+            action.Run(entityLast[j]);
+        }
+
+        entityChunks = entityChunks[..currentChunk];
+
+        for (int i = 0; i < currentChunk; i++)
+        {
+            var ent = entityChunks[i].AsSpan();
+
+            for (int j = 0; j < ent.Length; j++)
+            {
+                action.Run(ent[j]);
+            }
+        }
+    }
+
+    public static void EnumerateChunkSpanEntity<TAction, TUniform>(int currentChunk, int lastChunkComponentCount, TAction action, Span<Chunk<Entity>> entityChunks, in TUniform uniform)
+        where TAction : IQueryEntityUniform<TUniform>
+    {
+        var entityLast = entityChunks[currentChunk].AsSpan()[..lastChunkComponentCount];
+
+        for (int j = 0; j < entityLast.Length; j++)
+        {
+            action.Run(entityLast[j], in uniform);
+        }
+
+        entityChunks = entityChunks[..currentChunk];
+
+        for (int i = 0; i < currentChunk; i++)
+        {
+            var ent = entityChunks[i].AsSpan();
+
+            for (int j = 0; j < ent.Length; j++)
+            {
+                action.Run(ent[j], in uniform);
+            }
+        }
+    }
+}

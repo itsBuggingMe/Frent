@@ -8,7 +8,7 @@ public interface IUniformUpdateComponent<TUniform> : IComponent
     void Update(in TUniform uniform);
 }
 
-[Variadic(TArgFrom, TArgPattern)]
+[Variadic(TArgFrom, TArgPattern, 15)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IUniformUpdateComponent<TUniform, TArg> : IComponent
 {

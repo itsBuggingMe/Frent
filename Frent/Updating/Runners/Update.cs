@@ -16,12 +16,16 @@ public class Update<TComp> : ComponentRunnerBase<Update<TComp>, TComp>
     }
 }
 
+[Variadic(GetSpanFrom, GetSpanPattern, 15)]
+[Variadic(GenArgFrom, GenArgPattern)]
+[Variadic(GetArgFrom, GetArgPattern)]
+[Variadic(PutArgFrom, PutArgPattern)]
 public class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TComp>
     where TComp : IUpdateComponent<TArg>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpan<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
     internal struct Action : ChunkHelpers<TComp, TArg>.IAction
     {
-        public void Run(ref TComp t1, ref TArg t2) => t1.Update(ref t2);
+        public void Run(ref TComp c, ref TArg t1) => c.Update(ref t1);
     }
 }

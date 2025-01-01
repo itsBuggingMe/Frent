@@ -8,7 +8,7 @@ public interface IUpdateComponent : IComponent
     void Update();
 }
 
-[Variadic(TArgFrom, TArgPattern)]
+[Variadic(TArgFrom, TArgPattern, 15)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IUpdateComponent<TArg> : IComponent
 {

@@ -17,6 +17,10 @@ public class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<EntityUn
     }
 }
 
+[Variadic(GetSpanFrom, GetSpanPattern, 15)]
+[Variadic(GenArgFrom, GenArgPattern)]
+[Variadic(GetArgFrom, GetArgPattern)]
+[Variadic(PutArgFrom, PutArgPattern)]
 public class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform, TArg>, TComp>
     where TComp : IEntityUniformUpdateComponent<TUniform, TArg>
 {
@@ -24,6 +28,6 @@ public class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<En
     internal record struct Action : ChunkHelpers<TComp, TArg>.IEntityAction
     {
         public TUniform Uniform;
-        public void Run(in Entity entity, ref TComp t1, ref TArg t2) => t1.Update(entity, in Uniform, ref t2);
+        public void Run(in Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, in Uniform, ref t1);
     }
 }

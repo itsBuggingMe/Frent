@@ -4,8 +4,7 @@ using System.Runtime.CompilerServices;
 namespace Frent.Benchmarks;
 internal record struct Component32(int Value) : IEntityUpdateComponent
 {
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public void Update(Entity e)
+    public void Update(Entity entity)
     {
 
     }

@@ -19,10 +19,13 @@ public class VariadicAttribute : Attribute
 {
     private readonly string _from;
     private readonly string _pattern;
-    public VariadicAttribute(string from, string pattern)
+    private readonly int _count;
+
+    public VariadicAttribute(string from, string pattern, int count = 16)
     {
         _from = from;
         _pattern = pattern;
+        _count = count;
     }
 }";
 

@@ -26,6 +26,7 @@ public static partial class WorldStructQueryExtensions
         where TQuery : IQuery<T>
     {
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
+        ArgumentNullException.ThrowIfNull(world, nameof(world));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
@@ -50,6 +51,7 @@ public static partial class WorldStructQueryExtensions
         where TQuery : IQueryEntity<T>
     {
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
+        ArgumentNullException.ThrowIfNull(world, nameof(world));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
@@ -77,6 +79,7 @@ public static partial class WorldStructQueryExtensions
         where TQuery : IQueryEntityUniform<TUniform, T>
     {
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
+        ArgumentNullException.ThrowIfNull(world, nameof(world));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
@@ -106,6 +109,7 @@ public static partial class WorldStructQueryExtensions
         where TQuery : IQueryUniform<TUniform, T>
     {
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
+        ArgumentNullException.ThrowIfNull(world, nameof(world));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());

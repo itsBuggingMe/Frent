@@ -1,26 +1,17 @@
 ﻿namespace Frent.Updating;
 
-internal class Variadics
+internal static class Variadics
 {
-    public const string UpdateArgFrom = ", TArg>";
-    public const string UpdateArgPattern = ", |TArg$, |>";
+    public const string GetSpanFrom = "b.GetComponentSpan<TArg>()";
+    public const string GetSpanPattern = "|b.GetComponentSpan<TArg$>(), |";
 
-    public const string InterfaceFrom = "Component<TArg>";
-    public const string InterfacePattern = "Component<|TArg$, |>";
+    public const string GenArgFrom = "TArg>";
+    public const string GenArgPattern = "|TArg$, |>";
 
-    public const string GetCompSpanFrom = "        var a1 = b.GetComponentSpan<TArg>();";
-    public const string GetCompSpanPattern = "|        var a$ = b.GetComponentSpan<TArg$>();\n|";
+    public const string GetArgFrom = "ref TArg t1";
+    public const string GetArgPattern = "|ref TArg$ t$, |";
 
-    public const string GetChunkFrom = "            ref Chunk<TArg> ca = ref a1[i];";
-    public const string GetChunkPattern = "|            ref Chunk<TArg$> ca$ = ref a$[i];\n|";
-
-    public const string CallArgFrom = "ref ca[j]";
-    public const string CallArgPattern = "|ref ca$[j], |";
-
-    public const string GetChunkLastFrom = "        var caLast = a1[..(b.ChunkCount + 1)][^1].AsSpan(0, b.LastChunkComponentCount);";
-    public const string GetChunkLastPattern = "|        var caLast$ = a$[..(b.ChunkCount + 1)][^1].AsSpan(0, b.LastChunkComponentCount);\n|";
-
-    public const string CallArgLastFrom = "ref caLast[j]";
-    public const string CallArgLastPattern = "|ref caLast$[j], |";
+    public const string PutArgFrom = "ref t1";
+    public const string PutArgPattern = "|ref t$, |";
 }
 
