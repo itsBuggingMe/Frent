@@ -17,6 +17,8 @@ internal static class ChunkHelpers<T>
     public static void EnumerateChunkSpan<TAction>(int currentChunk, int lastChunkComponentCount, TAction action, Span<Chunk<T>> data1)
         where TAction : IAction
     {
+        //AsSpan()[..n] is better than AsSpan(0, n) since the jit only recognises the span slice itself
+        //Code side is also smaller
         var chunkLast1 = data1[currentChunk].AsSpan()[..lastChunkComponentCount];
 
         for (int j = 0; j < chunkLast1.Length; j++)
