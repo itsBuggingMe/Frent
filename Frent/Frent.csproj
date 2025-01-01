@@ -6,12 +6,14 @@
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8</PackageTags>
-    <Version>0.1.0-alpha</Version>
+    <Version>0.1.2-alpha</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Frent.Variadic.Generator\Frent.Variadic.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <None Include="..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
 
