@@ -2,6 +2,7 @@
 using Frent.Core;
 using Frent.Updating;
 using Frent.Variadic.Generator;
+using System.Runtime.CompilerServices;
 
 namespace Frent;
 
@@ -12,6 +13,7 @@ namespace Frent;
 //it just so happens Archetype and Create both end with "e"
 partial class World
 {
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public Entity Create<T>(in T comp)
     {
         Archetype archetype = WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.CreateArchetype(this);

@@ -28,7 +28,16 @@ internal class FrentExceptions
     {
         throw new ComponentNotFoundException<T>();
     }
+
+    [DoesNotReturn]
+    [StackTraceHidden]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void Throw_ComponentAlreadyExistsException<T>()
+    {
+        throw new ComponentNotFoundException<T>();
+    }
 }
 
+internal class ComponentAlreadyExistsException<T>() : Exception($"Component of type {typeof(T).FullName} already exists on entity!");
 internal class ComponentNotFoundException<T>() : Exception($"Component of type {typeof(T).FullName} not found");
 internal class ComponentNotFoundException(Type t) : Exception($"Component of type {t.FullName} not found");

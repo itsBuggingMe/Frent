@@ -1,9 +1,13 @@
 ﻿using Frent.Collections;
-using Frent.Core;
+using Frent.Components;
 using Frent.Systems;
+using Frent.Core;
 
 namespace Frent;
 
+/// <summary>
+/// Represents a collection of entities that can be updated and queried
+/// </summary>
 public partial class World : IDisposable
 {
     #region Static Version Management
@@ -23,8 +27,15 @@ public partial class World : IDisposable
 
     internal Dictionary<int, Query> QueryCache = [];
 
+    /// <summary>
+    /// The current uniform provider used when updating components/queries with uniforms
+    /// </summary>
     public IUniformProvider UniformProvider { get; set; }
 
+    /// <summary>
+    /// Creates a world with zero entities and a uniform provider
+    /// </summary>
+    /// <param name="uniformProvider">The initial uniform provider to be used</param>
     public World(IUniformProvider? uniformProvider = null)
     {
         UniformProvider = uniformProvider ?? NullUniformProvider.Instance;
@@ -47,14 +58,14 @@ public partial class World : IDisposable
         EntityTable[(uint)replacedEntity.EntityID] = (entityLocation, replacedEntity.EntityVersion);
     }
 
+    /// <summary>
+    /// Updates all component instances in the world that implement a component interface, e.g., <see cref="IUpdateComponent"/>
+    /// </summary>
     public void Update()
     {
         foreach(var element in WorldArchetypeTable.AsSpan())
         {
-            if(element is not null)
-            {
-                element.Update();
-            }
+            element?.Update();
         }
     }
 
@@ -80,6 +91,9 @@ public partial class World : IDisposable
         return q;
     }
 
+    /// <summary>
+    /// Disposes of the <see cref="World"/>
+    /// </summary>
     public void Dispose()
     {
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
@@ -88,6 +102,6 @@ public partial class World : IDisposable
     internal class NullUniformProvider : IUniformProvider
     {
         internal static NullUniformProvider Instance { get; } = new NullUniformProvider();
-        public T GetUniform<T>() => FrentExceptions.Throw_InvalidOperationException<T>("Initalize the world with an IUniformProvider in order to use uniforms");
+        public T GetUniform<T>() => FrentExceptions.Throw_InvalidOperationException<T>("Initialize the world with an IUniformProvider in order to use uniforms");
     }
 }

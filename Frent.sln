@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frent.Generator", "Frent.Ge
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frent.Benchmarks", "Frent.Benchmarks\Frent.Benchmarks.csproj", "{8B7D5AD6-F30D-4998-9DFD-A69A3532B40B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Frent.Tests", "Frent.Tests\Frent.Tests.csproj", "{C1AAE1A9-2C9C-4558-B943-18F928AFDC19}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frent.Tests", "Frent.Tests\Frent.Tests.csproj", "{C1AAE1A9-2C9C-4558-B943-18F928AFDC19}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

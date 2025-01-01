@@ -83,7 +83,7 @@ namespace Frent.Sample
             if(Keyboard.GetState().IsKeyDown(Keys.Space))
             {
                 _world.Create<Position, Velocity, Friction, Bounds, SinglePixel, MouseController>(
-                    MouseState.Position.ToVector2(),
+                    MouseState.Position.ToVector2(),    
                     Vector2.Normalize(new(Random.Shared.NextSingle() - 0.5f, Random.Shared.NextSingle() - 0.5f)),
                     0.99f,
                     new Vector2(5),
@@ -110,7 +110,7 @@ namespace Frent.Sample
 
         static void Main(string[] args)
         {
-            using var p = new GameRoot(args.Length == 0 ? 100_000 : int.Parse(args[0]));
+            using var p = new GameRoot(args.Length == 0 ? 200_000 : int.Parse(args[0]));
             p.Run();
         }
 

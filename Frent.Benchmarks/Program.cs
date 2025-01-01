@@ -29,41 +29,4 @@ public class Program
 
         world.Dispose();
     }
-
-    [Benchmark]
-    public void CreateEntities2()
-    {
-        World world = new World();
-
-        for (int i = 0; i < 100_000; i++)
-        {
-            world.Create<Component32, Component64>(default, default);
-        }
-
-        world.Dispose();
-    }
-
-    [Benchmark]
-    public void CreateAndDeleteEntities1()
-    {
-        World world = new World();
-        var entities = _sharedEntityBuffer100k.AsSpan();
-        for(int i = 0; i < entities.Length; i++)
-            entities[i] = world.Create<Component32>(default);
-        for (int i = 0; i < entities.Length; i++)
-            entities[i].Delete();
-        world.Dispose();
-    }
-
-    [Benchmark]
-    public void CreateAndDeleteEntities2()
-    {
-        World world = new World();
-        var entities = _sharedEntityBuffer100k.AsSpan();
-        for (int i = 0; i < entities.Length; i++)
-            entities[i] = world.Create<Component32, Component64>(default, default);
-        for (int i = 0; i < entities.Length; i++)
-            entities[i].Delete();
-        world.Dispose();
-    }
 }

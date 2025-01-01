@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 
 namespace Frent;
+
 public struct EntityLocation(Archetype archetype, ushort chunkIndex, ushort componentIndex)
 {
     internal Archetype Archetype = archetype;

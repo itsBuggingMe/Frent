@@ -1,9 +1,8 @@
 ﻿using Frent.Buffers;
 using System.Collections;
 using System.Collections.Frozen;
-using System.Reflection;
-
 namespace Frent.Updating;
+
 public static class GenerationServices
 {
     internal static readonly Dictionary<Type, IComponentRunner> UserGeneratedTypeMap = new();

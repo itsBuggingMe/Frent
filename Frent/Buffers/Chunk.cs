@@ -8,6 +8,7 @@ namespace Frent.Buffers;
 
 public struct Chunk<TData>
 {
+    TData[] _buffer;
     public ref TData this[int i]
     {
         [DebuggerHidden]
@@ -22,7 +23,6 @@ public struct Chunk<TData>
         _buffer = new TData[len];
     }
 
-    TData[] _buffer;
     public Span<TData> AsSpan() => _buffer;
     [DebuggerHidden]
     public Span<TData> AsSpan(int start, int length) => _buffer.AsSpan(start, length);
