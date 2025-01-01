@@ -54,3 +54,4 @@ record struct Velocity(Vector2 Delta) : IUpdateComponent<Position>
 - [ ]  Programmical Entity Creation
 - [ ]  Tests
 - [ ]  Built in Uniform Provider implementation
+- [ ]  Entity Tag
