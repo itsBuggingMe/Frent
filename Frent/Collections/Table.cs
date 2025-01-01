@@ -17,7 +17,7 @@ internal struct Table<T>(int size)
         get
         {
             var buffer = _buffer;
-            if(index < buffer.Length)
+            if (index < buffer.Length)
                 return ref buffer[index];
             return ref ResizeGet(index);
         }

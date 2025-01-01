@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Frent\Frent.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Frent.Generator\Frent.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  
 </Project>

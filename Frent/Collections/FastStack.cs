@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -54,7 +53,7 @@ public struct FastStack<T>(int initalComponents) : IEnumerable<T>
     [DebuggerStepThrough]
     public bool TryPop([NotNullWhen(true)] out T? value)
     {
-        if(_nextIndex == 0)
+        if (_nextIndex == 0)
         {
             value = default;
             return false;
@@ -71,10 +70,10 @@ public struct FastStack<T>(int initalComponents) : IEnumerable<T>
         Debug.Assert(Count > 0);
 
         var buffer = _buffer;
-        if(index < buffer.Length)
+        if (index < buffer.Length)
         {
             buffer[index] = buffer[--_nextIndex];
-            if(NeedToWorryAboutGC)
+            if (NeedToWorryAboutGC)
                 buffer[_nextIndex] = default!;
         }
     }

@@ -1,7 +1,4 @@
-﻿using Frent.Buffers;
-using System.Collections;
-using System.Collections.Frozen;
-namespace Frent.Updating;
+﻿namespace Frent.Updating;
 
 public static class GenerationServices
 {

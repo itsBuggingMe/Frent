@@ -104,7 +104,6 @@ namespace Frent.Variadic.Generator
 
         static ImmutableArray<(string Code, string FileName)> GenerateCode(GenerationModel ctx, CancellationToken ct)//omg cs ref
         {
-            CodeBuilder shared = new(-1);
             string code = ctx.SourceCode;
 
             const int MaxArity = 16;

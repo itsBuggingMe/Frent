@@ -33,7 +33,7 @@ public ref struct Option<T>(bool exists, ref T value)
     /// <returns><see langword="true"/> if successful, otherwise <see langword="false"/>.</returns>
     public bool SetIfExists(in T value)
     {
-        if(Exists)
+        if (Exists)
         {
             _value = value;
         }

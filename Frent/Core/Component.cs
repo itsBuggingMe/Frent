@@ -1,8 +1,6 @@
 ﻿using Frent.Collections;
-using Frent.Components;
 using Frent.Updating;
 using Frent.Updating.Runners;
-using System.Numerics;
 
 namespace Frent.Core;
 
@@ -25,7 +23,7 @@ internal static class Component<T>
             throw new InvalidOperationException($"{typeof(T).FullName} is not initalized. (Is the source generator working?)");
         }
 
-        Component.NoneComponentRunnerTable[typeof(T)] = RunnerInstance =  new None<T>();
+        Component.NoneComponentRunnerTable[typeof(T)] = RunnerInstance = new None<T>();
     }
 }
 
@@ -52,7 +50,7 @@ internal static class Component
 
     public static int GetComponentID(Type t)
     {
-        if(ExistingComponentIDs.TryGetValue(t, out int value))
+        if (ExistingComponentIDs.TryGetValue(t, out int value))
         {
             return value;
         }
@@ -73,9 +71,9 @@ internal static class Component
     {
         var table = GlobalWorldTables.ComponentLocationTable;
         int componentTableLength = AllComponentTypesOrdered.Count;
-        
+
         //when adding a component, we only care about changing the length
-        if(componentTableLength == id)
+        if (componentTableLength == id)
         {
             ComponentTableBufferSize = Math.Max(componentTableLength << 1, 1);
             for (int i = 0; i < table.Length; i++)

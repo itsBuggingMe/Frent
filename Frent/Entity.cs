@@ -1,8 +1,8 @@
 ﻿using Frent.Core;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Diagnostics.CodeAnalysis;
 using Frent.Updating;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -28,7 +28,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     internal readonly int EntityID;
     #endregion
 
-    #region Interactions
+    #region Public API
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> has a component of Type <typeparamref name="T"/>
     /// </summary>
@@ -101,7 +101,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <exception cref="ComponentAlreadyExistsException{T}"><see cref="Entity"/> already has a component of type <typeparamref name="T"/></exception>
     public void Add<T>(in T component)
     {
-        if(!IsAlive(out World? world, out EntityLocation entityLocation))
+        if (!IsAlive(out World? world, out EntityLocation entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
 
         Archetype from = entityLocation.Archetype;
@@ -111,7 +111,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         Archetype destination = edge.Add ??= Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, typeof(T)), world);
         destination.CreateEntityLocation(out EntityLocation nextLocation) = this;
 
-        for(int i = 0; i < from.Components.Length; i++)
+        for (int i = 0; i < from.Components.Length; i++)
         {
             destination.Components[i].PullComponentFrom(from.Components[i], ref nextLocation, ref entityLocation);
         }
@@ -201,7 +201,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public void Delete()
     {
-        if(IsAlive(out World? world, out EntityLocation entityLocation))
+        if (IsAlive(out World? world, out EntityLocation entityLocation))
         {
             world.DeleteEntityInternal(this, ref entityLocation);
         }
@@ -221,9 +221,23 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// Checks to see if this <see cref="Entity"/> instance is the null entity: <see langword="default"/>(<see cref="Entity"/>)
     /// </summary>
     public bool IsNull => WorldID == 0 && WorldVersion == 0 && EntityID == 0 && EntityVersion == 0;
+
+    /// <summary>
+    /// Gets the world this entity belongs to
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Entity is dead</exception>
+    public World World
+    {
+        get
+        {
+            if(!IsAlive(out World? world, out _))
+                FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+            return world;
+        }
+    }
     #endregion
 
-    #region Private Helpers
+    #region Internal Helpers
     internal bool IsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
         //2x dereference
@@ -232,10 +246,10 @@ public readonly partial struct Entity : IEquatable<Entity>
         if (span.Length > worldId)
         {
             world = span[worldId];
-            if(world.Version == WorldVersion)
+            if (world.Version == WorldVersion)
             {
                 var (loc, ver) = world.EntityTable[(uint)EntityID];
-                if(ver == EntityVersion)
+                if (ver == EntityVersion)
                 {
                     entityLocation = loc;
                     return true;
@@ -281,6 +295,9 @@ public readonly partial struct Entity : IEquatable<Entity>
 
     internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {EntityVersion}, ID: {EntityID}, Version {EntityVersion}";
     internal const string EntityIsDeadMessage = "Entity is Dead";
+
+    //Since we can't use Unsafe.NullRef<T>(), we return a dummy reference instead
+    private static class DefaultReference<T> { public static T? Value; }
     #endregion
 
     #region IEquatable
@@ -290,6 +307,4 @@ public readonly partial struct Entity : IEquatable<Entity>
     public bool Equals(Entity other) => other.WorldID == WorldID && other.EntityVersion == EntityVersion && other.EntityID == EntityID;
     public override int GetHashCode() => HashCode.Combine(WorldID, EntityVersion, EntityID);
     #endregion
-
-    private static class DefaultReference<T> { public static T? Value; }
 }

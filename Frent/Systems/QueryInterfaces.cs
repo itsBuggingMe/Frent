@@ -1,5 +1,5 @@
-﻿using static Frent.Components.Variadics;
-using Frent.Variadic.Generator;
+﻿using Frent.Variadic.Generator;
+using static Frent.Components.Variadics;
 
 namespace Frent;
 

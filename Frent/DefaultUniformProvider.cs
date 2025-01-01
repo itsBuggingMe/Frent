@@ -11,7 +11,7 @@ public class DefaultUniformProvider : IUniformProvider
         return this;
     }
 
-    public T GetUniform<T>() => _uniforms.TryGetValue(typeof(T), out object? value) ? 
-        (T)value : 
+    public T GetUniform<T>() => _uniforms.TryGetValue(typeof(T), out object? value) ?
+        (T)value :
         throw new InvalidOperationException($"Uniform of {typeof(T).Name} not found");
 }

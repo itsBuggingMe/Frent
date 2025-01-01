@@ -1,7 +1,4 @@
-﻿using Frent.Components;
-using System.Diagnostics;
-
-namespace Frent;
+﻿namespace Frent;
 
 /// <summary>
 /// A wrapper ref struct over a reference to a <typeparamref name="T"/>

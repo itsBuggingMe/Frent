@@ -1,9 +1,9 @@
-﻿using Frent.Updating;
+﻿using Frent.Buffers;
 using Frent.Collections;
+using Frent.Updating;
 using Frent.Variadic.Generator;
-using System.Runtime.InteropServices;
-using Frent.Buffers;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
@@ -20,7 +20,7 @@ internal class Archetype<T>
     public static Archetype CreateArchetype(World world)
     {
         ref Archetype archetype = ref world.GetArchetype(IDasUInt);
-        if(archetype is not null)
+        if (archetype is not null)
             return archetype;
 
         IComponentRunner[] runners = [Component<T>.CreateInstance()];
@@ -46,6 +46,7 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
 
     internal ushort LastChunkComponentCount => _componentIndex;
     internal ushort ChunkCount => _chunkIndex;
+    internal ushort CurrentWriteChunk => _chunkIndex;
 
     internal Span<Chunk<T>> GetComponentSpan<T>() => ((IComponentRunner<T>)Components[GlobalWorldTables.ComponentLocationTable[ArchetypeID][Component<T>.ID]]).AsSpan();
 
@@ -112,7 +113,7 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
         ref int slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types), out bool exists);
         int finalID;
 
-        if(exists)
+        if (exists)
         {
             finalID = slot;
         }
@@ -129,12 +130,12 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
 
     private static void ModifyComponentLocationTable(Type[] archetypeTypes, int id)
     {
-        if(GlobalWorldTables.ComponentLocationTable.Length == id)
+        if (GlobalWorldTables.ComponentLocationTable.Length == id)
         {
             Array.Resize(ref GlobalWorldTables.ComponentLocationTable, Math.Max(id << 1, 1));
         }
 
-        for(int i = 0; i < archetypeTypes.Length; i++)
+        for (int i = 0; i < archetypeTypes.Length; i++)
         {
             _ = Component.GetComponentID(archetypeTypes[i]);
         }

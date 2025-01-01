@@ -1,6 +1,4 @@
-﻿using System.Data;
-
-namespace Frent.Systems;
+﻿namespace Frent.Systems;
 internal struct QueryHash
 {
     public QueryHash() { }
@@ -22,7 +20,7 @@ internal struct QueryHash
 
     public void AddRule(Rule rule)
     {
-        if(rule.CustomOperator is not null)
+        if (rule.CustomOperator is not null)
         {
             _state.Add(rule.CustomOperator);
             return;

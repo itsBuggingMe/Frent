@@ -1,4 +1,5 @@
 ﻿using Frent.Buffers;
+using Frent.Collections;
 using Frent.Systems;
 using Frent.Variadic.Generator;
 using System.Runtime.InteropServices;
@@ -21,7 +22,7 @@ public static partial class WorldDelegateQueryExtensions
     {
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
-        Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??= 
+        Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
 
         foreach (var archetype in query)

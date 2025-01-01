@@ -27,7 +27,7 @@ public static partial class WorldStructQueryExtensions
     {
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
-        Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??= 
+        Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
 
         foreach (var archetype in query)

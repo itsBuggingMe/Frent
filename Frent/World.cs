@@ -1,7 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Components;
-using Frent.Systems;
 using Frent.Core;
+using Frent.Systems;
 
 namespace Frent;
 
@@ -63,7 +63,7 @@ public partial class World : IDisposable
     /// </summary>
     public void Update()
     {
-        foreach(var element in WorldArchetypeTable.AsSpan())
+        foreach (var element in WorldArchetypeTable.AsSpan())
         {
             element?.Update();
         }
@@ -76,11 +76,11 @@ public partial class World : IDisposable
 
     internal void ArchetypeAdded(Archetype archetype)
     {
-        foreach(var qkvp in QueryCache)
+        foreach (var qkvp in QueryCache)
         {
             qkvp.Value.TryAttachArchetype(archetype);
         }
-    }   
+    }
 
     internal Query CreateQuery(params Rule[] rules)
     {
@@ -96,6 +96,7 @@ public partial class World : IDisposable
     /// </summary>
     public void Dispose()
     {
+        GlobalWorldTables.Worlds[ID] = null!;
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
     }
 

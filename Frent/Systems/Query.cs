@@ -15,15 +15,15 @@ public class Query(Rule[] rules) : IEnumerable<Archetype>
 
     public void TryAttachArchetype(Archetype archetype)
     {
-        if(ArchetypeSatisfiesQuery(archetype))
+        if (ArchetypeSatisfiesQuery(archetype))
             _archetypes.Push(archetype);
     }
 
     private bool ArchetypeSatisfiesQuery(Archetype archetype)
     {
-        foreach(var rule in _rules)
+        foreach (var rule in _rules)
         {
-            if(!RuleApplies(rule, archetype.ArchetypeTypeArray))
+            if (!RuleApplies(rule, archetype.ArchetypeTypeArray))
             {
                 return false;
             }
@@ -34,7 +34,7 @@ public class Query(Rule[] rules) : IEnumerable<Archetype>
 
     private bool RuleApplies(Rule rule, Type[] types)
     {
-        if(rule.CustomOperator is not null)
+        if (rule.CustomOperator is not null)
         {
             return rule.CustomOperator(types);
         }

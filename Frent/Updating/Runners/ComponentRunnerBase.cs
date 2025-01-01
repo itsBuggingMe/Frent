@@ -25,7 +25,7 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
 
     internal void Clear()
     {
-        if(_chunks.Length == 1)
+        if (_chunks.Length == 1)
         {
             _chunks[0][0] = default!;
         }
@@ -39,7 +39,7 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
     {
         ref var from = ref _chunks[chunkFrom][compFrom];
         _chunks[chunkTo][compTo] = from;
-        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
 

@@ -1,5 +1,4 @@
-﻿using Frent.Components;
-using Frent.Core;
+﻿using Frent.Core;
 using Frent.Updating;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
@@ -8,7 +7,7 @@ namespace Frent;
 
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("in T comp", "|in T$ comp$, |")]
-[Variadic("        ((IComponentRunner<T>)archetype.Components[componentIndicies[Component<T>.ID]]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp!;", 
+[Variadic("        ((IComponentRunner<T>)archetype.Components[componentIndicies[Component<T>.ID]]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp!;",
     "|        ((IComponentRunner<T$>)archetype.Components[componentIndicies[Component<T$>.ID]]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp$!;\n|")]
 //it just so happens Archetype and Create both end with "e"
 partial class World
