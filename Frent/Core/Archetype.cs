@@ -3,6 +3,7 @@ using Frent.Collections;
 using Frent.Updating;
 using Frent.Variadic.Generator;
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Frent.Core;
@@ -32,6 +33,8 @@ internal class Archetype<T>
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 public class Archetype(int id, IComponentRunner[] components, World world, Type[] types)
 {
+    private const int MaxChunkSize = 8192;
+
     internal int ArchetypeID = id;
     internal readonly World World = world;
     internal readonly Type[] ArchetypeTypeArray = types;
@@ -41,6 +44,7 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
     private Chunk<Entity>[] _entities = [new Chunk<Entity>(1)];
     private ushort _chunkIndex;
     private ushort _componentIndex;
+    private int _chunkSize = 1;
 
     internal string DebuggerDisplayString => $"Archetype: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))}";
 
@@ -57,14 +61,30 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
             _chunkIndex++;
             _componentIndex = 0;
 
-            Chunk<Entity>.NextChunk(ref _entities);
+            _chunkSize = Math.Min(MaxChunkSize, _chunkSize << 1);
+            Chunk<Entity>.NextChunk(ref _entities, _chunkSize);
             foreach (var comprunner in Components)
-                comprunner.AllocateNextChunk();
+                comprunner.AllocateNextChunk(_chunkSize);
         }
 
         entityLocation = new EntityLocation(this, _chunkIndex, _componentIndex);
         return ref _entities[_chunkIndex][_componentIndex++];
     }
+
+    public void EnsureCapacity(int size)
+    {
+        _chunkSize = (int)Math.Min(MaxChunkSize, BitOperations.RoundUpToPowerOf2((uint)(size >> 1)));//round down to power of two
+
+        while(size > 0)
+        {
+            Chunk<Entity>.NextChunk(ref _entities, _chunkSize);
+            foreach (var comprunner in Components)
+                comprunner.AllocateNextChunk(_chunkSize);
+
+            size -= _chunkSize;
+        }
+    }
+
 
     internal Entity DeleteEntity(ushort chunk, ushort comp)
     {

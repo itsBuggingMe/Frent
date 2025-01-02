@@ -25,7 +25,7 @@ public static class QueryHashes<T>
 public static class QueryHashes
 {
     //https://xkcd.com/221/
-    public static readonly int Hash = 221;
+    public static readonly int Hash = 4;
 }
 
 partial class QueryDelegates

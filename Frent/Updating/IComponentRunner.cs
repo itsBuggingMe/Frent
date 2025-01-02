@@ -8,7 +8,7 @@ public interface IComponentRunner
     internal IComponentRunner Clone();
     internal void Run(Archetype archetype);
     internal void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);
-    internal void AllocateNextChunk();
+    internal void AllocateNextChunk(int size);
     internal void PullComponentFrom(IComponentRunner otherRunner, ref readonly EntityLocation me, ref readonly EntityLocation other);
     internal int ComponentID { get; }
 }

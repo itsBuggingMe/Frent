@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Frent.Core;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Buffers;
@@ -12,11 +13,8 @@ public struct Chunk<TData>
         get => ref _buffer[i];
     }
 
-    const int MaxChunkSize = 8192;
-
     public Chunk(int len)
     {
-        Debug.Assert(len > 0 && len <= MaxChunkSize);
         _buffer = new TData[len];
     }
 
@@ -24,16 +22,10 @@ public struct Chunk<TData>
     [DebuggerHidden]
     public Span<TData> AsSpan(int start, int length) => _buffer.AsSpan(start, length);
 
-    public Chunk<TData> CreateNext()
-    {
-        int len = _buffer.Length;
-        return new Chunk<TData>(len == MaxChunkSize ? MaxChunkSize : len << 1);
-    }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void NextChunk(ref Chunk<TData>[] chunks)
+    public static void NextChunk(ref Chunk<TData>[] chunks, int size)
     {
-        var nextChunk = chunks[^1].CreateNext();
+        var nextChunk = new Chunk<TData>(size);
         Array.Resize(ref chunks, chunks.Length + 1);
         chunks[^1] = nextChunk;
     }

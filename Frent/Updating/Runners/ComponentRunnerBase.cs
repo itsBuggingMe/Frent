@@ -13,7 +13,7 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
     public IComponentRunner<TComponent> CloneStronglyTyped() => new TSelf();
     public abstract void Run(Archetype b);
     protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
-    public void AllocateNextChunk() => Chunk<TComponent>.NextChunk(ref _chunks);
+    public void AllocateNextChunk(int chunkSize) => Chunk<TComponent>.NextChunk(ref _chunks, chunkSize);
     public int ComponentID => Component<TComponent>.ID;
     public void PullComponentFrom(IComponentRunner otherRunner, ref readonly EntityLocation me, ref readonly EntityLocation other)
     {

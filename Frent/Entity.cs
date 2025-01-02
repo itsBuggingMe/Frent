@@ -57,12 +57,12 @@ public readonly partial struct Entity : IEquatable<Entity>
         if (!IsAlive(out _, out EntityLocation entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
 
-        //5x
+        //2x
         byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][Component<T>.ID];
 
         if (compIndex == byte.MaxValue)
             FrentExceptions.Throw_ComponentNotFoundException<T>();
-
+        //3x
         return ref ((IComponentRunner<T>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
     }
 
