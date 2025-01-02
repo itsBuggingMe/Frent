@@ -31,5 +31,12 @@ internal struct Table<T>(int size)
         return ref _buffer[index];
     }
 
+    public void EnsureCapacity(int size)
+    {
+        if (_buffer.Length >= size)
+            return;
+        Array.Resize(ref _buffer, size);
+    }
+
     public Span<T> AsSpan() => _buffer.AsSpan();
 }

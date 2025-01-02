@@ -31,6 +31,7 @@ namespace Frent.Sample
         public SpriteBatch SpriteBatch = null!;
         public float DeltaTime;
         private int _count;
+        List<Entity> entities = new List<Entity>();
 
         public GameRoot(int count)
         {
@@ -61,13 +62,13 @@ namespace Frent.Sample
 
             for (int i = 0; i < _count; i++)
             {
-                _world.Create<Position, Velocity, Friction, Bounds, SinglePixel, MouseController>(
+                entities.Add(_world.Create<Position, Velocity, Friction, Bounds, SinglePixel, MouseController>(
                     new Vector2(Random.Shared.Next(_manager.PreferredBackBufferWidth), Random.Shared.Next(_manager.PreferredBackBufferHeight)),
                     Vector2.Normalize(new(Random.Shared.NextSingle() - 0.5f, Random.Shared.NextSingle() - 0.5f)),
                     0.99f,
                     new Vector2(5),
                     colors[Random.Shared.Next(colors.Length)],
-                    default);
+                    default));
             }
 
             SpriteBatch = new SpriteBatch(GraphicsDevice);
@@ -82,19 +83,33 @@ namespace Frent.Sample
 
             if(Keyboard.GetState().IsKeyDown(Keys.Space))
             {
-                _world.Create<Position, Velocity, Friction, Bounds, SinglePixel, MouseController>(
-                    MouseState.Position.ToVector2(),    
+                entities.Add(_world.Create<Position, Velocity, Friction, Bounds, SinglePixel, MouseController>(
+                    MouseState.Position.ToVector2(),
                     Vector2.Normalize(new(Random.Shared.NextSingle() - 0.5f, Random.Shared.NextSingle() - 0.5f)),
                     0.99f,
                     new Vector2(5),
                     colors[Random.Shared.Next(colors.Length)],
-                    default);
+                    default));
+            }
+            else
+            {
+                DeleteRandomEntity();
             }
 
             _world.Update();
             _world.InlineQueryUniform<QueryCollison, GameRoot, Velocity, Position, Bounds>(default);
 
             base.Update(gameTime);
+        }
+
+        private void DeleteRandomEntity()
+        {
+            if(entities.Count > 0)
+            {
+                int index = Random.Shared.Next(entities.Count);
+                entities[index].Delete();
+                entities.RemoveAt(index);
+            }
         }
 
         protected override void Draw(GameTime gameTime)
@@ -110,7 +125,7 @@ namespace Frent.Sample
 
         static void Main(string[] args)
         {
-            using var p = new GameRoot(args.Length == 0 ? 200_000 : int.Parse(args[0]));
+            using var p = new GameRoot(args.Length == 0 ? 1000 : int.Parse(args[0]));
             p.Run();
         }
 
