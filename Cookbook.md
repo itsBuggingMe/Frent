@@ -35,7 +35,7 @@ struct ConsoleText(ConsoleColor Color) : IUpdateComponent<string>
 }
 ```
 #### Output:
-```
+```csharp
 "Hello World!""Hello World!""Hello World!"
 ```
 
