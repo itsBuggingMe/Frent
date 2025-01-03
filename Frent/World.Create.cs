@@ -30,6 +30,7 @@ partial class World
         archetype.EnsureCapacity(entityCount);
     }
 
+    //refactor this into archetype
     private class ArchetypeConstantCache<T>
     {
         internal class OfComponent<C>

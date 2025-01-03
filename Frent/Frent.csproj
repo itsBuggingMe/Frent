@@ -13,7 +13,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Frent.Variadic.Generator\Frent.Variadic.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <None Include="..\README.md" Pack="true" PackagePath="\"/>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet.Annotations" Version="0.14.0" />
   </ItemGroup>
 
 

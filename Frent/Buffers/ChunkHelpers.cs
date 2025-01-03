@@ -4,6 +4,7 @@ namespace Frent.Buffers;
 
 [Variadic("ref T t", "|ref T$ t$, |")]
 [Variadic("ChunkHelpers<T>", "ChunkHelpers<|T$, |>")]
+[Variadic("y<T>", "y<|T$, |>")]
 [Variadic("Span<Chunk<T>> data1", "|Span<Chunk<T$>> data$, |")]
 [Variadic("        var chunkLast1 = data1[currentChunk].AsSpan()[..lastChunkComponentCount];",
     "|        var chunkLast$ = data$[currentChunk].AsSpan()[..lastChunkComponentCount];\n|")]
@@ -15,7 +16,7 @@ namespace Frent.Buffers;
 internal static class ChunkHelpers<T>
 {
     public static void EnumerateChunkSpan<TAction>(int currentChunk, int lastChunkComponentCount, TAction action, Span<Chunk<T>> data1)
-        where TAction : IAction
+        where TAction : IQuery<T>
     {
         //AsSpan()[..n] is better than AsSpan(0, n) since the jit only recognises the span slice itself
         //Code side is also smaller
@@ -41,7 +42,7 @@ internal static class ChunkHelpers<T>
     }
 
     public static void EnumerateChunkSpanEntity<TAction>(int currentChunk, int lastChunkComponentCount, TAction action, Span<Chunk<Entity>> entityChunks, Span<Chunk<T>> data1)
-        where TAction : IEntityAction
+        where TAction : IQueryEntity<T>
     {
         var entityLast = entityChunks[currentChunk].AsSpan()[..lastChunkComponentCount];
         var chunkLast1 = data1[currentChunk].AsSpan()[..lastChunkComponentCount];
@@ -61,19 +62,9 @@ internal static class ChunkHelpers<T>
 
             for (int j = 0; j < ent.Length; j++)
             {
-                action.Run(in ent[j], ref comp1[j]);
+                action.Run(ent[j], ref comp1[j]);
             }
         }
-    }
-
-    internal interface IAction
-    {
-        public void Run(ref T t);
-    }
-
-    internal interface IEntityAction
-    {
-        public void Run(in Entity entity, ref T t);
     }
 }
 

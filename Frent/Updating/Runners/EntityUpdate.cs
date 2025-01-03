@@ -10,9 +10,9 @@ public class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TCom
     where TComp : IEntityUpdateComponent
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetEntitySpan(), b.GetComponentSpan<TComp>());
-    internal struct Action : ChunkHelpers<TComp>.IEntityAction
+    internal struct Action : IQueryEntity<TComp>
     {
-        public void Run(in Entity entity, ref TComp t) => t.Update(entity);
+        public void Run(Entity entity, ref TComp t) => t.Update(entity);
     }
 }
 
@@ -24,8 +24,8 @@ public class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TComp,
     where TComp : IEntityUpdateComponent<TArg>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetEntitySpan(), b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
-    internal struct Action : ChunkHelpers<TComp, TArg>.IEntityAction
+    internal struct Action : IQueryEntity<TComp, TArg>
     {
-        public void Run(in Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, ref t1);
+        public void Run(Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, ref t1);
     }
 }

@@ -11,7 +11,7 @@ public class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpan<Action>
         (b.CurrentWriteChunk, b.LastChunkComponentCount, new() { Uniform = b.World.UniformProvider.GetUniform<TUniform>() }, b.GetComponentSpan<TComp>());
-    internal struct Action : ChunkHelpers<TComp>.IAction
+    internal struct Action : IQuery<TComp>
     {
         public TUniform Uniform;
         public void Run(ref TComp t) => t.Update(in Uniform);
@@ -28,7 +28,7 @@ public class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformU
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpan<Action>
         (b.CurrentWriteChunk, b.LastChunkComponentCount, new() { Uniform = b.World.UniformProvider.GetUniform<TUniform>() }, b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
 
-    internal struct Action : ChunkHelpers<TComp, TArg>.IAction
+    internal struct Action : IQuery<TComp, TArg>
     {
         public TUniform Uniform;
         public void Run(ref TComp c, ref TArg t1) => c.Update(in Uniform, ref t1);
