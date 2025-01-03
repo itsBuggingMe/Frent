@@ -1,18 +1,21 @@
 ﻿using Frent.Core;
 using Frent.Updating;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Frent;
 
 /// <summary>
 /// Represents an Entity; a collection of components of unqiue type
 /// </summary>
+//TODO: comparison with fieldoffset
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 public readonly partial struct Entity : IEquatable<Entity>
 {
+    #region Fields & Ctor
     internal Entity(byte worldID, byte worldVersion, ushort version, int entityID)
     {
         WorldID = worldID;
@@ -21,7 +24,6 @@ public readonly partial struct Entity : IEquatable<Entity>
         EntityID = entityID;
     }
 
-    #region Fields
     internal readonly byte WorldVersion;
     internal readonly byte WorldID;
     internal readonly ushort EntityVersion;
@@ -29,6 +31,8 @@ public readonly partial struct Entity : IEquatable<Entity>
     #endregion
 
     #region Public API
+
+    #region Has
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> has a component of Type <typeparamref name="T"/>
     /// </summary>
@@ -54,7 +58,9 @@ public readonly partial struct Entity : IEquatable<Entity>
         int compid = Component.GetComponentID(type);
         return GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][compid] != byte.MaxValue;
     }
+    #endregion
 
+    #region Get
     /// <summary>
     /// Gets this <see cref="Entity"/>'s component of type <typeparamref name="T"/>.
     /// </summary>
@@ -100,7 +106,9 @@ public readonly partial struct Entity : IEquatable<Entity>
         //3x
         return entityLocation.Archetype.Components[compIndex].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
     }
+    #endregion
 
+    #region TryGet
     /// <summary>
     /// Attempts to get a component from an <see cref="Entity"/>.
     /// </summary>
@@ -115,6 +123,47 @@ public readonly partial struct Entity : IEquatable<Entity>
     }
 
     /// <summary>
+    /// Attempts to get a component from an <see cref="Entity"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of component.</typeparam>
+    /// <param name="exists"><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</param>
+    /// <returns>Potentially a reference to the component</returns>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    public ref T? TryGet<T>(out bool exists)
+    {
+        var @ref = TryGetCore<T>(out exists);
+        return ref @ref.Component!;
+    }
+
+    /// <summary>
+    /// Attempts to get a component from an <see cref="Entity"/>.
+    /// </summary>
+    /// <param name="value">A wrapper over a reference to the component when <see langword="true"/>.</param>
+    /// <returns><see langword="true"/> if this entity has a component of type <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    public bool TryGet(Type type, [NotNullWhen(true)] out object? value)
+    {
+        if (!IsAlive(out _, out EntityLocation entityLocation))
+        {
+            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+        }
+
+        int componentId = Component.GetComponentID(type);
+        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][componentId];
+
+        if (compIndex == byte.MaxValue)
+        {
+            value = null;
+            return false;
+        }
+
+        value = entityLocation.Archetype.Components[compIndex].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        return true;
+    }
+    #endregion
+
+    #region Add
+    /// <summary>
     /// Adds a component to an <see cref="Entity"/>
     /// </summary>
     /// <typeparam name="T">The type of component</typeparam>
@@ -123,100 +172,106 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <exception cref="ComponentAlreadyExistsException{T}"><see cref="Entity"/> already has a component of type <typeparamref name="T"/></exception>
     public void Add<T>(in T component)
     {
-        if (!IsAlive(out World? world, out EntityLocation entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-
-        Archetype from = entityLocation.Archetype;
-
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, Component<T>.ID, out _);
-
-        Archetype destination = edge.Add ??= Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, typeof(T)), world);
-        destination.CreateEntityLocation(out EntityLocation nextLocation) = this;
-
-        for (int i = 0; i < from.Components.Length; i++)
-        {
-            destination.Components[i].PullComponentFrom(from.Components[i], ref nextLocation, ref entityLocation);
-        }
-
-        IComponentRunner<T> last = (IComponentRunner<T>)destination.Components[^1];
-        last.AsSpan()[nextLocation.ChunkIndex][nextLocation.ComponentIndex] = component;
-
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-
-        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        world.EntityTable[(uint)EntityID].Location = nextLocation;
-
-        static Type[] Concat(Type[] types, Type type)
-        {
-            if (Array.IndexOf(types, type) != -1)
-                FrentExceptions.Throw_ComponentAlreadyExistsException<T>();
-            Type[] arr = new Type[types.Length + 1];
-            types.CopyTo(arr, 0);
-            arr[^1] = type;
-            return arr;
-        }
+        AddCore(Component<T>.ID, typeof(T), out IComponentRunner to, out EntityLocation location);
+        ((IComponentRunner<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
     }
 
-    /// <summary>
-    /// Removes a component from an <see cref="Entity"/>
-    /// </summary>
-    /// <typeparam name="T">The type of component</typeparam>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentNotFoundException{T}"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
-    /// <returns>The component that was removed</returns>
-    public T Remove<T>()
+    public void Add(Type type, object component)
+    {
+        AddCore(Component.GetComponentID(type), type, out IComponentRunner to, out EntityLocation location);
+        to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
+    }
+
+    private void AddCore(int componentID, Type type, out IComponentRunner lastTo, out EntityLocation nextLocation)
     {
         if (!IsAlive(out World? world, out EntityLocation entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
 
         Archetype from = entityLocation.Archetype;
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, Component<T>.ID, out _);
-        Archetype destination = edge.Remove ??= Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, typeof(T)), world);
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, componentID, out _);
 
-        destination.CreateEntityLocation(out EntityLocation nextLocation) = this;
+        Archetype destination = edge.Add ??= Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, type, out var res), world, res);
+        destination.CreateEntityLocation(out nextLocation) = this;
 
-        int skipIndex = GlobalWorldTables.ComponentLocationTable[from.ArchetypeID][Component<T>.ID];
-        int j = 0;
-
-        if (skipIndex == byte.MaxValue)
-            FrentExceptions.Throw_ComponentNotFoundException<T>();
-
-        T result = default!;
         for (int i = 0; i < from.Components.Length; i++)
         {
-            if (i == skipIndex)
-            {
-                result = ((IComponentRunner<T>)from.Components[i]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
-                continue;
-            }
-            destination.Components[j++].PullComponentFrom(from.Components[i], ref nextLocation, ref entityLocation);
+            destination.Components[i].PullComponentFrom(from.Components[i], ref nextLocation, ref entityLocation);
         }
+
+        lastTo = destination.Components[^1];
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
         world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         world.EntityTable[(uint)EntityID].Location = nextLocation;
+    }
+    #endregion
 
-        return result;
+    #region Remove
+    /// <summary>
+    /// Removes a component from an <see cref="Entity"/>
+    /// </summary>
+    /// <typeparam name="T">The type of component</typeparam>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
+    /// <returns>The component that was removed</returns>
+    public T Remove<T>()
+    {
+        RemoveCore(Component<T>.ID, typeof(T), out var nextLocation, out var entityLocation, out int skipIndex, out World world);
 
-        static Type[] Remove(Type[] types, Type type)
+        T result = default!;
+        int j = 0;
+        for (int i = 0; i < entityLocation.Archetype.Components.Length; i++)
         {
-            Type[] arr = new Type[types.Length - 1];
-            int j = 0;
-
-            for (int i = 0; i < types.Length; i++)
+            if (i == skipIndex)
             {
-                if (types[i] == type)
-                    continue;
-
-                arr[j++] = types[i];
+                result = ((IComponentRunner<T>)entityLocation.Archetype.Components[i]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
+                continue;
             }
-
-            return arr;
+            nextLocation.Archetype.Components[j++].PullComponentFrom(entityLocation.Archetype.Components[i], ref nextLocation, ref entityLocation);
         }
+
+        Entity movedDown = entityLocation.Archetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+
+        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
+        world.EntityTable[(uint)EntityID].Location = nextLocation;
+        return result;
     }
 
+    /// <summary>
+    /// Removes a component from an <see cref="Entity"/>
+    /// </summary>
+    /// <param name="type">The type of component to remove</param>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
+    /// <returns>The component that was removed</returns>
+    public object Remove(Type type)
+    {
+        RemoveCore(Component.GetComponentID(type), type, out var nextLocation, out var entityLocation, out int skipIndex, out World world);
+
+        object result = default!;
+        int j = 0;
+        for (int i = 0; i < entityLocation.Archetype.Components.Length; i++)
+        {
+            if (i == skipIndex)
+            {
+                result = entityLocation.Archetype.Components[i].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+                continue;
+            }
+            nextLocation.Archetype.Components[j++].PullComponentFrom(entityLocation.Archetype.Components[i], ref nextLocation, ref entityLocation);
+        }
+
+        Entity movedDown = entityLocation.Archetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+
+        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
+        world.EntityTable[(uint)EntityID].Location = nextLocation;
+
+        return result;
+    }
+    #endregion
+
+    #region Misc
     /// <summary>
     /// Deletes this entity
     /// </summary>
@@ -257,6 +312,18 @@ public readonly partial struct Entity : IEquatable<Entity>
             return world;
         }
     }
+
+    public ImmutableArray<Type> ComponentTypes
+    {
+        get
+        {
+            if (!IsAlive(out World? world, out EntityLocation loc))
+                FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+            return loc.Archetype.ArchetypeTypeArray;
+        }
+    }
+    #endregion
+
     #endregion
 
     #region Internal Helpers
@@ -304,6 +371,21 @@ public readonly partial struct Entity : IEquatable<Entity>
         return Ref<T>.Create(((IComponentRunner<T>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
     }
 
+    internal void RemoveCore(int componentID, Type type, out EntityLocation nextLocation, out EntityLocation entityLocation, out int skipIndex, out World world)
+    {
+        //ignore - it throws if null
+        if (!IsAlive(out world!, out entityLocation))
+            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(entityLocation.Archetype.Graph, componentID, out _);
+        Archetype destination = edge.Remove ??= Archetype.CreateOrGetExistingArchetype(Remove(entityLocation.Archetype.ArchetypeTypeArray, type, out var arr), world, arr);
+
+        destination.CreateEntityLocation(out nextLocation) = this;
+
+        skipIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][componentID];
+        if (skipIndex == byte.MaxValue)
+            FrentExceptions.Throw_ComponentNotFoundException(type);
+    }
 
     internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation)
     {
@@ -313,6 +395,28 @@ public readonly partial struct Entity : IEquatable<Entity>
             FrentExceptions.Throw_ComponentNotFoundException<TComp>();
 
         return Ref<TComp>.Create(((IComponentRunner<TComp>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
+    }
+
+    internal static ReadOnlySpan<Type> Concat(ImmutableArray<Type> types, Type type, out ImmutableArray<Type> result)
+    {
+        if (types.IndexOf(type) != -1)
+            FrentExceptions.Throw_ComponentNotFoundException(type);
+
+        var builder = ImmutableArray.CreateBuilder<Type>(types.Length + 1);
+        builder.AddRange(types);
+        builder.Add(type);
+
+        result = builder.MoveToImmutable();
+        return result.AsSpan();
+    }
+
+    static ReadOnlySpan<Type> Remove(ImmutableArray<Type> types, Type type, out ImmutableArray<Type> result)
+    {
+        int index = types.IndexOf(type);
+        if (index == -1)
+            FrentExceptions.Throw_ComponentNotFoundException(type);
+        result = types.RemoveAt(index);
+        return result.AsSpan();
     }
 
     internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {EntityVersion}, ID: {EntityID}, Version {EntityVersion}";

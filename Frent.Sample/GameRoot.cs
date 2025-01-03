@@ -12,11 +12,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Resources;
-using Microsoft.Diagnostics.Tracing.Parsers.Clr;
-using Perfolizer.Horology;
-using Frent.Sample;
-using System;
+
 
 namespace Frent.Sample
 {
@@ -83,14 +79,17 @@ namespace Frent.Sample
 
             if(Keyboard.GetState().IsKeyDown(Keys.Space))
             {
-                Entity e;
-                entities.Add(e = _world.CreateFromObjects([
-                    new Position(MouseState.Position.ToVector2()),
+                for(int i = 0; i < 100; i++)
+                {
+                    Entity e;
+                    entities.Add(e = _world.CreateFromObjects([
+                        new Position(MouseState.Position.ToVector2()),
                     (Velocity)Vector2.Normalize(new(Random.Shared.NextSingle() - 0.5f, Random.Shared.NextSingle() - 0.5f)),
                     (Friction)0.99f,
                     (Bounds)new Vector2(5),
                     (SinglePixel)colors[Random.Shared.Next(colors.Length)],
                     default(MouseController)]));
+                }
             }
             else
             {

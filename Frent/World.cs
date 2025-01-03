@@ -116,7 +116,7 @@ public partial class World : IDisposable
         Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
         for(int i = 0; i < components.Length; i++)
         {
-            archetypeComponents[i].PullComponent(components[i], loc.ChunkIndex, loc.ComponentIndex);
+            archetypeComponents[i].SetAt(components[i], loc.ChunkIndex, loc.ComponentIndex);
         }
 
         return entity;

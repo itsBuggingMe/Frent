@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Updating;
+using Frent.Components;
 using Frent.Updating.Runners;
 
 namespace Frent.Core;
@@ -27,7 +28,7 @@ internal static class Component<T>
     }
 }
 
-internal static class Component
+public static class Component
 {
     internal static int ComponentTableBufferSize { get; private set; }
     internal static FastStack<Type> AllComponentTypesOrdered = FastStack<Type>.Create(16);
@@ -45,10 +46,22 @@ internal static class Component
         {
             return type.Clone();
         }
-        throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
+
+        if(t.IsAssignableTo(typeof(IComponent)))
+        {
+            throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
+        }
+        else
+        {
+            throw new InvalidOperationException($"{t.FullName} is not initalized. (Did you initalize T with Component.RegisterComponent<T>()?)");
+        }
     }
 
-    public static int GetComponentID(Type t)
+    public static void RegisterComponent<T>()
+    {
+        NoneComponentRunnerTable[typeof(T)] = new None<T>();
+    }
+    internal static int GetComponentID(Type t)
     {
         if (ExistingComponentIDs.TryGetValue(t, out int value))
         {

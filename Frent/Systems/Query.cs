@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using System.Collections;
+using System.Collections.Immutable;
 
 namespace Frent.Systems;
 
@@ -32,17 +33,17 @@ public class Query(Rule[] rules) : IEnumerable<Archetype>
     }
 
 
-    private bool RuleApplies(Rule rule, Type[] types)
+    private bool RuleApplies(Rule rule, ImmutableArray<Type> types)
     {
         if (rule.CustomOperator is not null)
         {
-            return rule.CustomOperator(types);
+            return rule.CustomOperator(types.AsSpan());
         }
 
         return rule.RuleTypes switch
         {
-            RuleTypes.Have => Array.IndexOf(types, rule.Type) > -1,
-            RuleTypes.DoesNotHave => Array.IndexOf(types, rule.Type) == -1,
+            RuleTypes.Have => types.IndexOf(rule.Type) > -1,
+            RuleTypes.DoesNotHave => types.IndexOf(rule.Type) == -1,
             _ => throw new Exception($"Invalid enum option {rule.RuleTypes}"),
         };
     }

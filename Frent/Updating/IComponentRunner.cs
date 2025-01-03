@@ -10,7 +10,7 @@ public interface IComponentRunner
     internal void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);
     internal void AllocateNextChunk(int size);
     internal void PullComponentFrom(IComponentRunner otherRunner, ref readonly EntityLocation me, ref readonly EntityLocation other);
-    internal void PullComponent(object component, ushort chunkIndex, ushort compIndex);
+    internal void SetAt(object component, ushort chunkIndex, ushort compIndex);
     internal object GetAt(ushort chunkIndex, ushort compIndex);
     internal int ComponentID { get; }
 }
