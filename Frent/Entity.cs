@@ -69,26 +69,13 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <summary>
     /// Attempts to get a component reference from an <see cref="Entity"/>.
     /// </summary>
-    /// <typeparam name="T">The type of component to try get.</typeparam>
-    /// <returns>An <see cref="Option{T}"/> that might contain a component reference.</returns>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public Option<T> TryGet<T>()
-    {
-        ref T? value = ref TryGetCore<T>(out bool exists);
-        //this can only be null if the user set something to be null
-        return new Option<T>(exists, ref value!);
-    }
-
-    /// <summary>
-    /// Attempts to get a component reference from an <see cref="Entity"/>.
-    /// </summary>
     /// <typeparam name="T">The type of component.</typeparam>
     /// <param name="value">A wrapper over a reference to the component when <see langword="true"/>.</param>
     /// <returns><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public bool TryGet<T>(out Ref<T> value)
     {
-        value = new Ref<T>(ref TryGetCore<T>(out bool exists)!);
+        value = TryGetCore<T>(out bool exists)!;
         return exists;
     }
 
@@ -203,7 +190,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     {
         if (IsAlive(out World? world, out EntityLocation entityLocation))
         {
-            world.DeleteEntityInternal(this, ref entityLocation);
+            world.DeleteEntityInternal(ref entityLocation);
         }
         else
         {
@@ -263,7 +250,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         return false;
     }
 
-    private ref T? TryGetCore<T>(out bool exists)
+    private Ref<T> TryGetCore<T>(out bool exists)
     {
         if (!IsAlive(out _, out EntityLocation entityLocation))
         {
@@ -275,29 +262,29 @@ public readonly partial struct Entity : IEquatable<Entity>
         if (compIndex == byte.MaxValue)
         {
             exists = false;
-            return ref DefaultReference<T>.Value;
+            return Ref<T>.CreateRef(DefaultReference<T>.Value, 0);
         }
 
         exists = true;
-        return ref ((IComponentRunner<T>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex]!;
+        return Ref<T>.CreateRef(((IComponentRunner<T>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex)!;
     }
 
 
-    internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation)
+    internal static Ref<TComp> GetComp<TComp>(scoped ref EntityLocation entityLocation)
     {
         byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][Component<TComp>.ID];
 
         if (compIndex == byte.MaxValue)
             FrentExceptions.Throw_ComponentNotFoundException<TComp>();
 
-        return new(ref ((IComponentRunner<TComp>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex]);
+        return Ref<TComp>.CreateRef(((IComponentRunner<TComp>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex)!;
     }
 
     internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {EntityVersion}, ID: {EntityID}, Version {EntityVersion}";
     internal const string EntityIsDeadMessage = "Entity is Dead";
 
     //Since we can't use Unsafe.NullRef<T>(), we return a dummy reference instead
-    private static class DefaultReference<T> { public static T? Value; }
+    private static class DefaultReference<T> { public static readonly T[] Value = new T[1]; }
     #endregion
 
     #region IEquatable

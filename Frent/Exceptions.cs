@@ -38,6 +38,24 @@ internal class FrentExceptions
     }
 }
 
-internal class ComponentAlreadyExistsException<T>() : Exception($"Component of type {typeof(T).FullName} already exists on entity!");
-internal class ComponentNotFoundException<T>() : Exception($"Component of type {typeof(T).FullName} not found");
-internal class ComponentNotFoundException(Type t) : Exception($"Component of type {t.FullName} not found");
+internal class ComponentAlreadyExistsException<T> : Exception
+{
+    public ComponentAlreadyExistsException() : base($"Component of type {typeof(T).FullName} already exists on entity!")
+    {
+
+    }
+}
+internal class ComponentNotFoundException<T> : Exception
+{
+    public ComponentNotFoundException() : base($"Component of type {typeof(T).FullName} not found")
+    {
+
+    }
+}
+internal class ComponentNotFoundException : Exception
+{
+    public ComponentNotFoundException(Type t) : base($"Component of type {t.FullName} not found")
+    {
+
+    }
+}

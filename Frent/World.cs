@@ -25,7 +25,7 @@ public partial class World : IDisposable
     internal readonly byte ID;
     internal readonly byte Version;
 
-    internal Dictionary<int, Query> QueryCache = [];
+    internal Dictionary<int, Query> QueryCache = new();
 
     /// <summary>
     /// The current uniform provider used when updating components/queries with uniforms
@@ -51,7 +51,11 @@ public partial class World : IDisposable
         return new Entity(ID, Version, version, id);
     }
 
-    internal void DeleteEntityInternal(Entity entity, ref readonly EntityLocation entityLocation)
+    internal void DeleteEntityInternal(ref
+#if NET8_0_OR_GREATER
+        readonly
+#endif
+        EntityLocation entityLocation)
     {
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);

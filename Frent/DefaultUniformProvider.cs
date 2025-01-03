@@ -2,7 +2,7 @@
 
 public class DefaultUniformProvider : IUniformProvider
 {
-    private Dictionary<Type, object> _uniforms = [];
+    private Dictionary<Type, object> _uniforms = new();
 
     public DefaultUniformProvider RegisterUniform<T>(T obj)
         where T : notnull

@@ -12,4 +12,7 @@
  *  Update with uniform + entityid                          X       X
  */
 
-public interface IComponent;
+/// <summary>
+/// A marker interface that all other component interfaces implement
+/// </summary>
+public interface IComponent { }

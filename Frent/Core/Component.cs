@@ -32,9 +32,9 @@ internal static class Component
     internal static int ComponentTableBufferSize { get; private set; }
     internal static FastStack<Type> AllComponentTypesOrdered = FastStack<Type>.Create(16);
     private static int NextComponentID = -1;
-    private static Dictionary<Type, int> ExistingComponentIDs = [];
+    private static Dictionary<Type, int> ExistingComponentIDs = new();
 
-    internal static Dictionary<Type, IComponentRunner> NoneComponentRunnerTable = [];
+    internal static Dictionary<Type, IComponentRunner> NoneComponentRunnerTable = new();
     internal static IComponentRunner GetComponentRunnerFromType(Type t)
     {
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out IComponentRunner? type))

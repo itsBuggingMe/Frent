@@ -3,14 +3,19 @@ using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
 
-internal struct Table<T>(int size)
+internal struct Table<T>
 {
+    public Table(int size)
+    {
+        _buffer = new T[size];
+    }
+
     public static Table<T> Empty => new()
     {
-        _buffer = []
+        _buffer = Array.Empty<T>()
     };
 
-    private T[] _buffer = new T[size];
+    private T[] _buffer;
 
     public ref T this[uint index]
     {

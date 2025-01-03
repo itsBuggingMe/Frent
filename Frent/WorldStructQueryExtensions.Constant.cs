@@ -16,7 +16,7 @@ partial class WorldStructQueryExtensions
         ArgumentNullException.ThrowIfNull(world, nameof(world));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes.Hash, out _) ??=
-            world.CreateQuery([]);
+            world.CreateQuery(Array.Empty<Rule>());
 
         foreach (var archetype in query)
             ChunkHelpers.EnumerateChunkSpanEntity(archetype.CurrentWriteChunk, archetype.LastChunkComponentCount, onEach, archetype.GetEntitySpan());
@@ -29,7 +29,7 @@ partial class WorldStructQueryExtensions
         ArgumentNullException.ThrowIfNull(world, nameof(world));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes.Hash, out _) ??=
-            world.CreateQuery([]);
+            world.CreateQuery(Array.Empty<Rule>());
 
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 

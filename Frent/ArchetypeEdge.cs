@@ -1,7 +1,14 @@
 ﻿using Frent.Core;
+
 namespace Frent;
-internal struct ArchetypeEdge(Archetype add, Archetype remove)
+internal struct ArchetypeEdge
 {
-    public Archetype Add = add;
-    public Archetype Remove = remove;
+    public ArchetypeEdge(Archetype add, Archetype remove)
+    {
+        Add = add;
+        Remove = remove;
+    }
+
+    public Archetype Add;
+    public Archetype Remove;
 }

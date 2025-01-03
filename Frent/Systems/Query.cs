@@ -4,10 +4,15 @@ using System.Collections;
 
 namespace Frent.Systems;
 
-public class Query(Rule[] rules) : IEnumerable<Archetype>
+public class Query : IEnumerable<Archetype>
 {
+    public Query(Rule[] rules)
+    {
+        _rules = rules;
+    }
+
     private FastStack<Archetype> _archetypes = FastStack<Archetype>.Create(1);
-    private Rule[] _rules = rules;
+    private Rule[] _rules;
 
     public FastStack<Archetype>.FastStackEnumerator GetEnumerator() => _archetypes.GetEnumerator();
     IEnumerator<Archetype> IEnumerable<Archetype>.GetEnumerator() => _archetypes.GetEnumerator();

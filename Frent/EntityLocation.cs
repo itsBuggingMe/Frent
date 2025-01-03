@@ -2,9 +2,16 @@
 
 namespace Frent;
 
-public struct EntityLocation(Archetype archetype, ushort chunkIndex, ushort componentIndex)
+public struct EntityLocation
 {
-    internal Archetype Archetype = archetype;
-    internal ushort ChunkIndex = chunkIndex;
-    internal ushort ComponentIndex = componentIndex;
+    public EntityLocation(Archetype archetype, ushort chunkIndex, ushort componentIndex)
+    {
+        Archetype = archetype;
+        ChunkIndex = chunkIndex;
+        ComponentIndex = componentIndex;
+    }
+
+    internal Archetype Archetype;
+    internal ushort ChunkIndex;
+    internal ushort ComponentIndex;
 }

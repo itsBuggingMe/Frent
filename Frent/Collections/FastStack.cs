@@ -4,12 +4,17 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
-public struct FastStack<T>(int initalComponents) : IEnumerable<T>
+public struct FastStack<T> : IEnumerable<T>
 {
+    public FastStack(int initalComponents)
+    {
+        _buffer = new T[initalComponents];
+    }
+
     [DebuggerStepThrough]
     public static FastStack<T> Create(int initalComponents) => new FastStack<T>(initalComponents);
 
-    private T[] _buffer = new T[initalComponents];
+    private T[] _buffer;
     private int _nextIndex = 0;
 
     private static bool NeedToWorryAboutGC => RuntimeHelpers.IsReferenceOrContainsReferences<T>();
@@ -96,10 +101,16 @@ public struct FastStack<T>(int initalComponents) : IEnumerable<T>
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     public readonly FastStackEnumerator GetEnumerator() => new(this);
 
-    public struct FastStackEnumerator(FastStack<T> stack) : IEnumerator<T>
+    public struct FastStackEnumerator : IEnumerator<T>
     {
-        private T[] _elements = stack._buffer;
-        private int _max = stack._nextIndex;
+        public FastStackEnumerator(FastStack<T> stack)
+        {
+            _elements = stack._buffer;
+            _max = stack._nextIndex;
+        }
+
+        private T[] _elements;
+        private int _max;
         private int _index = -1;
         public readonly T Current => _elements[_index];
         readonly object? IEnumerator.Current => _elements[_index];

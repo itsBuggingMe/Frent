@@ -9,11 +9,11 @@ using System.Runtime.InteropServices;
 namespace Frent.Core;
 
 [Variadic("Archetype<T>", "Archetype<|T$, |>")]
-[Variadic("[typeof(T)]", "[|typeof(T$), |]")]
-[Variadic("[Component<T>.CreateInstance()]", "[|Component<T$>.CreateInstance(), |]")]
+[Variadic("typeof(T)", "|typeof(T$), |")]
+[Variadic("Component<T>.CreateInstance()", "|Component<T$>.CreateInstance(), |")]
 internal class Archetype<T>
 {
-    public static readonly Type[] ArchetypeTypes = [typeof(T)];
+    public static readonly Type[] ArchetypeTypes = new[] { typeof(T) };
     //ArchetypeTypes init first, then ID
     public static readonly int ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), ArchetypeTypes);
     public static readonly uint IDasUInt = (uint)ID;
@@ -24,24 +24,34 @@ internal class Archetype<T>
         if (archetype is not null)
             return archetype;
 
-        IComponentRunner[] runners = [Component<T>.CreateInstance()];
+        IComponentRunner[] runners = new[] { Component<T>.CreateInstance() };
         archetype = new Archetype(ID, runners, world, ArchetypeTypes);
         return archetype;
     }
 }
 
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
-public class Archetype(int id, IComponentRunner[] components, World world, Type[] types)
+public class Archetype
 {
+    public Archetype(int id, IComponentRunner[] components, World world, Type[] types)
+    {
+        ArchetypeID = id;
+        World = world;
+        Components = components;
+        _entities = new[] { new Chunk<Entity>(1) };
+        ArchetypeTypeArray = types;
+        Graph = new();
+    }
+
     private const int MaxChunkSize = 8192;
 
-    internal int ArchetypeID = id;
-    internal readonly World World = world;
-    internal readonly Type[] ArchetypeTypeArray = types;
-    internal readonly Dictionary<int, ArchetypeEdge> Graph = [];
+    internal int ArchetypeID;
+    internal readonly World World;
+    internal readonly Type[] ArchetypeTypeArray;
+    internal readonly Dictionary<int, ArchetypeEdge> Graph;
 
-    internal IComponentRunner[] Components = components;
-    private Chunk<Entity>[] _entities = [new Chunk<Entity>(1)];
+    internal IComponentRunner[] Components;
+    private Chunk<Entity>[] _entities;
     private ushort _chunkIndex;
     private ushort _componentIndex;
     private int _chunkSize = 1;
@@ -112,7 +122,7 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
     #region Static Tables And Methods
     internal static FastStack<Type[]> ArchetypeTypes = FastStack<Type[]>.Create(16);
     internal static int NextArchetypeID = -1;
-    private static readonly Dictionary<long, int> ExistingArchetypes = [];
+    private static readonly Dictionary<long, int> ExistingArchetypes = new();
 
     internal static Archetype CreateOrGetExistingArchetype(Type[] types, World world)
     {

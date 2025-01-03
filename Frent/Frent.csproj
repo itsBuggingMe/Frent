@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8</PackageTags>
+    <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8;.net7;.net6</PackageTags>
     <Version>0.1.2-alpha</Version>
   </PropertyGroup>
 

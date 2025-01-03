@@ -7,7 +7,7 @@ namespace Frent.Updating.Runners;
 public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<TComponent>
     where TSelf : IComponentRunner<TComponent>, new()
 {
-    private Chunk<TComponent>[] _chunks = [new Chunk<TComponent>(1)];
+    private Chunk<TComponent>[] _chunks = new[] { new Chunk<TComponent>(1) };
     public Span<Chunk<TComponent>> AsSpan() => _chunks.AsSpan();
     public IComponentRunner Clone() => new TSelf();
     public IComponentRunner<TComponent> CloneStronglyTyped() => new TSelf();
@@ -15,7 +15,13 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
     protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
     public void AllocateNextChunk(int chunkSize) => Chunk<TComponent>.NextChunk(ref _chunks, chunkSize);
     public int ComponentID => Component<TComponent>.ID;
-    public void PullComponentFrom(IComponentRunner otherRunner, ref readonly EntityLocation me, ref readonly EntityLocation other)
+    public void PullComponentFrom(IComponentRunner otherRunner,
+#if NET8_0_OR_GREATER
+        ref readonly EntityLocation me, ref readonly EntityLocation other
+#else
+        ref EntityLocation me, ref EntityLocation other
+#endif
+        )
     {
         IComponentRunner<TComponent> componentRunner = (IComponentRunner<TComponent>)otherRunner;
         ref var left = ref _chunks[me.ChunkIndex][me.ComponentIndex];
@@ -31,7 +37,7 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
         }
         else
         {
-            _chunks = [new Chunk<TComponent>(1)];
+            _chunks = new[] { new Chunk<TComponent>(1) };
         }
     }
 
