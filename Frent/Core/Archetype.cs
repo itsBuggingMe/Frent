@@ -46,7 +46,20 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
     private ushort _componentIndex;
     private int _chunkSize = 1;
 
-    internal string DebuggerDisplayString => $"Archetype: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))}";
+    internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))}";
+
+    internal int EntityCount
+    {
+        get
+        {
+            int sum = 0;
+            for(int i = 0; i < _chunkIndex; i++)
+            {
+                sum += _entities[i].Length;
+            }
+            return sum + _componentIndex;
+        }
+    }
 
     internal ushort LastChunkComponentCount => _componentIndex;
     internal ushort ChunkCount => _chunkIndex;
@@ -125,6 +138,7 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
         for (int i = 0; i < types.Length; i++)
             componentRunners[i] = Component.GetComponentRunnerFromType(types[i]);
         archetype = new Archetype(id, componentRunners, world, typeArray ?? types.ToArray());
+        world.ArchetypeAdded(archetype);
         return archetype;
     }
 

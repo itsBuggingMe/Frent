@@ -83,13 +83,14 @@ namespace Frent.Sample
 
             if(Keyboard.GetState().IsKeyDown(Keys.Space))
             {
-                entities.Add(_world.Create<Position, Velocity, Friction, Bounds, SinglePixel, MouseController>(
-                    MouseState.Position.ToVector2(),
-                    Vector2.Normalize(new(Random.Shared.NextSingle() - 0.5f, Random.Shared.NextSingle() - 0.5f)),
-                    0.99f,
-                    new Vector2(5),
-                    colors[Random.Shared.Next(colors.Length)],
-                    default));
+                Entity e;
+                entities.Add(e = _world.CreateFromObjects([
+                    new Position(MouseState.Position.ToVector2()),
+                    (Velocity)Vector2.Normalize(new(Random.Shared.NextSingle() - 0.5f, Random.Shared.NextSingle() - 0.5f)),
+                    (Friction)0.99f,
+                    (Bounds)new Vector2(5),
+                    (SinglePixel)colors[Random.Shared.Next(colors.Length)],
+                    default(MouseController)]));
             }
             else
             {

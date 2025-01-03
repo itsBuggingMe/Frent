@@ -14,6 +14,8 @@ public abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<
     public abstract void Run(Archetype b);
     protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
     public void AllocateNextChunk(int chunkSize) => Chunk<TComponent>.NextChunk(ref _chunks, chunkSize);
+    public void PullComponent(object component, ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex] = (TComponent)component;
+    public object GetAt(ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex]!;
     public int ComponentID => Component<TComponent>.ID;
     public void PullComponentFrom(IComponentRunner otherRunner, ref readonly EntityLocation me, ref readonly EntityLocation other)
     {

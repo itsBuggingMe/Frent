@@ -43,7 +43,20 @@ public readonly partial struct Entity : IEquatable<Entity>
     }
 
     /// <summary>
-    /// Gets this <see cref="Entity"/>'s component of type <typeparamref name="T"/>,
+    /// Checks to see if this <see cref="Entity"/> has a component of Type <paramref name="type"/>
+    /// </summary>
+    /// <param name="type">The component type to check if this entity has</param>
+    /// <returns><see langword="true"/> if the entity has a component of <paramref name="T"/>, otherwise <see langword="false"/>.</returns>
+    public bool Has(Type type)
+    {
+        if (!IsAlive(out _, out var entityLocation))
+            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+        int compid = Component.GetComponentID(type);
+        return GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][compid] != byte.MaxValue;
+    }
+
+    /// <summary>
+    /// Gets this <see cref="Entity"/>'s component of type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type of component.</typeparam>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
@@ -67,6 +80,28 @@ public readonly partial struct Entity : IEquatable<Entity>
     }
 
     /// <summary>
+    /// Gets this <see cref="Entity"/>'s component of type <paramref name="type"/>.
+    /// </summary>
+    /// <param name="type">The type of component to get</param>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <exception cref="ComponentNotFoundException{T}"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
+    /// <returns>The component of type <paramref name="type"/></returns>
+    public object Get(Type type)
+    {
+        if (!IsAlive(out _, out EntityLocation entityLocation))
+            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+
+        //2x
+        int compid = Component.GetComponentID(type);
+        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][compid];
+
+        if (compIndex == byte.MaxValue)
+            FrentExceptions.Throw_ComponentNotFoundException(type);
+        //3x
+        return entityLocation.Archetype.Components[compIndex].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+    }
+
+    /// <summary>
     /// Attempts to get a component reference from an <see cref="Entity"/>.
     /// </summary>
     /// <typeparam name="T">The type of component to try get.</typeparam>
@@ -80,7 +115,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     }
 
     /// <summary>
-    /// Attempts to get a component reference from an <see cref="Entity"/>.
+    /// Attempts to get a component from an <see cref="Entity"/>.
     /// </summary>
     /// <typeparam name="T">The type of component.</typeparam>
     /// <param name="value">A wrapper over a reference to the component when <see langword="true"/>.</param>
@@ -275,7 +310,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         if (compIndex == byte.MaxValue)
         {
             exists = false;
-            return ref DefaultReference<T>.Value;
+            return ref default(Ref<T>).Component!;
         }
 
         exists = true;
@@ -295,9 +330,6 @@ public readonly partial struct Entity : IEquatable<Entity>
 
     internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {EntityVersion}, ID: {EntityID}, Version {EntityVersion}";
     internal const string EntityIsDeadMessage = "Entity is Dead";
-
-    //Since we can't use Unsafe.NullRef<T>(), we return a dummy reference instead
-    private static class DefaultReference<T> { public static T? Value; }
     #endregion
 
     #region IEquatable

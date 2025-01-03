@@ -32,6 +32,14 @@ internal class FrentExceptions
     [DoesNotReturn]
     [StackTraceHidden]
     [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void Throw_ComponentNotFoundException(Type t)
+    {
+        throw new ComponentNotFoundException(t);
+    }
+
+    [DoesNotReturn]
+    [StackTraceHidden]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void Throw_ComponentAlreadyExistsException<T>()
     {
         throw new ComponentNotFoundException<T>();
