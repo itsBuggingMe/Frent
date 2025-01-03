@@ -34,6 +34,8 @@ record struct Velocity(Vector2 Delta) : IUpdateComponent<Position>
     public void Update(ref Position position) => position.Value += Delta;
 }
 ```
+Wanna start cooking? Check out the [Cookbook](Cookbook.md)!
+
 # Features
 ## Implemented
 - [x]  Entity struct the size of a 64 bits
