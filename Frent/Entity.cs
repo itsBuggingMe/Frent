@@ -102,19 +102,6 @@ public readonly partial struct Entity : IEquatable<Entity>
     }
 
     /// <summary>
-    /// Attempts to get a component reference from an <see cref="Entity"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of component to try get.</typeparam>
-    /// <returns>An <see cref="Option{T}"/> that might contain a component reference.</returns>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public Option<T> TryGet<T>()
-    {
-        ref T? value = ref TryGetCore<T>(out bool exists);
-        //this can only be null if the user set something to be null
-        return new Option<T>(exists, ref value!);
-    }
-
-    /// <summary>
     /// Attempts to get a component from an <see cref="Entity"/>.
     /// </summary>
     /// <typeparam name="T">The type of component.</typeparam>
@@ -123,7 +110,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public bool TryGet<T>(out Ref<T> value)
     {
-        value = new Ref<T>(ref TryGetCore<T>(out bool exists)!);
+        value = TryGetCore<T>(out bool exists)!;
         return exists;
     }
 
@@ -298,7 +285,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         return false;
     }
 
-    private ref T? TryGetCore<T>(out bool exists)
+    private Ref<T> TryGetCore<T>(out bool exists)
     {
         if (!IsAlive(out _, out EntityLocation entityLocation))
         {
@@ -310,11 +297,11 @@ public readonly partial struct Entity : IEquatable<Entity>
         if (compIndex == byte.MaxValue)
         {
             exists = false;
-            return ref default(Ref<T>).Component!;
+            return default;
         }
 
         exists = true;
-        return ref ((IComponentRunner<T>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex]!;
+        return Ref<T>.Create(((IComponentRunner<T>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
     }
 
 
@@ -325,7 +312,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         if (compIndex == byte.MaxValue)
             FrentExceptions.Throw_ComponentNotFoundException<TComp>();
 
-        return new(ref ((IComponentRunner<TComp>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex]);
+        return Ref<TComp>.Create(((IComponentRunner<TComp>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
     }
 
     internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {EntityVersion}, ID: {EntityID}, Version {EntityVersion}";
