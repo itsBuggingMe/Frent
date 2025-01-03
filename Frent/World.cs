@@ -2,6 +2,7 @@
 using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
+using Frent.Updating;
 
 namespace Frent;
 
@@ -98,6 +99,32 @@ public partial class World : IDisposable
     {
         GlobalWorldTables.Worlds[ID] = null!;
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
+    }
+
+    public void Create(ReadOnlySpan<Box> components)
+    {
+        if(components.Length == 0 || components.Length > 16)
+            throw new ArgumentException("1-16 components per entity only", nameof(components));
+        Span<Type?> types = ((Span<Type?>)([null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]))[..components.Length];
+        for(int i = 0; i < components.Length; i++)
+            types[i] = components[i].Type;
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, this);
+        ref Entity entity = ref archetype.CreateEntityLocation(out EntityLocation loc);
+        entity = CreateEntityFromLocation(loc);
+
+        Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
+        for(int i = 0; i < components.Length; i++)
+        {
+            components[i].CopyInto(archetypeComponents[i], loc.ChunkIndex, loc.ComponentIndex);
+        }
+    }
+
+    public void Reserve(ReadOnlySpan<Type> componentTypes, int count)
+    {
+        if(componentTypes.Length == 0 || componentTypes.Length > 16)
+            throw new ArgumentException("1-16 components per entity only", nameof(componentTypes));
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentTypes, this);
+        archetype.EnsureCapacity(count);
     }
 
     internal class NullUniformProvider : IUniformProvider

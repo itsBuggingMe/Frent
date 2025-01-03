@@ -114,9 +114,9 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
     internal static int NextArchetypeID = -1;
     private static readonly Dictionary<long, int> ExistingArchetypes = [];
 
-    internal static Archetype CreateOrGetExistingArchetype(Type[] types, World world)
+    internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<Type> types, World world, Type[]? typeArray = null)
     {
-        int id = GetArchetypeID(types.AsSpan(), types);
+        int id = GetArchetypeID(types, typeArray);
         ref Archetype archetype = ref world.GetArchetype((uint)id);
         if (archetype is not null)
             return archetype;
@@ -124,11 +124,11 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
         IComponentRunner[] componentRunners = new IComponentRunner[types.Length];
         for (int i = 0; i < types.Length; i++)
             componentRunners[i] = Component.GetComponentRunnerFromType(types[i]);
-        archetype = new Archetype(id, componentRunners, world, types);
+        archetype = new Archetype(id, componentRunners, world, typeArray ?? types.ToArray());
         return archetype;
     }
 
-    internal static int GetArchetypeID(Span<Type> types, Type[]? typesArray = null)
+    internal static int GetArchetypeID(ReadOnlySpan<Type> types, Type[]? typesArray = null)
     {
         ref int slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types), out bool exists);
         int finalID;
@@ -169,7 +169,7 @@ public class Archetype(int id, IComponentRunner[] components, World world, Type[
         }
     }
 
-    private static long GetHash(Span<Type> types)
+    private static long GetHash(ReadOnlySpan<Type> types)
     {
         HashCode h1 = new();
 

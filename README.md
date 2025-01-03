@@ -25,7 +25,7 @@ world.Update();
 //Alternatively, run a system by providing a delegate or a struct
 world.Query((ref Position pos, ref Velocity vel) => pos.Value += vel.Delta);
 
-// Position is <1,1>
+// Position is <2,2>
 Console.WriteLine(entity.Get<Position>().Value);
 
 record struct Position(Vector2 Value);
@@ -51,11 +51,11 @@ Wanna start cooking? Check out the [Cookbook](Cookbook.md)!
 - [x]  Deconstructing entities
 - [x]  Zero reflection
 - [x]  AOT Compatible
+- [x]  Built in Uniform Provider implementation
 
 ## Future
 - [ ]  Multithreading
 - [ ]  Entity relationships
 - [ ]  Programmical Entity Creation
 - [ ]  Tests
-- [ ]  Built in Uniform Provider implementation
 - [ ]  Entity Tag
