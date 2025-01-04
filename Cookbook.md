@@ -101,9 +101,11 @@ world.InlineQueryUniform<WriteQuery, byte, int>(default(WriteQuery));
 ```
 #### Output:
 ```
-0, 1, 2, 3, 4,
-6, 7, 8, 9, 10, 
+3, 4, 0, 1, 2,
+9, 10, 6, 7, 8,
 ```
+*Note how the update order of entities is not always the same as the order of creation.*
+*Component update order within an entity will always be the same (first-last), but which entities are updated first varies.*
 
 ### The Entity Struct
 
