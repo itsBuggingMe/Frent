@@ -37,6 +37,11 @@ public partial class World : IDisposable
     public IUniformProvider UniformProvider { get; set; }
 
     /// <summary>
+    /// Gets the current number of entities managed by the world
+    /// </summary>
+    public int EntityCount => _nextEntityID - _recycledEntityIds.Count;
+
+    /// <summary>
     /// Creates a world with zero entities and a uniform provider
     /// </summary>
     /// <param name="uniformProvider">The initial uniform provider to be used</param>
@@ -126,12 +131,18 @@ public partial class World : IDisposable
         return entity;
     }
 
-    public void Reserve(ReadOnlySpan<Type> componentTypes, int count)
+    public void EnsureCapacity(ReadOnlySpan<Type> componentTypes, int count)
     {
         if(componentTypes.Length == 0 || componentTypes.Length > 16)
             throw new ArgumentException("1-16 components per entity only", nameof(componentTypes));
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentTypes, this);
+        EnsureCapacityCore(archetype, count);
+    }
+
+    internal void EnsureCapacityCore(Archetype archetype, int count)
+    {
         archetype.EnsureCapacity(count);
+        EntityTable.EnsureCapacity(count + EntityCount);
     }
 
     internal class NullUniformProvider : IUniformProvider

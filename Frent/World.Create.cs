@@ -26,7 +26,6 @@ partial class World
 
     public void EnsureCapacity<T>(int entityCount)
     {
-        Archetype archetype = WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.CreateArchetype(this);
-        archetype.EnsureCapacity(entityCount);
+        EnsureCapacityCore(WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.CreateArchetype(this), entityCount);
     }
 }

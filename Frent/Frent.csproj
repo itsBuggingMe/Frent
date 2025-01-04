@@ -7,18 +7,15 @@
     <LangVersion>Latest</LangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8</PackageTags>
-    <Version>0.1.2-alpha</Version>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8;.net7;.net6  </PackageTags>
+    <Version>0.1.4-alpha</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Frent.Variadic.Generator\Frent.Variadic.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\LICENSE.md" Pack="true" PackagePath="\" />
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet.Annotations" Version="0.14.0" />
-  </ItemGroup>
-
 
 </Project>

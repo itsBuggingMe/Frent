@@ -10,14 +10,24 @@ public class WorldTests
     [Test]
     public void World_Create_ID()
     {
-        for(int i = 0; i < 100; i++)
+        unchecked
         {
-            new World().Dispose();
-        }
+            byte firstID;
+            byte firstVersion;
+            using (World fworld = new())
+            {
+                firstID = fworld.ID;
+                firstVersion = fworld.Version;
+            }
+            for (int i = 0; i < 99; i++)
+            {
+                new World().Dispose();
+            }
 
-        using World world = new World();
-        That(world.Version == (255 - 101), "101 worlds have been created");
-        That(world.ID == 0, "ID should be recycled");
+            using World world = new World();
+            That((firstVersion - 100) == world.Version, "100 worlds have been created");
+            That(firstID == world.ID, "ID should be recycled");
+        }
     }
 
     [Test]
@@ -231,11 +241,6 @@ public class WorldTests
             if (i % 23 == 0)
             {
                 entities.Dequeue().Delete();
-            }
-
-            if(entities.Any(e => !e.Has<int>()))
-            {
-
             }
         }
 
