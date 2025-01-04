@@ -84,7 +84,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         string source = sb.ToString();
         sb.Clear();
 
-        sb.Append(model.Type).Append("ComponentUpdateInitalizer").Append(".g.cs");
+        sb.Append(model.SubNamespace).Append('.').Append(model.Type).Append("ComponentUpdateInitalizer").Append(".g.cs");
 
         string name = sb.ToString();
         sb.Clear();

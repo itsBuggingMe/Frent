@@ -1,21 +1,19 @@
 ﻿using Frent.Buffers;
-using Frent.Collections;
 using Frent.Systems;
-using Frent.Variadic.Generator;
 using System.Runtime.InteropServices;
+using Frent.Variadic.Generator;
 
 namespace Frent;
 
 [Variadic("Query<T>", "Query<|T$, |>")]
 [Variadic("Rule.With<T>()", "|Rule.With<T$>(), |")]
-[Variadic("                ref Chunk<T> chunk1 = ref chunks1[i];",
-    "|                ref Chunk<T$> chunk$ = ref chunks$[i];\n|")]
-[Variadic("            var chunks1 = archetype.GetComponentSpan<T>();",
-    "|            var chunks$ = archetype.GetComponentSpan<T$>();\n|")]
-[Variadic("ref chunk1[j]", "|ref chunk$[j], |")]
 [Variadic("QueryHashes<T>", "QueryHashes<|T$, |>")]
 [Variadic("QueryEntity<T>", "QueryEntity<|T$, |>")]
 [Variadic("<TUniform, T>", "<TUniform, |T$, |>")]
+[Variadic("a.GetComponentSpan<T>()", "|a.GetComponentSpan<T$>(), |")]
+[Variadic("ref T arg", "|ref T$ arg$, |")]
+[Variadic("ref arg", "|ref arg$, |")]
+[Variadic("ChunkHelpers<T>", "ChunkHelpers<|T$, |>")]
 public static partial class WorldDelegateQueryExtensions
 {
     public static void Query<T>(this World world, QueryDelegates.Query<T> onEach)
@@ -25,20 +23,13 @@ public static partial class WorldDelegateQueryExtensions
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
 
-        foreach (var archetype in query)
-        {
-            var chunks1 = archetype.GetComponentSpan<T>();
+        foreach (var a in query)
+            ChunkHelpers<T>.EnumerateChunkSpan<DelegateQuery<T>>(a.CurrentWriteChunk, a.LastChunkComponentCount, new(onEach), a.GetComponentSpan<T>());
+    }
 
-            for (int i = 0; i < chunks1.Length; i++)
-            {
-                ref Chunk<T> chunk1 = ref chunks1[i];
-
-                for (int j = 0; j < chunk1.Length; j++)
-                {
-                    onEach(ref chunk1[j]);
-                }
-            }
-        }
+    internal struct DelegateQuery<T>(QueryDelegates.Query<T> onEach) : IQuery<T>
+    {
+        public void Run(ref T arg) => onEach(ref arg);
     }
 
     public static void Query<T>(this World world, QueryDelegates.QueryEntity<T> onEach)
@@ -48,23 +39,13 @@ public static partial class WorldDelegateQueryExtensions
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
 
-        //TODO: Elide bounds checking
-        foreach (var archetype in query)
-        {
-            var entityChunks = archetype.GetEntitySpan();
-            var chunks1 = archetype.GetComponentSpan<T>();
-
-            for (int i = 0; i < chunks1.Length; i++)
-            {
-                ref var entityChunk = ref entityChunks[i];
-                ref Chunk<T> chunk1 = ref chunks1[i];
-
-                for (int j = 0; j < chunk1.Length; j++)
-                {
-                    onEach(entityChunk[j], ref chunk1[j]);
-                }
-            }
-        }
+        foreach (var a in query)
+            ChunkHelpers<T>.EnumerateChunkSpanEntity<DelegateQueryEntity<T>>(a.CurrentWriteChunk, a.LastChunkComponentCount, new(onEach), a.GetEntitySpan(), a.GetComponentSpan<T>());
+    }
+        
+    internal struct DelegateQueryEntity<T>(QueryDelegates.QueryEntity<T> onEach) : IQueryEntity<T>
+    {
+        public void Run(Entity entity, ref T arg) => onEach(entity, ref arg);
     }
 
     public static void QueryEntityUniform<TUniform, T>(this World world, QueryDelegates.QueryEntityUniform<TUniform, T> onEach)
@@ -74,25 +55,21 @@ public static partial class WorldDelegateQueryExtensions
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
 
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-
-        //TODO: Elide bounds checking
-        foreach (var archetype in query)
+        DelegateQueryEntityUniform<TUniform, T> uniform = new()
         {
-            var entityChunks = archetype.GetEntitySpan();
-            var chunks1 = archetype.GetComponentSpan<T>();
+            Uniform = world.UniformProvider.GetUniform<TUniform>(),
+            OnEach = onEach,
+        };
 
-            for (int i = 0; i < chunks1.Length; i++)
-            {
-                ref var entityChunk = ref entityChunks[i];
-                ref Chunk<T> chunk1 = ref chunks1[i];
+        foreach (var a in query)
+            ChunkHelpers<T>.EnumerateChunkSpanEntity(a.CurrentWriteChunk, a.LastChunkComponentCount, uniform, a.GetEntitySpan(), a.GetComponentSpan<T>());
+    }
 
-                for (int j = 0; j < chunk1.Length; j++)
-                {
-                    onEach(entityChunk[j], in uniform, ref chunk1[j]);
-                }
-            }
-        }
+    internal struct DelegateQueryEntityUniform<TUniform, T> : IQueryEntity<T>
+    {
+        internal TUniform Uniform;
+        internal QueryDelegates.QueryEntityUniform<TUniform, T> OnEach;
+        public void Run(Entity entity, ref T arg) => OnEach(entity, in Uniform, ref arg);
     }
 
     public static void QueryUniform<TUniform, T>(this World world, QueryDelegates.QueryUniform<TUniform, T> onEach)
@@ -102,23 +79,21 @@ public static partial class WorldDelegateQueryExtensions
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.With<T>());
 
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-
-        //TODO: Elide bounds checking
-        foreach (var archetype in query)
+        DelegateQueryUniform<TUniform, T> uniform = new()
         {
-            var chunks1 = archetype.GetComponentSpan<T>();
+            Uniform = world.UniformProvider.GetUniform<TUniform>(),
+            OnEach = onEach,
+        };
 
-            for (int i = 0; i < chunks1.Length; i++)
-            {
-                ref Chunk<T> chunk1 = ref chunks1[i];
+        foreach (var a in query)
+            ChunkHelpers<T>.EnumerateChunkSpan(a.CurrentWriteChunk, a.LastChunkComponentCount, uniform, a.GetComponentSpan<T>());
+    }
 
-                for (int j = 0; j < chunk1.Length; j++)
-                {
-                    onEach(in uniform, ref chunk1[j]);
-                }
-            }
-        }
+    internal struct DelegateQueryUniform<TUniform, T> : IQuery<T>
+    {
+        internal TUniform Uniform;
+        internal QueryDelegates.QueryUniform<TUniform, T> OnEach;
+        public void Run(ref T arg) => OnEach(in Uniform, ref arg);
     }
 }
 

@@ -9,6 +9,7 @@ internal struct Position(Vector2 xy)
 {
     public Vector2 XY = xy;
     public static implicit operator Position(Vector2 xy) => new(xy);
+    public static implicit operator Position((float x, float y) pos) => new Vector2(pos.x, pos.y);
 }
 internal record struct Friction(float Coefficient)
 {

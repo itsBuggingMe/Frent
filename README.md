@@ -52,10 +52,10 @@ Wanna start cooking? Check out the [Cookbook](Cookbook.md)!
 - [x]  Zero reflection
 - [x]  AOT Compatible
 - [x]  Built in Uniform Provider implementation
+- [x]  Programmical Entity Creation
 
 ## Future
 - [ ]  Multithreading
 - [ ]  Entity relationships
-- [ ]  Programmical Entity Creation
 - [ ]  Tests
 - [ ]  Entity Tag

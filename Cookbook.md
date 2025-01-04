@@ -14,12 +14,9 @@ You must implement one of many interfaces for component behavior, while any type
 using World world = new World();
 
 //Create three entities
-for(int i = 0; i < 3; i++)
+for (int i = 0; i < 3; i++)
 {
-    world.Create<string, ConsoleText>("\"Hello, World!\"", new()
-    { 
-        TextColor = ConsoleColor.Blue,
-    });
+    world.Create<string, ConsoleText>("\"Hello, World!\"", new(ConsoleColor.Blue));
 }
 
 //Update the three entities
@@ -29,7 +26,7 @@ struct ConsoleText(ConsoleColor Color) : IUpdateComponent<string>
 {
     public void Update(ref string str)
     {
-        Console.SetForegroundColor(Color);
+        Console.ForegroundColor = Color;
         Console.Write(str);
     }
 }
@@ -48,14 +45,14 @@ Uniforms are injected through an `IUniformProvider`
 #### Example:
 
 ```csharp
-IUniformProvider uniforms = new DictionaryUniformProvider();
+DefaultUniformProvider uniforms = new DefaultUniformProvider();
 //add delta time as a float
-uniforms.Add<float>(0.5f);
+uniforms.Add(0.5f);
 
 using World world = new World();
 
-world.Create<Velocity, Position>();
-world.Create<Position>();
+world.Create<Velocity, Position>(default, default);
+world.Create<Position>(default);
 
 world.Update();
 
@@ -63,8 +60,8 @@ record struct Position(float X) : IEntityUpdateComponent
 {
     public void Update(Entity entity)
     {
-        Console.WriteLine(entity.Has<Velocity>() ? 
-            "I have velocity!" : 
+        Console.WriteLine(entity.Has<Velocity>() ?
+            "I have velocity!" :
             "No velocity here!");
     }
 }
@@ -90,21 +87,17 @@ Frent also supports directly querying and updating entities. There are two main 
 #### Example:
 
 ```csharp
-IUniformProvider provider = new DictionaryUniformProvider();
-provider.Add<byte>((byte)5);
-using World world = new World();
+DefaultUniformProvider provider = new DefaultUniformProvider();
+provider.Add<byte>(5);
+using World world = new World(provider);
 
-for(int i = 0; i < 5; i++)
+for (int i = 0; i < 5; i++)
     world.Create<int>(i);
 
 world.Query((ref int x) => Console.Write($"{x++}, "));
 Console.WriteLine();
-world.InlineQuery<WriteQuery, int>(default(WriteQuery));
 
-struct WriteQuery : IQueryUniform<byte, int>
-{
-    void Run(in byte uniform, ref int x) => Console.Write($"{x + uniform}, ");
-}
+world.InlineQueryUniform<WriteQuery, byte, int>(default(WriteQuery));
 ```
 #### Output:
 ```
@@ -130,7 +123,7 @@ Console.WriteLine(ent.Has<bool>());
 //You can also add and remove components
 ent.Add<string>("I like Frent");
 
-if(ent.TryGet<string>(out Ref<string> strRef))
+if (ent.TryGet<string>(out Ref<string> strRef))
 {
     Console.WriteLine(strRef);
     //reassign the string value
@@ -147,8 +140,8 @@ str.Component = "Hello, World!";
 
 //You can also deconstruct like this - you just can'y assign the value of the struct
 //This also won't work with the tuple deconstruction syntax unfortunately due to a bug w/ the C# compiler
-ent.Deconstruct(out string str);
-Console.WriteLine(str);
+ent.Deconstruct(out string str1);
+Console.WriteLine(str1);
 ```
 
 #### Output:

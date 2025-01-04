@@ -4,7 +4,7 @@ public class DefaultUniformProvider : IUniformProvider
 {
     private Dictionary<Type, object> _uniforms = [];
 
-    public DefaultUniformProvider RegisterUniform<T>(T obj)
+    public DefaultUniformProvider Add<T>(T obj)
         where T : notnull
     {
         _uniforms[typeof(T)] = obj;
