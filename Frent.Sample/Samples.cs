@@ -30,10 +30,10 @@ internal class Samples
         //add delta time as a float
         uniforms.Add(0.5f);
 
-        using World world = new World();
+        using World world = new World(uniforms);
 
-        world.Create<Velocity, Position>(default, default);
-        world.Create<Position>(default);
+        world.Create<Vel, Pos>(default, default);
+        world.Create<Pos>(default);
 
         world.Update();
     }
@@ -98,7 +98,7 @@ record struct Pos(float X) : IEntityUpdateComponent
 {
     public void Update(Entity entity)
     {
-        Console.WriteLine(entity.Has<Velocity>() ?
+        Console.WriteLine(entity.Has<Vel>() ?
             "I have velocity!" :
             "No velocity here!");
     }

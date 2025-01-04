@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Frent.Core;
 
@@ -24,10 +25,14 @@ internal class Archetype<T>
         ref Archetype archetype = ref world.GetArchetype(IDasUInt);
         if (archetype is not null)
             return archetype;
-
         IComponentRunner[] runners = [Component<T>.CreateInstance()];
         archetype = new Archetype(ID, runners, world, ArchetypeTypes);
         return archetype;
+    }
+
+    internal class OfComponent<C>
+    {
+        public static readonly int Index = GlobalWorldTables.ComponentLocationTable[ID][Component<C>.ID];
     }
 }
 
@@ -66,7 +71,17 @@ public class Archetype(int id, IComponentRunner[] components, World world, Immut
     internal ushort ChunkCount => _chunkIndex;
     internal ushort CurrentWriteChunk => _chunkIndex;
 
-    internal Span<Chunk<T>> GetComponentSpan<T>() => ((IComponentRunner<T>)Components[GlobalWorldTables.ComponentLocationTable[ArchetypeID][Component<T>.ID]]).AsSpan();
+    internal Span<Chunk<T>> GetComponentSpan<T>()
+    {
+        var components = Components;
+        byte index = GlobalWorldTables.ComponentLocationTable[ArchetypeID][Component<T>.ID];
+        if (index > components.Length)
+        {
+            FrentExceptions.Throw_ComponentNotFoundException<T>();
+            return default;
+        }
+        return ((IComponentRunner<T>)components[index]).AsSpan();
+    }
 
     internal ref Entity CreateEntityLocation(out EntityLocation entityLocation)
     {
@@ -117,6 +132,8 @@ public class Archetype(int id, IComponentRunner[] components, World world, Immut
 
     internal void Update()
     {
+        if(_chunkIndex == 0 && _componentIndex == 0)
+            return;
         foreach (var comprunner in Components)
             comprunner.Run(this);
     }
@@ -190,13 +207,19 @@ public class Archetype(int id, IComponentRunner[] components, World world, Immut
 
         int i;
         for (i = 0; i < types.Length >> 1; i++)
+        {
             h1.Add(types[i]);
+        }
 
         HashCode h2 = new();
         for (; i < types.Length; i++)
+        {
             h2.Add(types[i]);
+        }
 
-        return ((long)h1.ToHashCode() << 0x20) | (long)h2.ToHashCode();
+        var hash = ((long)h1.ToHashCode() * 1610612741) + h2.ToHashCode();
+
+        return hash;
     }
 
     private static ImmutableArray<Type> ReadOnlySpanToImmutableArray(ReadOnlySpan<Type> types)

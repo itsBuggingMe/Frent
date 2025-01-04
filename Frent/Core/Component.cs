@@ -73,14 +73,14 @@ public static class Component
         int id = Interlocked.Increment(ref NextComponentID);
         ExistingComponentIDs[t] = id;
 
-        ModifyComponentTable(t, id);
+        ModifyComponentTable(id);
 
         AllComponentTypesOrdered.Push(t);
 
         return id;
     }
 
-    private static void ModifyComponentTable(Type newType, int id)
+    private static void ModifyComponentTable(int id)
     {
         var table = GlobalWorldTables.ComponentLocationTable;
         int componentTableLength = AllComponentTypesOrdered.Count;

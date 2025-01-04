@@ -3,7 +3,10 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Frent.Tests")]
 namespace Frent;
 
 /// <summary>
@@ -57,6 +60,7 @@ public partial class World : IDisposable
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
         EntityTable[(uint)replacedEntity.EntityID] = (entityLocation, replacedEntity.EntityVersion);
+        EntityTable[(uint)entity.EntityID] = (EntityLocation.Default, ushort.MaxValue);
     }
 
     /// <summary>
@@ -133,6 +137,7 @@ public partial class World : IDisposable
     internal class NullUniformProvider : IUniformProvider
     {
         internal static NullUniformProvider Instance { get; } = new NullUniformProvider();
+        [DebuggerHidden]
         public T GetUniform<T>() => FrentExceptions.Throw_InvalidOperationException<T>("Initialize the world with an IUniformProvider in order to use uniforms");
     }
 }

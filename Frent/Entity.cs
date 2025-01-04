@@ -317,7 +317,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     {
         get
         {
-            if (!IsAlive(out World? world, out EntityLocation loc))
+            if (!IsAlive(out World? _, out EntityLocation loc))
                 FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
             return loc.Archetype.ArchetypeTypeArray;
         }
@@ -400,7 +400,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     internal static ReadOnlySpan<Type> Concat(ImmutableArray<Type> types, Type type, out ImmutableArray<Type> result)
     {
         if (types.IndexOf(type) != -1)
-            FrentExceptions.Throw_ComponentNotFoundException(type);
+            FrentExceptions.Throw_InvalidOperationException($"This entity already has a component of type {type.Name}");
 
         var builder = ImmutableArray.CreateBuilder<Type>(types.Length + 1);
         builder.AddRange(types);
@@ -419,7 +419,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         return result.AsSpan();
     }
 
-    internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {EntityVersion}, ID: {EntityID}, Version {EntityVersion}";
+    internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}";
     internal const string EntityIsDeadMessage = "Entity is Dead";
     #endregion
 
