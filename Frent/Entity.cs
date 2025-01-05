@@ -143,7 +143,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public bool TryGet(Type type, [NotNullWhen(true)] out object? value)
     {
-        if (!IsAlive(out World world, out EntityLocation entityLocation))
+        if (!IsAlive(out World? world, out EntityLocation entityLocation))
         {
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
         }
@@ -176,35 +176,18 @@ public readonly partial struct Entity : IEquatable<Entity>
         ((IComponentRunner<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
     }
 
+    /// <summary>
+    /// Add a component to an <see cref="Entity"/>
+    /// </summary>
+    /// <param name="type">The type to add the component as. Note that a component of type DerivedClass and BaseClass are different component types.</param>
+    /// <param name="component">The component to add</param>
     public void Add(Type type, object component)
     {
+        if (!component.GetType().IsAssignableTo(type))
+            throw new ArgumentException("Component must be assignable to the given component type!", nameof(component));
+
         AddCore(Component.GetComponentID(type), type, out IComponentRunner to, out EntityLocation location);
         to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
-    }
-
-    private void AddCore(ComponentID componentID, Type type, out IComponentRunner lastTo, out EntityLocation nextLocation)
-    {
-        if (!IsAlive(out World? world, out EntityLocation entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-
-        Archetype from = entityLocation.Archetype(world);
-
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, componentID, out _);
-
-        Archetype destination = edge.Add ??= Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, type, out var res), world, res);
-        destination.CreateEntityLocation(out nextLocation) = this;
-
-        for (int i = 0; i < from.Components.Length; i++)
-        {
-            destination.Components[i].PullComponentFrom(from.Components[i], ref nextLocation, ref entityLocation);
-        }
-
-        lastTo = destination.Components[^1];
-
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-
-        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        world.EntityTable[(uint)EntityID].Location = nextLocation;
     }
     #endregion
 
@@ -358,6 +341,30 @@ public readonly partial struct Entity : IEquatable<Entity>
         return false;
     }
 
+    private void AddCore(ComponentID componentID, Type type, out IComponentRunner lastTo, out EntityLocation nextLocation)
+    {
+        if (!IsAlive(out World? world, out EntityLocation entityLocation))
+            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+
+        Archetype from = entityLocation.Archetype(world);
+
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, componentID, out _);
+
+        Archetype destination = edge.Add ??= Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, type, out var res), world, res);
+        destination.CreateEntityLocation(out nextLocation) = this;
+
+        for (int i = 0; i < from.Components.Length; i++)
+        {
+            destination.Components[i].PullComponentFrom(from.Components[i], ref nextLocation, ref entityLocation);
+        }
+
+        lastTo = destination.Components[^1];
+
+        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+
+        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
+        world.EntityTable[(uint)EntityID].Location = nextLocation;
+    }
     private Ref<T> TryGetCore<T>(out bool exists)
     {
         if (!IsAlive(out var world, out EntityLocation entityLocation))

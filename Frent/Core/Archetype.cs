@@ -21,22 +21,13 @@ internal class Archetype<T>
     public static readonly EntityType ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), ArchetypeTypes);
     public static readonly uint IDasUInt = (uint)ID.ID;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Archetype GetExistingOrCreateNewArchetype(World world)
+    //this method is literally only called once per world
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static Archetype CreateNewArchetype(World world)
     {
-        ref Archetype archetype = ref world.GetArchetype(IDasUInt);
-        if (archetype is not null)
-            return archetype;
-
-        return CreateNew(out archetype, world);
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static Archetype CreateNew(out Archetype archetype, World world)
-        {
-            IComponentRunner[] runners = [Component<T>.CreateInstance()];
-            archetype = new Archetype(world, runners, Archetype.ArchetypeTable[ID.ID]);
-            return archetype;
-        }
+        IComponentRunner[] runners = [Component<T>.CreateInstance()];
+        var archetype = new Archetype(world, runners, Archetype.ArchetypeTable[ID.ID]);
+        return archetype;
     }
 
     internal class OfComponent<C>

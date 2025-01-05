@@ -26,8 +26,10 @@ internal struct Table<T>(int size)
     [MethodImpl(MethodImplOptions.NoInlining)]
     private ref T ResizeGet(uint index)
     {
-        uint nextSize = BitOperations.RoundUpToPowerOf2(index + 1);
-        Array.Resize(ref _buffer, (int)nextSize);
+        Array.Resize(ref _buffer, (int)BitOperations.RoundUpToPowerOf2(index + 1));
+        //this is faster for larger entity counts
+        //but ensure capacity does essentially the same thing
+        //Array.Resize(ref _buffer, (int)(index << 2));
         return ref _buffer[index];
     }
 

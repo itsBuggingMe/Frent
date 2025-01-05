@@ -53,8 +53,7 @@ public partial class World : IDisposable
         GlobalWorldTables.Worlds[ID] = this;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Entity CreateEntityFromLocation(in EntityLocation entityLocation)
+    internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
     {
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
         EntityTable[(uint)id] = (entityLocation, version);

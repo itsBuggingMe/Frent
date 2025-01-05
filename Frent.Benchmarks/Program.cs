@@ -15,6 +15,15 @@ public class Program
         BenchmarkRunner.Run<Program>();
     }
 
+    static void Run()
+    {
+        World w = new();
+        for (int i = 0; i < 100_000; ++i)
+        {
+            w.Create<Position, Velocity, float>(default, default, default);
+        }
+        w.Dispose();
+    }
 
     private Entity[] _sharedEntityBuffer100k = null!;
     private Entity _entity;
@@ -28,7 +37,7 @@ public class Program
         world = new World();
         _arch = ArchWorld.Create();
         _queryDescription = new QueryDescription().WithAll<Velocity, Position>();
-        for (int i = 0; i < 1_000_000; i++)
+        for (int i = 0; i < 100_000; i++)
         {
             _arch.Create<Position, Velocity>();
             world.Create<Position, Velocity>(default, default);
@@ -40,9 +49,9 @@ public class Program
     public void CreateArch()
     {
         ArchWorld aw = ArchWorld.Create();
-        for (int i = 0; i < 1_000_000; ++i)
+        for (int i = 0; i < 10_000; ++i)
         {
-            aw.Create<Position, Velocity>();
+            aw.Create<Position, Velocity, float>();
         }
         ArchWorld.Destroy(aw);
     }
@@ -51,20 +60,20 @@ public class Program
     public void Create()
     {
         World w = new();
-        for (int i = 0; i < 1_000_000; ++i)
+        for (int i = 0; i < 10_000; ++i)
         {
-            w.Create<Position, Velocity, double>(default, default, default);
+            w.Create<Position, Velocity, float>(default, default, default);
         }
         w.Dispose();
     }
     [Benchmark]
-    public void Createensure()
+    public void CreateEnsure()
     {
         World w = new();
-        w.EnsureCapacity<Position, Velocity, double>(1_000_000);
-        for (int i = 0; i < 1_000_000; ++i)
+        w.EnsureCapacity<Position, Velocity, float>(10_000);
+        for (int i = 0; i < 10_000; ++i)
         {
-            w.Create<Position, Velocity, double>(default, default, default);
+            w.Create<Position, Velocity, float>(default, default, default);
         }
         w.Dispose();
     }
