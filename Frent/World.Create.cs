@@ -14,7 +14,7 @@ partial class World
 {
     public Entity Create<T>(in T comp)
     {
-        Archetype archetype = WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.CreateArchetype(this);
+        Archetype archetype = Archetype<T>.GetExistingOrCreateNewArchetype(this);
         ref var entity = ref archetype.CreateEntityLocation(out var eloc);
 
         //4x deref + cast per component
@@ -26,6 +26,6 @@ partial class World
     //might remove this due to code size
     public void EnsureCapacity<T>(int entityCount)
     {
-        EnsureCapacityCore(WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.CreateArchetype(this), entityCount);
+        EnsureCapacityCore(WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.GetExistingOrCreateNewArchetype(this), entityCount);
     }
 }

@@ -4,6 +4,7 @@ using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
 
@@ -20,14 +21,22 @@ internal class Archetype<T>
     public static readonly EntityType ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), ArchetypeTypes);
     public static readonly uint IDasUInt = (uint)ID.ID;
 
-    internal static Archetype CreateArchetype(World world)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Archetype GetExistingOrCreateNewArchetype(World world)
     {
         ref Archetype archetype = ref world.GetArchetype(IDasUInt);
         if (archetype is not null)
             return archetype;
-        IComponentRunner[] runners = [Component<T>.CreateInstance()];
-        archetype = new Archetype(world, runners, Archetype.ArchetypeTable[ID.ID]);
-        return archetype;
+
+        return CreateNew(out archetype, world);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static Archetype CreateNew(out Archetype archetype, World world)
+        {
+            IComponentRunner[] runners = [Component<T>.CreateInstance()];
+            archetype = new Archetype(world, runners, Archetype.ArchetypeTable[ID.ID]);
+            return archetype;
+        }
     }
 
     internal class OfComponent<C>
@@ -92,7 +101,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
             _chunkIndex++;
             _componentIndex = 0;
 
-            _chunkSize = Math.Min(MaxChunkSize, _chunkSize << 1);
+            _chunkSize = Math.Min(MaxChunkSize, _chunkSize << 2);
             Chunk<Entity>.NextChunk(ref _entities, _chunkSize);
             foreach (var comprunner in Components)
                 comprunner.AllocateNextChunk(_chunkSize);
@@ -104,7 +113,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
 
     public void EnsureCapacity(int size)
     {
-        _chunkSize = (int)Math.Min(MaxChunkSize, BitOperations.RoundUpToPowerOf2((uint)(size >> 1)));//round down to power of two
+        _chunkSize = Math.Min(MaxChunkSize, (int)PreformanceHelpers.RoundDownToPowerOfTwo((uint)size));//round down to power of two
 
         while (size > 0)
         {

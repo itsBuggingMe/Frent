@@ -4,9 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
-internal static class PreformanceHelpers
+public static class PreformanceHelpers
 {
-    public static readonly int MaxArchetypeChunkSize = 16384;//~16 kb
+    public static int MaxArchetypeChunkSize = 16384*4;
     public static uint RoundDownToPowerOfTwo(uint value) => BitOperations.RoundUpToPowerOf2((value >> 1) + 1);
 
     public static int GetSizeOfType<T>()
