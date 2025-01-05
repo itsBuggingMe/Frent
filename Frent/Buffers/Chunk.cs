@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 
 namespace Frent.Buffers;
 
@@ -22,11 +23,13 @@ public struct Chunk<TData>
     public Span<TData> AsSpan(int start, int length) => _buffer.AsSpan(start, length);
 
 
-    public static void NextChunk(ref Chunk<TData>[] chunks, int size)
+    public static void NextChunk(ref Chunk<TData>[] chunks, int size, int newChunkIndex)
     {
+        if(BitOperations.IsPow2(newChunkIndex))
+            Array.Resize(ref chunks, chunks.Length << 1);
+
         var nextChunk = new Chunk<TData>(size);
-        Array.Resize(ref chunks, chunks.Length + 1);
-        chunks[^1] = nextChunk;
+        chunks[newChunkIndex] = nextChunk;
     }
 
     public int Length => _buffer.Length;

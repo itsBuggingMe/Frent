@@ -53,6 +53,9 @@ public struct FastStack<T>(int initalComponents) : IEnumerable<T>
     [DebuggerStepThrough]
     public bool TryPop([NotNullWhen(true)] out T? value)
     {
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            throw new NotImplementedException();
+
         if (_nextIndex == 0)
         {
             value = default;

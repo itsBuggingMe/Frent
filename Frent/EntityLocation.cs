@@ -1,11 +1,18 @@
 ﻿using Frent.Core;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
-internal struct EntityLocation(Archetype archetype, ushort chunkIndex, ushort componentIndex)
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+internal struct EntityLocation(EntityType archetype, ushort chunkIndex, ushort componentIndex)
 {
-    internal Archetype Archetype = archetype;
+    internal uint ArchetypeID = unchecked((uint)archetype.ID);
     internal ushort ChunkIndex = chunkIndex;
     internal ushort ComponentIndex = componentIndex;
-    public static EntityLocation Default { get; } = new EntityLocation(null!, ushort.MaxValue, ushort.MaxValue);
+    public static EntityLocation Default { get; } = new EntityLocation(new(-1/*wraps*/), ushort.MaxValue, ushort.MaxValue);
+
+    public Archetype Archetype(World world)
+    {
+        return world.GetArchetype(ArchetypeID);
+    }
 }

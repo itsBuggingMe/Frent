@@ -7,7 +7,7 @@ public interface IComponentRunner
 {
     internal void Run(Archetype archetype);
     internal void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);
-    internal void AllocateNextChunk(int size);
+    internal void AllocateNextChunk(int size, int chunkIndex);
     internal void PullComponentFrom(IComponentRunner otherRunner, ref readonly EntityLocation me, ref readonly EntityLocation other);
     internal void SetAt(object component, ushort chunkIndex, ushort compIndex);
     internal object GetAt(ushort chunkIndex, ushort compIndex);

@@ -53,6 +53,7 @@ public partial class World : IDisposable
         GlobalWorldTables.Worlds[ID] = this;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Entity CreateEntityFromLocation(in EntityLocation entityLocation)
     {
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
@@ -63,7 +64,7 @@ public partial class World : IDisposable
     internal void DeleteEntityInternal(Entity entity, ref readonly EntityLocation entityLocation)
     {
         //entity is guaranteed to be alive here
-        Entity replacedEntity = entityLocation.Archetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
         EntityTable[(uint)replacedEntity.EntityID] = (entityLocation, replacedEntity.EntityVersion);
         EntityTable[(uint)entity.EntityID] = (EntityLocation.Default, ushort.MaxValue);
     }

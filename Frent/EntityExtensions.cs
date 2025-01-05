@@ -1,11 +1,12 @@
-﻿using Frent.Variadic.Generator;
+﻿using Frent.Core;
+using Frent.Variadic.Generator;
 
 namespace Frent;
 
 [Variadic("Deconstruct<T>", "Deconstruct<|T$, |>")]
 [Variadic("out Ref<T> comp", "|out Ref<T$> comp$, |")]
 [Variadic("out T comp", "|out T$ comp$, |")]
-[Variadic("        comp = Entity.GetComp<T>(ref entityLocation);", "|        comp$ = Entity.GetComp<T$>(ref entityLocation);|")]
+[Variadic("        comp = Entity.GetComp<T>(ref entityLocation, archetype);", "|        comp$ = Entity.GetComp<T$>(ref entityLocation, archetype);|")]
 [Variadic("    /// <typeparam name=\"T\">The component type to deconstruct</typeparam>",
     "|    /// <typeparam name=\"T$\">Component type number $ to deconstruct</typeparam>\n|")]
 [Variadic("    /// <param name=\"comp\">The reference to the entity's component of type <typeparamref name=\"T\"/></param>",
@@ -26,10 +27,12 @@ public static partial class EntityExtensions
     /// <exception cref="ComponentNotFoundException{T}">The entity does not have a component of type <typeparamref name="T"/></exception>
     public static void Deconstruct<T>(ref this Entity e, out Ref<T> comp)
     {
-        if (!e.IsAlive(out _, out EntityLocation entityLocation))
+        if (!e.IsAlive(out var world, out EntityLocation entityLocation))
             FrentExceptions.Throw_InvalidOperationException(Entity.EntityIsDeadMessage);
 
-        comp = Entity.GetComp<T>(ref entityLocation);
+        Archetype archetype = entityLocation.Archetype(world);
+
+        comp = Entity.GetComp<T>(ref entityLocation, archetype);
     }
 
     /// <summary>
@@ -41,9 +44,11 @@ public static partial class EntityExtensions
     /// <exception cref="ComponentNotFoundException{T}">The entity does not have a component of type <typeparamref name="T"/></exception>
     public static void Deconstruct<T>(ref this Entity e, out T comp)
     {
-        if (!e.IsAlive(out _, out EntityLocation entityLocation))
+        if (!e.IsAlive(out var world, out EntityLocation entityLocation))
             FrentExceptions.Throw_InvalidOperationException(Entity.EntityIsDeadMessage);
 
-        comp = Entity.GetComp<T>(ref entityLocation);
+        Archetype archetype = entityLocation.Archetype(world);
+
+        comp = Entity.GetComp<T>(ref entityLocation, archetype);
     }
 }

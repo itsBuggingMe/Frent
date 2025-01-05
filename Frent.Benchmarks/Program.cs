@@ -15,6 +15,7 @@ public class Program
         BenchmarkRunner.Run<Program>();
     }
 
+
     private Entity[] _sharedEntityBuffer100k = null!;
     private Entity _entity;
     private World world = null!;
@@ -34,6 +35,7 @@ public class Program
         }
     }
 
+    
     [Benchmark]
     public void CreateArch()
     {
@@ -51,11 +53,13 @@ public class Program
         World w = new();
         for (int i = 0; i < 1_000_000; ++i)
         {
-            w.Create<Position, Velocity>(default, default);
+            w.Create<Position, Velocity, double>(default, default, default);
         }
         w.Dispose();
     }
 
+
+    /*
     [Benchmark]
     public void RunEntities()
     {
@@ -78,7 +82,7 @@ public class Program
     public void RunEntitiesInlineArch()
     {
         _arch.InlineQuery<QueryStruct, Position, Velocity>(_queryDescription);
-    }
+    }*/
 
     internal struct QueryStruct : IQuery<Position, Velocity>, IForEach<Position, Velocity>
     {

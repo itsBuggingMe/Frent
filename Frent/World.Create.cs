@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using Frent.Updating;
 using Frent.Variadic.Generator;
+using System.Runtime.CompilerServices;
 
 namespace Frent;
 

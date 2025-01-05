@@ -94,21 +94,25 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
         return ((IComponentRunner<T>)components[index]).AsSpan();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref Entity CreateEntityLocation(out EntityLocation entityLocation)
     {
         if (_entities[_chunkIndex].Length == _componentIndex)
-        {
-            _chunkIndex++;
-            _componentIndex = 0;
+            CreateChunks();
 
-            _chunkSize = Math.Min(MaxChunkSize, _chunkSize << 2);
-            Chunk<Entity>.NextChunk(ref _entities, _chunkSize);
-            foreach (var comprunner in Components)
-                comprunner.AllocateNextChunk(_chunkSize);
-        }
-
-        entityLocation = new EntityLocation(this, _chunkIndex, _componentIndex);
+        entityLocation = new EntityLocation(ID, _chunkIndex, _componentIndex);
         return ref _entities[_chunkIndex][_componentIndex++];
+    }
+
+    private void CreateChunks()
+    {
+        _chunkIndex++;
+        _componentIndex = 0;
+
+        _chunkSize = Math.Min(MaxChunkSize, _chunkSize << 2);
+        Chunk<Entity>.NextChunk(ref _entities, _chunkSize, _chunkIndex);
+        foreach (var comprunner in Components)
+            comprunner.AllocateNextChunk(_chunkSize, _chunkIndex);
     }
 
     public void EnsureCapacity(int size)
@@ -117,9 +121,9 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
 
         while (size > 0)
         {
-            Chunk<Entity>.NextChunk(ref _entities, _chunkSize);
+            Chunk<Entity>.NextChunk(ref _entities, _chunkSize, _chunkIndex);
             foreach (var comprunner in Components)
-                comprunner.AllocateNextChunk(_chunkSize);
+                comprunner.AllocateNextChunk(_chunkSize, _chunkIndex);
 
             size -= _chunkSize;
         }
