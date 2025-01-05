@@ -74,7 +74,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .AppendLine("    [System.Runtime.CompilerServices.ModuleInitializer]")
                 .Append("    internal static void Initalize() => Frent.Updating.GenerationServices.RegisterType(typeof(")
                     .Append(model.SubNamespace).Append('.').Append(model.Type).Append("), new Frent.Updating.Runners."); 
-            (span.Count == 0 ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append('<').Append(model.SubNamespace).Append('.').Append(model.Type);
+            (span.Count == 0 ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("RunnerFactory").Append('<').Append(model.SubNamespace).Append('.').Append(model.Type);
 
         foreach(var item in model.GenericArguments)
             sb.Append(", ").Append(item);

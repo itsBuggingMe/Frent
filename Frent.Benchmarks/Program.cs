@@ -3,9 +3,8 @@ using BenchmarkDotNet.Running;
 
 namespace Frent.Benchmarks;
 
-[ShortRunJob]
 [MemoryDiagnoser]
-[DisassemblyDiagnoser(3)]
+[DisassemblyDiagnoser(5)]
 public class Program
 {
     static void Main(string[] args) => BenchmarkRunner.Run<Program>();
@@ -34,25 +33,29 @@ public class Program
     {
         world = new World();
 
-        int entityCount = 100_000;
-        int entityPadding = 10;
-        for (int i = 0; i < entityCount; ++i)
+        for (int i = 0; i < 100_000; ++i)
         {
-            for (int j = 0; j < entityPadding; ++j)
-            {
-                world.Create<Component2>(default);
-            }
-
-            world.Create<Component1>(default);
+            world.Create<Component32>(default);
         }
-
-        _entity = world.Create<Component32>(default);
     }
 
     [Benchmark]
     public void RunEntities()
     {
         world.Query((ref Component32 comp) => comp.Value++);
-        Console.WriteLine(_entity.Get<Component32>().Value);
+    }
+
+    [Benchmark]
+    public void RunEntitiesInline()
+    {
+        world.InlineQuery<QueryStruct, Component32>(default);
+    }
+
+    internal struct QueryStruct : IQuery<Component32>
+    {
+        public void Run(ref Component32 arg)
+        {
+            arg.Value++;
+        }
     }
 }

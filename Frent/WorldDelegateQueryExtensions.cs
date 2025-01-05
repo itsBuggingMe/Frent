@@ -18,6 +18,7 @@ public static partial class WorldDelegateQueryExtensions
 {
     public static void Query<T>(this World world, QueryDelegates.Query<T> onEach)
     {
+        ArgumentNullException.ThrowIfNull(world, nameof(world));
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
@@ -34,6 +35,7 @@ public static partial class WorldDelegateQueryExtensions
 
     public static void Query<T>(this World world, QueryDelegates.QueryEntity<T> onEach)
     {
+        ArgumentNullException.ThrowIfNull(world, nameof(world));
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
@@ -50,6 +52,7 @@ public static partial class WorldDelegateQueryExtensions
 
     public static void QueryEntityUniform<TUniform, T>(this World world, QueryDelegates.QueryEntityUniform<TUniform, T> onEach)
     {
+        ArgumentNullException.ThrowIfNull(world, nameof(world));
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
@@ -74,6 +77,7 @@ public static partial class WorldDelegateQueryExtensions
 
     public static void QueryUniform<TUniform, T>(this World world, QueryDelegates.QueryUniform<TUniform, T> onEach)
     {
+        ArgumentNullException.ThrowIfNull(world, nameof(world));
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=

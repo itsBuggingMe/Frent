@@ -2,11 +2,12 @@
 using Frent.Components;
 using Frent.Core;
 using Frent.Variadic.Generator;
+using System.Net.Http.Headers;
 using static Frent.Updating.Variadics;
 
 namespace Frent.Updating.Runners;
 
-public class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<TComp, TUniform>, TComp>
+internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<TComp, TUniform>, TComp>
     where TComp : IUniformUpdateComponent<TUniform>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpan<Action>
@@ -18,11 +19,18 @@ public class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<
     }
 }
 
+public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+    where TComp : IUniformUpdateComponent<TUniform>
+{
+    public object Create() => new UniformUpdate<TComp, TUniform>();
+    public IComponentRunner<TComp> CreateStronglyTyped() => new UniformUpdate<TComp, TUniform>();
+}
+
 [Variadic(GetSpanFrom, GetSpanPattern, 15)]
 [Variadic(GenArgFrom, GenArgPattern)]
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-public class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformUpdate<TComp, TUniform, TArg>, TComp>
+internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformUpdate<TComp, TUniform, TArg>, TComp>
     where TComp : IUniformUpdateComponent<TUniform, TArg>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpan<Action>
@@ -33,4 +41,12 @@ public class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformU
         public TUniform Uniform;
         public void Run(ref TComp c, ref TArg t1) => c.Update(in Uniform, ref t1);
     }
+}
+
+[Variadic(GenArgFrom, GenArgPattern, 15)]
+public class UniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+    where TComp : IUniformUpdateComponent<TUniform, TArg>
+{
+    public object Create() => new UniformUpdate<TComp, TUniform, TArg>();
+    public IComponentRunner<TComp> CreateStronglyTyped() => new UniformUpdate<TComp, TUniform, TArg>();
 }

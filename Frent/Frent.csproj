@@ -9,7 +9,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8;.net7;.net6  </PackageTags>
-    <Version>0.1.4-alpha</Version>
+    <Version>0.2.0-alpha</Version>
   </PropertyGroup>
 
   <ItemGroup>

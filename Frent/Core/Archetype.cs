@@ -6,48 +6,54 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Frent.Core;
 
 [Variadic("Archetype<T>", "Archetype<|T$, |>")]
 [Variadic("typeof(T)", "|typeof(T$), |")]
+[Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
 [Variadic("[Component<T>.CreateInstance()]", "[|Component<T$>.CreateInstance(), |]")]
 internal class Archetype<T>
 {
     public static readonly ImmutableArray<Type> ArchetypeTypes = new Type[] { typeof(T) }.ToImmutableArray();
-    //ArchetypeTypes init first, then ID
-    public static readonly int ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), ArchetypeTypes);
-    public static readonly uint IDasUInt = (uint)ID;
+    public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
 
-    public static Archetype CreateArchetype(World world)
+    //ArchetypeTypes init first, then ID
+    public static readonly EntityType ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), ArchetypeTypes);
+    public static readonly uint IDasUInt = (uint)ID.ID;
+
+    internal static Archetype CreateArchetype(World world)
     {
         ref Archetype archetype = ref world.GetArchetype(IDasUInt);
         if (archetype is not null)
             return archetype;
         IComponentRunner[] runners = [Component<T>.CreateInstance()];
-        archetype = new Archetype(ID, runners, world, ArchetypeTypes);
+        archetype = new Archetype(world, runners, Archetype.ArchetypeTable[ID.ID]);
         return archetype;
     }
 
     internal class OfComponent<C>
     {
-        public static readonly int Index = GlobalWorldTables.ComponentLocationTable[ID][Component<C>.ID];
+        public static readonly int Index = GlobalWorldTables.ComponentLocationTable[ID.ID][Component<C>.ID.ID];
     }
 }
 
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
-public class Archetype(int id, IComponentRunner[] components, World world, ImmutableArray<Type> types)
+internal class Archetype(World world, IComponentRunner[] components, ArchetypeData archetypeData)
 {
-    private const int MaxChunkSize = 8192;
+    internal EntityType ID => Data.ID;
+    internal int MaxChunkSize => Data.MaxChunkSize;
+    internal ImmutableArray<Type> ArchetypeTypeArray => Data.ComponentTypes;
 
-    internal int ArchetypeID = id;
     internal readonly World World = world;
-    internal readonly ImmutableArray<Type> ArchetypeTypeArray = types;
-    internal readonly Dictionary<int, ArchetypeEdge> Graph = [];
+    internal readonly ArchetypeData Data = archetypeData;
+    internal readonly Dictionary<ComponentID, ArchetypeEdge> Graph = [];
 
     internal IComponentRunner[] Components = components;
     private Chunk<Entity>[] _entities = [new Chunk<Entity>(1)];
+
     private ushort _chunkIndex;
     private ushort _componentIndex;
     private int _chunkSize = 1;
@@ -74,7 +80,7 @@ public class Archetype(int id, IComponentRunner[] components, World world, Immut
     internal Span<Chunk<T>> GetComponentSpan<T>()
     {
         var components = Components;
-        byte index = GlobalWorldTables.ComponentLocationTable[ArchetypeID][Component<T>.ID];
+        byte index = GlobalWorldTables.ComponentLocationTable[ID.ID][Component<T>.ID.ID];
         if (index > components.Length)
         {
             FrentExceptions.Throw_ComponentNotFoundException<T>();
@@ -141,43 +147,59 @@ public class Archetype(int id, IComponentRunner[] components, World world, Immut
     internal Span<Chunk<Entity>> GetEntitySpan() => _entities.AsSpan();
 
     #region Static Tables And Methods
-    internal static FastStack<ImmutableArray<Type>> ArchetypeTypes = FastStack<ImmutableArray<Type>>.Create(16);
+    internal static FastStack<ArchetypeData> ArchetypeTable = FastStack<ArchetypeData>.Create(16);
     internal static int NextArchetypeID = -1;
-    private static readonly Dictionary<long, int> ExistingArchetypes = [];
+
+    private static readonly Dictionary<long, ArchetypeData> ExistingArchetypes = [];
 
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<Type> types, World world, ImmutableArray<Type>? typeArray = null)
     {
-        int id = GetArchetypeID(types, typeArray);
-        ref Archetype archetype = ref world.GetArchetype((uint)id);
+        EntityType id = GetArchetypeID(types, typeArray);
+        ref Archetype archetype = ref world.GetArchetype((uint)id.ID);
         if (archetype is not null)
             return archetype;
 
         IComponentRunner[] componentRunners = new IComponentRunner[types.Length];
         for (int i = 0; i < types.Length; i++)
             componentRunners[i] = Component.GetComponentRunnerFromType(types[i]);
-        archetype = new Archetype(id, componentRunners, world, typeArray ?? ReadOnlySpanToImmutableArray(types));
+        archetype = new Archetype(world, componentRunners, ArchetypeTable[id.ID]);
         world.ArchetypeAdded(archetype);
         return archetype;
     }
 
-    internal static int GetArchetypeID(ReadOnlySpan<Type> types, ImmutableArray<Type>? typesArray = null)
+    internal static EntityType GetArchetypeID(ReadOnlySpan<Type> types, ImmutableArray<Type>? typesArray = null)
     {
-        ref int slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types), out bool exists);
-        int finalID;
+        ref ArchetypeData? slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types), out bool exists);
+        EntityType finalID;
 
         if (exists)
         {
-            finalID = slot;
+            //can't be null if entry exists
+            finalID = slot!.ID;
         }
         else
         {
-            slot = finalID = Interlocked.Increment(ref NextArchetypeID);
+            finalID = new EntityType(Interlocked.Increment(ref NextArchetypeID));
+
             var arr = typesArray ?? ReadOnlySpanToImmutableArray(types);
-            ArchetypeTypes.Push(arr);
-            ModifyComponentLocationTable(arr, finalID);
+            slot = CreateArchetypeData(finalID, typesArray ?? ReadOnlySpanToImmutableArray(types));
+            ArchetypeTable.Push(slot);
+            ModifyComponentLocationTable(arr, finalID.ID);
         }
 
         return finalID;
+    }
+
+    public static ArchetypeData CreateArchetypeData(EntityType id, ImmutableArray<Type> componentTypes)
+    {
+        //8 bytes for entity struct
+        int entitySize = 8;
+        foreach (var value in componentTypes)
+        {
+            entitySize += Component.ComponentSizes[value];
+        }
+
+        return new ArchetypeData(id, componentTypes, (int)PreformanceHelpers.RoundDownToPowerOfTwo((uint)(PreformanceHelpers.MaxArchetypeChunkSize / entitySize)));
     }
 
     private static void ModifyComponentLocationTable(ImmutableArray<Type> archetypeTypes, int id)
@@ -197,7 +219,7 @@ public class Archetype(int id, IComponentRunner[] components, World world, Immut
         componentTable.AsSpan().Fill(byte.MaxValue);
         for (int i = 0; i < archetypeTypes.Length; i++)
         {
-            componentTable[Component.GetComponentID(archetypeTypes[i])] = (byte)i;
+            componentTable[Component.GetComponentID(archetypeTypes[i]).ID] = (byte)i;
         }
     }
 

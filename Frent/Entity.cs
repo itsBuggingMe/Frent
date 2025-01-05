@@ -42,8 +42,8 @@ public readonly partial struct Entity : IEquatable<Entity>
     {
         if (!IsAlive(out _, out var entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-        int compid = Component<T>.ID;
-        return GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][compid] != byte.MaxValue;
+        ComponentID compid = Component<T>.ID;
+        return GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ID.ID][compid.ID] != byte.MaxValue;
     }
 
     /// <summary>
@@ -55,8 +55,8 @@ public readonly partial struct Entity : IEquatable<Entity>
     {
         if (!IsAlive(out _, out var entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-        int compid = Component.GetComponentID(type);
-        return GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][compid] != byte.MaxValue;
+        ComponentID compid = Component.GetComponentID(type);
+        return GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ID.ID][compid.ID] != byte.MaxValue;
     }
     #endregion
 
@@ -77,7 +77,7 @@ public readonly partial struct Entity : IEquatable<Entity>
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
 
         //2x
-        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][Component<T>.ID];
+        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ID.ID][Component<T>.ID.ID];
 
         if (compIndex == byte.MaxValue)
             FrentExceptions.Throw_ComponentNotFoundException<T>();
@@ -98,8 +98,8 @@ public readonly partial struct Entity : IEquatable<Entity>
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
 
         //2x
-        int compid = Component.GetComponentID(type);
-        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][compid];
+        ComponentID compid = Component.GetComponentID(type);
+        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ID.ID][compid.ID];
 
         if (compIndex == byte.MaxValue)
             FrentExceptions.Throw_ComponentNotFoundException(type);
@@ -148,8 +148,8 @@ public readonly partial struct Entity : IEquatable<Entity>
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
         }
 
-        int componentId = Component.GetComponentID(type);
-        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][componentId];
+        ComponentID componentId = Component.GetComponentID(type);
+        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ID.ID][componentId.ID];
 
         if (compIndex == byte.MaxValue)
         {
@@ -182,7 +182,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
     }
 
-    private void AddCore(int componentID, Type type, out IComponentRunner lastTo, out EntityLocation nextLocation)
+    private void AddCore(ComponentID componentID, Type type, out IComponentRunner lastTo, out EntityLocation nextLocation)
     {
         if (!IsAlive(out World? world, out EntityLocation entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
@@ -359,7 +359,7 @@ public readonly partial struct Entity : IEquatable<Entity>
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
         }
 
-        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][Component<T>.ID];
+        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ID.ID][Component<T>.ID.ID];
 
         if (compIndex == byte.MaxValue)
         {
@@ -371,7 +371,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         return Ref<T>.Create(((IComponentRunner<T>)entityLocation.Archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
     }
 
-    internal void RemoveCore(int componentID, Type type, out EntityLocation nextLocation, out EntityLocation entityLocation, out int skipIndex, out World world)
+    internal void RemoveCore(ComponentID componentID, Type type, out EntityLocation nextLocation, out EntityLocation entityLocation, out int skipIndex, out World world)
     {
         //ignore - it throws if null
         if (!IsAlive(out world!, out entityLocation))
@@ -382,14 +382,14 @@ public readonly partial struct Entity : IEquatable<Entity>
 
         destination.CreateEntityLocation(out nextLocation) = this;
 
-        skipIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][componentID];
+        skipIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ID.ID][componentID.ID];
         if (skipIndex == byte.MaxValue)
             FrentExceptions.Throw_ComponentNotFoundException(type);
     }
 
     internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation)
     {
-        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ArchetypeID][Component<TComp>.ID];
+        byte compIndex = GlobalWorldTables.ComponentLocationTable[entityLocation.Archetype.ID.ID][Component<TComp>.ID.ID];
 
         if (compIndex == byte.MaxValue)
             FrentExceptions.Throw_ComponentNotFoundException<TComp>();

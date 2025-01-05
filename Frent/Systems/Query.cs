@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 
 namespace Frent.Systems;
 
-public class Query(Rule[] rules) : IEnumerable<Archetype>
+internal class Query(Rule[] rules) : IEnumerable<Archetype>
 {
     private FastStack<Archetype> _archetypes = FastStack<Archetype>.Create(1);
     private Rule[] _rules = rules;
@@ -14,7 +14,7 @@ public class Query(Rule[] rules) : IEnumerable<Archetype>
     IEnumerator<Archetype> IEnumerable<Archetype>.GetEnumerator() => _archetypes.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => _archetypes.GetEnumerator();
 
-    public void TryAttachArchetype(Archetype archetype)
+    internal void TryAttachArchetype(Archetype archetype)
     {
         if (ArchetypeSatisfiesQuery(archetype))
             _archetypes.Push(archetype);

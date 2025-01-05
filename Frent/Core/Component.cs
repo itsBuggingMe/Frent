@@ -2,49 +2,61 @@
 using Frent.Updating;
 using Frent.Components;
 using Frent.Updating.Runners;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
 
-internal static class Component<T>
+public static class Component<T>
 {
-    public static readonly int ID = Component.GetComponentID(typeof(T));
-    public static IComponentRunner<T> CreateInstance() => RunnerInstance.CloneStronglyTyped();
-
-    private static readonly IComponentRunner<T> RunnerInstance;
     static Component()
     {
-        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out IComponentRunner? type))
+        Component.ComponentSizes[typeof(T)] = PreformanceHelpers.GetSizeOfType<T>();
+        ID = Component.GetComponentID(typeof(T));
+
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out IComponentRunnerFactory? type))
         {
-            if (type is IComponentRunner<T> casted)
+            if (type is IComponentRunnerFactory<T> casted)
             {
                 RunnerInstance = casted;
                 return;
             }
 
-            throw new InvalidOperationException($"{typeof(T).FullName} is not initalized. (Is the source generator working?)");
+            throw new InvalidOperationException($"{typeof(T).FullName} is not initalized correctly. (Is the source generator working?)");
         }
 
-        Component.NoneComponentRunnerTable[typeof(T)] = RunnerInstance = new None<T>();
+        var fac = new NoneComponentRunnerFactory<T>();
+        Component.NoneComponentRunnerTable[typeof(T)] = fac;
+        RunnerInstance = fac;
     }
+
+    public static readonly ComponentID ID;
+    public static IComponentRunner<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
+
+    private static readonly IComponentRunnerFactory<T> RunnerInstance;
 }
 
 public static class Component
 {
     internal static int ComponentTableBufferSize { get; private set; }
-    internal static FastStack<Type> AllComponentTypesOrdered = FastStack<Type>.Create(16);
-    private static int NextComponentID = -1;
-    private static Dictionary<Type, int> ExistingComponentIDs = [];
+    internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
 
-    internal static Dictionary<Type, IComponentRunner> NoneComponentRunnerTable = [];
+    internal static Dictionary<Type, int> ComponentSizes = [];
+    internal static Dictionary<Type, IComponentRunnerFactory> NoneComponentRunnerTable = [];
+
+    private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
+    private static int NextComponentID = -1;
+
     internal static IComponentRunner GetComponentRunnerFromType(Type t)
     {
-        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out IComponentRunner? type))
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out IComponentRunnerFactory? type))
         {
-            return type.Clone();
+            return (IComponentRunner)type.Create();
         }
         if (NoneComponentRunnerTable.TryGetValue(t, out type))
         {
-            return type.Clone();
+            return (IComponentRunner)type.Create();
         }
 
         if(t.IsAssignableTo(typeof(IComponent)))
@@ -59,23 +71,35 @@ public static class Component
 
     public static void RegisterComponent<T>()
     {
-        NoneComponentRunnerTable[typeof(T)] = new None<T>();
+        //random size estimate of a managed type
+        ComponentSizes[typeof(T)] = PreformanceHelpers.GetSizeOfType<T>();
+        NoneComponentRunnerTable[typeof(T)] = new NoneComponentRunnerFactory<T>();
     }
-    internal static int GetComponentID(Type t)
+
+    internal static ComponentID GetComponentID(Type t)
     {
-        if (ExistingComponentIDs.TryGetValue(t, out int value))
+        if (ExistingComponentIDs.TryGetValue(t, out ComponentID value))
         {
             return value;
         }
 
         //although this part is thread safe...
         //NOTHING ELSE IS YET!!!!
-        int id = Interlocked.Increment(ref NextComponentID);
+        ComponentID id = new ComponentID(Interlocked.Increment(ref NextComponentID));
         ExistingComponentIDs[t] = id;
 
-        ModifyComponentTable(id);
+        ModifyComponentTable(id.ID);
 
-        AllComponentTypesOrdered.Push(t);
+        if(ComponentSizes.TryGetValue(t, out int size))
+        {
+            ComponentTable.Push(new ComponentData(t, size));
+        }
+        else
+        {
+            //we give a estimate of 16 bytes?
+            //ComponentTable.Push(new ComponentData(t, 16));
+            throw new InvalidOperationException($"{t.FullName} is not initalized. (Did you initalize T with Component.RegisterComponent<T>()?)");
+        }
 
         return id;
     }
@@ -83,7 +107,7 @@ public static class Component
     private static void ModifyComponentTable(int id)
     {
         var table = GlobalWorldTables.ComponentLocationTable;
-        int componentTableLength = AllComponentTypesOrdered.Count;
+        int componentTableLength = ComponentTable.Count;
 
         //when adding a component, we only care about changing the length
         if (componentTableLength == id)

@@ -2,11 +2,11 @@
 
 public static class GenerationServices
 {
-    internal static readonly Dictionary<Type, IComponentRunner> UserGeneratedTypeMap = new();
+    internal static readonly Dictionary<Type, IComponentRunnerFactory> UserGeneratedTypeMap = new();
 
-    public static void RegisterType(Type type, IComponentRunner value)
+    public static void RegisterType(Type type, IComponentRunnerFactory value)
     {
-        if (UserGeneratedTypeMap.TryGetValue(type, out IComponentRunner? val))
+        if (UserGeneratedTypeMap.TryGetValue(type, out IComponentRunnerFactory? val))
         {
             if (val.GetType() != value.GetType())
             {
