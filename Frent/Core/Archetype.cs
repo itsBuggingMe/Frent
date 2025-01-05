@@ -117,7 +117,10 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
 
     public void EnsureCapacity(int size)
     {
-        _chunkSize = Math.Min(MaxChunkSize, (int)PreformanceHelpers.RoundDownToPowerOfTwo((uint)size));//round down to power of two
+        _chunkSize = (int)PreformanceHelpers.RoundDownToPowerOfTwo((uint)size);
+
+        //TODO: make this better
+        //don't really need it to be pow of two, just multiple of vector sizes
 
         while (size > 0)
         {

@@ -57,7 +57,17 @@ public class Program
         }
         w.Dispose();
     }
-
+    [Benchmark]
+    public void Createensure()
+    {
+        World w = new();
+        w.EnsureCapacity<Position, Velocity, double>(1_000_000);
+        for (int i = 0; i < 1_000_000; ++i)
+        {
+            w.Create<Position, Velocity, double>(default, default, default);
+        }
+        w.Dispose();
+    }
 
     /*
     [Benchmark]
