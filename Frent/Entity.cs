@@ -1,9 +1,9 @@
 ﻿using Frent.Core;
 using Frent.Updating;
-using System.Diagnostics;
 using System.Collections.Immutable;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -307,7 +307,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     {
         get
         {
-            if(!IsAlive(out World? world, out _))
+            if (!IsAlive(out World? world, out _))
                 FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
             return world;
         }

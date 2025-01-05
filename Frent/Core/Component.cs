@@ -1,10 +1,7 @@
 ﻿using Frent.Collections;
-using Frent.Updating;
 using Frent.Components;
+using Frent.Updating;
 using Frent.Updating.Runners;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
 
@@ -59,7 +56,7 @@ public static class Component
             return (IComponentRunner)type.Create();
         }
 
-        if(t.IsAssignableTo(typeof(IComponent)))
+        if (t.IsAssignableTo(typeof(IComponent)))
         {
             throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
         }
@@ -90,7 +87,7 @@ public static class Component
 
         ModifyComponentTable(id.ID);
 
-        if(ComponentSizes.TryGetValue(t, out int size))
+        if (ComponentSizes.TryGetValue(t, out int size))
         {
             ComponentTable.Push(new ComponentData(t, size));
         }

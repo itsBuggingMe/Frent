@@ -1,5 +1,8 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using Arch.Core;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using System.Diagnostics;
+using ArchWorld = Arch.Core.World;
 
 namespace Frent.Benchmarks;
 
@@ -7,55 +10,89 @@ namespace Frent.Benchmarks;
 [DisassemblyDiagnoser(5)]
 public class Program
 {
-    static void Main(string[] args) => BenchmarkRunner.Run<Program>();
+    static void Main(string[] args)
+    {
+        BenchmarkRunner.Run<Program>();
+    }
 
     private Entity[] _sharedEntityBuffer100k = null!;
     private Entity _entity;
     private World world = null!;
-
-    public struct Component1
-    {
-        public int Value;
-    }
-
-    public struct Component2
-    {
-        public int Value;
-    }
-
-    public struct Component3
-    {
-        public int Value;
-    }
+    private ArchWorld _arch;
+    private QueryDescription _queryDescription;
 
     [GlobalSetup]
     public void Setup()
     {
         world = new World();
-
-        for (int i = 0; i < 100_000; ++i)
+        _arch = ArchWorld.Create();
+        _queryDescription = new QueryDescription().WithAll<Velocity, Position>();
+        for (int i = 0; i < 1_000_000; i++)
         {
-            world.Create<Component32>(default);
+            _arch.Create<Position, Velocity>();
+            world.Create<Position, Velocity>(default, default);
         }
+    }
+
+    [Benchmark]
+    public void CreateArch()
+    {
+        ArchWorld aw = ArchWorld.Create();
+        for (int i = 0; i < 1_000_000; ++i)
+        {
+            aw.Create<Position, Velocity>();
+        }
+        ArchWorld.Destroy(aw);
+    }
+
+    [Benchmark]
+    public void Create()
+    {
+        World w = new();
+        for (int i = 0; i < 1_000_000; ++i)
+        {
+            w.Create<Position, Velocity>(default, default);
+        }
+        w.Dispose();
     }
 
     [Benchmark]
     public void RunEntities()
     {
-        world.Query((ref Component32 comp) => comp.Value++);
+        world.Query((ref Position comp, ref Velocity vel) => comp.X += vel.DX);
     }
 
     [Benchmark]
     public void RunEntitiesInline()
     {
-        world.InlineQuery<QueryStruct, Component32>(default);
+        world.InlineQuery<QueryStruct, Position, Velocity>(default);
     }
 
-    internal struct QueryStruct : IQuery<Component32>
+    [Benchmark]
+    public void RunEntitiesArch()
     {
-        public void Run(ref Component32 arg)
-        {
-            arg.Value++;
-        }
+        _arch.Query(_queryDescription, (ref Position comp, ref Velocity vel) => comp.X += vel.DX);
+    }
+
+    [Benchmark]
+    public void RunEntitiesInlineArch()
+    {
+        _arch.InlineQuery<QueryStruct, Position, Velocity>(_queryDescription);
+    }
+
+    internal struct QueryStruct : IQuery<Position, Velocity>, IForEach<Position, Velocity>
+    {
+        public void Run(ref Position arg1, ref Velocity arg2) => arg1.X += arg2.DX;
+        public void Update(ref Position t0, ref Velocity t1) => t0.X += t1.DX;
+    }
+
+    internal struct Position(float x)
+    {
+        public float X = x;
+    }
+
+    internal struct Velocity(float dx)
+    {
+        public float DX = dx;
     }
 }

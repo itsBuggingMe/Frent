@@ -1,5 +1,4 @@
-﻿using Frent.Systems;
-using Frent.Variadic.Generator;
+﻿using Frent.Variadic.Generator;
 
 namespace Frent;
 

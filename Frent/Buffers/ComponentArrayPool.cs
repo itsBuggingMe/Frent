@@ -14,7 +14,7 @@ class ComponentArrayPool<T> : ArrayPool<T>
         if (!BitOperations.IsPow2(array.Length))
             return;
 
-        if(clearArray)
+        if (clearArray)
             array.AsSpan().Clear();
 
         throw new NotImplementedException();

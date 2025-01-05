@@ -1,7 +1,6 @@
 ﻿using Frent.Core;
 using Frent.Updating;
 using Frent.Variadic.Generator;
-using System.Runtime.CompilerServices;
 
 namespace Frent;
 
@@ -24,6 +23,7 @@ partial class World
         return entity = CreateEntityFromLocation(in eloc);
     }
 
+    //might remove this due to code size
     public void EnsureCapacity<T>(int entityCount)
     {
         EnsureCapacityCore(WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.CreateArchetype(this), entityCount);

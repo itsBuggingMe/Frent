@@ -112,18 +112,18 @@ public partial class World : IDisposable
 
     public Entity CreateFromObjects(ReadOnlySpan<object> components)
     {
-        if(components.Length == 0 || components.Length > 16)
+        if (components.Length == 0 || components.Length > 16)
             throw new ArgumentException("1-16 components per entity only", nameof(components));
         Span<Type?> types = ((Span<Type?>)([null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]))[..components.Length];
 
-        for(int i = 0; i < components.Length; i++)
+        for (int i = 0; i < components.Length; i++)
             types[i] = components[i].GetType();
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, this);
         ref Entity entity = ref archetype.CreateEntityLocation(out EntityLocation loc);
         entity = CreateEntityFromLocation(loc);
 
         Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
-        for(int i = 0; i < components.Length; i++)
+        for (int i = 0; i < components.Length; i++)
         {
             archetypeComponents[i].SetAt(components[i], loc.ChunkIndex, loc.ComponentIndex);
         }
@@ -133,7 +133,7 @@ public partial class World : IDisposable
 
     public void EnsureCapacity(ReadOnlySpan<Type> componentTypes, int count)
     {
-        if(componentTypes.Length == 0 || componentTypes.Length > 16)
+        if (componentTypes.Length == 0 || componentTypes.Length > 16)
             throw new ArgumentException("1-16 components per entity only", nameof(componentTypes));
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentTypes, this);
         EnsureCapacityCore(archetype, count);

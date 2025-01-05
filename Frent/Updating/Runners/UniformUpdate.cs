@@ -2,7 +2,6 @@
 using Frent.Components;
 using Frent.Core;
 using Frent.Variadic.Generator;
-using System.Net.Http.Headers;
 using static Frent.Updating.Variadics;
 
 namespace Frent.Updating.Runners;

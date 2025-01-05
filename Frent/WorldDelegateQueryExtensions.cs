@@ -1,7 +1,7 @@
 ﻿using Frent.Buffers;
 using Frent.Systems;
-using System.Runtime.InteropServices;
 using Frent.Variadic.Generator;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -44,7 +44,7 @@ public static partial class WorldDelegateQueryExtensions
         foreach (var a in query)
             ChunkHelpers<T>.EnumerateChunkSpanEntity<DelegateQueryEntity<T>>(a.CurrentWriteChunk, a.LastChunkComponentCount, new(onEach), a.GetEntitySpan(), a.GetComponentSpan<T>());
     }
-        
+
     internal struct DelegateQueryEntity<T>(QueryDelegates.QueryEntity<T> onEach) : IQueryEntity<T>
     {
         public void Run(Entity entity, ref T arg) => onEach(entity, ref arg);
