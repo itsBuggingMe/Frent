@@ -3,7 +3,7 @@ using Frent.Core;
 
 namespace Frent.Updating;
 
-public interface IComponentRunner
+internal interface IComponentRunner
 {
     internal void Run(Archetype archetype);
     internal void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);
@@ -14,7 +14,7 @@ public interface IComponentRunner
     internal ComponentID ComponentID { get; }
 }
 
-public interface IComponentRunner<T> : IComponentRunner
+internal interface IComponentRunner<T> : IComponentRunner
 {
     internal Span<Chunk<T>> AsSpan();
 }

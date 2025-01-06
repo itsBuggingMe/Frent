@@ -42,11 +42,18 @@ public partial class World : IDisposable
     public int EntityCount => _nextEntityID - _recycledEntityIds.Count;
 
     /// <summary>
+    /// The current world config
+    /// </summary>
+    public Config CurrentConfig { get; set; }
+
+    /// <summary>
     /// Creates a world with zero entities and a uniform provider
     /// </summary>
     /// <param name="uniformProvider">The initial uniform provider to be used</param>
-    public World(IUniformProvider? uniformProvider = null)
+    /// <param name="config">The inital config to use. If not provided <see cref="Config.Singlethreaded"/> is used.</param>
+    public World(IUniformProvider? uniformProvider = null, Config? config = null)
     {
+        CurrentConfig = config ?? Config.Singlethreaded;
         UniformProvider = uniformProvider ?? NullUniformProvider.Instance;
         (ID, Version) = _recycledWorldIDs.TryPop(out var id) ? id : (_nextWorldID++, byte.MaxValue);
         IDAsUInt = ID;
@@ -73,9 +80,19 @@ public partial class World : IDisposable
     /// </summary>
     public void Update()
     {
-        foreach (var element in WorldArchetypeTable.AsSpan())
+        if(CurrentConfig.MultiThreadedUpdate)
         {
-            element?.Update();
+            foreach (var element in WorldArchetypeTable.AsSpan())
+            {
+                element?.MultiThreadedUpdate(CurrentConfig);
+            }
+        }
+        else
+        {
+            foreach (var element in WorldArchetypeTable.AsSpan())
+            {
+                element?.Update();
+            }
         }
     }
 
@@ -110,14 +127,23 @@ public partial class World : IDisposable
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
     }
 
+    /// <summary>
+    /// Creates an <see cref="Entity"/>
+    /// </summary>
+    /// <param name="components">The components to use</param>
+    /// <returns>The created entity</returns>
+    /// <exception cref="ArgumentException">Thrown when the length of <paramref name="components"/> is > 16.</exception>
     public Entity CreateFromObjects(ReadOnlySpan<object> components)
     {
-        if (components.Length == 0 || components.Length > 16)
-            throw new ArgumentException("1-16 components per entity only", nameof(components));
+        if (components.Length < 0 || components.Length > 16)
+            throw new ArgumentException("0-16 components per entity only", nameof(components));
+
+        //poverty InlineArray
         Span<Type?> types = ((Span<Type?>)([null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]))[..components.Length];
 
         for (int i = 0; i < components.Length; i++)
             types[i] = components[i].GetType();
+
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, [], this);
         ref Entity entity = ref archetype.CreateEntityLocation(out EntityLocation loc);
         entity = CreateEntityFromLocation(loc);
@@ -131,6 +157,13 @@ public partial class World : IDisposable
         return entity;
     }
 
+    /// <summary>
+    /// Allocates memory sufficient to store <paramref name="componentTypes"/> entities of a type
+    /// </summary>
+    /// <param name="componentTypes">The types of the entity to allocate for</param>
+    /// <param name="count">Number of entity spaces to allocate</param>
+    /// <remarks>Use this method when creating a large number of entities</remarks>
+    /// <exception cref="ArgumentException">Thrown when the length of <paramref name="componentTypes"/> is > 16.</exception>
     public void EnsureCapacity(ReadOnlySpan<Type> componentTypes, int count)
     {
         if (componentTypes.Length == 0 || componentTypes.Length > 16)

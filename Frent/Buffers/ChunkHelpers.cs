@@ -16,6 +16,7 @@ namespace Frent.Buffers;
 [Variadic("            var comp1 = data1[i].AsSpan()[..ent.Length];", "|            var comp$ = data$[i].AsSpan()[..ent.Length];\n|")]
 internal static class ChunkHelpers<T>
 {
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void EnumerateChunkSpan<TAction>(int currentChunk, int lastChunkComponentCount, TAction action, Span<Chunk<T>> data1)
         where TAction : IQuery<T>
     {

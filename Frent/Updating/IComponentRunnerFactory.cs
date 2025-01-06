@@ -1,10 +1,18 @@
 ﻿namespace Frent.Updating;
+
+/// <summary>
+/// Defines an object for creating component runners
+/// </summary>
+/// <remarks>Used only in source generation</remarks>
 public interface IComponentRunnerFactory
 {
+    /// <summary>
+    /// Used only in source generation
+    /// </summary>
     public object Create();
 }
 
 internal interface IComponentRunnerFactory<T>
 {
-    public IComponentRunner<T> CreateStronglyTyped();
+    internal IComponentRunner<T> CreateStronglyTyped();
 }

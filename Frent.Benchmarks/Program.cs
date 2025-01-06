@@ -6,6 +6,7 @@ using ArchWorld = Arch.Core.World;
 
 namespace Frent.Benchmarks;
 
+[ShortRunJob]
 [MemoryDiagnoser]
 [DisassemblyDiagnoser(5)]
 public class Program
@@ -13,16 +14,6 @@ public class Program
     static void Main(string[] args)
     {
         BenchmarkRunner.Run<Program>();
-    }
-
-    static void Run()
-    {
-        World w = new();
-        for (int i = 0; i < 100_000; ++i)
-        {
-            w.Create<Position, Velocity, float>(default, default, default);
-        }
-        w.Dispose();
     }
 
     private Entity[] _sharedEntityBuffer100k = null!;
@@ -42,30 +33,20 @@ public class Program
             _arch.Create<Position, Velocity>();
             world.Create<Position, Velocity>(default, default);
         }
-    }
 
-    
-    [Benchmark]
-    public void CreateArch()
-    {
-        ArchWorld aw = ArchWorld.Create();
-        for (int i = 0; i < 10_000; ++i)
-        {
-            aw.Create<Position, Velocity, float>();
-        }
-        ArchWorld.Destroy(aw);
     }
 
     [Benchmark]
     public void Create()
     {
         World w = new();
-        for (int i = 0; i < 10_000; ++i)
+        for (int i = 0; i < 1_000_000; i++)
         {
-            w.Create<Position, Velocity, float>(default, default, default);
+            w.Create<int, float>(i, default);
         }
         w.Dispose();
     }
+    /*
     [Benchmark]
     public void CreateEnsure()
     {
@@ -78,7 +59,6 @@ public class Program
         w.Dispose();
     }
 
-    /*
     [Benchmark]
     public void RunEntities()
     {

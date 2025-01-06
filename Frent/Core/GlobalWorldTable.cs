@@ -7,7 +7,9 @@ internal static class GlobalWorldTables
     //we accsess by archetype first because i think we access different comps from the same archetype more
     public static byte[/*archetype id*/][/*component id*/] ComponentTagLocationTable = [];
     internal static int ComponentTagTableBufferSize { get; set; }//reps the length of the second dimension
-    public static Table<World> Worlds = new Table<World>(2);
+    internal static Table<World> Worlds = new Table<World>(2);
+
+    internal static readonly object BufferChangeLock = new object();
 
     internal static void ModifyComponentTagTableIfNeeded(int idValue)
     {
@@ -26,10 +28,7 @@ internal static class GlobalWorldTables
         }
     }
 
-    public static int ComponentIndex(EntityType archetype, int component) => ComponentTagLocationTable[archetype.ID][component] & Tag.IndexBits;
-    public static int ComponentIndex(EntityType archetype, ComponentID component) => ComponentTagLocationTable[archetype.ID][component.ID] & Tag.IndexBits;
+    public static int ComponentIndex(ArchetypeID archetype, ComponentID component) => ComponentTagLocationTable[archetype.ID][component.ID] & Tag.IndexBits;
     public static int ComponentIndex(uint archetype, ComponentID component) => ComponentTagLocationTable[archetype][component.ID] & Tag.IndexBits;
-    public static int ComponentIndex(uint archetype, int component) => ComponentTagLocationTable[archetype][component] & Tag.IndexBits;
-    public static bool HasTag(EntityType archetype, TagID tag) => (ComponentTagLocationTable[archetype.ID][tag.ID] & Tag.HasTagMask) != 0;
     public static bool HasTag(uint archetype, TagID tag) => (ComponentTagLocationTable[archetype][tag.ID] & Tag.HasTagMask) != 0;
 }

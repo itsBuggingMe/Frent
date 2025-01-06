@@ -14,7 +14,7 @@ partial class Archetype
 
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, World world, ImmutableArray<Type>? typeArray = null, ImmutableArray<Type>? tagTypesArray = null)
     {
-        EntityType id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
+        ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
         ref Archetype archetype = ref world.GetArchetype((uint)id.ID);
         if (archetype is not null)
             return archetype;
@@ -27,10 +27,10 @@ partial class Archetype
         return archetype;
     }
 
-    internal static EntityType GetArchetypeID(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, ImmutableArray<Type>? typesArray = null, ImmutableArray<Type>? tagTypesArray = null)
+    internal static ArchetypeID GetArchetypeID(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, ImmutableArray<Type>? typesArray = null, ImmutableArray<Type>? tagTypesArray = null)
     {
         ref ArchetypeData? slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);
-        EntityType finalID;
+        ArchetypeID finalID;
 
         if (exists)
         {
@@ -39,7 +39,7 @@ partial class Archetype
         }
         else
         {
-            finalID = new EntityType(Interlocked.Increment(ref NextArchetypeID));
+            finalID = new ArchetypeID(Interlocked.Increment(ref NextArchetypeID));
 
             var arr = typesArray ?? ReadOnlySpanToImmutableArray(types);
             var tagArr = tagTypesArray ?? ReadOnlySpanToImmutableArray(tagTypes);
@@ -52,7 +52,7 @@ partial class Archetype
         return finalID;
     }
 
-    public static ArchetypeData CreateArchetypeData(EntityType id, ImmutableArray<Type> componentTypes, ImmutableArray<Type> tagTypes)
+    public static ArchetypeData CreateArchetypeData(ArchetypeID id, ImmutableArray<Type> componentTypes, ImmutableArray<Type> tagTypes)
     {
         //8 bytes for entity struct
         int entitySize = 8;

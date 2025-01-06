@@ -1,12 +1,13 @@
 ﻿using Frent.Core;
 using Frent.Updating;
+using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
 
 namespace Frent;
 
-[Variadic("        ((IComponentRunner<T>)archetype.Components[Archetype<T>.OfComponent<T>.Index]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp!;",
-    "|        ((IComponentRunner<T$>)archetype.Components[Archetype<T>.OfComponent<T$>.Index]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp$!;\n|")]
+[Variadic("        ((ComponentStorage<T>)archetype.Components[Archetype<T>.OfComponent<T>.Index]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp!;",
+    "|        ((ComponentStorage<T$>)archetype.Components[Archetype<T>.OfComponent<T$>.Index]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp$!;\n|")]
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("y<T>", "y<|T$, |>")]
 [Variadic("in T comp", "|in T$ comp$, |")]
@@ -20,9 +21,7 @@ partial class World
         ref var entity = ref archetype.CreateEntityLocation(out var eloc);
 
         //4x deref + cast per component
-        //a microoptimization here is to cast to a base class so we dont need a virt call
-        //might also reduce code size since the jit doesnt branch and guess the type
-        ((IComponentRunner<T>)archetype.Components[Archetype<T>.OfComponent<T>.Index]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp!;
+        ((ComponentStorage<T>)archetype.Components[Archetype<T>.OfComponent<T>.Index]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp!;
 
         //manually inlined from World.CreateEntityFromLocation
         //The jit likes to inline the outer create function and not inline

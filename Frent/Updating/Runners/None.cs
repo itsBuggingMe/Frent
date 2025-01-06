@@ -9,5 +9,5 @@ internal class None<TComp> : ComponentRunnerBase<None<TComp>, TComp>
 public class NoneComponentRunnerFactory<T> : IComponentRunnerFactory, IComponentRunnerFactory<T>
 {
     public object Create() => new None<T>();
-    public IComponentRunner<T> CreateStronglyTyped() => new None<T>();
+    IComponentRunner<T> IComponentRunnerFactory<T>.CreateStronglyTyped() => new None<T>();
 }

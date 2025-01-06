@@ -18,7 +18,7 @@ internal class Archetype<T>
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
 
     //ArchetypeTypes init first, then ID
-    public static readonly EntityType ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), [], ArchetypeTypes);
+    public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), [], ArchetypeTypes);
     public static readonly uint IDasUInt = (uint)ID.ID;
 
     //this method is literally only called once per world
@@ -39,14 +39,17 @@ internal class Archetype<T>
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 internal partial class Archetype(World world, IComponentRunner[] components, ArchetypeData archetypeData)
 {
-    internal EntityType ID => Data.ID;
+    internal ArchetypeID ID => Data.ID;
     internal int MaxChunkSize => Data.MaxChunkSize;
     internal ImmutableArray<Type> ArchetypeTypeArray => Data.ComponentTypes;
     internal ImmutableArray<Type> ArchetypeTagArray => Data.TagTypes;
 
+    //48 bytes
+    //thats chonky
     internal readonly World World = world;
     internal readonly ArchetypeData Data = archetypeData;
     //the "raw" ID value
+    //im ok with using bcl dictionary b/c inital capacity is zero
     internal readonly Dictionary<int, ArchetypeEdge> Graph = [];
 
     internal IComponentRunner[] Components = components;
@@ -110,10 +113,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
 
     public void EnsureCapacity(int size)
     {
-        _chunkSize = (int)PreformanceHelpers.RoundDownToPowerOfTwo((uint)size);
-
-        //TODO: make this better
-        //don't really need it to be pow of two, just multiple of vector sizes
+        _chunkSize = (int)BitOperations.RoundUpToPowerOf2((uint)size);
 
         while (size > 0)
         {
@@ -147,6 +147,11 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
             return;
         foreach (var comprunner in Components)
             comprunner.Run(this);
+    }
+
+    internal void MultiThreadedUpdate(Config config)
+    {
+        throw new NotImplementedException();
     }
 
     internal Span<Chunk<Entity>> GetEntitySpan() => _entities.AsSpan();

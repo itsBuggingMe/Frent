@@ -19,7 +19,7 @@ public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, ICompon
     where TComp : IEntityUpdateComponent
 {
     public object Create() => new EntityUpdate<TComp>();
-    public IComponentRunner<TComp> CreateStronglyTyped() => new EntityUpdate<TComp>();
+    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp>();
 }
 
 [Variadic(GetSpanFrom, GetSpanPattern, 15)]
@@ -41,5 +41,5 @@ public class EntityUpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, I
     where TComp : IEntityUpdateComponent<TArg>
 {
     public object Create() => new EntityUpdate<TComp, TArg>();
-    public IComponentRunner<TComp> CreateStronglyTyped() => new EntityUpdate<TComp, TArg>();
+    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp, TArg>();
 }

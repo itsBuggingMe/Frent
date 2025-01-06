@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static NUnit.Framework.Assert;
+﻿using static NUnit.Framework.Assert;
 
 namespace Frent.Tests;
 
@@ -126,31 +121,31 @@ public class EntityTests
     [Test]
     public void EntityTag_TagExists()
     {
-        That(_ent.IsTagged<EntityTests>(), Is.True);
+        That(_ent.Tagged<EntityTests>(), Is.True);
     }
 
     [Test]
     public void EntityTag_TagDoesNotExist()
     {
-        That(_ent.IsTagged<string>(), Is.False);
+        That(_ent.Tagged<string>(), Is.False);
     }
 
     [Test]
     public void EntityTag_Tag()
     {
         _ent.Tag<bool>();
-        That(_ent.IsTagged<bool>(), Is.True);
+        That(_ent.Tagged<bool>(), Is.True);
         _ent.Detach<bool>();
-        That(_ent.IsTagged<bool>(), Is.False);
+        That(_ent.Tagged<bool>(), Is.False);
     }
 
     [Test]
     public void EntityTag_Detach()
     {
         That(_ent.Detach<EntityTests>(), Is.True);
-        That(_ent.IsTagged<EntityTests>(), Is.False);
+        That(_ent.Tagged<EntityTests>(), Is.False);
         _ent.Tag<EntityTests>();
-        That(_ent.IsTagged<EntityTests>(), Is.True);
+        That(_ent.Tagged<EntityTests>(), Is.True);
     }
 
 

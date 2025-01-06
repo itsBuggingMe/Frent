@@ -150,7 +150,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         }
 
         ComponentID componentId = Component.GetComponentID(type);
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentId.ID);
+        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentId);
 
         if (compIndex >= PreformanceHelpers.MaxComponentCount)
         {

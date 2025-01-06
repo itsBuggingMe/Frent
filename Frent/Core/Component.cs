@@ -5,8 +5,16 @@ using Frent.Updating.Runners;
 
 namespace Frent.Core;
 
+/// <summary>
+/// Used to quickly get the component ID of a given type
+/// </summary>
+/// <typeparam name="T">The type of component</typeparam>
 public static class Component<T>
 {
+    /// <summary>
+    /// The component ID for <typeparamref name="T"/>
+    /// </summary>
+    public static readonly ComponentID ID;
     static Component()
     {
         Component.ComponentSizes[typeof(T)] = PreformanceHelpers.GetSizeOfType<T>();
@@ -28,12 +36,14 @@ public static class Component<T>
         RunnerInstance = fac;
     }
 
-    public static readonly ComponentID ID;
-    public static IComponentRunner<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
+    internal static IComponentRunner<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
 
     private static readonly IComponentRunnerFactory<T> RunnerInstance;
 }
 
+/// <summary>
+/// Class for registering components
+/// </summary>
 public static class Component
 {
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
@@ -65,6 +75,10 @@ public static class Component
         }
     }
 
+    /// <summary>
+    /// Register components with this method to be able to use them programmically. Note that components that implement an IComponent interface do not need to be registered
+    /// </summary>
+    /// <typeparam name="T">The type of component to implement</typeparam>
     public static void RegisterComponent<T>()
     {
         //random size estimate of a managed type

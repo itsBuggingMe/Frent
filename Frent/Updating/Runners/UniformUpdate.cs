@@ -22,7 +22,7 @@ public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFacto
     where TComp : IUniformUpdateComponent<TUniform>
 {
     public object Create() => new UniformUpdate<TComp, TUniform>();
-    public IComponentRunner<TComp> CreateStronglyTyped() => new UniformUpdate<TComp, TUniform>();
+    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new UniformUpdate<TComp, TUniform>();
 }
 
 [Variadic(GetSpanFrom, GetSpanPattern, 15)]
@@ -47,5 +47,5 @@ public class UniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunne
     where TComp : IUniformUpdateComponent<TUniform, TArg>
 {
     public object Create() => new UniformUpdate<TComp, TUniform, TArg>();
-    public IComponentRunner<TComp> CreateStronglyTyped() => new UniformUpdate<TComp, TUniform, TArg>();
+    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new UniformUpdate<TComp, TUniform, TArg>();
 }

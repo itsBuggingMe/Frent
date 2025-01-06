@@ -1,9 +1,10 @@
-﻿using System.Diagnostics;
+﻿using Frent.Core;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace Frent.Buffers;
 
-public struct Chunk<TData>
+internal struct Chunk<TData>
 {
     TData[] _buffer;
     public ref TData this[int i]
@@ -14,7 +15,7 @@ public struct Chunk<TData>
 
     public Chunk(int len)
     {
-        _buffer = new TData[len];
+        _buffer = PreformanceHelpers<TData>.Pool.Rent(len);
     }
 
     public Span<TData> AsSpan() => _buffer;

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace Frent;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-internal struct EntityLocation(EntityType archetype, ushort chunkIndex, ushort componentIndex)
+internal struct EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort componentIndex)
 {
     internal uint ArchetypeID = unchecked((uint)archetype.ID);
     internal ushort ChunkIndex = chunkIndex;

@@ -4,11 +4,9 @@ using System.Runtime.CompilerServices;
 
 namespace Frent.Updating.Runners;
 
-internal abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunner<TComponent>
+internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorage<TComponent>, IComponentRunner<TComponent>
     where TSelf : IComponentRunner<TComponent>, new()
 {
-    private Chunk<TComponent>[] _chunks = [new Chunk<TComponent>(1)];
-    public Span<Chunk<TComponent>> AsSpan() => _chunks.AsSpan();
     public abstract void Run(Archetype b);
     protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
     public void AllocateNextChunk(int chunkSize, int chunkIndex) => Chunk<TComponent>.NextChunk(ref _chunks, chunkSize, chunkIndex);
@@ -42,4 +40,10 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunne
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
+}
+
+internal abstract class ComponentStorage<TComponent>
+{
+    protected Chunk<TComponent>[] _chunks = [new Chunk<TComponent>(1)];
+    public Span<Chunk<TComponent>> AsSpan() => _chunks.AsSpan();
 }
