@@ -1,10 +1,10 @@
 # [Frent](https://github.com/itsBuggingMe/Frent)
 
-A high preformance archetyped based **[ECS](https://github.com/SanderMertens/ecs-faq)/ECF**  library for C#. Zero unsafe code and optimized to be just as fast.
+A high preformance archetyped based **ECF/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#. Zero unsafe code and optimized to be just as fast.
 
 *Whaaaat?! Isn't there enough ECS libraries out there!*
 
-While Frent at its core is an archetype based ECS library, thats not why Frent was made. Frent is also an **ECF** - Entity Component Framework - that allows you to easily use composition for code reuse rather than inheritance with minimal boilerplate. Think Unity's Monobehavior but powered by the principles and speed of an ECS.
+While Frent's implementation is an archetype based ECS, thats not why Frent was made. Frent is also an **ECF** - Entity Component Framework - that allows you to easily use composition for code reuse rather than inheritance with minimal boilerplate. Think Unity's Monobehavior but powered by the principles and speed of an ECS.
 
 > [!CAUTION]
 > Frent is still in alpha, with an incomplete feature set. The api is unstable and there may be bugs!
