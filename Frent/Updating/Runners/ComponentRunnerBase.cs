@@ -15,7 +15,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : IComponentRunne
     public void SetAt(object component, ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex] = (TComponent)component;
     public object GetAt(ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex]!;
     public ComponentID ComponentID => Component<TComponent>.ID;
-    public void PullComponentFrom(IComponentRunner otherRunner, ref readonly EntityLocation me, ref readonly EntityLocation other)
+    public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
     {
         IComponentRunner<TComponent> componentRunner = (IComponentRunner<TComponent>)otherRunner;
         ref var left = ref _chunks[me.ChunkIndex][me.ComponentIndex];

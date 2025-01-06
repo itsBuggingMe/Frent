@@ -12,9 +12,9 @@ partial class Archetype
 
     private static readonly Dictionary<long, ArchetypeData> ExistingArchetypes = [];
 
-    internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<Type> types, World world, ImmutableArray<Type>? typeArray = null)
+    internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, World world, ImmutableArray<Type>? typeArray = null, ImmutableArray<Type>? tagTypesArray = null)
     {
-        EntityType id = GetArchetypeID(types, typeArray);
+        EntityType id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
         ref Archetype archetype = ref world.GetArchetype((uint)id.ID);
         if (archetype is not null)
             return archetype;
@@ -27,9 +27,9 @@ partial class Archetype
         return archetype;
     }
 
-    internal static EntityType GetArchetypeID(ReadOnlySpan<Type> types, ImmutableArray<Type>? typesArray = null)
+    internal static EntityType GetArchetypeID(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, ImmutableArray<Type>? typesArray = null, ImmutableArray<Type>? tagTypesArray = null)
     {
-        ref ArchetypeData? slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types), out bool exists);
+        ref ArchetypeData? slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);
         EntityType finalID;
 
         if (exists)
@@ -42,15 +42,17 @@ partial class Archetype
             finalID = new EntityType(Interlocked.Increment(ref NextArchetypeID));
 
             var arr = typesArray ?? ReadOnlySpanToImmutableArray(types);
-            slot = CreateArchetypeData(finalID, typesArray ?? ReadOnlySpanToImmutableArray(types));
+            var tagArr = tagTypesArray ?? ReadOnlySpanToImmutableArray(tagTypes);
+
+            slot = CreateArchetypeData(finalID, arr, tagArr);
             ArchetypeTable.Push(slot);
-            ModifyComponentLocationTable(arr, finalID.ID);
+            ModifyComponentLocationTable(arr, tagArr, finalID.ID);
         }
 
         return finalID;
     }
 
-    public static ArchetypeData CreateArchetypeData(EntityType id, ImmutableArray<Type> componentTypes)
+    public static ArchetypeData CreateArchetypeData(EntityType id, ImmutableArray<Type> componentTypes, ImmutableArray<Type> tagTypes)
     {
         //8 bytes for entity struct
         int entitySize = 8;
@@ -59,14 +61,14 @@ partial class Archetype
             entitySize += Component.ComponentSizes[value];
         }
 
-        return new ArchetypeData(id, componentTypes, (int)PreformanceHelpers.RoundDownToPowerOfTwo((uint)(PreformanceHelpers.MaxArchetypeChunkSize / entitySize)));
+        return new ArchetypeData(id, componentTypes, tagTypes, (int)PreformanceHelpers.RoundDownToPowerOfTwo((uint)(PreformanceHelpers.MaxArchetypeChunkSize / entitySize)));
     }
 
-    private static void ModifyComponentLocationTable(ImmutableArray<Type> archetypeTypes, int id)
+    private static void ModifyComponentLocationTable(ImmutableArray<Type> archetypeTypes, ImmutableArray<Type> archetypeTags, int id)
     {
-        if (GlobalWorldTables.ComponentLocationTable.Length == id)
+        if (GlobalWorldTables.ComponentTagLocationTable.Length == id)
         {
-            Array.Resize(ref GlobalWorldTables.ComponentLocationTable, Math.Max(id << 1, 1));
+            Array.Resize(ref GlobalWorldTables.ComponentTagLocationTable, Math.Max(id << 1, 1));
         }
 
         for (int i = 0; i < archetypeTypes.Length; i++)
@@ -74,16 +76,22 @@ partial class Archetype
             _ = Component.GetComponentID(archetypeTypes[i]);
         }
 
-        ref var componentTable = ref GlobalWorldTables.ComponentLocationTable[id];
-        componentTable = new byte[Component.ComponentTableBufferSize];
-        componentTable.AsSpan().Fill(byte.MaxValue);
+        ref var componentTable = ref GlobalWorldTables.ComponentTagLocationTable[id];
+        componentTable = new byte[GlobalWorldTables.ComponentTagTableBufferSize];
+        componentTable.AsSpan().Fill(Tag.DefaultNoTag);
+        //TODO: tags
         for (int i = 0; i < archetypeTypes.Length; i++)
         {
             componentTable[Component.GetComponentID(archetypeTypes[i]).ID] = (byte)i;
         }
+
+        for(int i = 0; i < archetypeTags.Length; i++)
+        {
+            componentTable[Tag.GetTagID(archetypeTags[i]).ID] |= Tag.HasTagMask;
+        }
     }
 
-    private static long GetHash(ReadOnlySpan<Type> types)
+    private static long GetHash(ReadOnlySpan<Type> types, ReadOnlySpan<Type> andMoreTypes)
     {
         HashCode h1 = new();
 
@@ -92,6 +100,16 @@ partial class Archetype
         {
             h1.Add(types[i]);
         }
+
+
+        int tagHash = 0;
+        foreach (var item in andMoreTypes)
+        {
+            //we do this so its communative
+            tagHash += item.GetHashCode();
+        }
+
+        h1.Add(tagHash);
 
         HashCode h2 = new();
         for (; i < types.Length; i++)

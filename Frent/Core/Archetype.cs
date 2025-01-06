@@ -18,7 +18,7 @@ internal class Archetype<T>
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
 
     //ArchetypeTypes init first, then ID
-    public static readonly EntityType ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), ArchetypeTypes);
+    public static readonly EntityType ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), [], ArchetypeTypes);
     public static readonly uint IDasUInt = (uint)ID.ID;
 
     //this method is literally only called once per world
@@ -32,7 +32,7 @@ internal class Archetype<T>
 
     internal class OfComponent<C>
     {
-        public static readonly int Index = GlobalWorldTables.ComponentLocationTable[ID.ID][Component<C>.ID.ID];
+        public static readonly int Index = GlobalWorldTables.ComponentIndex(ID, Component<C>.ID);
     }
 }
 
@@ -42,10 +42,12 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
     internal EntityType ID => Data.ID;
     internal int MaxChunkSize => Data.MaxChunkSize;
     internal ImmutableArray<Type> ArchetypeTypeArray => Data.ComponentTypes;
+    internal ImmutableArray<Type> ArchetypeTagArray => Data.TagTypes;
 
     internal readonly World World = world;
     internal readonly ArchetypeData Data = archetypeData;
-    internal readonly Dictionary<ComponentID, ArchetypeEdge> Graph = [];
+    //the "raw" ID value
+    internal readonly Dictionary<int, ArchetypeEdge> Graph = [];
 
     internal IComponentRunner[] Components = components;
     private Chunk<Entity>[] _entities = [new Chunk<Entity>(1)];
@@ -76,7 +78,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
     internal Span<Chunk<T>> GetComponentSpan<T>()
     {
         var components = Components;
-        byte index = GlobalWorldTables.ComponentLocationTable[ID.ID][Component<T>.ID.ID];
+        int index = GlobalWorldTables.ComponentIndex(ID, Component<T>.ID);
         if (index > components.Length)
         {
             FrentExceptions.Throw_ComponentNotFoundException<T>();

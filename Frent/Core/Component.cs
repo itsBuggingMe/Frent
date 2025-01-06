@@ -36,7 +36,6 @@ public static class Component<T>
 
 public static class Component
 {
-    internal static int ComponentTableBufferSize { get; private set; }
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
 
     internal static Dictionary<Type, int> ComponentSizes = [];
@@ -85,7 +84,7 @@ public static class Component
         ComponentID id = new ComponentID(Interlocked.Increment(ref NextComponentID));
         ExistingComponentIDs[t] = id;
 
-        ModifyComponentTable(id.ID);
+        GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
 
         if (ComponentSizes.TryGetValue(t, out int size))
         {
@@ -99,23 +98,5 @@ public static class Component
         }
 
         return id;
-    }
-
-    private static void ModifyComponentTable(int id)
-    {
-        var table = GlobalWorldTables.ComponentLocationTable;
-        int componentTableLength = ComponentTable.Count;
-
-        //when adding a component, we only care about changing the length
-        if (componentTableLength == id)
-        {
-            ComponentTableBufferSize = Math.Max(componentTableLength << 1, 1);
-            for (int i = 0; i < table.Length; i++)
-            {
-                ref var componentsForArchetype = ref table[i];
-                Array.Resize(ref componentsForArchetype, ComponentTableBufferSize);
-                componentsForArchetype.AsSpan(componentTableLength).Fill(byte.MaxValue);
-            }
-        }
     }
 }

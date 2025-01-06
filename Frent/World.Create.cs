@@ -20,6 +20,8 @@ partial class World
         ref var entity = ref archetype.CreateEntityLocation(out var eloc);
 
         //4x deref + cast per component
+        //a microoptimization here is to cast to a base class so we dont need a virt call
+        //might also reduce code size since the jit doesnt branch and guess the type
         ((IComponentRunner<T>)archetype.Components[Archetype<T>.OfComponent<T>.Index]).AsSpan()[eloc.ChunkIndex][eloc.ComponentIndex] = comp!;
 
         //manually inlined from World.CreateEntityFromLocation

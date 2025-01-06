@@ -19,6 +19,7 @@ public class EntityTests
     {
         _world = new World();
         _ent = _world.Create<int, double, float>(69, 3.14, 2.71f);
+        _ent.Tag<EntityTests>();
     }
 
     [Test]
@@ -36,7 +37,8 @@ public class EntityTests
     [Test]
     public void EntityHas_ComponentNotPresent()
     {
-        That(_ent.Has<bool>(), Is.False);
+        bool res = _ent.Has<bool>();
+        That(res, Is.False);
     }
 
     [Test]
@@ -75,7 +77,12 @@ public class EntityTests
     [Test]
     public void EntityGet_ComponentDoesNotExist()
     {
-        Throws<ComponentNotFoundException<string>>(() => _ent.Get<string>());
+        Throws<ComponentNotFoundException<string>>(
+            () =>
+            {
+                _ent.Get<string>();
+            }
+            );
     }
 
     [Test]
@@ -114,6 +121,49 @@ public class EntityTests
     public void EntityRemove_ComponentThatDoesNotExist()
     {
         Throws<ComponentNotFoundException>(() => _ent.Remove<string>());
+    }
+
+    [Test]
+    public void EntityTag_TagExists()
+    {
+        That(_ent.IsTagged<EntityTests>(), Is.True);
+    }
+
+    [Test]
+    public void EntityTag_TagDoesNotExist()
+    {
+        That(_ent.IsTagged<string>(), Is.False);
+    }
+
+    [Test]
+    public void EntityTag_Tag()
+    {
+        _ent.Tag<bool>();
+        That(_ent.IsTagged<bool>(), Is.True);
+        _ent.Detach<bool>();
+        That(_ent.IsTagged<bool>(), Is.False);
+    }
+
+    [Test]
+    public void EntityTag_Detach()
+    {
+        That(_ent.Detach<EntityTests>(), Is.True);
+        That(_ent.IsTagged<EntityTests>(), Is.False);
+        _ent.Tag<EntityTests>();
+        That(_ent.IsTagged<EntityTests>(), Is.True);
+    }
+
+
+    [Test]
+    public void EntityTag_DetachReturnsFalse()
+    {
+        That(_ent.Detach<string>(), Is.False);
+    }
+
+    [Test]
+    public void EntityTag_DuplicateThrows()
+    {
+        Throws<InvalidOperationException>(() => _ent.Tag<EntityTests>());
     }
 
     [Test]

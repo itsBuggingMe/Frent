@@ -118,7 +118,7 @@ public partial class World : IDisposable
 
         for (int i = 0; i < components.Length; i++)
             types[i] = components[i].GetType();
-        Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, this);
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, [], this);
         ref Entity entity = ref archetype.CreateEntityLocation(out EntityLocation loc);
         entity = CreateEntityFromLocation(loc);
 
@@ -135,7 +135,7 @@ public partial class World : IDisposable
     {
         if (componentTypes.Length == 0 || componentTypes.Length > 16)
             throw new ArgumentException("1-16 components per entity only", nameof(componentTypes));
-        Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentTypes, this);
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentTypes, [], this);
         EnsureCapacityCore(archetype, count);
     }
 

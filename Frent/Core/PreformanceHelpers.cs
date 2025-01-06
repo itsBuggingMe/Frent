@@ -4,8 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
-public static class PreformanceHelpers
+internal static class PreformanceHelpers
 {
+    public const int MaxComponentCount = 16;
     public static int MaxArchetypeChunkSize = 16384*4;
     public static uint RoundDownToPowerOfTwo(uint value) => BitOperations.RoundUpToPowerOf2((value >> 1) + 1);
 

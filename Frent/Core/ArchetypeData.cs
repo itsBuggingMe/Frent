@@ -1,4 +1,3 @@
 ﻿using System.Collections.Immutable;
-
 namespace Frent.Core;
-internal record class ArchetypeData(EntityType ID, ImmutableArray<Type> ComponentTypes, int MaxChunkSize);
+internal record class ArchetypeData(EntityType ID, ImmutableArray<Type> ComponentTypes, ImmutableArray<Type> TagTypes, int MaxChunkSize);
