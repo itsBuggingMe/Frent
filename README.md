@@ -53,9 +53,8 @@ Wanna start cooking? Check out the [Cookbook](Cookbook.md)!
 - [x]  AOT Compatible
 - [x]  Built in Uniform Provider implementation
 - [x]  Programmical Entity Creation
+- [X]  Tests
+- [X]  Entity Tag
 
 ## Future
 - [ ]  Multithreading
-- [ ]  Entity relationships
-- [ ]  Tests
-- [ ]  Entity Tag
