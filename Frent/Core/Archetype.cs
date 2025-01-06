@@ -56,7 +56,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
     private ushort _componentIndex;
     private int _chunkSize = 1;
 
-    internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))}";
+    internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Name))}";
 
     internal int EntityCount
     {

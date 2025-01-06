@@ -23,7 +23,7 @@ internal record struct SinglePixel(Color Color)
 {
     public static implicit operator SinglePixel(Color co) => new(co);
 }
-internal record struct Velocity(Vector2 dxy) : IUniformUpdateComponent<GameRoot, Position, Friction>
+internal struct Velocity(Vector2 dxy) : IUniformUpdateComponent<GameRoot, Position, Friction>
 {
     public Vector2 DXY = dxy;
     public static implicit operator Velocity(Vector2 dxy) => new(dxy);
@@ -33,10 +33,15 @@ internal record struct Velocity(Vector2 dxy) : IUniformUpdateComponent<GameRoot,
         DXY *= friction.Coefficient;
     }
 }
-internal record struct MouseController : IUniformUpdateComponent<GameRoot, Velocity, Position>
+internal record struct MouseController : IEntityUniformUpdateComponent<GameRoot, Velocity, Position>
 {
-    public void Update(in GameRoot uniform, ref Velocity vel, ref Position arg)
+    public void Update(Entity e, in GameRoot uniform, ref Velocity vel, ref Position arg)
     {
+        if (uniform.MouseState.MiddleButton == ButtonState.Pressed && !e.Tagged<UserCreated>())
+        {
+            vel.DXY = default;
+            return;
+        }
         if (uniform.MouseState.RightButton == ButtonState.Pressed)
             vel.DXY += NormalizeSafe(arg.XY - uniform.MouseState.Position.ToVector2()) * 0.1f;
         if (uniform.MouseState.LeftButton == ButtonState.Pressed)

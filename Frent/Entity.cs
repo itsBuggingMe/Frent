@@ -219,7 +219,7 @@ public readonly partial struct Entity : IEquatable<Entity>
             nextArchetype.Components[j++].PullComponentFrom(fromArchetype.Components[i], nextLocation, entityLocation);
         }
 
-        Entity movedDown = nextArchetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        Entity movedDown = fromArchetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
         world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         world.EntityTable[(uint)EntityID].Location = nextLocation;
@@ -270,7 +270,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <see langword="true"/> if the tag of type <typeparamref name="T"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
-    public bool IsTagged<T>()
+    public bool Tagged<T>()
     {
         if (!IsAlive(out _, out var entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
@@ -286,7 +286,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <see langword="true"/> if the tag identified by <paramref name="tagID"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
-    public bool IsTagged(TagID tagID)
+    public bool Tagged(TagID tagID)
     {
         if (!IsAlive(out _, out var entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
@@ -296,13 +296,13 @@ public readonly partial struct Entity : IEquatable<Entity>
     /// <summary>
     /// Checks whether this <see cref="Entity"/> has a specific tag, using a <see cref="Type"/> to represent the tag.
     /// </summary>
-    /// <remarks>Prefer the <see cref="IsTagged(TagID)"/> or <see cref="IsTagged{T}()"/> overloads. Use <see cref="Tag{T}.ID"/> to get a <see cref="TagID"/> instance</remarks>
+    /// <remarks>Prefer the <see cref="Tagged(TagID)"/> or <see cref="Tagged{T}()"/> overloads. Use <see cref="Tag{T}.ID"/> to get a <see cref="TagID"/> instance</remarks>
     /// <param name="type">The <see cref="Type"/> representing the tag to check.</param>
     /// <returns>
     /// <see langword="true"/> if the tag represented by <paramref name="type"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> not alive.</exception>
-    public bool IsTagged(Type type)
+    public bool Tagged(Type type)
     {
         if (!IsAlive(out _, out var entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
@@ -512,7 +512,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         destination.CreateEntityLocation(out nextLocation) = this;
 
         skipIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID);
-        if (skipIndex == byte.MaxValue)
+        if (skipIndex >= PreformanceHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(type);
     }
 

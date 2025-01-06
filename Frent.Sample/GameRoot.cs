@@ -89,6 +89,8 @@ namespace Frent.Sample
                     (Bounds)new Vector2(5),
                     (SinglePixel)colors[Random.Shared.Next(colors.Length)],
                     default(MouseController)]));
+
+                    e.Tag<UserCreated>();
                 }
             }
             else
@@ -132,6 +134,8 @@ namespace Frent.Sample
             gameRoot.SpriteBatch.Draw(gameRoot.PixelTexture, new Rectangle(topLeft.ToPoint(), bounds.Size.ToPoint()), singlePixel.Color);
         }
     }
+
+    internal struct UserCreated;
 
     internal struct QueryCollison : IQueryUniform<GameRoot, Velocity, Position, Bounds>
     {
