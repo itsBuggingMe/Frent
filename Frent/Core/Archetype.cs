@@ -56,7 +56,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
     private Chunk<Entity>[] _entities = [new Chunk<Entity>(1)];
 
     private ushort _chunkIndex;
-    private ushort _componentIndex;
+    private int _componentIndex;
     private int _chunkSize = 1;
 
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Name))}";
@@ -74,7 +74,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
         }
     }
 
-    internal ushort LastChunkComponentCount => _componentIndex;
+    internal int LastChunkComponentCount => _componentIndex;
     internal ushort ChunkCount => _chunkIndex;
     internal ushort CurrentWriteChunk => _chunkIndex;
 
@@ -96,7 +96,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
         if (_entities[_chunkIndex].Length == _componentIndex)
             CreateChunks();
 
-        entityLocation = new EntityLocation(ID, _chunkIndex, _componentIndex);
+        entityLocation = new EntityLocation(ID, _chunkIndex, (ushort)_componentIndex);
         return ref _entities[_chunkIndex][_componentIndex++];
     }
 
@@ -113,7 +113,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
 
     public void EnsureCapacity(int size)
     {
-        _chunkSize = (int)BitOperations.RoundUpToPowerOf2((uint)size);
+        _chunkSize = MaxChunkSize;
 
         while (size > 0)
         {
@@ -128,15 +128,15 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
 
     internal Entity DeleteEntity(ushort chunk, ushort comp)
     {
-        if (unchecked(--_componentIndex == ushort.MaxValue))
+        if (unchecked(--_componentIndex == -1))
         {
             _chunkIndex--;
-            _componentIndex = (ushort)(_entities[_chunkIndex].Length - 1);
+            _componentIndex = _entities[_chunkIndex].Length - 1;
         }
 
 
         foreach (var comprunner in Components)
-            comprunner.Delete(chunk, comp, _chunkIndex, _componentIndex);
+            comprunner.Delete(chunk, comp, _chunkIndex, (ushort)_componentIndex);
 
         return _entities[chunk][comp] = _entities[_chunkIndex][_componentIndex];
     }

@@ -1,43 +1,50 @@
-﻿using Arch.Core;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
-using System.Diagnostics;
-using ArchWorld = Arch.Core.World;
+﻿using System.Diagnostics;
 
 namespace Frent.Benchmarks;
 
-[ShortRunJob]
-[MemoryDiagnoser]
-[DisassemblyDiagnoser(5)]
+//[MemoryDiagnoser]
+//[DisassemblyDiagnoser(5)]
 public class Program
 {
     static void Main(string[] args)
     {
-        BenchmarkRunner.Run<Program>();
     }
 
     private Entity[] _sharedEntityBuffer100k = null!;
     private Entity _entity;
     private World world = null!;
-    private ArchWorld _arch;
-    private QueryDescription _queryDescription;
 
-    [GlobalSetup]
+    //[GlobalSetup]
     public void Setup()
     {
         world = new World();
-        _arch = ArchWorld.Create();
-        _queryDescription = new QueryDescription().WithAll<Velocity, Position>();
-        for (int i = 0; i < 100_000; i++)
-        {
-            _arch.Create<Position, Velocity>();
-            world.Create<Position, Velocity>(default, default);
-        }
 
     }
 
-    [Benchmark]
-    public void Create()
+    //[Benchmark]
+    public void CreateMax()
+    {
+        World w = new();
+        for (int i = 0; i < 100_000_000; i++)
+        {
+            w.Create(i);
+        }
+        w.Dispose();
+    }
+
+    //[Benchmark]
+    public void Create1()
+    {
+        World w = new();
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            w.Create<int>(i);
+        }
+        w.Dispose();
+    }
+
+    //[Benchmark]
+    public void Create2()
     {
         World w = new();
         for (int i = 0; i < 1_000_000; i++)
@@ -46,6 +53,29 @@ public class Program
         }
         w.Dispose();
     }
+
+    //[Benchmark]
+    public void Create3()
+    {
+        World w = new();
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            w.Create<int, float, short>(i, default, default);
+        }
+        w.Dispose();
+    }
+
+    //[Benchmark]
+    public void Create4()
+    {
+        World w = new();
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            w.Create<int, float, short, long>(i, default, default, default);
+        }
+        w.Dispose();
+    }
+
     /*
     [Benchmark]
     public void CreateEnsure()
@@ -83,7 +113,7 @@ public class Program
         _arch.InlineQuery<QueryStruct, Position, Velocity>(_queryDescription);
     }*/
 
-    internal struct QueryStruct : IQuery<Position, Velocity>, IForEach<Position, Velocity>
+    internal struct QueryStruct : IQuery<Position, Velocity>
     {
         public void Run(ref Position arg1, ref Velocity arg2) => arg1.X += arg2.DX;
         public void Update(ref Position t0, ref Velocity t1) => t0.X += t1.DX;

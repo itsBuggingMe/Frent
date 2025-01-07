@@ -54,14 +54,7 @@ partial class Archetype
 
     public static ArchetypeData CreateArchetypeData(ArchetypeID id, ImmutableArray<Type> componentTypes, ImmutableArray<Type> tagTypes)
     {
-        //8 bytes for entity struct
-        int entitySize = 8;
-        foreach (var value in componentTypes)
-        {
-            entitySize += Component.ComponentSizes[value];
-        }
-
-        return new ArchetypeData(id, componentTypes, tagTypes, (int)PreformanceHelpers.RoundDownToPowerOfTwo((uint)(PreformanceHelpers.MaxArchetypeChunkSize / entitySize)));
+        return new ArchetypeData(id, componentTypes, tagTypes, PreformanceHelpers.MaxArchetypeChunkSize);
     }
 
     private static void ModifyComponentLocationTable(ImmutableArray<Type> archetypeTypes, ImmutableArray<Type> archetypeTags, int id)
