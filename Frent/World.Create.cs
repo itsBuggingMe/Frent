@@ -14,6 +14,12 @@ namespace Frent;
 //it just so happens Archetype and Create both end with "e"
 partial class World
 {
+    /// <summary>
+    /// Creates an <see cref="Entity"/> with the given component
+    /// </summary>
+    /// <param name="comp"></param>
+    /// <typeparam name="T">The type of the component</typeparam>
+    /// <returns>An <see cref="Entity"/> that can be used to acsess the component data</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Entity Create<T>(in T comp)
     {
@@ -35,6 +41,11 @@ partial class World
     }
 
     //might remove this due to code size
+    /// <summary>
+    /// Allocates enough memory for an entity type internally
+    /// </summary>
+    /// <param name="entityCount">The number of entity slots to allocate for</param>
+    /// <typeparam name="T">The sole component type in the entity type to allocate for</typeparam>
     public void EnsureCapacity<T>(int entityCount)
     {
         EnsureCapacityCore(WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.CreateNewArchetype(this), entityCount);

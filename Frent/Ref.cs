@@ -16,7 +16,14 @@ public ref struct Ref<T>
     /// The wrapped reference to <typeparamref name="T"/>
     /// </summary>
     public ref T Component => ref _comp;
+    /// <summary>
+    /// Extracts the wrapped <typeparamref name="T"/> from this <see cref="Ref{T}"/>
+    /// </summary>
     public static implicit operator T(Ref<T> @ref) => @ref.Component;
+    /// <summary>
+    /// Calls the wrapped <typeparamref name="T"/>'s ToString() function, or returns null.
+    /// </summary>
+    /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
     public override string ToString() => Component?.ToString() ?? "null";
     internal static Ref<T> Create(Span<T> span, int index) => new Ref<T>(ref span[index]);
 #else
@@ -28,7 +35,14 @@ public ref struct Ref<T>
     /// The wrapped reference to <typeparamref name="T"/>
     /// </summary>
     public ref T Component => ref _comp[0];
+    /// <summary>
+    /// Extracts the wrapped <typeparamref name="T"/> from this <see cref="Ref{T}"/>
+    /// /// </summary>
     public static implicit operator T(Ref<T> @ref) => @ref.Component;
+    /// <summary>
+    /// Calls the wrapped <typeparamref name="T"/>'s ToString() function, or returns null.
+    /// </summary>
+    /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
     public override string ToString() => Component?.ToString() ?? "null";
     internal static Ref<T> Create(Span<T> span, int index) => new Ref<T>(span.Slice(index, 1));
 #endif
