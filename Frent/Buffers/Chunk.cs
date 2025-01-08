@@ -15,7 +15,13 @@ internal struct Chunk<TData>
 
     public Chunk(int len)
     {
-        _buffer = PreformanceHelpers<TData>.Pool.Rent(len);
+        _buffer = MemoryHelpers<TData>.Pool.Rent(len);
+    }
+
+    public void Return()
+    {
+        MemoryHelpers<TData>.Pool.Return(_buffer);
+        _buffer = null;
     }
 
     public Span<TData> AsSpan() => _buffer;

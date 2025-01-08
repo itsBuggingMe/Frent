@@ -54,7 +54,7 @@ partial class Archetype
 
     public static ArchetypeData CreateArchetypeData(ArchetypeID id, ImmutableArray<Type> componentTypes, ImmutableArray<Type> tagTypes)
     {
-        return new ArchetypeData(id, componentTypes, tagTypes, PreformanceHelpers.MaxArchetypeChunkSize);
+        return new ArchetypeData(id, componentTypes, tagTypes, MemoryHelpers.MaxArchetypeChunkSize);
     }
 
     private static void ModifyComponentLocationTable(ImmutableArray<Type> archetypeTypes, ImmutableArray<Type> archetypeTags, int id)

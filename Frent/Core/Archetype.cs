@@ -130,6 +130,10 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
     {
         if (unchecked(--_componentIndex == -1))
         {
+            _entities[_chunkIndex].Return();
+            foreach (var comprunner in Components)
+                comprunner.Trim(_chunkIndex);
+
             _chunkIndex--;
             _componentIndex = _entities[_chunkIndex].Length - 1;
         }

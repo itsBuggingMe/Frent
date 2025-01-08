@@ -1,11 +1,12 @@
-﻿using System.Buffers;
+﻿using Frent.Buffers;
+using System.Buffers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
-internal static class PreformanceHelpers
+internal static class MemoryHelpers
 {
     public const int MaxComponentCount = 16;
     public static int MaxArchetypeChunkSize = 16384*4;
@@ -25,7 +26,8 @@ internal static class PreformanceHelpers
     }
 }
 
-internal static class PreformanceHelpers<T>
+internal static class MemoryHelpers<T>
 {
-    public static ArrayPool<T> Pool => ArrayPool<T>.Shared;
+    internal static ComponentArrayPool<T> _pool = new();
+    internal static ArrayPool<T> Pool => _pool;
 }

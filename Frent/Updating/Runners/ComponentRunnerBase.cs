@@ -9,6 +9,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
 {
     public abstract void Run(Archetype b);
     protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
+    public void Trim(int index) => _chunks[index].Return();
     public void AllocateNextChunk(int chunkSize, int chunkIndex) => Chunk<TComponent>.NextChunk(ref _chunks, chunkSize, chunkIndex);
     public void SetAt(object component, ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex] = (TComponent)component;
     public object GetAt(ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex]!;

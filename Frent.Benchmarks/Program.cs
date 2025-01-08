@@ -1,71 +1,33 @@
-﻿using System.Diagnostics;
+﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
+using Frent.Collections;
+using Frent.Core;
+using System.Diagnostics;
 
 namespace Frent.Benchmarks;
 
-//[MemoryDiagnoser]
+[MemoryDiagnoser]
 //[DisassemblyDiagnoser(5)]
 public class Program
 {
     static void Main(string[] args)
     {
+        BenchmarkRunner.Run<Program>();
     }
 
     private Entity[] _sharedEntityBuffer100k = null!;
     private Entity _entity;
     private World world = null!;
 
-    //[GlobalSetup]
+    [GlobalSetup]
     public void Setup()
     {
         world = new World();
 
     }
 
-    //[Benchmark]
-    public void CreateMax()
-    {
-        World w = new();
-        for (int i = 0; i < 100_000_000; i++)
-        {
-            w.Create(i);
-        }
-        w.Dispose();
-    }
-
-    //[Benchmark]
-    public void Create1()
-    {
-        World w = new();
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            w.Create<int>(i);
-        }
-        w.Dispose();
-    }
-
-    //[Benchmark]
-    public void Create2()
-    {
-        World w = new();
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            w.Create<int, float>(i, default);
-        }
-        w.Dispose();
-    }
-
-    //[Benchmark]
-    public void Create3()
-    {
-        World w = new();
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            w.Create<int, float, short>(i, default, default);
-        }
-        w.Dispose();
-    }
-
-    //[Benchmark]
+    
+    [Benchmark]
     public void Create4()
     {
         World w = new();
@@ -76,6 +38,41 @@ public class Program
         w.Dispose();
     }
 
+    [Benchmark]
+    public void CreateEnsure()
+    {
+        World w = new();
+        w.EnsureCapacity<int, float, short, long>(1_000_000);
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            w.Create<int, float, short, long>(i, default, default, default);
+        }
+        w.Dispose();
+    }
+
+    [Benchmark]
+    public void Create4NoInit()
+    {
+        World w = new();
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            w.Create<int, float, short, long>(i, default, default, default);
+        }
+        w.Dispose();
+    }
+
+    [Benchmark]
+    public void CreateEnsureNoInit()
+    {
+        World w = new();
+        w.EnsureCapacity<int, float, short, long>(1_000_000);
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            w.Create<int, float, short, long>(i, default, default, default);
+        }
+        w.Dispose();
+    }
+    
     /*
     [Benchmark]
     public void CreateEnsure()

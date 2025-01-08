@@ -43,7 +43,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         if (!IsAlive(out _, out var entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
         ComponentID compid = Component<T>.ID;
-        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < PreformanceHelpers.MaxComponentCount;
+        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         if (!IsAlive(out _, out var entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
         ComponentID compid = Component.GetComponentID(type);
-        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < PreformanceHelpers.MaxComponentCount;
+        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
     }
     #endregion
 
@@ -79,7 +79,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         //2x
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
 
-        if (compIndex >= PreformanceHelpers.MaxComponentCount)
+        if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException<T>();
         //3x
         return ref ((IComponentRunner<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
@@ -101,7 +101,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         ComponentID compid = Component.GetComponentID(type);
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid);
 
-        if (compIndex >= PreformanceHelpers.MaxComponentCount)
+        if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(type);
         //3x
         return entityLocation.Archetype(world).Components[compIndex].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
@@ -152,7 +152,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         ComponentID componentId = Component.GetComponentID(type);
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentId);
 
-        if (compIndex >= PreformanceHelpers.MaxComponentCount)
+        if (compIndex >= MemoryHelpers.MaxComponentCount)
         {
             value = null;
             return false;
@@ -488,7 +488,7 @@ public readonly partial struct Entity : IEquatable<Entity>
 
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
 
-        if (compIndex >= PreformanceHelpers.MaxComponentCount)
+        if (compIndex >= MemoryHelpers.MaxComponentCount)
         {
             exists = false;
             return default;
@@ -512,7 +512,7 @@ public readonly partial struct Entity : IEquatable<Entity>
         destination.CreateEntityLocation(out nextLocation) = this;
 
         skipIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID);
-        if (skipIndex >= PreformanceHelpers.MaxComponentCount)
+        if (skipIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(type);
     }
 
@@ -520,7 +520,7 @@ public readonly partial struct Entity : IEquatable<Entity>
     {
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);
 
-        if (compIndex >= PreformanceHelpers.MaxComponentCount)
+        if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException<TComp>();
 
         return Ref<TComp>.Create(((IComponentRunner<TComp>)archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);

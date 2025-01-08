@@ -17,7 +17,7 @@ public static class Component<T>
     public static readonly ComponentID ID;
     static Component()
     {
-        Component.ComponentSizes[typeof(T)] = PreformanceHelpers.GetSizeOfType<T>();
+        Component.ComponentSizes[typeof(T)] = MemoryHelpers.GetSizeOfType<T>();
         ID = Component.GetComponentID(typeof(T));
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out IComponentRunnerFactory? type))
@@ -82,7 +82,7 @@ public static class Component
     public static void RegisterComponent<T>()
     {
         //random size estimate of a managed type
-        ComponentSizes[typeof(T)] = PreformanceHelpers.GetSizeOfType<T>();
+        ComponentSizes[typeof(T)] = MemoryHelpers.GetSizeOfType<T>();
         NoneComponentRunnerTable[typeof(T)] = new NoneComponentRunnerFactory<T>();
     }
 
