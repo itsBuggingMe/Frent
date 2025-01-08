@@ -20,7 +20,7 @@ internal struct Chunk<TData>
 
     public void Return()
     {
-        MemoryHelpers<TData>.Pool.Return(_buffer);
+        MemoryHelpers<TData>.Pool.Return(_buffer, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
         _buffer = null;
     }
 
