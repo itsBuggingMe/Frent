@@ -27,6 +27,9 @@ partial class Archetype
         return archetype;
     }
 
+    //initalize default(ArchetypeID) to point to empty archetype
+    static Archetype() => GetArchetypeID([], []);
+
     internal static ArchetypeID GetArchetypeID(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, ImmutableArray<Type>? typesArray = null, ImmutableArray<Type>? tagTypesArray = null)
     {
         ref ArchetypeData? slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);

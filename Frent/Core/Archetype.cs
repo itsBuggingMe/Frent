@@ -158,5 +158,15 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
         throw new NotImplementedException();
     }
 
+    internal void ReleaseArrays()
+    {
+        for(int i = 0; i <= _chunkIndex; i++)
+        {
+            _entities[i].Return();
+            foreach (var comprunner in Components)
+                comprunner.Trim(i);
+        }
+    }
+
     internal Span<Chunk<Entity>> GetEntitySpan() => _entities.AsSpan();
 }

@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Buffers;
 
@@ -20,8 +21,8 @@ internal struct Chunk<TData>
 
     public void Return()
     {
-        MemoryHelpers<TData>.Pool.Return(_buffer, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
-        _buffer = null;
+        MemoryHelpers<TData>.Pool.Return(_buffer, RuntimeHelpers.IsReferenceOrContainsReferences<TData>());
+        _buffer = null!;
     }
 
     public Span<TData> AsSpan() => _buffer;
@@ -32,8 +33,8 @@ internal struct Chunk<TData>
 
     public static void NextChunk(ref Chunk<TData>[] chunks, int size, int newChunkIndex)
     {
-        if(BitOperations.IsPow2(newChunkIndex))
-            Array.Resize(ref chunks, chunks.Length << 1);
+        if(newChunkIndex == chunks.Length)
+            Array.Resize(ref chunks, newChunkIndex << 1);
 
         var nextChunk = new Chunk<TData>(size);
         chunks[newChunkIndex] = nextChunk;

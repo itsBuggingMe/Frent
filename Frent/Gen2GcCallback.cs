@@ -13,10 +13,21 @@ namespace Frent.Core
     /// </summary>
     internal sealed class Gen2GcCallback : CriticalFinalizerObject
     {
+        public static Action? Gen2CollectionOccured;
+
         private readonly Func<bool>? _callback0;
         private readonly Func<object, bool>? _callback1;
         private GCHandle _weakTargetObj;
- 
+        
+        static Gen2GcCallback()
+        {
+            Register(() =>
+            {
+                Gen2CollectionOccured?.Invoke();
+                return true;
+            });
+        }
+
         private Gen2GcCallback(Func<bool> callback)
         {
             _callback0 = callback;

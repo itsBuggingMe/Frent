@@ -11,7 +11,7 @@ internal class ComponentArrayPool<T> : ArrayPool<T>
 {
     public ComponentArrayPool()
     {
-        Gen2GcCallback.Register(Gen2GcCallback, this);
+        Gen2GcCallback.Gen2CollectionOccured += ClearBuckets;
     }
     
     //16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536 
@@ -21,30 +21,36 @@ internal class ComponentArrayPool<T> : ArrayPool<T>
     public override T[] Rent(int minimumLength)
     {
         //valid chunk sizes only
-        Debug.Assert(BitOperations.IsPow2(minimumLength));
         Debug.Assert(minimumLength <= 65536);
 
         if (minimumLength < 16)
             return new T[minimumLength];
 
         int bucketIndex = BitOperations.Log2((uint)minimumLength) - 4;
+        ref T[] item = ref Buckets[bucketIndex];
+        if(item is not null)
+        {
+            var loc = item;
+            item = null!;
+            return loc;
+        }
 
-        return Buckets[bucketIndex] ?? new T[minimumLength];//GC.AllocateUninitializedArray<T>(minimumLength)
+        return new T[minimumLength];//GC.AllocateUninitializedArray<T>(minimumLength)
         //benchmarks say uninit is the same speed
     }
 
     public override void Return(T[] array, bool clearArray = false)
     {
         Debug.Assert(clearArray == RuntimeHelpers.IsReferenceOrContainsReferences<T>());
+        if (clearArray)
+            Array.Clear(array);
         int bucketIndex = BitOperations.Log2((uint)array.Length) - 4;
         if ((uint)bucketIndex < (uint)Buckets.Length)
             Buckets[bucketIndex] = array;
     }
-    
-    private static bool Gen2GcCallback(object @this)
+
+    private void ClearBuckets()
     {
-        var pool = (ComponentArrayPool<T>)@this;
-        pool.Buckets.Clear();
-        return true;
+        Buckets.AsSpan().Clear();
     }
 }

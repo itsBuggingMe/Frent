@@ -20,7 +20,7 @@ partial class World
     /// <param name="comp"></param>
     /// <typeparam name="T">The type of the component</typeparam>
     /// <returns>An <see cref="Entity"/> that can be used to acsess the component data</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public Entity Create<T>(in T comp)
     {
         Archetype archetype = WorldArchetypeTable[Archetype<T>.IDasUInt] ??= Archetype<T>.CreateNewArchetype(this);

@@ -2,6 +2,7 @@
 using Frent.Components;
 using Frent.Core;
 using Frent.Variadic.Generator;
+using System.Diagnostics;
 using static Frent.Updating.Variadics;
 
 namespace Frent.Updating.Runners;

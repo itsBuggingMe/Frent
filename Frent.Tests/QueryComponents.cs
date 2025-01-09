@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Frent.Components;
 
 namespace Frent.Tests;
@@ -63,7 +64,13 @@ struct EntityUniformCounterComponent : IEntityUniformUpdateComponent<int>
 
     public EntityUniformCounterComponent(StrongBox<int> counter) => Counter = counter;
 
-    public void Update(Entity entity, in int uniform) => Counter.Value++;
+    public void Update(Entity entity, in int uniform)
+    {
+        if(Counter is null)
+        { 
+        }
+        Counter.Value++;
+    }
 }
 
 struct EntityUniformArgCounterComponent : IEntityUniformUpdateComponent<int, int>

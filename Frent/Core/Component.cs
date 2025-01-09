@@ -2,6 +2,7 @@
 using Frent.Components;
 using Frent.Updating;
 using Frent.Updating.Runners;
+using System.Diagnostics;
 
 namespace Frent.Core;
 
@@ -17,7 +18,6 @@ public static class Component<T>
     public static readonly ComponentID ID;
     static Component()
     {
-        Component.ComponentSizes[typeof(T)] = MemoryHelpers.GetSizeOfType<T>();
         ID = Component.GetComponentID(typeof(T));
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out IComponentRunnerFactory? type))
@@ -48,10 +48,10 @@ public static class Component
 {
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
 
-    internal static Dictionary<Type, int> ComponentSizes = [];
     internal static Dictionary<Type, IComponentRunnerFactory> NoneComponentRunnerTable = [];
 
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
+
     private static int NextComponentID = -1;
 
     internal static IComponentRunner GetComponentRunnerFromType(Type t)
@@ -82,7 +82,6 @@ public static class Component
     public static void RegisterComponent<T>()
     {
         //random size estimate of a managed type
-        ComponentSizes[typeof(T)] = MemoryHelpers.GetSizeOfType<T>();
         NoneComponentRunnerTable[typeof(T)] = new NoneComponentRunnerFactory<T>();
     }
 
@@ -100,17 +99,11 @@ public static class Component
 
         GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
 
-        if (ComponentSizes.TryGetValue(t, out int size))
-        {
-            ComponentTable.Push(new ComponentData(t, size));
-        }
-        else
-        {
-            //we give a estimate of 16 bytes?
-            //ComponentTable.Push(new ComponentData(t, 16));
-            throw new InvalidOperationException($"{t.FullName} is not initalized. (Did you initalize T with Component.RegisterComponent<T>()?)");
-        }
+        ComponentTable.Push(new ComponentData(t));
 
         return id;
     }
+
+    //initalize default(ComponentID) to point to void
+    static Component() => GetComponentID(typeof(void));
 }

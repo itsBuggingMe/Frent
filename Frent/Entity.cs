@@ -83,7 +83,7 @@ public readonly partial struct Entity : IEquatable<Entity>
             FrentExceptions.Throw_ComponentNotFoundException<T>();
         //3x
         return ref ((IComponentRunner<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
-    }
+    }//2, 0
 
     /// <summary>
     /// Gets this <see cref="Entity"/>'s component of type <paramref name="type"/>.

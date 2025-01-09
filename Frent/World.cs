@@ -28,6 +28,7 @@ public partial class World : IDisposable
     internal readonly uint IDAsUInt;
     internal readonly byte ID;
     internal readonly byte Version;
+    private bool _isDisposed = false;
 
     internal Dictionary<int, Query> QueryCache = [];
 
@@ -123,8 +124,17 @@ public partial class World : IDisposable
     /// </summary>
     public void Dispose()
     {
+        if (_isDisposed)
+            throw new InvalidOperationException("World is already disposed!");
+
         GlobalWorldTables.Worlds[ID] = null!;
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
+        foreach(var item in WorldArchetypeTable.AsSpan())
+            if(item is not null)
+                item.ReleaseArrays();
+
+
+        _isDisposed = true;
     }
 
     /// <summary>

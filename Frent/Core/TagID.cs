@@ -5,14 +5,14 @@
 /// </summary>
 public readonly struct TagID : IEquatable<TagID>
 {
-    internal TagID(int value) => Value = value + 1;
-    internal readonly int ID => Value - 1;
+    internal TagID(int value) => Value = value;
+    internal readonly int ID => Value;
     private readonly int Value;
 
     /// <summary>
     /// The type that this TagID represents
     /// </summary>
-    public Type Type => Component.ComponentTable[ID].Type;
+    public Type Type => Tag.TagTable[ID];
     /// <summary>
     /// Checks if this TagID instance represents the same type as <paramref name="other"/>
     /// </summary>

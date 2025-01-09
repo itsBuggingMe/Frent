@@ -23,9 +23,12 @@ internal class Tag
     public const int Mod16Mask = 0xF;
 
     private static readonly Dictionary<Type, TagID> ExistingTagIDs = [];
-    private static FastStack<Type> TagTable = FastStack<Type>.Create(4);
+    internal static FastStack<Type> TagTable = FastStack<Type>.Create(4);
 
     private static int _nextTagID = -1;
+
+    //initalize default(TagID) to point to disable
+    static Tag() => GetTagID(typeof(Disable));
 
     internal static TagID GetTagID(Type type)
     {
