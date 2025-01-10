@@ -11,11 +11,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8;.net7;.net6  </PackageTags>
     <Version>0.2.3-alpha</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Core\Gen2GcCallback.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Frent.Variadic.Generator\Frent.Variadic.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

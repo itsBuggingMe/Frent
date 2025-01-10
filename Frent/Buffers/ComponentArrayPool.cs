@@ -11,28 +11,32 @@ internal class ComponentArrayPool<T> : ArrayPool<T>
 {
     public ComponentArrayPool()
     {
+        //16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536 
+        //13 array sizes for components, 27 array sizes for EntityLocation (special case)
         Gen2GcCallback.Gen2CollectionOccured += ClearBuckets;
+
+        Buckets = new T[typeof(T) == typeof((EntityLocation Location, ushort Version)) ? 27 : 13][];
     }
     
-    //16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536 
-    //13 array sizes
-    private T[][] Buckets = new T[13][];
+    private T[][] Buckets;
 
     public override T[] Rent(int minimumLength)
     {
-        //valid chunk sizes only
-        Debug.Assert(minimumLength <= 65536);
-
         if (minimumLength < 16)
             return new T[minimumLength];
 
         int bucketIndex = BitOperations.Log2((uint)minimumLength) - 4;
-        ref T[] item = ref Buckets[bucketIndex];
-        if(item is not null)
+
+        if((uint)bucketIndex < (uint)Buckets.Length)
         {
-            var loc = item;
-            item = null!;
-            return loc;
+            ref T[] item = ref Buckets[bucketIndex];
+
+            if (item is not null)
+            {
+                var loc = item;
+                item = null!;
+                return loc;
+            }
         }
 
         return new T[minimumLength];//GC.AllocateUninitializedArray<T>(minimumLength)
@@ -41,8 +45,8 @@ internal class ComponentArrayPool<T> : ArrayPool<T>
 
     public override void Return(T[] array, bool clearArray = false)
     {
-        Debug.Assert(clearArray == RuntimeHelpers.IsReferenceOrContainsReferences<T>());
-        if (clearArray)
+        //easier to deal w/ all logic here
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             Array.Clear(array);
         int bucketIndex = BitOperations.Log2((uint)array.Length) - 4;
         if ((uint)bucketIndex < (uint)Buckets.Length)

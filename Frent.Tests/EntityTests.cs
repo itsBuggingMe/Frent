@@ -1,4 +1,5 @@
-﻿using static NUnit.Framework.Assert;
+﻿using Frent.Core;
+using static NUnit.Framework.Assert;
 
 namespace Frent.Tests;
 

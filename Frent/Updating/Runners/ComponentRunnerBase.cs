@@ -45,6 +45,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
 
 internal abstract class ComponentStorage<TComponent>
 {
+    internal Chunk<TComponent>[] Chunks => _chunks;
     protected Chunk<TComponent>[] _chunks = [new Chunk<TComponent>(1)];
     public Span<Chunk<TComponent>> AsSpan() => _chunks.AsSpan();
 }

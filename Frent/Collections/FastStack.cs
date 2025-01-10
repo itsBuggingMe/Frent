@@ -1,10 +1,12 @@
-﻿using System.Collections;
+﻿using Frent.Core;
+using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
-public struct FastStack<T>(int initalComponents) : IEnumerable<T>
+
+internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
 {
     [DebuggerStepThrough]
     public static FastStack<T> Create(int initalComponents) => new FastStack<T>(initalComponents);
@@ -34,7 +36,7 @@ public struct FastStack<T>(int initalComponents) : IEnumerable<T>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ResizeAndPush(in T comp)
     {
-        Array.Resize(ref _buffer, _buffer.Length * 2);
+        MemoryHelpers<T>.ResizeArrayFromPool(ref _buffer, _buffer.Length * 2);
         _buffer[_nextIndex++] = comp;
     }
 
@@ -64,7 +66,7 @@ public struct FastStack<T>(int initalComponents) : IEnumerable<T>
 
         //we can ignore - as the as the user doesn't push null onto the stack
         //they won't get null from the stack
-        value = _buffer[--_nextIndex]!;
+        value = _buffer.UnsafeArrayIndex(--_nextIndex)!;
         return true;
     }
 

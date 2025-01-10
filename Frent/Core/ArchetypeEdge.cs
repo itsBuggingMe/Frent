@@ -1,5 +1,4 @@
-﻿using Frent.Core;
-namespace Frent;
+﻿namespace Frent.Core;
 internal struct ArchetypeEdge(Archetype add, Archetype remove, Archetype addTag, Archetype removeTag)
 {
     public Archetype Add = add;

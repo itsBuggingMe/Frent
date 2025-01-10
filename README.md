@@ -1,6 +1,6 @@
 # [Frent](https://github.com/itsBuggingMe/Frent)
 
-A high preformance archetyped based **ECF/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#. Zero unsafe code and optimized to be just as fast.
+A high preformance archetyped based **ECF/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
 
 *Whaaaat?! Isn't there enough ECS libraries out there!*
 

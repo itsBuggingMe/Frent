@@ -64,7 +64,15 @@ partial class Archetype
     {
         if (GlobalWorldTables.ComponentTagLocationTable.Length == id)
         {
-            Array.Resize(ref GlobalWorldTables.ComponentTagLocationTable, Math.Max(id << 1, 1));
+            int size = Math.Max(id << 1, 1);
+            Array.Resize(ref GlobalWorldTables.ComponentTagLocationTable, size);
+            foreach(var world in GlobalWorldTables.Worlds.AsSpan())
+            {
+                if(world is World w)
+                {
+                    w.UpdateArchetypeTable(size);
+                }
+            }
         }
 
         for (int i = 0; i < archetypeTypes.Length; i++)

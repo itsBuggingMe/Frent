@@ -32,7 +32,7 @@ internal class Archetype<T>
 
     internal class OfComponent<C>
     {
-        public static readonly int Index = GlobalWorldTables.ComponentIndex(ID, Component<C>.ID);
+        public static int Index = GlobalWorldTables.ComponentIndex(ID, Component<C>.ID);
     }
 }
 
@@ -93,11 +93,11 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref Entity CreateEntityLocation(out EntityLocation entityLocation)
     {
-        if (_entities[_chunkIndex].Length == _componentIndex)
+        if (_entities.UnsafeArrayIndex(_chunkIndex).Length == _componentIndex)
             CreateChunks();
 
         entityLocation = new EntityLocation(ID, _chunkIndex, (ushort)_componentIndex);
-        return ref _entities[_chunkIndex][_componentIndex++];
+        return ref _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex++];
     }
 
     private void CreateChunks()

@@ -13,7 +13,7 @@ namespace Frent;
 //TODO: comparison with fieldoffset
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
-public readonly partial struct Entity : IEquatable<Entity>
+public partial struct Entity : IEquatable<Entity>
 {
     #region Fields & Ctor
     internal Entity(byte worldID, byte worldVersion, ushort version, int entityID)
@@ -24,10 +24,10 @@ public readonly partial struct Entity : IEquatable<Entity>
         EntityID = entityID;
     }
 
-    internal readonly byte WorldVersion;
-    internal readonly byte WorldID;
-    internal readonly ushort EntityVersion;
-    internal readonly int EntityID;
+    internal byte WorldVersion;
+    internal byte WorldID;
+    internal ushort EntityVersion;
+    internal int EntityID;
     #endregion
 
     #region Public API

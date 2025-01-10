@@ -11,7 +11,7 @@ internal struct Chunk<TData>
     public ref TData this[int i]
     {
         [DebuggerHidden]
-        get => ref _buffer[i];
+        get => ref _buffer.UnsafeArrayIndex(i);
     }
 
     public Chunk(int len)
@@ -21,7 +21,7 @@ internal struct Chunk<TData>
 
     public void Return()
     {
-        MemoryHelpers<TData>.Pool.Return(_buffer, RuntimeHelpers.IsReferenceOrContainsReferences<TData>());
+        MemoryHelpers<TData>.Pool.Return(_buffer);
         _buffer = null!;
     }
 
@@ -33,6 +33,7 @@ internal struct Chunk<TData>
 
     public static void NextChunk(ref Chunk<TData>[] chunks, int size, int newChunkIndex)
     {
+        //these arrays are too small to pool
         if(newChunkIndex == chunks.Length)
             Array.Resize(ref chunks, newChunkIndex << 1);
 

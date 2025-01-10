@@ -4,6 +4,7 @@ using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Frent.Tests")]
@@ -21,7 +22,7 @@ public partial class World : IDisposable
 
 
     internal Table<(EntityLocation Location, ushort Version)> EntityTable = new Table<(EntityLocation, ushort Version)>(32);
-    private Table<Archetype> WorldArchetypeTable = new Table<Archetype>(4);
+    private Archetype[] WorldArchetypeTable;
     private FastStack<(int ID, ushort Version)> _recycledEntityIds = FastStack<(int, ushort)>.Create(8);
     private int _nextEntityID;
 
@@ -59,6 +60,8 @@ public partial class World : IDisposable
         (ID, Version) = _recycledWorldIDs.TryPop(out var id) ? id : (_nextWorldID++, byte.MaxValue);
         IDAsUInt = ID;
         GlobalWorldTables.Worlds[ID] = this;
+
+        WorldArchetypeTable = new Archetype[GlobalWorldTables.ComponentTagLocationTable.Length];
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
@@ -117,6 +120,12 @@ public partial class World : IDisposable
             if (element is not null)
                 q.TryAttachArchetype(element);
         return q;
+    }
+
+    internal void UpdateArchetypeTable(int newSize)
+    {
+        Debug.Assert(newSize > WorldArchetypeTable.Length);
+        MemoryHelpers<Archetype>.ResizeArrayFromPool(ref WorldArchetypeTable, newSize);
     }
 
     /// <summary>
@@ -194,4 +203,6 @@ public partial class World : IDisposable
         [DebuggerHidden]
         public T GetUniform<T>() => FrentExceptions.Throw_InvalidOperationException<T>("Initialize the world with an IUniformProvider in order to use uniforms");
     }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Side() { }
 }
