@@ -33,6 +33,8 @@ public partial class World : IDisposable
 
     internal Dictionary<int, Query> QueryCache = [];
 
+    private FastStack<Archetype> _enabledArchetypes = FastStack<Archetype>.Create(16);
+
     /// <summary>
     /// The current uniform provider used when updating components/queries with uniforms
     /// </summary>
@@ -86,16 +88,16 @@ public partial class World : IDisposable
     {
         if(CurrentConfig.MultiThreadedUpdate)
         {
-            foreach (var element in WorldArchetypeTable.AsSpan())
+            foreach (var element in _enabledArchetypes.AsSpan())
             {
-                element?.MultiThreadedUpdate(CurrentConfig);
+                element.MultiThreadedUpdate(CurrentConfig);
             }
         }
         else
         {
-            foreach (var element in WorldArchetypeTable.AsSpan())
+            foreach (var element in _enabledArchetypes.AsSpan())
             {
-                element?.Update();
+                element.Update();
             }
         }
     }
@@ -107,6 +109,8 @@ public partial class World : IDisposable
 
     internal void ArchetypeAdded(Archetype archetype)
     {
+        if (!GlobalWorldTables.HasTag(archetype.ID.ID, Tag<Disable>.ID))
+            _enabledArchetypes.Push(archetype);
         foreach (var qkvp in QueryCache)
         {
             qkvp.Value.TryAttachArchetype(archetype);

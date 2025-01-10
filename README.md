@@ -41,7 +41,6 @@ Wanna start cooking? Check out the [Cookbook](Cookbook.md)!
 - [x]  Entity struct the size of a 64 bits
 - [x]  Up to 16 components per entity
 - [x]  Getting, Adding, and Removing components
-- [x]  Zero unsafe code
 - [x]  Classes as components
 - [x]  Structs as components
 - [x]  Deconstructing entities

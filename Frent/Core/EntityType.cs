@@ -9,16 +9,16 @@ namespace Frent.Core;
 /// </summary>>
 public struct EntityType
 {
-    internal EntityType(int id) => ID = id;
+    internal EntityType(ushort id) => ID = id;
 
     /// <summary>
     /// The component types
     /// </summary>
-    public ImmutableArray<Type> Types => Archetype.ArchetypeTable[ID].ComponentTypes;
+    public readonly ImmutableArray<Type> Types => Archetype.ArchetypeTable[ID].ComponentTypes;
     /// <summary>
     /// The tag types
     /// </summary>
-    public ImmutableArray<Type> Tags => Archetype.ArchetypeTable[ID].TagTypes;
+    public readonly ImmutableArray<Type> Tags => Archetype.ArchetypeTable[ID].TagTypes;
 
-    internal int ID;
+    internal ushort ID;
 }

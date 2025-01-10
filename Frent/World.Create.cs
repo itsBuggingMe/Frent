@@ -21,6 +21,7 @@ partial class World
     /// <typeparam name="T">The type of the component</typeparam>
     /// <returns>An <see cref="Entity"/> that can be used to acsess the component data</returns>
     [SkipLocalsInit]//we save 2 instructions...
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public Entity Create<T>(T comp)
     {
         int index = Archetype<T>.ID.ID;

@@ -42,7 +42,7 @@ partial class Archetype
         }
         else
         {
-            finalID = new ArchetypeID(Interlocked.Increment(ref NextArchetypeID));
+            finalID = new ArchetypeID((ushort)Interlocked.Increment(ref NextArchetypeID));
 
             var arr = typesArray ?? ReadOnlySpanToImmutableArray(types);
             var tagArr = tagTypesArray ?? ReadOnlySpanToImmutableArray(tagTypes);
@@ -83,7 +83,7 @@ partial class Archetype
         ref var componentTable = ref GlobalWorldTables.ComponentTagLocationTable[id];
         componentTable = new byte[GlobalWorldTables.ComponentTagTableBufferSize];
         componentTable.AsSpan().Fill(Tag.DefaultNoTag);
-        //TODO: tags
+
         for (int i = 0; i < archetypeTypes.Length; i++)
         {
             componentTable[Component.GetComponentID(archetypeTypes[i]).ID] = (byte)i;

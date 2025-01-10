@@ -10,7 +10,6 @@ namespace Frent;
 /// <summary>
 /// Represents an Entity; a collection of components of unqiue type
 /// </summary>
-//TODO: comparison with fieldoffset
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 public partial struct Entity : IEquatable<Entity>
