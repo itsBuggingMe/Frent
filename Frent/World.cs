@@ -207,6 +207,4 @@ public partial class World : IDisposable
         [DebuggerHidden]
         public T GetUniform<T>() => FrentExceptions.Throw_InvalidOperationException<T>("Initialize the world with an IUniformProvider in order to use uniforms");
     }
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void Side() { }
 }

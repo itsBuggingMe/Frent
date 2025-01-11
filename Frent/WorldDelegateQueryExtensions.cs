@@ -1,4 +1,5 @@
 ﻿using Frent.Buffers;
+using Frent.Core;
 using Frent.Systems;
 using Frent.Variadic.Generator;
 using System.Runtime.InteropServices;
@@ -6,7 +7,7 @@ using System.Runtime.InteropServices;
 namespace Frent;
 
 [Variadic("Query<T>", "Query<|T$, |>")]
-[Variadic("Rule.With<T>()", "|Rule.With<T$>(), |")]
+[Variadic("Rule.HasComponent(Component<T>.ID)", "|Rule.HasComponent(Component<T$>.ID), |")]
 [Variadic("QueryHashes<T>", "QueryHashes<|T$, |>")]
 [Variadic("QueryEntity<T>", "QueryEntity<|T$, |>")]
 [Variadic("<TUniform, T>", "<TUniform, |T$, |>")]
@@ -22,9 +23,9 @@ public static partial class WorldDelegateQueryExtensions
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
-            world.CreateQuery(Rule.With<T>());
+            world.CreateQuery(Rule.HasComponent(Component<T>.ID));
 
-        foreach (var a in query)
+        foreach (var a in query.AsSpan())
             ChunkHelpers<T>.EnumerateChunkSpan<DelegateQuery<T>>(a.CurrentWriteChunk, a.LastChunkComponentCount, new(onEach), a.GetComponentSpan<T>());
     }
 
@@ -39,9 +40,9 @@ public static partial class WorldDelegateQueryExtensions
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
-            world.CreateQuery(Rule.With<T>());
+            world.CreateQuery(Rule.HasComponent(Component<T>.ID));
 
-        foreach (var a in query)
+        foreach (var a in query.AsSpan())
             ChunkHelpers<T>.EnumerateChunkSpanEntity<DelegateQueryEntity<T>>(a.CurrentWriteChunk, a.LastChunkComponentCount, new(onEach), a.GetEntitySpan(), a.GetComponentSpan<T>());
     }
 
@@ -56,7 +57,7 @@ public static partial class WorldDelegateQueryExtensions
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
-            world.CreateQuery(Rule.With<T>());
+            world.CreateQuery(Rule.HasComponent(Component<T>.ID));
 
         DelegateQueryEntityUniform<TUniform, T> uniform = new()
         {
@@ -64,7 +65,7 @@ public static partial class WorldDelegateQueryExtensions
             OnEach = onEach,
         };
 
-        foreach (var a in query)
+        foreach (var a in query.AsSpan())
             ChunkHelpers<T>.EnumerateChunkSpanEntity(a.CurrentWriteChunk, a.LastChunkComponentCount, uniform, a.GetEntitySpan(), a.GetComponentSpan<T>());
     }
 
@@ -81,7 +82,7 @@ public static partial class WorldDelegateQueryExtensions
         ArgumentNullException.ThrowIfNull(onEach, nameof(onEach));
 
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
-            world.CreateQuery(Rule.With<T>());
+            world.CreateQuery(Rule.HasComponent(Component<T>.ID));
 
         DelegateQueryUniform<TUniform, T> uniform = new()
         {
@@ -89,7 +90,7 @@ public static partial class WorldDelegateQueryExtensions
             OnEach = onEach,
         };
 
-        foreach (var a in query)
+        foreach (var a in query.AsSpan())
             ChunkHelpers<T>.EnumerateChunkSpan(a.CurrentWriteChunk, a.LastChunkComponentCount, uniform, a.GetComponentSpan<T>());
     }
 

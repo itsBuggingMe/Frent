@@ -5,14 +5,20 @@ using System.Collections.Immutable;
 
 namespace Frent.Systems;
 
-internal class Query(Rule[] rules) : IEnumerable<Archetype>
+/// <summary>
+/// Represents a set of entities from a world which can have systems applied to
+/// </summary>
+public class Query
 {
-    private FastStack<Archetype> _archetypes = FastStack<Archetype>.Create(1);
-    private Rule[] _rules = rules;
+    internal Span<Archetype> AsSpan() => _archetypes.AsSpan();
 
-    public FastStack<Archetype>.FastStackEnumerator GetEnumerator() => _archetypes.GetEnumerator();
-    IEnumerator<Archetype> IEnumerable<Archetype>.GetEnumerator() => _archetypes.GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _archetypes.GetEnumerator();
+    private FastStack<Archetype> _archetypes = FastStack<Archetype>.Create(2);
+    private Rule[] _rules;
+
+    internal Query(Rule[] rules)
+    {
+        _rules = rules;
+    }
 
     internal void TryAttachArchetype(Archetype archetype)
     {
@@ -24,29 +30,11 @@ internal class Query(Rule[] rules) : IEnumerable<Archetype>
     {
         foreach (var rule in _rules)
         {
-            if (!RuleApplies(rule, archetype.ArchetypeTypeArray))
+            if(!rule.RuleApplies(archetype.ID))
             {
                 return false;
             }
         }
         return true;
     }
-
-
-    private bool RuleApplies(Rule rule, ImmutableArray<Type> types)
-    {
-        if (rule.CustomOperator is not null)
-        {
-            return rule.CustomOperator(types.AsSpan());
-        }
-
-        return rule.RuleTypes switch
-        {
-            RuleTypes.Have => types.IndexOf(rule.Type) > -1,
-            RuleTypes.DoesNotHave => types.IndexOf(rule.Type) == -1,
-            _ => throw new Exception($"Invalid enum option {rule.RuleTypes}"),
-        };
-    }
 }
-
-public delegate bool CustomQueryDelegate(ReadOnlySpan<Type> archetypeTypes);

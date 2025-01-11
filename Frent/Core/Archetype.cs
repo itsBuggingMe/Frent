@@ -27,6 +27,7 @@ internal class Archetype<T>
     {
         IComponentRunner[] runners = [Component<T>.CreateInstance()];
         var archetype = new Archetype(world, runners, Archetype.ArchetypeTable[ID.ID]);
+        world.ArchetypeAdded(archetype);
         return archetype;
     }
 

@@ -29,13 +29,14 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                         {
                             string @namespace = symbol.ContainingNamespace.ToString();
                             int index = @namespace.IndexOf('.');
-                            var genericArgs = @interface.TypeArguments.Length == 0 ? Array.Empty<string>() : new string[@interface.TypeArguments.Length];
+                            var genericArgs = @interface.TypeArguments.Length == 0 ? [] : new string[@interface.TypeArguments.Length];
 
                             for(int i = 0; i < @interface.TypeArguments.Length; i++)
                                 genericArgs[i] = @interface.TypeArguments[i].ToString();
 
 
                             return new ComponentUpdateItemModel(
+                                symbol.ToString(),
                                 symbol.Name,
                                 @interface.Name,
                                 index == -1 ? @namespace : @namespace.Substring(0, index),
@@ -45,7 +46,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     }
                 }
 
-                return new ComponentUpdateItemModel(string.Empty, string.Empty, string.Empty, string.Empty, new EquatableArray<string>(Array.Empty<string>()));
+                return new ComponentUpdateItemModel(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new EquatableArray<string>(Array.Empty<string>()));
             });
 
         IncrementalValuesProvider<(string Name, string Source)> file = models
@@ -69,10 +70,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .AppendLine()
             .Append("namespace ").Append(model.BaseNamespace).Append(';').AppendLine()
             .AppendLine()
-            .Append("internal static class ").Append(model.Type).AppendLine("ComponentUpdateInitalizer_")
+            .Append("internal static partial class ").Append(model.Type).AppendLine("ComponentUpdateInitalizer_")
             .AppendLine("{")
                 .AppendLine("    [System.Runtime.CompilerServices.ModuleInitializer]")
-                .Append("    internal static void Initalize() => Frent.Updating.GenerationServices.RegisterType(typeof(")
+                .Append("    internal static void Initalize").Append(model.FullName.Replace('.', '_')).Append("() => Frent.Updating.GenerationServices.RegisterType(typeof(")
                     .Append(model.SubNamespace).Append('.').Append(model.Type).Append("), new Frent.Updating.Runners."); 
             (span.Count == 0 ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("RunnerFactory").Append('<').Append(model.SubNamespace).Append('.').Append(model.Type);
 
@@ -116,5 +117,5 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         namedTypeSymbol.Interfaces.Length == 0 && 
         namedTypeSymbol.ConstructedFrom.ToString() == RegistryConstants.TargetInterfaceName;
 
-    internal record struct ComponentUpdateItemModel(string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments);
+    internal record struct ComponentUpdateItemModel(string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments);
 }

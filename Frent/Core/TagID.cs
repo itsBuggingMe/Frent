@@ -5,9 +5,8 @@
 /// </summary>
 public readonly struct TagID : IEquatable<TagID>
 {
-    internal TagID(int value) => Value = value;
-    internal readonly int ID => Value;
-    private readonly int Value;
+    internal TagID(int id) => ID = id;
+    internal readonly int ID;
 
     /// <summary>
     /// The type that this TagID represents

@@ -12,6 +12,7 @@ namespace Frent;
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
+[DebuggerTypeProxy(typeof(Entity.EntityDebugView))]
 public partial struct Entity : IEquatable<Entity>
 {
     #region Fields & Ctor
@@ -617,6 +618,31 @@ public partial struct Entity : IEquatable<Entity>
     internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}";
     internal const string EntityIsDeadMessage = "Entity is Dead";
     internal const string DoesNotHaveTagMessage = "This Entity does not have this tag";
+
+    private class EntityDebugView(Entity target)
+    {
+        public ImmutableArray<Type> ComponentTypes => target.ComponentTypes;
+        public ImmutableArray<Type> Tags => target.TagTypes;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+        public object[] Components
+        {
+            get
+            {
+                if(!target.IsAlive(out World? world, out var eloc))
+                    return Array.Empty<object>();
+
+                object[] objects = new object[ComponentTypes.Length];
+                Archetype archetype = eloc.Archetype(world);
+                for(int i = 0; i < objects.Length; i++)
+                {
+                    objects[i] = archetype.Components[i].GetAt(eloc.ChunkIndex, eloc.ComponentIndex);
+                }
+
+                return objects;
+            }
+        }
+    }
     #endregion
 
     #region IEquatable
