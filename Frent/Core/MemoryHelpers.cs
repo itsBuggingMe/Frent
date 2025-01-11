@@ -30,13 +30,4 @@ internal static class MemoryHelpers<T>
 {
     internal static ComponentArrayPool<T> _pool = new();
     internal static ArrayPool<T> Pool => _pool;
-
-    internal static void ResizeArrayFromPool(ref T[] arr, int len)
-    {
-        var finalArr = Pool.Rent(len);
-
-        arr.CopyTo(finalArr, 0);
-        Pool.Return(arr);
-        arr = finalArr;
-    }
 }

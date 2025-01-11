@@ -1,5 +1,6 @@
 ﻿using Frent.Components;
 using Frent.Core;
+using System;
 
 namespace Frent.Sample;
 

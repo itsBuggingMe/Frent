@@ -1,4 +1,5 @@
-﻿using Frent.Core;
+﻿using Frent.Buffers;
+using Frent.Core;
 using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -36,7 +37,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ResizeAndPush(in T comp)
     {
-        MemoryHelpers<T>.ResizeArrayFromPool(ref _buffer, _buffer.Length * 2);
+        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, _buffer.Length * 2);
         _buffer[_nextIndex++] = comp;
     }
 

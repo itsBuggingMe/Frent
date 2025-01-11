@@ -1,4 +1,5 @@
-﻿using Frent.Core;
+﻿using Frent.Buffers;
+using Frent.Core;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -36,7 +37,7 @@ internal struct Table<T>(int size)
     [MethodImpl(MethodImplOptions.NoInlining)]
     private ref T ResizeGet(uint index)
     {
-        MemoryHelpers<T>.ResizeArrayFromPool(ref _buffer, (int)BitOperations.RoundUpToPowerOf2(index + 1));
+        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, (int)BitOperations.RoundUpToPowerOf2(index + 1));
         return ref _buffer.UnsafeArrayIndex(index);
     }
 
@@ -49,7 +50,7 @@ internal struct Table<T>(int size)
     {
         if (_buffer.Length >= size)
             return;
-        MemoryHelpers<T>.ResizeArrayFromPool(ref _buffer, size);
+        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, size);
     }
 
     public Span<T> AsSpan() => _buffer.AsSpan();

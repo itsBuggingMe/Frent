@@ -18,8 +18,12 @@ partial class WorldStructQueryExtensions
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes.Hash, out _) ??=
             world.CreateQuery([]);
 
+        world.EnterDisallowState();
+
         foreach (var archetype in query.AsSpan())
             ChunkHelpers.EnumerateChunkSpanEntity(archetype.CurrentWriteChunk, archetype.LastChunkComponentCount, onEach, archetype.GetEntitySpan());
+
+        world.ExitDisallowState();
     }
 
     public static void InlineQueryUniform<TQuery, TUniform>(this World world, TQuery onEach)
@@ -33,7 +37,11 @@ partial class WorldStructQueryExtensions
 
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
+        world.EnterDisallowState();
+
         foreach (var archetype in query.AsSpan())
             ChunkHelpers.EnumerateChunkSpanEntity(archetype.CurrentWriteChunk, archetype.LastChunkComponentCount, onEach, archetype.GetEntitySpan(), in uniform);
+
+        world.ExitDisallowState();
     }
 }

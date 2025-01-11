@@ -1,4 +1,5 @@
-﻿using Frent.Collections;
+﻿using Frent.Buffers;
+using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
@@ -6,6 +7,7 @@ using Frent.Updating;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Frent.Tests")]
 namespace Frent;
@@ -34,6 +36,15 @@ public partial class World : IDisposable
     internal Dictionary<int, Query> QueryCache = [];
 
     private FastStack<Archetype> _enabledArchetypes = FastStack<Archetype>.Create(16);
+
+    private volatile int _allowStructuralChanges;
+
+    #region Operations
+    internal FastStack<EntityIDOnly> ToDelete = FastStack<EntityIDOnly>.Create(4);
+    internal FastStack<AddOrDeleteComponent> AddComponents = FastStack<AddOrDeleteComponent>.Create(4);
+    internal FastStack<AddOrDeleteComponent> DeleteComponents = FastStack<AddOrDeleteComponent>.Create(4);
+    #endregion
+
 
     /// <summary>
     /// The current uniform provider used when updating components/queries with uniforms
@@ -73,7 +84,7 @@ public partial class World : IDisposable
         return new Entity(ID, Version, version, id);
     }
 
-    internal void DeleteEntityInternal(Entity entity, ref readonly EntityLocation entityLocation)
+    internal void DeleteEntityInternal(Entity entity, EntityLocation entityLocation)
     {
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
@@ -86,7 +97,9 @@ public partial class World : IDisposable
     /// </summary>
     public void Update()
     {
-        if(CurrentConfig.MultiThreadedUpdate)
+        EnterDisallowState();
+
+        if (CurrentConfig.MultiThreadedUpdate)
         {
             foreach (var element in _enabledArchetypes.AsSpan())
             {
@@ -100,6 +113,8 @@ public partial class World : IDisposable
                 element.Update();
             }
         }
+
+        ExitDisallowState();
     }
 
     internal ref Archetype GetArchetype(uint archetypeID)
@@ -129,8 +144,46 @@ public partial class World : IDisposable
     internal void UpdateArchetypeTable(int newSize)
     {
         Debug.Assert(newSize > WorldArchetypeTable.Length);
-        MemoryHelpers<Archetype>.ResizeArrayFromPool(ref WorldArchetypeTable, newSize);
+        FastStackArrayPool<Archetype>.ResizeArrayFromPool(ref WorldArchetypeTable, newSize);
     }
+
+    internal void EnterDisallowState()
+    {
+        Interlocked.Increment(ref _allowStructuralChanges);
+    }
+
+    internal void ExitDisallowState()
+    {
+        if(Interlocked.Decrement(ref _allowStructuralChanges) == 0)
+        {
+            while (DeleteComponents.TryPop(out var item))
+            {
+                var record = EntityTable[(uint)item.Entity.ID];
+                if (record.Version == item.Entity.ID)
+                {
+                    //TODO: not make this shit
+                    new Entity(ID, Version, item.Entity.Version, item.Entity.ID).Remove(item.ComponentID.Type);
+                }
+            }
+
+            while (AddComponents.TryPop(out var item))
+            {
+                throw new NotImplementedException();
+            }
+
+            while (ToDelete.TryPop(out var item))
+            {
+                //double check that its alive
+                var record = EntityTable[(uint)item.ID];
+                if (record.Version == item.Version)
+                {
+                    DeleteEntityInternal(new Entity(ID, Version, item.Version, item.ID), record.Location);
+                }
+            }
+        }
+    }
+
+    internal bool AllowStructualChanges => _allowStructuralChanges == 0;
 
     /// <summary>
     /// Disposes of the <see cref="World"/>

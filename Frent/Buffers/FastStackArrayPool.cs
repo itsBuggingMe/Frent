@@ -1,23 +1,32 @@
-﻿using System.Buffers;
-using System.Diagnostics;
+﻿using Frent.Core;
+using System.Buffers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Frent.Core;
 
 namespace Frent.Buffers;
 
-//super simple arraypool class
-internal class ComponentArrayPool<T> : ArrayPool<T>
+internal class FastStackArrayPool<T> : ArrayPool<T>
 {
-    public ComponentArrayPool()
+    public static FastStackArrayPool<T> Instance { get; } = new();
+
+    internal static void ResizeArrayFromPool(ref T[] arr, int len)
+    {
+        var finalArr = Instance.Rent(len);
+
+        arr.CopyTo(finalArr, 0);
+        Instance.Return(arr);
+        arr = finalArr;
+    }
+
+    public FastStackArrayPool()
     {
         //16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536 
-        //13 array sizes for components
+        //13 array sizes for components, 27 array sizes for EntityLocation (special case)
         Gen2GcCallback.Gen2CollectionOccured += ClearBuckets;
 
-        Buckets = new T[13][];
+        Buckets = new T[27][];
     }
-    
+
     private T[][] Buckets;
 
     public override T[] Rent(int minimumLength)
@@ -27,7 +36,7 @@ internal class ComponentArrayPool<T> : ArrayPool<T>
 
         int bucketIndex = BitOperations.Log2((uint)minimumLength) - 4;
 
-        if((uint)bucketIndex < (uint)Buckets.Length)
+        if ((uint)bucketIndex < (uint)Buckets.Length)
         {
             ref T[] item = ref Buckets[bucketIndex];
 

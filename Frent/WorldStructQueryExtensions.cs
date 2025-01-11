@@ -29,8 +29,12 @@ public static partial class WorldStructQueryExtensions
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.HasComponent(Component<T>.ID));
 
+        world.EnterDisallowState();
+
         foreach (var a in query.AsSpan())
             ChunkHelpers<T>.EnumerateChunkSpan(a.CurrentWriteChunk, a.LastChunkComponentCount, onEach, a.GetComponentSpan<T>());
+
+        world.ExitDisallowState();
     }
 
     public static void InlineQueryEntity<TQuery, T>(this World world, TQuery onEach)
@@ -42,8 +46,12 @@ public static partial class WorldStructQueryExtensions
         Query query = CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, QueryHashes<T>.Hash, out _) ??=
             world.CreateQuery(Rule.HasComponent(Component<T>.ID));
 
+        world.EnterDisallowState();
+
         foreach (var a in query.AsSpan())
             ChunkHelpers<T>.EnumerateChunkSpanEntity(a.CurrentWriteChunk, a.LastChunkComponentCount, onEach, a.GetEntitySpan(), a.GetComponentSpan<T>());
+
+        world.ExitDisallowState();
     }
 
     public static void InlineQueryEntityUniform<TQuery, TUniform, T>(this World world, TQuery onEach)
@@ -61,8 +69,12 @@ public static partial class WorldStructQueryExtensions
             Query = onEach,
         };
 
+        world.EnterDisallowState();
+
         foreach (var a in query.AsSpan())
             ChunkHelpers<T>.EnumerateChunkSpanEntity(a.CurrentWriteChunk, a.LastChunkComponentCount, finalOnEach, a.GetEntitySpan(), a.GetComponentSpan<T>());
+
+        world.ExitDisallowState();
     }
 
     internal struct EntityUniformActionBridge<TQuery, TUniform, T> : IQueryEntity<T>
@@ -88,8 +100,12 @@ public static partial class WorldStructQueryExtensions
             Query = onEach,
         };
 
+        world.EnterDisallowState();
+
         foreach (var a in query.AsSpan())
             ChunkHelpers<T>.EnumerateChunkSpan(a.CurrentWriteChunk, a.LastChunkComponentCount, finalOnEach, a.GetComponentSpan<T>());
+
+        world.ExitDisallowState();
     }
 
     internal struct UniformActionBridge<TQuery, TUniform, T> : IQuery<T>

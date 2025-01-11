@@ -1,6 +1,12 @@
 ﻿using Frent.Components;
+using Iced.Intel;
+using Microsoft.CodeAnalysis;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections;
+using System.Transactions;
+using Frent.Core;
 
 namespace Frent.Sample.Asteroids;
 
@@ -45,30 +51,189 @@ internal struct Velocity(float dx, float dy) : IUpdateComponent<Transform>
     public static implicit operator Velocity(Vector2 pos) => new(pos.X, pos.Y);
 }
 
-internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 1)
+internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2) : IEnumerable<(Vector2 A, Vector2 B)>
 {
     public float Thickness = thickness;
     public Vector2 Origin = origin;
     public Vector2[] Verticies = verticies;
+
+
+    PolygonEnumerator GetEnumerator() => new PolygonEnumerator(Verticies);
+    IEnumerator<(Vector2 A, Vector2 B)> IEnumerable<(Vector2 A, Vector2 B)>.GetEnumerator() => new PolygonEnumerator(Verticies);
+    IEnumerator IEnumerable.GetEnumerator() => new PolygonEnumerator(Verticies);
+
+    internal struct PolygonEnumerator(Vector2[] verticies) : IEnumerator<(Vector2 A, Vector2 B)>
+    {
+        private Vector2 _prev = verticies[^1];
+        private Vector2[] Verticies = verticies;
+        private int _index = -1;
+        public (Vector2 A, Vector2 B) Current => (_prev, Verticies[_index]);
+        object IEnumerator.Current => Current;
+
+        public bool MoveNext()
+        {
+            if(_index == -1)
+            {
+                _index++;
+                return true;
+            }
+            _prev = Verticies[_index];
+            bool canNext = ++_index < Verticies.Length;
+            return canNext;
+        }
+
+        public void Reset()
+        {
+            _index = 0;
+            _prev = Verticies[^1];
+        }
+        public void Dispose() { }
+    }
 }
 
 internal struct Line
 {
     public float Thickness;
+    public float Opacity;
     public Vector2 A;
     public Vector2 B;
 }
 
-internal struct PlayerController : IUniformUpdateComponent<InputState, Transform, Velocity>
+internal struct PlayerController : IEntityUniformUpdateComponent<World, Transform, Velocity>
 {
-    public void Update(in InputState ms, ref Transform transform, ref Velocity vel)
+    private int _timeSinceShoot;
+    private MouseState _pms;
+    public void Update(Entity entity, in World world, ref Transform transform, ref Velocity vel)
     {
-        if (ms.CurrentKeyboard.IsKeyDown(Keys.W))
-            vel -= Vector2.Rotate(Vector2.UnitY, transform.Rotation) * 0.15f;
+        _timeSinceShoot++;
+        vel = vel.DXY * 0.97f;
 
-        if (ms.CurrentKeyboard.IsKeyDown(Keys.A))
+        var ks = Keyboard.GetState();
+        var ms = Mouse.GetState();
+
+        Vector2 pointingDirection = Vector2.Rotate(-Vector2.UnitY, transform.Rotation);
+
+        if (ks.IsKeyDown(Keys.W))
+        {
+            vel += pointingDirection * 0.30f;
+
+            world.Create<Transform, Velocity, Triangle, DecayTimer, AngularVelocity, Tween>(
+                transform,//copy the transform of the player
+                pointingDirection * -8 + AsteroidsGame.RandomDirection(),//make the velocity opposite its current direction
+                new(),//triangle
+                new(30),//Delete after 30 frames 
+                new(Random.Shared.NextSingle() - 0.5f),//some random rotational velocity 
+                new Tween(TweenType.Parabolic, 30, (e, f) => //animate the triangle to grow in size, and fade out
+                {
+                    ref Triangle t = ref e.Get<Triangle>();
+                    t.Size = f * 6 + 2;
+                    t.Opacity = 1 - f;
+                }));
+        }
+
+        if (ks.IsKeyDown(Keys.A))
             transform.Rotation -= 0.07f;
-        if (ms.CurrentKeyboard.IsKeyDown(Keys.D))
+        if (ks.IsKeyDown(Keys.D))
             transform.Rotation += 0.07f;
+        int delta = _pms.ScrollWheelValue - ms.ScrollWheelValue;
+        if (delta != 0)
+            transform.Rotation += Math.Sign(delta) * 0.1f;
+
+        if (_timeSinceShoot > 10 && ks.IsKeyDown(Keys.Space))
+        {
+            AsteroidsGame.ShootBullet(entity, pointingDirection, 24);
+            _timeSinceShoot = 0;
+        }
+
+        _pms = ms;
     }
 }
+
+internal struct EnemyController(Entity target) : IEntityUpdateComponent<Transform, Velocity>
+{
+    public Entity Target = target;
+    private int _shootTimer;
+    public void Update(Entity entity, ref Transform arg1, ref Velocity arg2)
+    {
+        if (!Target.IsAlive())
+            return;
+        var pointTo = -Vector2.Normalize(arg1.XY - Target.Get<Transform>());
+        arg2 += pointTo * 0.01f;
+        arg2 = arg2.DXY * 0.99f;
+        _shootTimer++;
+        if(_shootTimer > 120)
+        {
+            _shootTimer = 0;
+            AsteroidsGame.ShootBullet(entity, pointTo, 4);
+        }
+    }
+}
+
+internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : IUpdateComponent<Transform>
+{
+    public Entity Follow = toFollow;
+    public float Smoothing = smoothing;
+
+    public void Update(ref Transform arg)
+    {
+        if (Follow.IsAlive())
+            arg -= (arg.XY - Follow.Get<Transform>()    ) * Smoothing;
+    }
+}
+
+internal struct Camera : IUniformUpdateComponent<Viewport, Transform>
+{
+    public Matrix View;
+    public void Update(in Viewport uniform, ref Transform transform)
+    {
+        int width = uniform.Width;
+        int height = uniform.Height;
+        View = Matrix.CreateTranslation(-transform.X + width / 2, -transform.Y + height / 2, 0);
+    }
+}
+
+internal struct Triangle
+{
+    public float Size;
+    public float Opacity;
+}
+
+internal struct AngularVelocity(float dt)  : IUpdateComponent<Transform>
+{
+    //delta theta???
+    public float DT = dt;
+
+    public void Update(ref Transform arg)
+    {
+        arg.Rotation += DT;
+    }
+}
+
+internal struct CircleCollision
+{
+    public float Radius;
+    public Entity CollidesWith;
+
+    public static bool Intersects(Vector2 aPos, CircleCollision a, Vector2 bPos, CircleCollision b)
+    {
+        float radiiSum = a.Radius + b.Radius;
+        return Vector2.DistanceSquared(aPos, bPos) <= radiiSum * radiiSum;
+    }
+}
+
+internal struct BulletBehavior(Entity entity) : IUpdateComponent<CircleCollision>
+{
+    public Entity Parent = entity;
+    public void Update(ref CircleCollision arg)
+    {
+        if(!arg.CollidesWith.IsNull && arg.CollidesWith != Parent && arg.CollidesWith.IsAlive() && arg.CollidesWith.Tagged<Shootable>())
+        {
+            AsteroidsGame.BlowUpEntity(arg.CollidesWith);
+            arg.CollidesWith.Delete();
+            arg.CollidesWith = default;
+        }
+    }
+}
+
+internal struct Asteroid;
+internal struct Shootable;

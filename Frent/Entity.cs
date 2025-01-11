@@ -12,7 +12,7 @@ namespace Frent;
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
-[DebuggerTypeProxy(typeof(Entity.EntityDebugView))]
+[DebuggerTypeProxy(typeof(EntityDebugView))]
 public partial struct Entity : IEquatable<Entity>
 {
     #region Fields & Ctor
@@ -199,12 +199,19 @@ public partial struct Entity : IEquatable<Entity>
     /// <typeparam name="T">The type of component</typeparam>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
-    /// <returns>The component that was removed</returns>
-    public T Remove<T>()
+    public void Remove<T>()
     {
-        RemoveCore(Component<T>.ID, typeof(T), out var nextLocation, out var entityLocation, out int skipIndex, out World world);
+        if (!IsAlive(out var world, out var entityLocation))
+            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
 
-        T result = default!;
+        if (!world.AllowStructualChanges)
+        {
+            world.DeleteComponents.Push(new AddOrDeleteComponent(new EntityIDOnly(EntityID, EntityVersion), Component<T>.ID));
+            return;
+        }
+
+        RemoveCore(Component<T>.ID, typeof(T), out var nextLocation,  entityLocation, out int skipIndex, world);
+
         int j = 0;
         Archetype fromArchetype = entityLocation.Archetype(world);
         Archetype nextArchetype = nextLocation.Archetype(world);
@@ -213,7 +220,6 @@ public partial struct Entity : IEquatable<Entity>
         {
             if (i == skipIndex)
             {
-                result = ((IComponentRunner<T>)fromArchetype.Components[i]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
                 continue;
             }
             nextArchetype.Components[j++].PullComponentFrom(fromArchetype.Components[i], nextLocation, entityLocation);
@@ -223,7 +229,6 @@ public partial struct Entity : IEquatable<Entity>
 
         world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         world.EntityTable[(uint)EntityID].Location = nextLocation;
-        return result;
     }
 
     /// <summary>
@@ -232,12 +237,18 @@ public partial struct Entity : IEquatable<Entity>
     /// <param name="type">The type of component to remove</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
-    /// <returns>The component that was removed</returns>
-    public object Remove(Type type)
+    public void Remove(Type type)
     {
-        RemoveCore(Component.GetComponentID(type), type, out var nextLocation, out var entityLocation, out int skipIndex, out World world);
+        if (!IsAlive(out var world, out var entityLocation))
+            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+        var compid = Component.GetComponentID(type);
+        if (!world.AllowStructualChanges)
+        {
+            world.DeleteComponents.Push(new AddOrDeleteComponent(new EntityIDOnly(EntityID, EntityVersion), compid));
+        }
 
-        object result = default!;
+        RemoveCore(compid, type, out var nextLocation, entityLocation, out int skipIndex, world);
+
         int j = 0;
         Archetype fromArchetype = entityLocation.Archetype(world);
         Archetype nextArchetype = nextLocation.Archetype(world);
@@ -246,7 +257,6 @@ public partial struct Entity : IEquatable<Entity>
         {
             if (i == skipIndex)
             {
-                result = fromArchetype.Components[i].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
                 continue;
             }
             nextArchetype.Components[j++].PullComponentFrom(nextArchetype.Components[i], nextLocation, entityLocation);
@@ -256,8 +266,6 @@ public partial struct Entity : IEquatable<Entity>
 
         world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         world.EntityTable[(uint)EntityID].Location = nextLocation;
-
-        return result;
     }
     #endregion
 
@@ -364,7 +372,14 @@ public partial struct Entity : IEquatable<Entity>
     {
         if (IsAlive(out World? world, out EntityLocation entityLocation))
         {
-            world.DeleteEntityInternal(this, ref entityLocation);
+            if(world.AllowStructualChanges)
+            {
+                world.DeleteEntityInternal(this, entityLocation);
+            }
+            else
+            {
+                world.ToDelete.Push(new EntityIDOnly(EntityID, EntityVersion));
+            }
         }
         else
         {
@@ -498,12 +513,8 @@ public partial struct Entity : IEquatable<Entity>
         return Ref<T>.Create(((IComponentRunner<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
     }
 
-    private void RemoveCore(ComponentID componentID, Type type, out EntityLocation nextLocation, out EntityLocation entityLocation, out int skipIndex, out World world)
+    private void RemoveCore(ComponentID componentID, Type type, out EntityLocation nextLocation, EntityLocation entityLocation, out int skipIndex, World world)
     {
-        //ignore - it throws if null
-        if (!IsAlive(out world!, out entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-
         //this method is similar to DetachCore
         Archetype from = entityLocation.Archetype(world);
         ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, componentID.ID, out _);
@@ -615,7 +626,7 @@ public partial struct Entity : IEquatable<Entity>
         return true;
     }
 
-    internal string DebuggerDisplayString => IsNull ? "null" : $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}";
+    internal string DebuggerDisplayString => IsNull ? "null" : IsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
     internal const string EntityIsDeadMessage = "Entity is Dead";
     internal const string DoesNotHaveTagMessage = "This Entity does not have this tag";
 
