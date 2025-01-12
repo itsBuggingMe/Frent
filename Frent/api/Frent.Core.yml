@@ -1,0 +1,148 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Core
+  commentId: N:Frent.Core
+  id: Frent.Core
+  children:
+  - Frent.Core.Component
+  - Frent.Core.ComponentID
+  - Frent.Core.Component`1
+  - Frent.Core.EntityType
+  - Frent.Core.Ref`1
+  - Frent.Core.TagID
+  - Frent.Core.Tag`1
+  langs:
+  - csharp
+  - vb
+  name: Frent.Core
+  nameWithType: Frent.Core
+  fullName: Frent.Core
+  type: Namespace
+  assemblies:
+  - Frent
+references:
+- uid: Frent.Core.Component`1
+  commentId: T:Frent.Core.Component`1
+  href: Frent.Core.Component-1.html
+  name: Component<T>
+  nameWithType: Component<T>
+  fullName: Frent.Core.Component<T>
+  nameWithType.vb: Component(Of T)
+  fullName.vb: Frent.Core.Component(Of T)
+  name.vb: Component(Of T)
+  spec.csharp:
+  - uid: Frent.Core.Component`1
+    name: Component
+    href: Frent.Core.Component-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Core.Component`1
+    name: Component
+    href: Frent.Core.Component-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Frent.Core.Component
+  commentId: T:Frent.Core.Component
+  href: Frent.Core.Component.html
+  name: Component
+  nameWithType: Component
+  fullName: Frent.Core.Component
+- uid: Frent.Core.ComponentID
+  commentId: T:Frent.Core.ComponentID
+  parent: Frent.Core
+  href: Frent.Core.ComponentID.html
+  name: ComponentID
+  nameWithType: ComponentID
+  fullName: Frent.Core.ComponentID
+- uid: Frent.Core.EntityType
+  commentId: T:Frent.Core.EntityType
+  parent: Frent.Core
+  href: Frent.Core.EntityType.html
+  name: EntityType
+  nameWithType: EntityType
+  fullName: Frent.Core.EntityType
+- uid: Frent.Core.Ref`1
+  commentId: T:Frent.Core.Ref`1
+  parent: Frent.Core
+  href: Frent.Core.Ref-1.html
+  name: Ref<T>
+  nameWithType: Ref<T>
+  fullName: Frent.Core.Ref<T>
+  nameWithType.vb: Ref(Of T)
+  fullName.vb: Frent.Core.Ref(Of T)
+  name.vb: Ref(Of T)
+  spec.csharp:
+  - uid: Frent.Core.Ref`1
+    name: Ref
+    href: Frent.Core.Ref-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Core.Ref`1
+    name: Ref
+    href: Frent.Core.Ref-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Frent.Core.Tag`1
+  commentId: T:Frent.Core.Tag`1
+  href: Frent.Core.Tag-1.html
+  name: Tag<T>
+  nameWithType: Tag<T>
+  fullName: Frent.Core.Tag<T>
+  nameWithType.vb: Tag(Of T)
+  fullName.vb: Frent.Core.Tag(Of T)
+  name.vb: Tag(Of T)
+  spec.csharp:
+  - uid: Frent.Core.Tag`1
+    name: Tag
+    href: Frent.Core.Tag-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Core.Tag`1
+    name: Tag
+    href: Frent.Core.Tag-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Frent.Core.TagID
+  commentId: T:Frent.Core.TagID
+  parent: Frent.Core
+  href: Frent.Core.TagID.html
+  name: TagID
+  nameWithType: TagID
+  fullName: Frent.Core.TagID
+- uid: Frent.Core
+  commentId: N:Frent.Core
+  href: Frent.html
+  name: Frent.Core
+  nameWithType: Frent.Core
+  fullName: Frent.Core
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Core
+    name: Core
+    href: Frent.Core.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Core
+    name: Core
+    href: Frent.Core.html

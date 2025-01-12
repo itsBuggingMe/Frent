@@ -1,0 +1,84 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Components.IUpdateComponent
+  commentId: T:Frent.Components.IUpdateComponent
+  id: IUpdateComponent
+  parent: Frent.Components
+  children:
+  - Frent.Components.IUpdateComponent.Update
+  langs:
+  - csharp
+  - vb
+  name: IUpdateComponent
+  nameWithType: IUpdateComponent
+  fullName: Frent.Components.IUpdateComponent
+  type: Interface
+  source:
+    remote:
+      path: Frent/Components/IUpdateComponent.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: IUpdateComponent
+    path: Components/IUpdateComponent.cs
+    startLine: 5
+  assemblies:
+  - Frent
+  namespace: Frent.Components
+  syntax:
+    content: 'public interface IUpdateComponent : IComponent'
+    content.vb: Public Interface IUpdateComponent Inherits IComponent
+- uid: Frent.Components.IUpdateComponent.Update
+  commentId: M:Frent.Components.IUpdateComponent.Update
+  id: Update
+  parent: Frent.Components.IUpdateComponent
+  langs:
+  - csharp
+  - vb
+  name: Update()
+  nameWithType: IUpdateComponent.Update()
+  fullName: Frent.Components.IUpdateComponent.Update()
+  type: Method
+  source:
+    remote:
+      path: Frent/Components/IUpdateComponent.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Update
+    path: Components/IUpdateComponent.cs
+    startLine: 7
+  assemblies:
+  - Frent
+  namespace: Frent.Components
+  syntax:
+    content: void Update()
+    content.vb: Sub Update()
+  overload: Frent.Components.IUpdateComponent.Update*
+references:
+- uid: Frent.Components
+  commentId: N:Frent.Components
+  href: Frent.html
+  name: Frent.Components
+  nameWithType: Frent.Components
+  fullName: Frent.Components
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Components
+    name: Components
+    href: Frent.Components.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Components
+    name: Components
+    href: Frent.Components.html
+- uid: Frent.Components.IUpdateComponent.Update*
+  commentId: Overload:Frent.Components.IUpdateComponent.Update
+  href: Frent.Components.IUpdateComponent.html#Frent_Components_IUpdateComponent_Update
+  name: Update
+  nameWithType: IUpdateComponent.Update
+  fullName: Frent.Components.IUpdateComponent.Update

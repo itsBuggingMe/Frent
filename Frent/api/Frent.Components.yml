@@ -1,0 +1,4349 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Components
+  commentId: N:Frent.Components
+  id: Frent.Components
+  children:
+  - Frent.Components.IComponent
+  - Frent.Components.IEntityUniformUpdateComponent`1
+  - Frent.Components.IEntityUniformUpdateComponent`10
+  - Frent.Components.IEntityUniformUpdateComponent`11
+  - Frent.Components.IEntityUniformUpdateComponent`12
+  - Frent.Components.IEntityUniformUpdateComponent`13
+  - Frent.Components.IEntityUniformUpdateComponent`14
+  - Frent.Components.IEntityUniformUpdateComponent`15
+  - Frent.Components.IEntityUniformUpdateComponent`16
+  - Frent.Components.IEntityUniformUpdateComponent`2
+  - Frent.Components.IEntityUniformUpdateComponent`3
+  - Frent.Components.IEntityUniformUpdateComponent`4
+  - Frent.Components.IEntityUniformUpdateComponent`5
+  - Frent.Components.IEntityUniformUpdateComponent`6
+  - Frent.Components.IEntityUniformUpdateComponent`7
+  - Frent.Components.IEntityUniformUpdateComponent`8
+  - Frent.Components.IEntityUniformUpdateComponent`9
+  - Frent.Components.IEntityUpdateComponent
+  - Frent.Components.IEntityUpdateComponent`1
+  - Frent.Components.IEntityUpdateComponent`10
+  - Frent.Components.IEntityUpdateComponent`11
+  - Frent.Components.IEntityUpdateComponent`12
+  - Frent.Components.IEntityUpdateComponent`13
+  - Frent.Components.IEntityUpdateComponent`14
+  - Frent.Components.IEntityUpdateComponent`15
+  - Frent.Components.IEntityUpdateComponent`2
+  - Frent.Components.IEntityUpdateComponent`3
+  - Frent.Components.IEntityUpdateComponent`4
+  - Frent.Components.IEntityUpdateComponent`5
+  - Frent.Components.IEntityUpdateComponent`6
+  - Frent.Components.IEntityUpdateComponent`7
+  - Frent.Components.IEntityUpdateComponent`8
+  - Frent.Components.IEntityUpdateComponent`9
+  - Frent.Components.IUniformUpdateComponent`1
+  - Frent.Components.IUniformUpdateComponent`10
+  - Frent.Components.IUniformUpdateComponent`11
+  - Frent.Components.IUniformUpdateComponent`12
+  - Frent.Components.IUniformUpdateComponent`13
+  - Frent.Components.IUniformUpdateComponent`14
+  - Frent.Components.IUniformUpdateComponent`15
+  - Frent.Components.IUniformUpdateComponent`16
+  - Frent.Components.IUniformUpdateComponent`2
+  - Frent.Components.IUniformUpdateComponent`3
+  - Frent.Components.IUniformUpdateComponent`4
+  - Frent.Components.IUniformUpdateComponent`5
+  - Frent.Components.IUniformUpdateComponent`6
+  - Frent.Components.IUniformUpdateComponent`7
+  - Frent.Components.IUniformUpdateComponent`8
+  - Frent.Components.IUniformUpdateComponent`9
+  - Frent.Components.IUpdateComponent
+  - Frent.Components.IUpdateComponent`1
+  - Frent.Components.IUpdateComponent`10
+  - Frent.Components.IUpdateComponent`11
+  - Frent.Components.IUpdateComponent`12
+  - Frent.Components.IUpdateComponent`13
+  - Frent.Components.IUpdateComponent`14
+  - Frent.Components.IUpdateComponent`15
+  - Frent.Components.IUpdateComponent`2
+  - Frent.Components.IUpdateComponent`3
+  - Frent.Components.IUpdateComponent`4
+  - Frent.Components.IUpdateComponent`5
+  - Frent.Components.IUpdateComponent`6
+  - Frent.Components.IUpdateComponent`7
+  - Frent.Components.IUpdateComponent`8
+  - Frent.Components.IUpdateComponent`9
+  langs:
+  - csharp
+  - vb
+  name: Frent.Components
+  nameWithType: Frent.Components
+  fullName: Frent.Components
+  type: Namespace
+  assemblies:
+  - Frent
+references:
+- uid: Frent.Components.IComponent
+  commentId: T:Frent.Components.IComponent
+  href: Frent.Components.IComponent.html
+  name: IComponent
+  nameWithType: IComponent
+  fullName: Frent.Components.IComponent
+- uid: Frent.Components.IEntityUniformUpdateComponent`1
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`1
+  href: Frent.Components.IEntityUniformUpdateComponent-1.html
+  name: IEntityUniformUpdateComponent<TUniform>
+  nameWithType: IEntityUniformUpdateComponent<TUniform>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`1
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-1.html
+  - name: <
+  - name: TUniform
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`1
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`2
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`2
+  href: Frent.Components.IEntityUniformUpdateComponent-2.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`2
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-2.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`2
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent
+  commentId: T:Frent.Components.IEntityUpdateComponent
+  href: Frent.Components.IEntityUpdateComponent.html
+  name: IEntityUpdateComponent
+  nameWithType: IEntityUpdateComponent
+  fullName: Frent.Components.IEntityUpdateComponent
+- uid: Frent.Components.IEntityUpdateComponent`1
+  commentId: T:Frent.Components.IEntityUpdateComponent`1
+  href: Frent.Components.IEntityUpdateComponent-1.html
+  name: IEntityUpdateComponent<TArg>
+  nameWithType: IEntityUpdateComponent<TArg>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg)
+  name.vb: IEntityUpdateComponent(Of TArg)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`1
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-1.html
+  - name: <
+  - name: TArg
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`1
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`1
+  commentId: T:Frent.Components.IUniformUpdateComponent`1
+  href: Frent.Components.IUniformUpdateComponent-1.html
+  name: IUniformUpdateComponent<TUniform>
+  nameWithType: IUniformUpdateComponent<TUniform>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform)
+  name.vb: IUniformUpdateComponent(Of TUniform)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`1
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-1.html
+  - name: <
+  - name: TUniform
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`1
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`2
+  commentId: T:Frent.Components.IUniformUpdateComponent`2
+  href: Frent.Components.IUniformUpdateComponent-2.html
+  name: IUniformUpdateComponent<TUniform, TArg>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`2
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-2.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`2
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg
+  - name: )
+- uid: Frent.Components.IUpdateComponent
+  commentId: T:Frent.Components.IUpdateComponent
+  href: Frent.Components.IUpdateComponent.html
+  name: IUpdateComponent
+  nameWithType: IUpdateComponent
+  fullName: Frent.Components.IUpdateComponent
+- uid: Frent.Components.IUpdateComponent`1
+  commentId: T:Frent.Components.IUpdateComponent`1
+  href: Frent.Components.IUpdateComponent-1.html
+  name: IUpdateComponent<TArg>
+  nameWithType: IUpdateComponent<TArg>
+  fullName: Frent.Components.IUpdateComponent<TArg>
+  nameWithType.vb: IUpdateComponent(Of TArg)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg)
+  name.vb: IUpdateComponent(Of TArg)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`1
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-1.html
+  - name: <
+  - name: TArg
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`1
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg
+  - name: )
+- uid: Frent.Components.IUpdateComponent`12
+  commentId: T:Frent.Components.IUpdateComponent`12
+  href: Frent.Components.IUpdateComponent-12.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`12
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-12.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`12
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-12.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: )
+- uid: Frent.Components.IUpdateComponent`8
+  commentId: T:Frent.Components.IUpdateComponent`8
+  href: Frent.Components.IUpdateComponent-8.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`8
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-8.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`8
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-8.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`9
+  commentId: T:Frent.Components.IEntityUpdateComponent`9
+  href: Frent.Components.IEntityUpdateComponent-9.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`9
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-9.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`9
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-9.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`16
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`16
+  href: Frent.Components.IEntityUniformUpdateComponent-16.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`16
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-16.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: ','
+  - name: " "
+  - name: TArg15
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`16
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-16.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: ','
+  - name: " "
+  - name: TArg15
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`5
+  commentId: T:Frent.Components.IEntityUpdateComponent`5
+  href: Frent.Components.IEntityUpdateComponent-5.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`5
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-5.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`5
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-5.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`5
+  commentId: T:Frent.Components.IUniformUpdateComponent`5
+  href: Frent.Components.IUniformUpdateComponent-5.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`5
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-5.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`5
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-5.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`13
+  commentId: T:Frent.Components.IEntityUpdateComponent`13
+  href: Frent.Components.IEntityUpdateComponent-13.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`13
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-13.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`13
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-13.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`3
+  commentId: T:Frent.Components.IUniformUpdateComponent`3
+  href: Frent.Components.IUniformUpdateComponent-3.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`3
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-3.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`3
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-3.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`3
+  commentId: T:Frent.Components.IEntityUpdateComponent`3
+  href: Frent.Components.IEntityUpdateComponent-3.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`3
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-3.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`3
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-3.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: )
+- uid: Frent.Components.IUpdateComponent`15
+  commentId: T:Frent.Components.IUpdateComponent`15
+  href: Frent.Components.IUpdateComponent-15.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`15
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-15.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: ','
+  - name: " "
+  - name: TArg15
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`15
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-15.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: ','
+  - name: " "
+  - name: TArg15
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`13
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`13
+  href: Frent.Components.IEntityUniformUpdateComponent-13.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`13
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-13.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`13
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-13.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: )
+- uid: Frent.Components.IUpdateComponent`10
+  commentId: T:Frent.Components.IUpdateComponent`10
+  href: Frent.Components.IUpdateComponent-10.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`10
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-10.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`10
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-10.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`15
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`15
+  href: Frent.Components.IEntityUniformUpdateComponent-15.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`15
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-15.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`15
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-15.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`7
+  commentId: T:Frent.Components.IUniformUpdateComponent`7
+  href: Frent.Components.IUniformUpdateComponent-7.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`7
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-7.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`7
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-7.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`10
+  commentId: T:Frent.Components.IEntityUpdateComponent`10
+  href: Frent.Components.IEntityUpdateComponent-10.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`10
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-10.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`10
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-10.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`4
+  commentId: T:Frent.Components.IUniformUpdateComponent`4
+  href: Frent.Components.IUniformUpdateComponent-4.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`4
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-4.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`4
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-4.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`8
+  commentId: T:Frent.Components.IEntityUpdateComponent`8
+  href: Frent.Components.IEntityUpdateComponent-8.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`8
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-8.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`8
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-8.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`4
+  commentId: T:Frent.Components.IEntityUpdateComponent`4
+  href: Frent.Components.IEntityUpdateComponent-4.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`4
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-4.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`4
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-4.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: )
+- uid: Frent.Components.IUpdateComponent`3
+  commentId: T:Frent.Components.IUpdateComponent`3
+  href: Frent.Components.IUpdateComponent-3.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`3
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-3.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`3
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-3.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`6
+  commentId: T:Frent.Components.IUniformUpdateComponent`6
+  href: Frent.Components.IUniformUpdateComponent-6.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`6
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-6.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`6
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-6.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: )
+- uid: Frent.Components.IUpdateComponent`2
+  commentId: T:Frent.Components.IUpdateComponent`2
+  href: Frent.Components.IUpdateComponent-2.html
+  name: IUpdateComponent<TArg1, TArg2>
+  nameWithType: IUpdateComponent<TArg1, TArg2>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2)
+  name.vb: IUpdateComponent(Of TArg1, TArg2)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`2
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-2.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`2
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`11
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`11
+  href: Frent.Components.IEntityUniformUpdateComponent-11.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`11
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-11.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`11
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-11.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`15
+  commentId: T:Frent.Components.IEntityUpdateComponent`15
+  href: Frent.Components.IEntityUpdateComponent-15.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`15
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-15.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: ','
+  - name: " "
+  - name: TArg15
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`15
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-15.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: ','
+  - name: " "
+  - name: TArg15
+  - name: )
+- uid: Frent.Components.IUpdateComponent`13
+  commentId: T:Frent.Components.IUpdateComponent`13
+  href: Frent.Components.IUpdateComponent-13.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`13
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-13.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`13
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-13.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`14
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`14
+  href: Frent.Components.IEntityUniformUpdateComponent-14.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`14
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-14.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`14
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-14.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`9
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`9
+  href: Frent.Components.IEntityUniformUpdateComponent-9.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`9
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-9.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`9
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-9.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`14
+  commentId: T:Frent.Components.IUniformUpdateComponent`14
+  href: Frent.Components.IUniformUpdateComponent-14.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`14
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-14.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`14
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-14.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`10
+  commentId: T:Frent.Components.IUniformUpdateComponent`10
+  href: Frent.Components.IUniformUpdateComponent-10.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`10
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-10.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`10
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-10.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`12
+  commentId: T:Frent.Components.IUniformUpdateComponent`12
+  href: Frent.Components.IUniformUpdateComponent-12.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`12
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-12.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`12
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-12.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`8
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`8
+  href: Frent.Components.IEntityUniformUpdateComponent-8.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`8
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-8.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`8
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-8.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`9
+  commentId: T:Frent.Components.IUniformUpdateComponent`9
+  href: Frent.Components.IUniformUpdateComponent-9.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`9
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-9.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`9
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-9.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`15
+  commentId: T:Frent.Components.IUniformUpdateComponent`15
+  href: Frent.Components.IUniformUpdateComponent-15.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`15
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-15.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`15
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-15.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`12
+  commentId: T:Frent.Components.IEntityUpdateComponent`12
+  href: Frent.Components.IEntityUpdateComponent-12.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`12
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-12.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`12
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-12.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: )
+- uid: Frent.Components.IUpdateComponent`11
+  commentId: T:Frent.Components.IUpdateComponent`11
+  href: Frent.Components.IUpdateComponent-11.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`11
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-11.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`11
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-11.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`2
+  commentId: T:Frent.Components.IEntityUpdateComponent`2
+  href: Frent.Components.IEntityUpdateComponent-2.html
+  name: IEntityUpdateComponent<TArg1, TArg2>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`2
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-2.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`2
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`11
+  commentId: T:Frent.Components.IUniformUpdateComponent`11
+  href: Frent.Components.IUniformUpdateComponent-11.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`11
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-11.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`11
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-11.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`7
+  commentId: T:Frent.Components.IEntityUpdateComponent`7
+  href: Frent.Components.IEntityUpdateComponent-7.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`7
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-7.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`7
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-7.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`8
+  commentId: T:Frent.Components.IUniformUpdateComponent`8
+  href: Frent.Components.IUniformUpdateComponent-8.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`8
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-8.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`8
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-8.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`6
+  commentId: T:Frent.Components.IEntityUpdateComponent`6
+  href: Frent.Components.IEntityUpdateComponent-6.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`6
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-6.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`6
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-6.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`14
+  commentId: T:Frent.Components.IEntityUpdateComponent`14
+  href: Frent.Components.IEntityUpdateComponent-14.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`14
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-14.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`14
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-14.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`7
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`7
+  href: Frent.Components.IEntityUniformUpdateComponent-7.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`7
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-7.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`7
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-7.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: )
+- uid: Frent.Components.IUpdateComponent`9
+  commentId: T:Frent.Components.IUpdateComponent`9
+  href: Frent.Components.IUpdateComponent-9.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`9
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-9.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`9
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-9.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`5
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`5
+  href: Frent.Components.IEntityUniformUpdateComponent-5.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`5
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-5.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`5
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-5.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`4
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`4
+  href: Frent.Components.IEntityUniformUpdateComponent-4.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`4
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-4.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`4
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-4.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`16
+  commentId: T:Frent.Components.IUniformUpdateComponent`16
+  href: Frent.Components.IUniformUpdateComponent-16.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14, TArg15)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`16
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-16.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: ','
+  - name: " "
+  - name: TArg15
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`16
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-16.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: ','
+  - name: " "
+  - name: TArg15
+  - name: )
+- uid: Frent.Components.IEntityUpdateComponent`11
+  commentId: T:Frent.Components.IEntityUpdateComponent`11
+  href: Frent.Components.IEntityUpdateComponent-11.html
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUpdateComponent`11
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-11.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUpdateComponent`11
+    name: IEntityUpdateComponent
+    href: Frent.Components.IEntityUpdateComponent-11.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: )
+- uid: Frent.Components.IUpdateComponent`6
+  commentId: T:Frent.Components.IUpdateComponent`6
+  href: Frent.Components.IUpdateComponent-6.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`6
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-6.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`6
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-6.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: )
+- uid: Frent.Components.IUpdateComponent`5
+  commentId: T:Frent.Components.IUpdateComponent`5
+  href: Frent.Components.IUpdateComponent-5.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`5
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-5.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`5
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-5.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`12
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`12
+  href: Frent.Components.IEntityUniformUpdateComponent-12.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`12
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-12.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`12
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-12.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: )
+- uid: Frent.Components.IUniformUpdateComponent`13
+  commentId: T:Frent.Components.IUniformUpdateComponent`13
+  href: Frent.Components.IUniformUpdateComponent-13.html
+  name: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  nameWithType: IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  fullName: Frent.Components.IUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12>
+  nameWithType.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  fullName.vb: Frent.Components.IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  name.vb: IUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12)
+  spec.csharp:
+  - uid: Frent.Components.IUniformUpdateComponent`13
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-13.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUniformUpdateComponent`13
+    name: IUniformUpdateComponent
+    href: Frent.Components.IUniformUpdateComponent-13.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`6
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`6
+  href: Frent.Components.IEntityUniformUpdateComponent-6.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`6
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-6.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`6
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-6.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`3
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`3
+  href: Frent.Components.IEntityUniformUpdateComponent-3.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`3
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-3.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`3
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-3.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: )
+- uid: Frent.Components.IUpdateComponent`14
+  commentId: T:Frent.Components.IUpdateComponent`14
+  href: Frent.Components.IUpdateComponent-14.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10, TArg11, TArg12, TArg13, TArg14)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`14
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-14.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`14
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-14.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: ','
+  - name: " "
+  - name: TArg10
+  - name: ','
+  - name: " "
+  - name: TArg11
+  - name: ','
+  - name: " "
+  - name: TArg12
+  - name: ','
+  - name: " "
+  - name: TArg13
+  - name: ','
+  - name: " "
+  - name: TArg14
+  - name: )
+- uid: Frent.Components.IEntityUniformUpdateComponent`10
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`10
+  href: Frent.Components.IEntityUniformUpdateComponent-10.html
+  name: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9)
+  spec.csharp:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`10
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-10.html
+  - name: <
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IEntityUniformUpdateComponent`10
+    name: IEntityUniformUpdateComponent
+    href: Frent.Components.IEntityUniformUpdateComponent-10.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TUniform
+  - name: ','
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: ','
+  - name: " "
+  - name: TArg8
+  - name: ','
+  - name: " "
+  - name: TArg9
+  - name: )
+- uid: Frent.Components.IUpdateComponent`4
+  commentId: T:Frent.Components.IUpdateComponent`4
+  href: Frent.Components.IUpdateComponent-4.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`4
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-4.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`4
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-4.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: )
+- uid: Frent.Components.IUpdateComponent`7
+  commentId: T:Frent.Components.IUpdateComponent`7
+  href: Frent.Components.IUpdateComponent-7.html
+  name: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  nameWithType: IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  fullName: Frent.Components.IUpdateComponent<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>
+  nameWithType.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  name.vb: IUpdateComponent(Of TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7)
+  spec.csharp:
+  - uid: Frent.Components.IUpdateComponent`7
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-7.html
+  - name: <
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: '>'
+  spec.vb:
+  - uid: Frent.Components.IUpdateComponent`7
+    name: IUpdateComponent
+    href: Frent.Components.IUpdateComponent-7.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TArg1
+  - name: ','
+  - name: " "
+  - name: TArg2
+  - name: ','
+  - name: " "
+  - name: TArg3
+  - name: ','
+  - name: " "
+  - name: TArg4
+  - name: ','
+  - name: " "
+  - name: TArg5
+  - name: ','
+  - name: " "
+  - name: TArg6
+  - name: ','
+  - name: " "
+  - name: TArg7
+  - name: )

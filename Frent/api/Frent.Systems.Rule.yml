@@ -1,0 +1,987 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Systems.Rule
+  commentId: T:Frent.Systems.Rule
+  id: Rule
+  parent: Frent.Systems
+  children:
+  - Frent.Systems.Rule.Delegate(System.Func{Frent.Core.EntityType,System.Boolean})
+  - Frent.Systems.Rule.Equals(Frent.Systems.Rule)
+  - Frent.Systems.Rule.Equals(System.Object)
+  - Frent.Systems.Rule.GetHashCode
+  - Frent.Systems.Rule.HasComponent(Frent.Core.ComponentID)
+  - Frent.Systems.Rule.HasTag(Frent.Core.TagID)
+  - Frent.Systems.Rule.NotComponent(Frent.Core.ComponentID)
+  - Frent.Systems.Rule.NotTag(Frent.Core.TagID)
+  - Frent.Systems.Rule.op_Equality(Frent.Systems.Rule,Frent.Systems.Rule)
+  - Frent.Systems.Rule.op_Inequality(Frent.Systems.Rule,Frent.Systems.Rule)
+  langs:
+  - csharp
+  - vb
+  name: Rule
+  nameWithType: Rule
+  fullName: Frent.Systems.Rule
+  type: Struct
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Rule
+    path: Systems/Rule.cs
+    startLine: 7
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Encapsulates a check for an entity, used to filter queries
+  example: []
+  syntax:
+    content: 'public struct Rule : IEquatable<Rule>'
+    content.vb: Public Structure Rule Implements IEquatable(Of Rule)
+  implements:
+  - System.IEquatable{Frent.Systems.Rule}
+  inheritedMembers:
+  - System.ValueType.ToString
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.GetType
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Frent.Systems.Rule.Delegate(System.Func{Frent.Core.EntityType,System.Boolean})
+  commentId: M:Frent.Systems.Rule.Delegate(System.Func{Frent.Core.EntityType,System.Boolean})
+  id: Delegate(System.Func{Frent.Core.EntityType,System.Boolean})
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: Delegate(Func<EntityType, bool>)
+  nameWithType: Rule.Delegate(Func<EntityType, bool>)
+  fullName: Frent.Systems.Rule.Delegate(System.Func<Frent.Core.EntityType, bool>)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Delegate
+    path: Systems/Rule.cs
+    startLine: 29
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Creates a custom delegate-based rule.
+  example: []
+  syntax:
+    content: public static Rule Delegate(Func<EntityType, bool> rule)
+    parameters:
+    - id: rule
+      type: System.Func{Frent.Core.EntityType,System.Boolean}
+      description: The custom delegate to determine rule applicability.
+    return:
+      type: Frent.Systems.Rule
+      description: A <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> configured with the custom delegate.
+    content.vb: Public Shared Function [Delegate](rule As Func(Of EntityType, Boolean)) As Rule
+  overload: Frent.Systems.Rule.Delegate*
+  nameWithType.vb: Rule.Delegate(Func(Of EntityType, Boolean))
+  fullName.vb: Frent.Systems.Rule.Delegate(System.Func(Of Frent.Core.EntityType, Boolean))
+  name.vb: Delegate(Func(Of EntityType, Boolean))
+- uid: Frent.Systems.Rule.HasComponent(Frent.Core.ComponentID)
+  commentId: M:Frent.Systems.Rule.HasComponent(Frent.Core.ComponentID)
+  id: HasComponent(Frent.Core.ComponentID)
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: HasComponent(ComponentID)
+  nameWithType: Rule.HasComponent(ComponentID)
+  fullName: Frent.Systems.Rule.HasComponent(Frent.Core.ComponentID)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: HasComponent
+    path: Systems/Rule.cs
+    startLine: 40
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Creates a rule that applies when an archetype has the specified component.
+  example: []
+  syntax:
+    content: public static Rule HasComponent(ComponentID compID)
+    parameters:
+    - id: compID
+      type: Frent.Core.ComponentID
+      description: The ID of the component to check for.
+    return:
+      type: Frent.Systems.Rule
+      description: A <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> that checks for the presence of a component.
+    content.vb: Public Shared Function HasComponent(compID As ComponentID) As Rule
+  overload: Frent.Systems.Rule.HasComponent*
+- uid: Frent.Systems.Rule.NotComponent(Frent.Core.ComponentID)
+  commentId: M:Frent.Systems.Rule.NotComponent(Frent.Core.ComponentID)
+  id: NotComponent(Frent.Core.ComponentID)
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: NotComponent(ComponentID)
+  nameWithType: Rule.NotComponent(ComponentID)
+  fullName: Frent.Systems.Rule.NotComponent(Frent.Core.ComponentID)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: NotComponent
+    path: Systems/Rule.cs
+    startLine: 51
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Creates a rule that applies when an archetype does not have the specified component.
+  example: []
+  syntax:
+    content: public static Rule NotComponent(ComponentID compID)
+    parameters:
+    - id: compID
+      type: Frent.Core.ComponentID
+      description: The ID of the component to check for absence.
+    return:
+      type: Frent.Systems.Rule
+      description: A <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> that checks for the absence of a component.
+    content.vb: Public Shared Function NotComponent(compID As ComponentID) As Rule
+  overload: Frent.Systems.Rule.NotComponent*
+- uid: Frent.Systems.Rule.HasTag(Frent.Core.TagID)
+  commentId: M:Frent.Systems.Rule.HasTag(Frent.Core.TagID)
+  id: HasTag(Frent.Core.TagID)
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: HasTag(TagID)
+  nameWithType: Rule.HasTag(TagID)
+  fullName: Frent.Systems.Rule.HasTag(Frent.Core.TagID)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: HasTag
+    path: Systems/Rule.cs
+    startLine: 62
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Creates a rule that applies when an archetype has the specified tag.
+  example: []
+  syntax:
+    content: public static Rule HasTag(TagID tagID)
+    parameters:
+    - id: tagID
+      type: Frent.Core.TagID
+      description: The ID of the tag to check for.
+    return:
+      type: Frent.Systems.Rule
+      description: A <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> that checks for the presence of a tag.
+    content.vb: Public Shared Function HasTag(tagID As TagID) As Rule
+  overload: Frent.Systems.Rule.HasTag*
+- uid: Frent.Systems.Rule.NotTag(Frent.Core.TagID)
+  commentId: M:Frent.Systems.Rule.NotTag(Frent.Core.TagID)
+  id: NotTag(Frent.Core.TagID)
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: NotTag(TagID)
+  nameWithType: Rule.NotTag(TagID)
+  fullName: Frent.Systems.Rule.NotTag(Frent.Core.TagID)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: NotTag
+    path: Systems/Rule.cs
+    startLine: 73
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Creates a rule that applies when an archetype does not have the specified tag.
+  example: []
+  syntax:
+    content: public static Rule NotTag(TagID tagID)
+    parameters:
+    - id: tagID
+      type: Frent.Core.TagID
+      description: The ID of the tag to check for absence.
+    return:
+      type: Frent.Systems.Rule
+      description: A <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> that checks for the absence of a tag.
+    content.vb: Public Shared Function NotTag(tagID As TagID) As Rule
+  overload: Frent.Systems.Rule.NotTag*
+- uid: Frent.Systems.Rule.Equals(Frent.Systems.Rule)
+  commentId: M:Frent.Systems.Rule.Equals(Frent.Systems.Rule)
+  id: Equals(Frent.Systems.Rule)
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: Equals(Rule)
+  nameWithType: Rule.Equals(Rule)
+  fullName: Frent.Systems.Rule.Equals(Frent.Systems.Rule)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Equals
+    path: Systems/Rule.cs
+    startLine: 84
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Determines whether this <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> is equal to another <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public bool Equals(Rule other)
+    parameters:
+    - id: other
+      type: Frent.Systems.Rule
+      description: The <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> to compare against.
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the rules are equal, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise.
+    content.vb: Public Function Equals(other As Rule) As Boolean
+  overload: Frent.Systems.Rule.Equals*
+  implements:
+  - System.IEquatable{Frent.Systems.Rule}.Equals(Frent.Systems.Rule)
+- uid: Frent.Systems.Rule.Equals(System.Object)
+  commentId: M:Frent.Systems.Rule.Equals(System.Object)
+  id: Equals(System.Object)
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: Equals(object?)
+  nameWithType: Rule.Equals(object?)
+  fullName: Frent.Systems.Rule.Equals(object?)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Equals
+    path: Systems/Rule.cs
+    startLine: 95
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Determines whether this <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> is equal to an object.
+  example: []
+  syntax:
+    content: public override bool Equals(object? obj)
+    parameters:
+    - id: obj
+      type: System.Object
+      description: The object to compare against.
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the object is a <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> and they are equal, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise.
+    content.vb: Public Overrides Function Equals(obj As Object) As Boolean
+  overridden: System.ValueType.Equals(System.Object)
+  overload: Frent.Systems.Rule.Equals*
+  nameWithType.vb: Rule.Equals(Object)
+  fullName.vb: Frent.Systems.Rule.Equals(Object)
+  name.vb: Equals(Object)
+- uid: Frent.Systems.Rule.GetHashCode
+  commentId: M:Frent.Systems.Rule.GetHashCode
+  id: GetHashCode
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: GetHashCode()
+  nameWithType: Rule.GetHashCode()
+  fullName: Frent.Systems.Rule.GetHashCode()
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: GetHashCode
+    path: Systems/Rule.cs
+    startLine: 101
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Gets a hash code for this <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public override int GetHashCode()
+    return:
+      type: System.Int32
+      description: A hash code representing this <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref>.
+    content.vb: Public Overrides Function GetHashCode() As Integer
+  overridden: System.ValueType.GetHashCode
+  overload: Frent.Systems.Rule.GetHashCode*
+- uid: Frent.Systems.Rule.op_Equality(Frent.Systems.Rule,Frent.Systems.Rule)
+  commentId: M:Frent.Systems.Rule.op_Equality(Frent.Systems.Rule,Frent.Systems.Rule)
+  id: op_Equality(Frent.Systems.Rule,Frent.Systems.Rule)
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: operator ==(Rule, Rule)
+  nameWithType: Rule.operator ==(Rule, Rule)
+  fullName: Frent.Systems.Rule.operator ==(Frent.Systems.Rule, Frent.Systems.Rule)
+  type: Operator
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: op_Equality
+    path: Systems/Rule.cs
+    startLine: 109
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Determines whether two <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> instances are equal.
+  example: []
+  syntax:
+    content: public static bool operator ==(Rule left, Rule right)
+    parameters:
+    - id: left
+      type: Frent.Systems.Rule
+      description: The first rule to compare.
+    - id: right
+      type: Frent.Systems.Rule
+      description: The second rule to compare.
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the rules are equal, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise.
+    content.vb: Public Shared Operator =(left As Rule, right As Rule) As Boolean
+  overload: Frent.Systems.Rule.op_Equality*
+  nameWithType.vb: Rule.=(Rule, Rule)
+  fullName.vb: Frent.Systems.Rule.=(Frent.Systems.Rule, Frent.Systems.Rule)
+  name.vb: =(Rule, Rule)
+- uid: Frent.Systems.Rule.op_Inequality(Frent.Systems.Rule,Frent.Systems.Rule)
+  commentId: M:Frent.Systems.Rule.op_Inequality(Frent.Systems.Rule,Frent.Systems.Rule)
+  id: op_Inequality(Frent.Systems.Rule,Frent.Systems.Rule)
+  parent: Frent.Systems.Rule
+  langs:
+  - csharp
+  - vb
+  name: operator !=(Rule, Rule)
+  nameWithType: Rule.operator !=(Rule, Rule)
+  fullName: Frent.Systems.Rule.operator !=(Frent.Systems.Rule, Frent.Systems.Rule)
+  type: Operator
+  source:
+    remote:
+      path: Frent/Systems/Rule.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: op_Inequality
+    path: Systems/Rule.cs
+    startLine: 117
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  summary: Determines whether two <xref href="Frent.Systems.Rule" data-throw-if-not-resolved="false"></xref> instances are not equal.
+  example: []
+  syntax:
+    content: public static bool operator !=(Rule left, Rule right)
+    parameters:
+    - id: left
+      type: Frent.Systems.Rule
+      description: The first rule to compare.
+    - id: right
+      type: Frent.Systems.Rule
+      description: The second rule to compare.
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the rules are not equal, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise.
+    content.vb: Public Shared Operator <>(left As Rule, right As Rule) As Boolean
+  overload: Frent.Systems.Rule.op_Inequality*
+  nameWithType.vb: Rule.<>(Rule, Rule)
+  fullName.vb: Frent.Systems.Rule.<>(Frent.Systems.Rule, Frent.Systems.Rule)
+  name.vb: <>(Rule, Rule)
+references:
+- uid: Frent.Systems
+  commentId: N:Frent.Systems
+  href: Frent.html
+  name: Frent.Systems
+  nameWithType: Frent.Systems
+  fullName: Frent.Systems
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Systems
+    name: Systems
+    href: Frent.Systems.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Systems
+    name: Systems
+    href: Frent.Systems.html
+- uid: System.IEquatable{Frent.Systems.Rule}
+  commentId: T:System.IEquatable{Frent.Systems.Rule}
+  parent: System
+  definition: System.IEquatable`1
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  name: IEquatable<Rule>
+  nameWithType: IEquatable<Rule>
+  fullName: System.IEquatable<Frent.Systems.Rule>
+  nameWithType.vb: IEquatable(Of Rule)
+  fullName.vb: System.IEquatable(Of Frent.Systems.Rule)
+  name.vb: IEquatable(Of Rule)
+  spec.csharp:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: <
+  - uid: Frent.Systems.Rule
+    name: Rule
+    href: Frent.Systems.Rule.html
+  - name: '>'
+  spec.vb:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Frent.Systems.Rule
+    name: Rule
+    href: Frent.Systems.Rule.html
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.IEquatable`1
+  commentId: T:System.IEquatable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  name: IEquatable<T>
+  nameWithType: IEquatable<T>
+  fullName: System.IEquatable<T>
+  nameWithType.vb: IEquatable(Of T)
+  fullName.vb: System.IEquatable(Of T)
+  name.vb: IEquatable(Of T)
+  spec.csharp:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: Frent.Systems.Rule
+  commentId: T:Frent.Systems.Rule
+  parent: Frent.Systems
+  href: Frent.Systems.Rule.html
+  name: Rule
+  nameWithType: Rule
+  fullName: Frent.Systems.Rule
+- uid: Frent.Systems.Rule.Delegate*
+  commentId: Overload:Frent.Systems.Rule.Delegate
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_Delegate_System_Func_Frent_Core_EntityType_System_Boolean__
+  name: Delegate
+  nameWithType: Rule.Delegate
+  fullName: Frent.Systems.Rule.Delegate
+- uid: System.Func{Frent.Core.EntityType,System.Boolean}
+  commentId: T:System.Func{Frent.Core.EntityType,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<EntityType, bool>
+  nameWithType: Func<EntityType, bool>
+  fullName: System.Func<Frent.Core.EntityType, bool>
+  nameWithType.vb: Func(Of EntityType, Boolean)
+  fullName.vb: System.Func(Of Frent.Core.EntityType, Boolean)
+  name.vb: Func(Of EntityType, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Frent.Core.EntityType
+    name: EntityType
+    href: Frent.Core.EntityType.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Frent.Core.EntityType
+    name: EntityType
+    href: Frent.Core.EntityType.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Frent.Systems.Rule.HasComponent*
+  commentId: Overload:Frent.Systems.Rule.HasComponent
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_HasComponent_Frent_Core_ComponentID_
+  name: HasComponent
+  nameWithType: Rule.HasComponent
+  fullName: Frent.Systems.Rule.HasComponent
+- uid: Frent.Core.ComponentID
+  commentId: T:Frent.Core.ComponentID
+  parent: Frent.Core
+  href: Frent.Core.ComponentID.html
+  name: ComponentID
+  nameWithType: ComponentID
+  fullName: Frent.Core.ComponentID
+- uid: Frent.Core
+  commentId: N:Frent.Core
+  href: Frent.html
+  name: Frent.Core
+  nameWithType: Frent.Core
+  fullName: Frent.Core
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Core
+    name: Core
+    href: Frent.Core.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Core
+    name: Core
+    href: Frent.Core.html
+- uid: Frent.Systems.Rule.NotComponent*
+  commentId: Overload:Frent.Systems.Rule.NotComponent
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_NotComponent_Frent_Core_ComponentID_
+  name: NotComponent
+  nameWithType: Rule.NotComponent
+  fullName: Frent.Systems.Rule.NotComponent
+- uid: Frent.Systems.Rule.HasTag*
+  commentId: Overload:Frent.Systems.Rule.HasTag
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_HasTag_Frent_Core_TagID_
+  name: HasTag
+  nameWithType: Rule.HasTag
+  fullName: Frent.Systems.Rule.HasTag
+- uid: Frent.Core.TagID
+  commentId: T:Frent.Core.TagID
+  parent: Frent.Core
+  href: Frent.Core.TagID.html
+  name: TagID
+  nameWithType: TagID
+  fullName: Frent.Core.TagID
+- uid: Frent.Systems.Rule.NotTag*
+  commentId: Overload:Frent.Systems.Rule.NotTag
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_NotTag_Frent_Core_TagID_
+  name: NotTag
+  nameWithType: Rule.NotTag
+  fullName: Frent.Systems.Rule.NotTag
+- uid: Frent.Systems.Rule.Equals*
+  commentId: Overload:Frent.Systems.Rule.Equals
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_Equals_Frent_Systems_Rule_
+  name: Equals
+  nameWithType: Rule.Equals
+  fullName: Frent.Systems.Rule.Equals
+- uid: System.IEquatable{Frent.Systems.Rule}.Equals(Frent.Systems.Rule)
+  commentId: M:System.IEquatable{Frent.Systems.Rule}.Equals(Frent.Systems.Rule)
+  parent: System.IEquatable{Frent.Systems.Rule}
+  definition: System.IEquatable`1.Equals(`0)
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  name: Equals(Rule)
+  nameWithType: IEquatable<Rule>.Equals(Rule)
+  fullName: System.IEquatable<Frent.Systems.Rule>.Equals(Frent.Systems.Rule)
+  nameWithType.vb: IEquatable(Of Rule).Equals(Rule)
+  fullName.vb: System.IEquatable(Of Frent.Systems.Rule).Equals(Frent.Systems.Rule)
+  spec.csharp:
+  - uid: System.IEquatable{Frent.Systems.Rule}.Equals(Frent.Systems.Rule)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - uid: Frent.Systems.Rule
+    name: Rule
+    href: Frent.Systems.Rule.html
+  - name: )
+  spec.vb:
+  - uid: System.IEquatable{Frent.Systems.Rule}.Equals(Frent.Systems.Rule)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - uid: Frent.Systems.Rule
+    name: Rule
+    href: Frent.Systems.Rule.html
+  - name: )
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: System.IEquatable`1.Equals(`0)
+  commentId: M:System.IEquatable`1.Equals(`0)
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  name: Equals(T)
+  nameWithType: IEquatable<T>.Equals(T)
+  fullName: System.IEquatable<T>.Equals(T)
+  nameWithType.vb: IEquatable(Of T).Equals(T)
+  fullName.vb: System.IEquatable(Of T).Equals(T)
+  spec.csharp:
+  - uid: System.IEquatable`1.Equals(`0)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - name: T
+  - name: )
+  spec.vb:
+  - uid: System.IEquatable`1.Equals(`0)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - name: T
+  - name: )
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: Frent.Systems.Rule.GetHashCode*
+  commentId: Overload:Frent.Systems.Rule.GetHashCode
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_GetHashCode
+  name: GetHashCode
+  nameWithType: Rule.GetHashCode
+  fullName: Frent.Systems.Rule.GetHashCode
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Frent.Systems.Rule.op_Equality*
+  commentId: Overload:Frent.Systems.Rule.op_Equality
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_op_Equality_Frent_Systems_Rule_Frent_Systems_Rule_
+  name: operator ==
+  nameWithType: Rule.operator ==
+  fullName: Frent.Systems.Rule.operator ==
+  nameWithType.vb: Rule.=
+  fullName.vb: Frent.Systems.Rule.=
+  name.vb: =
+  spec.csharp:
+  - name: operator
+  - name: " "
+  - uid: Frent.Systems.Rule.op_Equality*
+    name: ==
+    href: Frent.Systems.Rule.html#Frent_Systems_Rule_op_Equality_Frent_Systems_Rule_Frent_Systems_Rule_
+- uid: Frent.Systems.Rule.op_Inequality*
+  commentId: Overload:Frent.Systems.Rule.op_Inequality
+  href: Frent.Systems.Rule.html#Frent_Systems_Rule_op_Inequality_Frent_Systems_Rule_Frent_Systems_Rule_
+  name: operator !=
+  nameWithType: Rule.operator !=
+  fullName: Frent.Systems.Rule.operator !=
+  nameWithType.vb: Rule.<>
+  fullName.vb: Frent.Systems.Rule.<>
+  name.vb: <>
+  spec.csharp:
+  - name: operator
+  - name: " "
+  - uid: Frent.Systems.Rule.op_Inequality*
+    name: '!='
+    href: Frent.Systems.Rule.html#Frent_Systems_Rule_op_Inequality_Frent_Systems_Rule_Frent_Systems_Rule_

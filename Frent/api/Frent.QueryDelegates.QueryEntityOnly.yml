@@ -1,0 +1,45 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.QueryDelegates.QueryEntityOnly
+  commentId: T:Frent.QueryDelegates.QueryEntityOnly
+  id: QueryDelegates.QueryEntityOnly
+  parent: Frent
+  children: []
+  langs:
+  - csharp
+  - vb
+  name: QueryDelegates.QueryEntityOnly
+  nameWithType: QueryDelegates.QueryEntityOnly
+  fullName: Frent.QueryDelegates.QueryEntityOnly
+  type: Delegate
+  source:
+    remote:
+      path: Frent/Systems/QueryDelegates.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: QueryEntityOnly
+    path: Systems/QueryDelegates.cs
+    startLine: 15
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: public delegate void QueryDelegates.QueryEntityOnly(Entity entity)
+    parameters:
+    - id: entity
+      type: Frent.Entity
+    content.vb: Public Delegate Sub QueryDelegates.QueryEntityOnly(entity As Entity)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.Entity
+  commentId: T:Frent.Entity
+  parent: Frent
+  href: Frent.Entity.html
+  name: Entity
+  nameWithType: Entity
+  fullName: Frent.Entity

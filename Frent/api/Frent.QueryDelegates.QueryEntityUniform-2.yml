@@ -1,0 +1,75 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.QueryDelegates.QueryEntityUniform`2
+  commentId: T:Frent.QueryDelegates.QueryEntityUniform`2
+  id: QueryDelegates.QueryEntityUniform`2
+  parent: Frent
+  children: []
+  langs:
+  - csharp
+  - vb
+  name: QueryDelegates.QueryEntityUniform<TUniform, T>
+  nameWithType: QueryDelegates.QueryEntityUniform<TUniform, T>
+  fullName: Frent.QueryDelegates.QueryEntityUniform<TUniform, T>
+  type: Delegate
+  source:
+    remote:
+      path: Frent/Systems/QueryDelegates.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: QueryEntityUniform
+    path: Systems/QueryDelegates.cs
+    startLine: 10
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: public delegate void QueryDelegates.QueryEntityUniform<TUniform, T>(Entity entity, in TUniform uniform, ref T comp1)
+    parameters:
+    - id: entity
+      type: Frent.Entity
+    - id: uniform
+      type: '{TUniform}'
+    - id: comp1
+      type: '{T}'
+    typeParameters:
+    - id: TUniform
+    - id: T
+    content.vb: Public Delegate Sub QueryDelegates.QueryEntityUniform(Of TUniform, T)(entity As Entity, uniform As TUniform, comp1 As T)
+  nameWithType.vb: QueryDelegates.QueryEntityUniform(Of TUniform, T)
+  fullName.vb: Frent.QueryDelegates.QueryEntityUniform(Of TUniform, T)
+  name.vb: QueryDelegates.QueryEntityUniform(Of TUniform, T)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.Entity
+  commentId: T:Frent.Entity
+  parent: Frent
+  href: Frent.Entity.html
+  name: Entity
+  nameWithType: Entity
+  fullName: Frent.Entity
+- uid: '{TUniform}'
+  commentId: '!:TUniform'
+  definition: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: '{T}'
+  commentId: '!:T'
+  definition: T
+  name: T
+  nameWithType: T
+  fullName: T
+- uid: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: T
+  name: T
+  nameWithType: T
+  fullName: T

@@ -1,0 +1,140 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.QueryDelegates.QueryUniform`8
+  commentId: T:Frent.QueryDelegates.QueryUniform`8
+  id: QueryDelegates.QueryUniform`8
+  parent: Frent
+  children: []
+  langs:
+  - csharp
+  - vb
+  name: QueryDelegates.QueryUniform<TUniform, T1, T2, T3, T4, T5, T6, T7>
+  nameWithType: QueryDelegates.QueryUniform<TUniform, T1, T2, T3, T4, T5, T6, T7>
+  fullName: Frent.QueryDelegates.QueryUniform<TUniform, T1, T2, T3, T4, T5, T6, T7>
+  type: Delegate
+  source:
+    id: QueryUniform
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\QueryDelegates.7.cs
+    startLine: 14
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: public delegate void QueryDelegates.QueryUniform<TUniform, T1, T2, T3, T4, T5, T6, T7>(in TUniform uniform, ref T1 comp1, ref T2 comp2, ref T3 comp3, ref T4 comp4, ref T5 comp5, ref T6 comp6, ref T7 comp7)
+    parameters:
+    - id: uniform
+      type: '{TUniform}'
+    - id: comp1
+      type: '{T1}'
+    - id: comp2
+      type: '{T2}'
+    - id: comp3
+      type: '{T3}'
+    - id: comp4
+      type: '{T4}'
+    - id: comp5
+      type: '{T5}'
+    - id: comp6
+      type: '{T6}'
+    - id: comp7
+      type: '{T7}'
+    typeParameters:
+    - id: TUniform
+    - id: T1
+    - id: T2
+    - id: T3
+    - id: T4
+    - id: T5
+    - id: T6
+    - id: T7
+    content.vb: Public Delegate Sub QueryDelegates.QueryUniform(Of TUniform, T1, T2, T3, T4, T5, T6, T7)(uniform As TUniform, comp1 As T1, comp2 As T2, comp3 As T3, comp4 As T4, comp5 As T5, comp6 As T6, comp7 As T7)
+  nameWithType.vb: QueryDelegates.QueryUniform(Of TUniform, T1, T2, T3, T4, T5, T6, T7)
+  fullName.vb: Frent.QueryDelegates.QueryUniform(Of TUniform, T1, T2, T3, T4, T5, T6, T7)
+  name.vb: QueryDelegates.QueryUniform(Of TUniform, T1, T2, T3, T4, T5, T6, T7)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: '{TUniform}'
+  commentId: '!:TUniform'
+  definition: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: '{T1}'
+  commentId: '!:T1'
+  definition: T1
+  name: T1
+  nameWithType: T1
+  fullName: T1
+- uid: '{T2}'
+  commentId: '!:T2'
+  definition: T2
+  name: T2
+  nameWithType: T2
+  fullName: T2
+- uid: '{T3}'
+  commentId: '!:T3'
+  definition: T3
+  name: T3
+  nameWithType: T3
+  fullName: T3
+- uid: '{T4}'
+  commentId: '!:T4'
+  definition: T4
+  name: T4
+  nameWithType: T4
+  fullName: T4
+- uid: '{T5}'
+  commentId: '!:T5'
+  definition: T5
+  name: T5
+  nameWithType: T5
+  fullName: T5
+- uid: '{T6}'
+  commentId: '!:T6'
+  definition: T6
+  name: T6
+  nameWithType: T6
+  fullName: T6
+- uid: '{T7}'
+  commentId: '!:T7'
+  definition: T7
+  name: T7
+  nameWithType: T7
+  fullName: T7
+- uid: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: T1
+  name: T1
+  nameWithType: T1
+  fullName: T1
+- uid: T2
+  name: T2
+  nameWithType: T2
+  fullName: T2
+- uid: T3
+  name: T3
+  nameWithType: T3
+  fullName: T3
+- uid: T4
+  name: T4
+  nameWithType: T4
+  fullName: T4
+- uid: T5
+  name: T5
+  nameWithType: T5
+  fullName: T5
+- uid: T6
+  name: T6
+  nameWithType: T6
+  fullName: T6
+- uid: T7
+  name: T7
+  nameWithType: T7
+  fullName: T7

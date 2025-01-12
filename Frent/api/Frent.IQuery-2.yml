@@ -1,0 +1,125 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.IQuery`2
+  commentId: T:Frent.IQuery`2
+  id: IQuery`2
+  parent: Frent
+  children:
+  - Frent.IQuery`2.Run(`0@,`1@)
+  langs:
+  - csharp
+  - vb
+  name: IQuery<TArg1, TArg2>
+  nameWithType: IQuery<TArg1, TArg2>
+  fullName: Frent.IQuery<TArg1, TArg2>
+  type: Interface
+  source:
+    id: IQuery
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\IQuery.2.cs
+    startLine: 8
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: >-
+      [Variadic("TArg>", "|TArg$, |>", 16)]
+
+      [Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)]
+
+      public interface IQuery<TArg1, TArg2>
+    typeParameters:
+    - id: TArg1
+    - id: TArg2
+    content.vb: >-
+      <Variadic("TArg>", "|TArg$, |>", 16)>
+
+      <Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)>
+
+      Public Interface IQuery(Of TArg1, TArg2)
+  attributes:
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: TArg>
+    - type: System.String
+      value: '|TArg$, |>'
+    - type: System.Int32
+      value: 16
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: ref TArg arg
+    - type: System.String
+      value: '|ref TArg$ arg$, |'
+    - type: System.Int32
+      value: 16
+  nameWithType.vb: IQuery(Of TArg1, TArg2)
+  fullName.vb: Frent.IQuery(Of TArg1, TArg2)
+  name.vb: IQuery(Of TArg1, TArg2)
+- uid: Frent.IQuery`2.Run(`0@,`1@)
+  commentId: M:Frent.IQuery`2.Run(`0@,`1@)
+  id: Run(`0@,`1@)
+  parent: Frent.IQuery`2
+  langs:
+  - csharp
+  - vb
+  name: Run(ref TArg1, ref TArg2)
+  nameWithType: IQuery<TArg1, TArg2>.Run(ref TArg1, ref TArg2)
+  fullName: Frent.IQuery<TArg1, TArg2>.Run(ref TArg1, ref TArg2)
+  type: Method
+  source:
+    id: Run
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\IQuery.2.cs
+    startLine: 12
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: void Run(ref TArg1 arg1, ref TArg2 arg2)
+    parameters:
+    - id: arg1
+      type: '{TArg1}'
+    - id: arg2
+      type: '{TArg2}'
+    content.vb: Sub Run(arg1 As TArg1, arg2 As TArg2)
+  overload: Frent.IQuery`2.Run*
+  nameWithType.vb: IQuery(Of TArg1, TArg2).Run(TArg1, TArg2)
+  fullName.vb: Frent.IQuery(Of TArg1, TArg2).Run(TArg1, TArg2)
+  name.vb: Run(TArg1, TArg2)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.IQuery`2.Run*
+  commentId: Overload:Frent.IQuery`2.Run
+  href: Frent.IQuery-2.html#Frent_IQuery_2_Run__0___1__
+  name: Run
+  nameWithType: IQuery<TArg1, TArg2>.Run
+  fullName: Frent.IQuery<TArg1, TArg2>.Run
+  nameWithType.vb: IQuery(Of TArg1, TArg2).Run
+  fullName.vb: Frent.IQuery(Of TArg1, TArg2).Run
+- uid: '{TArg1}'
+  commentId: '!:TArg1'
+  definition: TArg1
+  name: TArg1
+  nameWithType: TArg1
+  fullName: TArg1
+- uid: '{TArg2}'
+  commentId: '!:TArg2'
+  definition: TArg2
+  name: TArg2
+  nameWithType: TArg2
+  fullName: TArg2
+- uid: TArg1
+  name: TArg1
+  nameWithType: TArg1
+  fullName: TArg1
+- uid: TArg2
+  name: TArg2
+  nameWithType: TArg2
+  fullName: TArg2

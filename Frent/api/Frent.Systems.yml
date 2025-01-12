@@ -1,0 +1,62 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Systems
+  commentId: N:Frent.Systems
+  id: Frent.Systems
+  children:
+  - Frent.Systems.Query
+  - Frent.Systems.Rule
+  - Frent.Systems.RuleTypes
+  langs:
+  - csharp
+  - vb
+  name: Frent.Systems
+  nameWithType: Frent.Systems
+  fullName: Frent.Systems
+  type: Namespace
+  assemblies:
+  - Frent
+references:
+- uid: Frent.Systems.Query
+  commentId: T:Frent.Systems.Query
+  parent: Frent.Systems
+  href: Frent.Systems.Query.html
+  name: Query
+  nameWithType: Query
+  fullName: Frent.Systems.Query
+- uid: Frent.Systems.Rule
+  commentId: T:Frent.Systems.Rule
+  parent: Frent.Systems
+  href: Frent.Systems.Rule.html
+  name: Rule
+  nameWithType: Rule
+  fullName: Frent.Systems.Rule
+- uid: Frent.Systems.RuleTypes
+  commentId: T:Frent.Systems.RuleTypes
+  parent: Frent.Systems
+  href: Frent.Systems.RuleTypes.html
+  name: RuleTypes
+  nameWithType: RuleTypes
+  fullName: Frent.Systems.RuleTypes
+- uid: Frent.Systems
+  commentId: N:Frent.Systems
+  href: Frent.html
+  name: Frent.Systems
+  nameWithType: Frent.Systems
+  fullName: Frent.Systems
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Systems
+    name: Systems
+    href: Frent.Systems.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Systems
+    name: Systems
+    href: Frent.Systems.html

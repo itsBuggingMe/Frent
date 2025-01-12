@@ -1,0 +1,120 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.IQuery`1
+  commentId: T:Frent.IQuery`1
+  id: IQuery`1
+  parent: Frent
+  children:
+  - Frent.IQuery`1.Run(`0@)
+  langs:
+  - csharp
+  - vb
+  name: IQuery<TArg>
+  nameWithType: IQuery<TArg>
+  fullName: Frent.IQuery<TArg>
+  type: Interface
+  source:
+    remote:
+      path: Frent/Systems/QueryInterfaces.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: IQuery
+    path: Systems/QueryInterfaces.cs
+    startLine: 5
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: >-
+      [Variadic("TArg>", "|TArg$, |>", 16)]
+
+      [Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)]
+
+      public interface IQuery<TArg>
+    typeParameters:
+    - id: TArg
+    content.vb: >-
+      <Variadic("TArg>", "|TArg$, |>", 16)>
+
+      <Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)>
+
+      Public Interface IQuery(Of TArg)
+  attributes:
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: TArg>
+    - type: System.String
+      value: '|TArg$, |>'
+    - type: System.Int32
+      value: 16
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: ref TArg arg
+    - type: System.String
+      value: '|ref TArg$ arg$, |'
+    - type: System.Int32
+      value: 16
+  nameWithType.vb: IQuery(Of TArg)
+  fullName.vb: Frent.IQuery(Of TArg)
+  name.vb: IQuery(Of TArg)
+- uid: Frent.IQuery`1.Run(`0@)
+  commentId: M:Frent.IQuery`1.Run(`0@)
+  id: Run(`0@)
+  parent: Frent.IQuery`1
+  langs:
+  - csharp
+  - vb
+  name: Run(ref TArg)
+  nameWithType: IQuery<TArg>.Run(ref TArg)
+  fullName: Frent.IQuery<TArg>.Run(ref TArg)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/QueryInterfaces.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Run
+    path: Systems/QueryInterfaces.cs
+    startLine: 9
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: void Run(ref TArg arg)
+    parameters:
+    - id: arg
+      type: '{TArg}'
+    content.vb: Sub Run(arg As TArg)
+  overload: Frent.IQuery`1.Run*
+  nameWithType.vb: IQuery(Of TArg).Run(TArg)
+  fullName.vb: Frent.IQuery(Of TArg).Run(TArg)
+  name.vb: Run(TArg)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.IQuery`1.Run*
+  commentId: Overload:Frent.IQuery`1.Run
+  href: Frent.IQuery-1.html#Frent_IQuery_1_Run__0__
+  name: Run
+  nameWithType: IQuery<TArg>.Run
+  fullName: Frent.IQuery<TArg>.Run
+  nameWithType.vb: IQuery(Of TArg).Run
+  fullName.vb: Frent.IQuery(Of TArg).Run
+- uid: '{TArg}'
+  commentId: '!:TArg'
+  definition: TArg
+  name: TArg
+  nameWithType: TArg
+  fullName: TArg
+- uid: TArg
+  name: TArg
+  nameWithType: TArg
+  fullName: TArg

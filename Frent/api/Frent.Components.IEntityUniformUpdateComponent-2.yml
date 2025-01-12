@@ -1,0 +1,164 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Components.IEntityUniformUpdateComponent`2
+  commentId: T:Frent.Components.IEntityUniformUpdateComponent`2
+  id: IEntityUniformUpdateComponent`2
+  parent: Frent.Components
+  children:
+  - Frent.Components.IEntityUniformUpdateComponent`2.Update(Frent.Entity,`0@,`1@)
+  langs:
+  - csharp
+  - vb
+  name: IEntityUniformUpdateComponent<TUniform, TArg>
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg>
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg>
+  type: Interface
+  source:
+    remote:
+      path: Frent/Components/IEntityUniformUpdateComponent.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: IEntityUniformUpdateComponent
+    path: Components/IEntityUniformUpdateComponent.cs
+    startLine: 10
+  assemblies:
+  - Frent
+  namespace: Frent.Components
+  syntax:
+    content: >-
+      [Variadic("TArg>", "|TArg$, |>", 15)]
+
+      [Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)]
+
+      public interface IEntityUniformUpdateComponent<TUniform, TArg> : IComponent
+    typeParameters:
+    - id: TUniform
+    - id: TArg
+    content.vb: >-
+      <Variadic("TArg>", "|TArg$, |>", 15)>
+
+      <Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)>
+
+      Public Interface IEntityUniformUpdateComponent(Of TUniform, TArg) Inherits IComponent
+  attributes:
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: TArg>
+    - type: System.String
+      value: '|TArg$, |>'
+    - type: System.Int32
+      value: 15
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: ref TArg arg
+    - type: System.String
+      value: '|ref TArg$ arg$, |'
+    - type: System.Int32
+      value: 16
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg)
+  name.vb: IEntityUniformUpdateComponent(Of TUniform, TArg)
+- uid: Frent.Components.IEntityUniformUpdateComponent`2.Update(Frent.Entity,`0@,`1@)
+  commentId: M:Frent.Components.IEntityUniformUpdateComponent`2.Update(Frent.Entity,`0@,`1@)
+  id: Update(Frent.Entity,`0@,`1@)
+  parent: Frent.Components.IEntityUniformUpdateComponent`2
+  langs:
+  - csharp
+  - vb
+  name: Update(Entity, in TUniform, ref TArg)
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg>.Update(Entity, in TUniform, ref TArg)
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg>.Update(Frent.Entity, in TUniform, ref TArg)
+  type: Method
+  source:
+    remote:
+      path: Frent/Components/IEntityUniformUpdateComponent.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Update
+    path: Components/IEntityUniformUpdateComponent.cs
+    startLine: 14
+  assemblies:
+  - Frent
+  namespace: Frent.Components
+  syntax:
+    content: void Update(Entity entity, in TUniform uniform, ref TArg arg)
+    parameters:
+    - id: entity
+      type: Frent.Entity
+    - id: uniform
+      type: '{TUniform}'
+    - id: arg
+      type: '{TArg}'
+    content.vb: Sub Update(entity As Entity, uniform As TUniform, arg As TArg)
+  overload: Frent.Components.IEntityUniformUpdateComponent`2.Update*
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg).Update(Entity, TUniform, TArg)
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg).Update(Frent.Entity, TUniform, TArg)
+  name.vb: Update(Entity, TUniform, TArg)
+references:
+- uid: Frent.Components
+  commentId: N:Frent.Components
+  href: Frent.html
+  name: Frent.Components
+  nameWithType: Frent.Components
+  fullName: Frent.Components
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Components
+    name: Components
+    href: Frent.Components.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Components
+    name: Components
+    href: Frent.Components.html
+- uid: Frent.Components.IEntityUniformUpdateComponent`2.Update*
+  commentId: Overload:Frent.Components.IEntityUniformUpdateComponent`2.Update
+  href: Frent.Components.IEntityUniformUpdateComponent-2.html#Frent_Components_IEntityUniformUpdateComponent_2_Update_Frent_Entity__0___1__
+  name: Update
+  nameWithType: IEntityUniformUpdateComponent<TUniform, TArg>.Update
+  fullName: Frent.Components.IEntityUniformUpdateComponent<TUniform, TArg>.Update
+  nameWithType.vb: IEntityUniformUpdateComponent(Of TUniform, TArg).Update
+  fullName.vb: Frent.Components.IEntityUniformUpdateComponent(Of TUniform, TArg).Update
+- uid: Frent.Entity
+  commentId: T:Frent.Entity
+  parent: Frent
+  href: Frent.Entity.html
+  name: Entity
+  nameWithType: Entity
+  fullName: Frent.Entity
+- uid: '{TUniform}'
+  commentId: '!:TUniform'
+  definition: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: '{TArg}'
+  commentId: '!:TArg'
+  definition: TArg
+  name: TArg
+  nameWithType: TArg
+  fullName: TArg
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: TArg
+  name: TArg
+  nameWithType: TArg
+  fullName: TArg

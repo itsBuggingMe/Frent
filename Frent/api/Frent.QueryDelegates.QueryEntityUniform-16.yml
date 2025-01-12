@@ -1,0 +1,253 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.QueryDelegates.QueryEntityUniform`16
+  commentId: T:Frent.QueryDelegates.QueryEntityUniform`16
+  id: QueryDelegates.QueryEntityUniform`16
+  parent: Frent
+  children: []
+  langs:
+  - csharp
+  - vb
+  name: QueryDelegates.QueryEntityUniform<TUniform, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+  nameWithType: QueryDelegates.QueryEntityUniform<TUniform, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+  fullName: Frent.QueryDelegates.QueryEntityUniform<TUniform, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+  type: Delegate
+  source:
+    id: QueryEntityUniform
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\QueryDelegates.15.cs
+    startLine: 13
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: public delegate void QueryDelegates.QueryEntityUniform<TUniform, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Entity entity, in TUniform uniform, ref T1 comp1, ref T2 comp2, ref T3 comp3, ref T4 comp4, ref T5 comp5, ref T6 comp6, ref T7 comp7, ref T8 comp8, ref T9 comp9, ref T10 comp10, ref T11 comp11, ref T12 comp12, ref T13 comp13, ref T14 comp14, ref T15 comp15)
+    parameters:
+    - id: entity
+      type: Frent.Entity
+    - id: uniform
+      type: '{TUniform}'
+    - id: comp1
+      type: '{T1}'
+    - id: comp2
+      type: '{T2}'
+    - id: comp3
+      type: '{T3}'
+    - id: comp4
+      type: '{T4}'
+    - id: comp5
+      type: '{T5}'
+    - id: comp6
+      type: '{T6}'
+    - id: comp7
+      type: '{T7}'
+    - id: comp8
+      type: '{T8}'
+    - id: comp9
+      type: '{T9}'
+    - id: comp10
+      type: '{T10}'
+    - id: comp11
+      type: '{T11}'
+    - id: comp12
+      type: '{T12}'
+    - id: comp13
+      type: '{T13}'
+    - id: comp14
+      type: '{T14}'
+    - id: comp15
+      type: '{T15}'
+    typeParameters:
+    - id: TUniform
+    - id: T1
+    - id: T2
+    - id: T3
+    - id: T4
+    - id: T5
+    - id: T6
+    - id: T7
+    - id: T8
+    - id: T9
+    - id: T10
+    - id: T11
+    - id: T12
+    - id: T13
+    - id: T14
+    - id: T15
+    content.vb: Public Delegate Sub QueryDelegates.QueryEntityUniform(Of TUniform, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15)(entity As Entity, uniform As TUniform, comp1 As T1, comp2 As T2, comp3 As T3, comp4 As T4, comp5 As T5, comp6 As T6, comp7 As T7, comp8 As T8, comp9 As T9, comp10 As T10, comp11 As T11, comp12 As T12, comp13 As T13, comp14 As T14, comp15 As T15)
+  nameWithType.vb: QueryDelegates.QueryEntityUniform(Of TUniform, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15)
+  fullName.vb: Frent.QueryDelegates.QueryEntityUniform(Of TUniform, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15)
+  name.vb: QueryDelegates.QueryEntityUniform(Of TUniform, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.Entity
+  commentId: T:Frent.Entity
+  parent: Frent
+  href: Frent.Entity.html
+  name: Entity
+  nameWithType: Entity
+  fullName: Frent.Entity
+- uid: '{TUniform}'
+  commentId: '!:TUniform'
+  definition: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: '{T1}'
+  commentId: '!:T1'
+  definition: T1
+  name: T1
+  nameWithType: T1
+  fullName: T1
+- uid: '{T2}'
+  commentId: '!:T2'
+  definition: T2
+  name: T2
+  nameWithType: T2
+  fullName: T2
+- uid: '{T3}'
+  commentId: '!:T3'
+  definition: T3
+  name: T3
+  nameWithType: T3
+  fullName: T3
+- uid: '{T4}'
+  commentId: '!:T4'
+  definition: T4
+  name: T4
+  nameWithType: T4
+  fullName: T4
+- uid: '{T5}'
+  commentId: '!:T5'
+  definition: T5
+  name: T5
+  nameWithType: T5
+  fullName: T5
+- uid: '{T6}'
+  commentId: '!:T6'
+  definition: T6
+  name: T6
+  nameWithType: T6
+  fullName: T6
+- uid: '{T7}'
+  commentId: '!:T7'
+  definition: T7
+  name: T7
+  nameWithType: T7
+  fullName: T7
+- uid: '{T8}'
+  commentId: '!:T8'
+  definition: T8
+  name: T8
+  nameWithType: T8
+  fullName: T8
+- uid: '{T9}'
+  commentId: '!:T9'
+  definition: T9
+  name: T9
+  nameWithType: T9
+  fullName: T9
+- uid: '{T10}'
+  commentId: '!:T10'
+  definition: T10
+  name: T10
+  nameWithType: T10
+  fullName: T10
+- uid: '{T11}'
+  commentId: '!:T11'
+  definition: T11
+  name: T11
+  nameWithType: T11
+  fullName: T11
+- uid: '{T12}'
+  commentId: '!:T12'
+  definition: T12
+  name: T12
+  nameWithType: T12
+  fullName: T12
+- uid: '{T13}'
+  commentId: '!:T13'
+  definition: T13
+  name: T13
+  nameWithType: T13
+  fullName: T13
+- uid: '{T14}'
+  commentId: '!:T14'
+  definition: T14
+  name: T14
+  nameWithType: T14
+  fullName: T14
+- uid: '{T15}'
+  commentId: '!:T15'
+  definition: T15
+  name: T15
+  nameWithType: T15
+  fullName: T15
+- uid: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: T1
+  name: T1
+  nameWithType: T1
+  fullName: T1
+- uid: T2
+  name: T2
+  nameWithType: T2
+  fullName: T2
+- uid: T3
+  name: T3
+  nameWithType: T3
+  fullName: T3
+- uid: T4
+  name: T4
+  nameWithType: T4
+  fullName: T4
+- uid: T5
+  name: T5
+  nameWithType: T5
+  fullName: T5
+- uid: T6
+  name: T6
+  nameWithType: T6
+  fullName: T6
+- uid: T7
+  name: T7
+  nameWithType: T7
+  fullName: T7
+- uid: T8
+  name: T8
+  nameWithType: T8
+  fullName: T8
+- uid: T9
+  name: T9
+  nameWithType: T9
+  fullName: T9
+- uid: T10
+  name: T10
+  nameWithType: T10
+  fullName: T10
+- uid: T11
+  name: T11
+  nameWithType: T11
+  fullName: T11
+- uid: T12
+  name: T12
+  nameWithType: T12
+  fullName: T12
+- uid: T13
+  name: T13
+  nameWithType: T13
+  fullName: T13
+- uid: T14
+  name: T14
+  nameWithType: T14
+  fullName: T14
+- uid: T15
+  name: T15
+  nameWithType: T15
+  fullName: T15

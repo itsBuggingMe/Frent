@@ -1,0 +1,701 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Core.TagID
+  commentId: T:Frent.Core.TagID
+  id: TagID
+  parent: Frent.Core
+  children:
+  - Frent.Core.TagID.Equals(Frent.Core.TagID)
+  - Frent.Core.TagID.Equals(System.Object)
+  - Frent.Core.TagID.GetHashCode
+  - Frent.Core.TagID.Type
+  - Frent.Core.TagID.op_Equality(Frent.Core.TagID,Frent.Core.TagID)
+  - Frent.Core.TagID.op_Inequality(Frent.Core.TagID,Frent.Core.TagID)
+  langs:
+  - csharp
+  - vb
+  name: TagID
+  nameWithType: TagID
+  fullName: Frent.Core.TagID
+  type: Struct
+  source:
+    remote:
+      path: Frent/Core/TagID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: TagID
+    path: Core/TagID.cs
+    startLine: 5
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Represents a specific type as a tag, and can be used for tag related queries
+  example: []
+  syntax:
+    content: 'public readonly struct TagID : IEquatable<TagID>'
+    content.vb: Public Structure TagID Implements IEquatable(Of TagID)
+  implements:
+  - System.IEquatable{Frent.Core.TagID}
+  inheritedMembers:
+  - System.ValueType.ToString
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.GetType
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Frent.Core.TagID.Type
+  commentId: P:Frent.Core.TagID.Type
+  id: Type
+  parent: Frent.Core.TagID
+  langs:
+  - csharp
+  - vb
+  name: Type
+  nameWithType: TagID.Type
+  fullName: Frent.Core.TagID.Type
+  type: Property
+  source:
+    remote:
+      path: Frent/Core/TagID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Type
+    path: Core/TagID.cs
+    startLine: 13
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: The type that this TagID represents
+  example: []
+  syntax:
+    content: public Type Type { get; }
+    parameters: []
+    return:
+      type: System.Type
+    content.vb: Public ReadOnly Property Type As Type
+  overload: Frent.Core.TagID.Type*
+- uid: Frent.Core.TagID.Equals(Frent.Core.TagID)
+  commentId: M:Frent.Core.TagID.Equals(Frent.Core.TagID)
+  id: Equals(Frent.Core.TagID)
+  parent: Frent.Core.TagID
+  langs:
+  - csharp
+  - vb
+  name: Equals(TagID)
+  nameWithType: TagID.Equals(TagID)
+  fullName: Frent.Core.TagID.Equals(Frent.Core.TagID)
+  type: Method
+  source:
+    remote:
+      path: Frent/Core/TagID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Equals
+    path: Core/TagID.cs
+    startLine: 19
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Checks if this TagID instance represents the same type as <code class="paramref">other</code>
+  example: []
+  syntax:
+    content: public bool Equals(TagID other)
+    parameters:
+    - id: other
+      type: Frent.Core.TagID
+      description: The tag to compare against
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when they represent the same type, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise
+    content.vb: Public Function Equals(other As TagID) As Boolean
+  overload: Frent.Core.TagID.Equals*
+  implements:
+  - System.IEquatable{Frent.Core.TagID}.Equals(Frent.Core.TagID)
+- uid: Frent.Core.TagID.Equals(System.Object)
+  commentId: M:Frent.Core.TagID.Equals(System.Object)
+  id: Equals(System.Object)
+  parent: Frent.Core.TagID
+  langs:
+  - csharp
+  - vb
+  name: Equals(object?)
+  nameWithType: TagID.Equals(object?)
+  fullName: Frent.Core.TagID.Equals(object?)
+  type: Method
+  source:
+    remote:
+      path: Frent/Core/TagID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Equals
+    path: Core/TagID.cs
+    startLine: 25
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Checks if this TagID instance represents the same type as <code class="paramref">other</code>
+  example: []
+  syntax:
+    content: public override bool Equals(object? other)
+    parameters:
+    - id: other
+      type: System.Object
+      description: The tag to compare against
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when they represent the same type, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise
+    content.vb: Public Overrides Function Equals(other As Object) As Boolean
+  overridden: System.ValueType.Equals(System.Object)
+  overload: Frent.Core.TagID.Equals*
+  nameWithType.vb: TagID.Equals(Object)
+  fullName.vb: Frent.Core.TagID.Equals(Object)
+  name.vb: Equals(Object)
+- uid: Frent.Core.TagID.op_Equality(Frent.Core.TagID,Frent.Core.TagID)
+  commentId: M:Frent.Core.TagID.op_Equality(Frent.Core.TagID,Frent.Core.TagID)
+  id: op_Equality(Frent.Core.TagID,Frent.Core.TagID)
+  parent: Frent.Core.TagID
+  langs:
+  - csharp
+  - vb
+  name: operator ==(TagID, TagID)
+  nameWithType: TagID.operator ==(TagID, TagID)
+  fullName: Frent.Core.TagID.operator ==(Frent.Core.TagID, Frent.Core.TagID)
+  type: Operator
+  source:
+    remote:
+      path: Frent/Core/TagID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: op_Equality
+    path: Core/TagID.cs
+    startLine: 30
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Checks if two <xref href="Frent.Core.TagID" data-throw-if-not-resolved="false"></xref>s represent the same type
+  example: []
+  syntax:
+    content: public static bool operator ==(TagID left, TagID right)
+    parameters:
+    - id: left
+      type: Frent.Core.TagID
+    - id: right
+      type: Frent.Core.TagID
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when they represent the same type, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise
+    content.vb: Public Shared Operator =(left As TagID, right As TagID) As Boolean
+  overload: Frent.Core.TagID.op_Equality*
+  nameWithType.vb: TagID.=(TagID, TagID)
+  fullName.vb: Frent.Core.TagID.=(Frent.Core.TagID, Frent.Core.TagID)
+  name.vb: =(TagID, TagID)
+- uid: Frent.Core.TagID.op_Inequality(Frent.Core.TagID,Frent.Core.TagID)
+  commentId: M:Frent.Core.TagID.op_Inequality(Frent.Core.TagID,Frent.Core.TagID)
+  id: op_Inequality(Frent.Core.TagID,Frent.Core.TagID)
+  parent: Frent.Core.TagID
+  langs:
+  - csharp
+  - vb
+  name: operator !=(TagID, TagID)
+  nameWithType: TagID.operator !=(TagID, TagID)
+  fullName: Frent.Core.TagID.operator !=(Frent.Core.TagID, Frent.Core.TagID)
+  type: Operator
+  source:
+    remote:
+      path: Frent/Core/TagID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: op_Inequality
+    path: Core/TagID.cs
+    startLine: 35
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Checks if two <xref href="Frent.Core.TagID" data-throw-if-not-resolved="false"></xref>s represent a different type
+  example: []
+  syntax:
+    content: public static bool operator !=(TagID left, TagID right)
+    parameters:
+    - id: left
+      type: Frent.Core.TagID
+    - id: right
+      type: Frent.Core.TagID
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> when they represent the same type, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> otherwise
+    content.vb: Public Shared Operator <>(left As TagID, right As TagID) As Boolean
+  overload: Frent.Core.TagID.op_Inequality*
+  nameWithType.vb: TagID.<>(TagID, TagID)
+  fullName.vb: Frent.Core.TagID.<>(Frent.Core.TagID, Frent.Core.TagID)
+  name.vb: <>(TagID, TagID)
+- uid: Frent.Core.TagID.GetHashCode
+  commentId: M:Frent.Core.TagID.GetHashCode
+  id: GetHashCode
+  parent: Frent.Core.TagID
+  langs:
+  - csharp
+  - vb
+  name: GetHashCode()
+  nameWithType: TagID.GetHashCode()
+  fullName: Frent.Core.TagID.GetHashCode()
+  type: Method
+  source:
+    remote:
+      path: Frent/Core/TagID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: GetHashCode
+    path: Core/TagID.cs
+    startLine: 40
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Gets the hashcode of this <xref href="Frent.Core.TagID" data-throw-if-not-resolved="false"></xref>
+  example: []
+  syntax:
+    content: public override int GetHashCode()
+    return:
+      type: System.Int32
+      description: A unique code representing the <xref href="Frent.Core.TagID" data-throw-if-not-resolved="false"></xref>
+    content.vb: Public Overrides Function GetHashCode() As Integer
+  overridden: System.ValueType.GetHashCode
+  overload: Frent.Core.TagID.GetHashCode*
+references:
+- uid: Frent.Core
+  commentId: N:Frent.Core
+  href: Frent.html
+  name: Frent.Core
+  nameWithType: Frent.Core
+  fullName: Frent.Core
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Core
+    name: Core
+    href: Frent.Core.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Core
+    name: Core
+    href: Frent.Core.html
+- uid: System.IEquatable{Frent.Core.TagID}
+  commentId: T:System.IEquatable{Frent.Core.TagID}
+  parent: System
+  definition: System.IEquatable`1
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  name: IEquatable<TagID>
+  nameWithType: IEquatable<TagID>
+  fullName: System.IEquatable<Frent.Core.TagID>
+  nameWithType.vb: IEquatable(Of TagID)
+  fullName.vb: System.IEquatable(Of Frent.Core.TagID)
+  name.vb: IEquatable(Of TagID)
+  spec.csharp:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: <
+  - uid: Frent.Core.TagID
+    name: TagID
+    href: Frent.Core.TagID.html
+  - name: '>'
+  spec.vb:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Frent.Core.TagID
+    name: TagID
+    href: Frent.Core.TagID.html
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.IEquatable`1
+  commentId: T:System.IEquatable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  name: IEquatable<T>
+  nameWithType: IEquatable<T>
+  fullName: System.IEquatable<T>
+  nameWithType.vb: IEquatable(Of T)
+  fullName.vb: System.IEquatable(Of T)
+  name.vb: IEquatable(Of T)
+  spec.csharp:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: Frent.Core.TagID.Type*
+  commentId: Overload:Frent.Core.TagID.Type
+  href: Frent.Core.TagID.html#Frent_Core_TagID_Type
+  name: Type
+  nameWithType: TagID.Type
+  fullName: Frent.Core.TagID.Type
+- uid: System.Type
+  commentId: T:System.Type
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.type
+  name: Type
+  nameWithType: Type
+  fullName: System.Type
+- uid: Frent.Core.TagID.Equals*
+  commentId: Overload:Frent.Core.TagID.Equals
+  href: Frent.Core.TagID.html#Frent_Core_TagID_Equals_Frent_Core_TagID_
+  name: Equals
+  nameWithType: TagID.Equals
+  fullName: Frent.Core.TagID.Equals
+- uid: System.IEquatable{Frent.Core.TagID}.Equals(Frent.Core.TagID)
+  commentId: M:System.IEquatable{Frent.Core.TagID}.Equals(Frent.Core.TagID)
+  parent: System.IEquatable{Frent.Core.TagID}
+  definition: System.IEquatable`1.Equals(`0)
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  name: Equals(TagID)
+  nameWithType: IEquatable<TagID>.Equals(TagID)
+  fullName: System.IEquatable<Frent.Core.TagID>.Equals(Frent.Core.TagID)
+  nameWithType.vb: IEquatable(Of TagID).Equals(TagID)
+  fullName.vb: System.IEquatable(Of Frent.Core.TagID).Equals(Frent.Core.TagID)
+  spec.csharp:
+  - uid: System.IEquatable{Frent.Core.TagID}.Equals(Frent.Core.TagID)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - uid: Frent.Core.TagID
+    name: TagID
+    href: Frent.Core.TagID.html
+  - name: )
+  spec.vb:
+  - uid: System.IEquatable{Frent.Core.TagID}.Equals(Frent.Core.TagID)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - uid: Frent.Core.TagID
+    name: TagID
+    href: Frent.Core.TagID.html
+  - name: )
+- uid: Frent.Core.TagID
+  commentId: T:Frent.Core.TagID
+  parent: Frent.Core
+  href: Frent.Core.TagID.html
+  name: TagID
+  nameWithType: TagID
+  fullName: Frent.Core.TagID
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: System.IEquatable`1.Equals(`0)
+  commentId: M:System.IEquatable`1.Equals(`0)
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  name: Equals(T)
+  nameWithType: IEquatable<T>.Equals(T)
+  fullName: System.IEquatable<T>.Equals(T)
+  nameWithType.vb: IEquatable(Of T).Equals(T)
+  fullName.vb: System.IEquatable(Of T).Equals(T)
+  spec.csharp:
+  - uid: System.IEquatable`1.Equals(`0)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - name: T
+  - name: )
+  spec.vb:
+  - uid: System.IEquatable`1.Equals(`0)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - name: T
+  - name: )
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: Frent.Core.TagID.op_Equality*
+  commentId: Overload:Frent.Core.TagID.op_Equality
+  href: Frent.Core.TagID.html#Frent_Core_TagID_op_Equality_Frent_Core_TagID_Frent_Core_TagID_
+  name: operator ==
+  nameWithType: TagID.operator ==
+  fullName: Frent.Core.TagID.operator ==
+  nameWithType.vb: TagID.=
+  fullName.vb: Frent.Core.TagID.=
+  name.vb: =
+  spec.csharp:
+  - name: operator
+  - name: " "
+  - uid: Frent.Core.TagID.op_Equality*
+    name: ==
+    href: Frent.Core.TagID.html#Frent_Core_TagID_op_Equality_Frent_Core_TagID_Frent_Core_TagID_
+- uid: Frent.Core.TagID.op_Inequality*
+  commentId: Overload:Frent.Core.TagID.op_Inequality
+  href: Frent.Core.TagID.html#Frent_Core_TagID_op_Inequality_Frent_Core_TagID_Frent_Core_TagID_
+  name: operator !=
+  nameWithType: TagID.operator !=
+  fullName: Frent.Core.TagID.operator !=
+  nameWithType.vb: TagID.<>
+  fullName.vb: Frent.Core.TagID.<>
+  name.vb: <>
+  spec.csharp:
+  - name: operator
+  - name: " "
+  - uid: Frent.Core.TagID.op_Inequality*
+    name: '!='
+    href: Frent.Core.TagID.html#Frent_Core_TagID_op_Inequality_Frent_Core_TagID_Frent_Core_TagID_
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: Frent.Core.TagID.GetHashCode*
+  commentId: Overload:Frent.Core.TagID.GetHashCode
+  href: Frent.Core.TagID.html#Frent_Core_TagID_GetHashCode
+  name: GetHashCode
+  nameWithType: TagID.GetHashCode
+  fullName: Frent.Core.TagID.GetHashCode
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer

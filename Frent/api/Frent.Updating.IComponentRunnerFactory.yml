@@ -1,0 +1,109 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Updating.IComponentRunnerFactory
+  commentId: T:Frent.Updating.IComponentRunnerFactory
+  id: IComponentRunnerFactory
+  parent: Frent.Updating
+  children:
+  - Frent.Updating.IComponentRunnerFactory.Create
+  langs:
+  - csharp
+  - vb
+  name: IComponentRunnerFactory
+  nameWithType: IComponentRunnerFactory
+  fullName: Frent.Updating.IComponentRunnerFactory
+  type: Interface
+  source:
+    remote:
+      path: Frent/Updating/IComponentRunnerFactory.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: IComponentRunnerFactory
+    path: Updating/IComponentRunnerFactory.cs
+    startLine: 6
+  assemblies:
+  - Frent
+  namespace: Frent.Updating
+  summary: Defines an object for creating component runners
+  remarks: Used only in source generation
+  example: []
+  syntax:
+    content: public interface IComponentRunnerFactory
+    content.vb: Public Interface IComponentRunnerFactory
+- uid: Frent.Updating.IComponentRunnerFactory.Create
+  commentId: M:Frent.Updating.IComponentRunnerFactory.Create
+  id: Create
+  parent: Frent.Updating.IComponentRunnerFactory
+  langs:
+  - csharp
+  - vb
+  name: Create()
+  nameWithType: IComponentRunnerFactory.Create()
+  fullName: Frent.Updating.IComponentRunnerFactory.Create()
+  type: Method
+  source:
+    remote:
+      path: Frent/Updating/IComponentRunnerFactory.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Create
+    path: Updating/IComponentRunnerFactory.cs
+    startLine: 11
+  assemblies:
+  - Frent
+  namespace: Frent.Updating
+  summary: Used only in source generation
+  example: []
+  syntax:
+    content: object Create()
+    return:
+      type: System.Object
+    content.vb: Function Create() As Object
+  overload: Frent.Updating.IComponentRunnerFactory.Create*
+references:
+- uid: Frent.Updating
+  commentId: N:Frent.Updating
+  href: Frent.html
+  name: Frent.Updating
+  nameWithType: Frent.Updating
+  fullName: Frent.Updating
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Updating
+    name: Updating
+    href: Frent.Updating.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Updating
+    name: Updating
+    href: Frent.Updating.html
+- uid: Frent.Updating.IComponentRunnerFactory.Create*
+  commentId: Overload:Frent.Updating.IComponentRunnerFactory.Create
+  href: Frent.Updating.IComponentRunnerFactory.html#Frent_Updating_IComponentRunnerFactory_Create
+  name: Create
+  nameWithType: IComponentRunnerFactory.Create
+  fullName: Frent.Updating.IComponentRunnerFactory.Create
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System

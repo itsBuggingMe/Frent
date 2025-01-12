@@ -1,0 +1,112 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Systems.RuleTypes
+  commentId: T:Frent.Systems.RuleTypes
+  id: RuleTypes
+  parent: Frent.Systems
+  children:
+  - Frent.Systems.RuleTypes.DoesNotHave
+  - Frent.Systems.RuleTypes.Have
+  langs:
+  - csharp
+  - vb
+  name: RuleTypes
+  nameWithType: RuleTypes
+  fullName: Frent.Systems.RuleTypes
+  type: Enum
+  source:
+    remote:
+      path: Frent/Systems/RuleTypes.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: RuleTypes
+    path: Systems/RuleTypes.cs
+    startLine: 2
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  syntax:
+    content: public enum RuleTypes
+    content.vb: Public Enum RuleTypes
+- uid: Frent.Systems.RuleTypes.Have
+  commentId: F:Frent.Systems.RuleTypes.Have
+  id: Have
+  parent: Frent.Systems.RuleTypes
+  langs:
+  - csharp
+  - vb
+  name: Have
+  nameWithType: RuleTypes.Have
+  fullName: Frent.Systems.RuleTypes.Have
+  type: Field
+  source:
+    remote:
+      path: Frent/Systems/RuleTypes.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Have
+    path: Systems/RuleTypes.cs
+    startLine: 4
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  syntax:
+    content: Have = 0
+    return:
+      type: Frent.Systems.RuleTypes
+- uid: Frent.Systems.RuleTypes.DoesNotHave
+  commentId: F:Frent.Systems.RuleTypes.DoesNotHave
+  id: DoesNotHave
+  parent: Frent.Systems.RuleTypes
+  langs:
+  - csharp
+  - vb
+  name: DoesNotHave
+  nameWithType: RuleTypes.DoesNotHave
+  fullName: Frent.Systems.RuleTypes.DoesNotHave
+  type: Field
+  source:
+    remote:
+      path: Frent/Systems/RuleTypes.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: DoesNotHave
+    path: Systems/RuleTypes.cs
+    startLine: 5
+  assemblies:
+  - Frent
+  namespace: Frent.Systems
+  syntax:
+    content: DoesNotHave = 1
+    return:
+      type: Frent.Systems.RuleTypes
+references:
+- uid: Frent.Systems
+  commentId: N:Frent.Systems
+  href: Frent.html
+  name: Frent.Systems
+  nameWithType: Frent.Systems
+  fullName: Frent.Systems
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Systems
+    name: Systems
+    href: Frent.Systems.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Systems
+    name: Systems
+    href: Frent.Systems.html
+- uid: Frent.Systems.RuleTypes
+  commentId: T:Frent.Systems.RuleTypes
+  parent: Frent.Systems
+  href: Frent.Systems.RuleTypes.html
+  name: RuleTypes
+  nameWithType: RuleTypes
+  fullName: Frent.Systems.RuleTypes

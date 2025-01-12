@@ -1,0 +1,78 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.IQueryEntity
+  commentId: T:Frent.IQueryEntity
+  id: IQueryEntity
+  parent: Frent
+  children:
+  - Frent.IQueryEntity.Run(Frent.Entity)
+  langs:
+  - csharp
+  - vb
+  name: IQueryEntity
+  nameWithType: IQueryEntity
+  fullName: Frent.IQueryEntity
+  type: Interface
+  source:
+    remote:
+      path: Frent/Systems/QueryInterfaces.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: IQueryEntity
+    path: Systems/QueryInterfaces.cs
+    startLine: 20
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: public interface IQueryEntity
+    content.vb: Public Interface IQueryEntity
+- uid: Frent.IQueryEntity.Run(Frent.Entity)
+  commentId: M:Frent.IQueryEntity.Run(Frent.Entity)
+  id: Run(Frent.Entity)
+  parent: Frent.IQueryEntity
+  langs:
+  - csharp
+  - vb
+  name: Run(Entity)
+  nameWithType: IQueryEntity.Run(Entity)
+  fullName: Frent.IQueryEntity.Run(Frent.Entity)
+  type: Method
+  source:
+    remote:
+      path: Frent/Systems/QueryInterfaces.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Run
+    path: Systems/QueryInterfaces.cs
+    startLine: 22
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: void Run(Entity entity)
+    parameters:
+    - id: entity
+      type: Frent.Entity
+    content.vb: Sub Run(entity As Entity)
+  overload: Frent.IQueryEntity.Run*
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.IQueryEntity.Run*
+  commentId: Overload:Frent.IQueryEntity.Run
+  href: Frent.IQueryEntity.html#Frent_IQueryEntity_Run_Frent_Entity_
+  name: Run
+  nameWithType: IQueryEntity.Run
+  fullName: Frent.IQueryEntity.Run
+- uid: Frent.Entity
+  commentId: T:Frent.Entity
+  parent: Frent
+  href: Frent.Entity.html
+  name: Entity
+  nameWithType: Entity
+  fullName: Frent.Entity

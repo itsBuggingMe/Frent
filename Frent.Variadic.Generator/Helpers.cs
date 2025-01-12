@@ -15,7 +15,7 @@ using System;
 namespace Frent.Variadic.Generator;
 
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
-public class VariadicAttribute : Attribute
+internal class VariadicAttribute : Attribute
 {
     private readonly string _from;
     private readonly string _pattern;

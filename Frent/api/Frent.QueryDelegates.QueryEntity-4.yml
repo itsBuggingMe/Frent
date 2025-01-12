@@ -1,0 +1,97 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.QueryDelegates.QueryEntity`4
+  commentId: T:Frent.QueryDelegates.QueryEntity`4
+  id: QueryDelegates.QueryEntity`4
+  parent: Frent
+  children: []
+  langs:
+  - csharp
+  - vb
+  name: QueryDelegates.QueryEntity<T1, T2, T3, T4>
+  nameWithType: QueryDelegates.QueryEntity<T1, T2, T3, T4>
+  fullName: Frent.QueryDelegates.QueryEntity<T1, T2, T3, T4>
+  type: Delegate
+  source:
+    id: QueryEntity
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\QueryDelegates.4.cs
+    startLine: 12
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: public delegate void QueryDelegates.QueryEntity<T1, T2, T3, T4>(Entity entity, ref T1 comp1, ref T2 comp2, ref T3 comp3, ref T4 comp4)
+    parameters:
+    - id: entity
+      type: Frent.Entity
+    - id: comp1
+      type: '{T1}'
+    - id: comp2
+      type: '{T2}'
+    - id: comp3
+      type: '{T3}'
+    - id: comp4
+      type: '{T4}'
+    typeParameters:
+    - id: T1
+    - id: T2
+    - id: T3
+    - id: T4
+    content.vb: Public Delegate Sub QueryDelegates.QueryEntity(Of T1, T2, T3, T4)(entity As Entity, comp1 As T1, comp2 As T2, comp3 As T3, comp4 As T4)
+  nameWithType.vb: QueryDelegates.QueryEntity(Of T1, T2, T3, T4)
+  fullName.vb: Frent.QueryDelegates.QueryEntity(Of T1, T2, T3, T4)
+  name.vb: QueryDelegates.QueryEntity(Of T1, T2, T3, T4)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.Entity
+  commentId: T:Frent.Entity
+  parent: Frent
+  href: Frent.Entity.html
+  name: Entity
+  nameWithType: Entity
+  fullName: Frent.Entity
+- uid: '{T1}'
+  commentId: '!:T1'
+  definition: T1
+  name: T1
+  nameWithType: T1
+  fullName: T1
+- uid: '{T2}'
+  commentId: '!:T2'
+  definition: T2
+  name: T2
+  nameWithType: T2
+  fullName: T2
+- uid: '{T3}'
+  commentId: '!:T3'
+  definition: T3
+  name: T3
+  nameWithType: T3
+  fullName: T3
+- uid: '{T4}'
+  commentId: '!:T4'
+  definition: T4
+  name: T4
+  nameWithType: T4
+  fullName: T4
+- uid: T1
+  name: T1
+  nameWithType: T1
+  fullName: T1
+- uid: T2
+  name: T2
+  nameWithType: T2
+  fullName: T2
+- uid: T3
+  name: T3
+  nameWithType: T3
+  fullName: T3
+- uid: T4
+  name: T4
+  nameWithType: T4
+  fullName: T4

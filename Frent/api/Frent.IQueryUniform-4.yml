@@ -1,0 +1,151 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.IQueryUniform`4
+  commentId: T:Frent.IQueryUniform`4
+  id: IQueryUniform`4
+  parent: Frent
+  children:
+  - Frent.IQueryUniform`4.Run(`0@,`1@,`2@,`3@)
+  langs:
+  - csharp
+  - vb
+  name: IQueryUniform<TUniform, TArg1, TArg2, TArg3>
+  nameWithType: IQueryUniform<TUniform, TArg1, TArg2, TArg3>
+  fullName: Frent.IQueryUniform<TUniform, TArg1, TArg2, TArg3>
+  type: Interface
+  source:
+    id: IQueryUniform
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\IQueryUniform.3.cs
+    startLine: 7
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: >-
+      [Variadic("TArg>", "|TArg$, |>", 16)]
+
+      [Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)]
+
+      public interface IQueryUniform<TUniform, TArg1, TArg2, TArg3>
+    typeParameters:
+    - id: TUniform
+    - id: TArg1
+    - id: TArg2
+    - id: TArg3
+    content.vb: >-
+      <Variadic("TArg>", "|TArg$, |>", 16)>
+
+      <Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)>
+
+      Public Interface IQueryUniform(Of TUniform, TArg1, TArg2, TArg3)
+  attributes:
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: TArg>
+    - type: System.String
+      value: '|TArg$, |>'
+    - type: System.Int32
+      value: 16
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: ref TArg arg
+    - type: System.String
+      value: '|ref TArg$ arg$, |'
+    - type: System.Int32
+      value: 16
+  nameWithType.vb: IQueryUniform(Of TUniform, TArg1, TArg2, TArg3)
+  fullName.vb: Frent.IQueryUniform(Of TUniform, TArg1, TArg2, TArg3)
+  name.vb: IQueryUniform(Of TUniform, TArg1, TArg2, TArg3)
+- uid: Frent.IQueryUniform`4.Run(`0@,`1@,`2@,`3@)
+  commentId: M:Frent.IQueryUniform`4.Run(`0@,`1@,`2@,`3@)
+  id: Run(`0@,`1@,`2@,`3@)
+  parent: Frent.IQueryUniform`4
+  langs:
+  - csharp
+  - vb
+  name: Run(in TUniform, ref TArg1, ref TArg2, ref TArg3)
+  nameWithType: IQueryUniform<TUniform, TArg1, TArg2, TArg3>.Run(in TUniform, ref TArg1, ref TArg2, ref TArg3)
+  fullName: Frent.IQueryUniform<TUniform, TArg1, TArg2, TArg3>.Run(in TUniform, ref TArg1, ref TArg2, ref TArg3)
+  type: Method
+  source:
+    id: Run
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\IQueryUniform.3.cs
+    startLine: 11
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: void Run(in TUniform uniform, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3)
+    parameters:
+    - id: uniform
+      type: '{TUniform}'
+    - id: arg1
+      type: '{TArg1}'
+    - id: arg2
+      type: '{TArg2}'
+    - id: arg3
+      type: '{TArg3}'
+    content.vb: Sub Run(uniform As TUniform, arg1 As TArg1, arg2 As TArg2, arg3 As TArg3)
+  overload: Frent.IQueryUniform`4.Run*
+  nameWithType.vb: IQueryUniform(Of TUniform, TArg1, TArg2, TArg3).Run(TUniform, TArg1, TArg2, TArg3)
+  fullName.vb: Frent.IQueryUniform(Of TUniform, TArg1, TArg2, TArg3).Run(TUniform, TArg1, TArg2, TArg3)
+  name.vb: Run(TUniform, TArg1, TArg2, TArg3)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.IQueryUniform`4.Run*
+  commentId: Overload:Frent.IQueryUniform`4.Run
+  href: Frent.IQueryUniform-4.html#Frent_IQueryUniform_4_Run__0___1___2___3__
+  name: Run
+  nameWithType: IQueryUniform<TUniform, TArg1, TArg2, TArg3>.Run
+  fullName: Frent.IQueryUniform<TUniform, TArg1, TArg2, TArg3>.Run
+  nameWithType.vb: IQueryUniform(Of TUniform, TArg1, TArg2, TArg3).Run
+  fullName.vb: Frent.IQueryUniform(Of TUniform, TArg1, TArg2, TArg3).Run
+- uid: '{TUniform}'
+  commentId: '!:TUniform'
+  definition: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: '{TArg1}'
+  commentId: '!:TArg1'
+  definition: TArg1
+  name: TArg1
+  nameWithType: TArg1
+  fullName: TArg1
+- uid: '{TArg2}'
+  commentId: '!:TArg2'
+  definition: TArg2
+  name: TArg2
+  nameWithType: TArg2
+  fullName: TArg2
+- uid: '{TArg3}'
+  commentId: '!:TArg3'
+  definition: TArg3
+  name: TArg3
+  nameWithType: TArg3
+  fullName: TArg3
+- uid: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: TArg1
+  name: TArg1
+  nameWithType: TArg1
+  fullName: TArg1
+- uid: TArg2
+  name: TArg2
+  nameWithType: TArg2
+  fullName: TArg2
+- uid: TArg3
+  name: TArg3
+  nameWithType: TArg3
+  fullName: TArg3

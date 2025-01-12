@@ -1,0 +1,705 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Core.ComponentID
+  commentId: T:Frent.Core.ComponentID
+  id: ComponentID
+  parent: Frent.Core
+  children:
+  - Frent.Core.ComponentID.Equals(Frent.Core.ComponentID)
+  - Frent.Core.ComponentID.Equals(System.Object)
+  - Frent.Core.ComponentID.GetHashCode
+  - Frent.Core.ComponentID.Type
+  - Frent.Core.ComponentID.op_Equality(Frent.Core.ComponentID,Frent.Core.ComponentID)
+  - Frent.Core.ComponentID.op_Inequality(Frent.Core.ComponentID,Frent.Core.ComponentID)
+  langs:
+  - csharp
+  - vb
+  name: ComponentID
+  nameWithType: ComponentID
+  fullName: Frent.Core.ComponentID
+  type: Struct
+  source:
+    remote:
+      path: Frent/Core/ComponentID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: ComponentID
+    path: Core/ComponentID.cs
+    startLine: 5
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: A lightweight struct that represents a component type. Used for fast lookups
+  example: []
+  syntax:
+    content: 'public readonly struct ComponentID : IEquatable<ComponentID>'
+    content.vb: Public Structure ComponentID Implements IEquatable(Of ComponentID)
+  implements:
+  - System.IEquatable{Frent.Core.ComponentID}
+  inheritedMembers:
+  - System.ValueType.ToString
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.GetType
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Frent.Core.ComponentID.Type
+  commentId: P:Frent.Core.ComponentID.Type
+  id: Type
+  parent: Frent.Core.ComponentID
+  langs:
+  - csharp
+  - vb
+  name: Type
+  nameWithType: ComponentID.Type
+  fullName: Frent.Core.ComponentID.Type
+  type: Property
+  source:
+    remote:
+      path: Frent/Core/ComponentID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Type
+    path: Core/ComponentID.cs
+    startLine: 13
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: The type of component this component ID represents
+  example: []
+  syntax:
+    content: public Type Type { get; }
+    parameters: []
+    return:
+      type: System.Type
+    content.vb: Public ReadOnly Property Type As Type
+  overload: Frent.Core.ComponentID.Type*
+- uid: Frent.Core.ComponentID.Equals(Frent.Core.ComponentID)
+  commentId: M:Frent.Core.ComponentID.Equals(Frent.Core.ComponentID)
+  id: Equals(Frent.Core.ComponentID)
+  parent: Frent.Core.ComponentID
+  langs:
+  - csharp
+  - vb
+  name: Equals(ComponentID)
+  nameWithType: ComponentID.Equals(ComponentID)
+  fullName: Frent.Core.ComponentID.Equals(Frent.Core.ComponentID)
+  type: Method
+  source:
+    remote:
+      path: Frent/Core/ComponentID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Equals
+    path: Core/ComponentID.cs
+    startLine: 20
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Checks if this ComponentID instance represents the same ID as <code class="paramref">other</code>
+  example: []
+  syntax:
+    content: public bool Equals(ComponentID other)
+    parameters:
+    - id: other
+      type: Frent.Core.ComponentID
+      description: The ComponentID to compare against
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if they represent the same ID, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise
+    content.vb: Public Function Equals(other As ComponentID) As Boolean
+  overload: Frent.Core.ComponentID.Equals*
+  implements:
+  - System.IEquatable{Frent.Core.ComponentID}.Equals(Frent.Core.ComponentID)
+- uid: Frent.Core.ComponentID.Equals(System.Object)
+  commentId: M:Frent.Core.ComponentID.Equals(System.Object)
+  id: Equals(System.Object)
+  parent: Frent.Core.ComponentID
+  langs:
+  - csharp
+  - vb
+  name: Equals(object?)
+  nameWithType: ComponentID.Equals(object?)
+  fullName: Frent.Core.ComponentID.Equals(object?)
+  type: Method
+  source:
+    remote:
+      path: Frent/Core/ComponentID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Equals
+    path: Core/ComponentID.cs
+    startLine: 27
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Checks if this ComponentID instance represents the same ID as <code class="paramref">obj</code>
+  example: []
+  syntax:
+    content: public override bool Equals(object? obj)
+    parameters:
+    - id: obj
+      type: System.Object
+      description: The object to compare against
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if they represent the same ID, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise
+    content.vb: Public Overrides Function Equals(obj As Object) As Boolean
+  overridden: System.ValueType.Equals(System.Object)
+  overload: Frent.Core.ComponentID.Equals*
+  nameWithType.vb: ComponentID.Equals(Object)
+  fullName.vb: Frent.Core.ComponentID.Equals(Object)
+  name.vb: Equals(Object)
+- uid: Frent.Core.ComponentID.GetHashCode
+  commentId: M:Frent.Core.ComponentID.GetHashCode
+  id: GetHashCode
+  parent: Frent.Core.ComponentID
+  langs:
+  - csharp
+  - vb
+  name: GetHashCode()
+  nameWithType: ComponentID.GetHashCode()
+  fullName: Frent.Core.ComponentID.GetHashCode()
+  type: Method
+  source:
+    remote:
+      path: Frent/Core/ComponentID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: GetHashCode
+    path: Core/ComponentID.cs
+    startLine: 33
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Gets the hash code for this ComponentID
+  example: []
+  syntax:
+    content: public override int GetHashCode()
+    return:
+      type: System.Int32
+      description: An integer hash code representing this ComponentID
+    content.vb: Public Overrides Function GetHashCode() As Integer
+  overridden: System.ValueType.GetHashCode
+  overload: Frent.Core.ComponentID.GetHashCode*
+- uid: Frent.Core.ComponentID.op_Equality(Frent.Core.ComponentID,Frent.Core.ComponentID)
+  commentId: M:Frent.Core.ComponentID.op_Equality(Frent.Core.ComponentID,Frent.Core.ComponentID)
+  id: op_Equality(Frent.Core.ComponentID,Frent.Core.ComponentID)
+  parent: Frent.Core.ComponentID
+  langs:
+  - csharp
+  - vb
+  name: operator ==(ComponentID, ComponentID)
+  nameWithType: ComponentID.operator ==(ComponentID, ComponentID)
+  fullName: Frent.Core.ComponentID.operator ==(Frent.Core.ComponentID, Frent.Core.ComponentID)
+  type: Operator
+  source:
+    remote:
+      path: Frent/Core/ComponentID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: op_Equality
+    path: Core/ComponentID.cs
+    startLine: 41
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Checks if two ComponentID instances represent the same ID
+  example: []
+  syntax:
+    content: public static bool operator ==(ComponentID left, ComponentID right)
+    parameters:
+    - id: left
+      type: Frent.Core.ComponentID
+      description: The first ComponentID
+    - id: right
+      type: Frent.Core.ComponentID
+      description: The second ComponentID
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if they represent the same ID, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise
+    content.vb: Public Shared Operator =(left As ComponentID, right As ComponentID) As Boolean
+  overload: Frent.Core.ComponentID.op_Equality*
+  nameWithType.vb: ComponentID.=(ComponentID, ComponentID)
+  fullName.vb: Frent.Core.ComponentID.=(Frent.Core.ComponentID, Frent.Core.ComponentID)
+  name.vb: =(ComponentID, ComponentID)
+- uid: Frent.Core.ComponentID.op_Inequality(Frent.Core.ComponentID,Frent.Core.ComponentID)
+  commentId: M:Frent.Core.ComponentID.op_Inequality(Frent.Core.ComponentID,Frent.Core.ComponentID)
+  id: op_Inequality(Frent.Core.ComponentID,Frent.Core.ComponentID)
+  parent: Frent.Core.ComponentID
+  langs:
+  - csharp
+  - vb
+  name: operator !=(ComponentID, ComponentID)
+  nameWithType: ComponentID.operator !=(ComponentID, ComponentID)
+  fullName: Frent.Core.ComponentID.operator !=(Frent.Core.ComponentID, Frent.Core.ComponentID)
+  type: Operator
+  source:
+    remote:
+      path: Frent/Core/ComponentID.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: op_Inequality
+    path: Core/ComponentID.cs
+    startLine: 49
+  assemblies:
+  - Frent
+  namespace: Frent.Core
+  summary: Checks if two ComponentID instances represent different IDs
+  example: []
+  syntax:
+    content: public static bool operator !=(ComponentID left, ComponentID right)
+    parameters:
+    - id: left
+      type: Frent.Core.ComponentID
+      description: The first ComponentID
+    - id: right
+      type: Frent.Core.ComponentID
+      description: The second ComponentID
+    return:
+      type: System.Boolean
+      description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if they represent different IDs, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> otherwise
+    content.vb: Public Shared Operator <>(left As ComponentID, right As ComponentID) As Boolean
+  overload: Frent.Core.ComponentID.op_Inequality*
+  nameWithType.vb: ComponentID.<>(ComponentID, ComponentID)
+  fullName.vb: Frent.Core.ComponentID.<>(Frent.Core.ComponentID, Frent.Core.ComponentID)
+  name.vb: <>(ComponentID, ComponentID)
+references:
+- uid: Frent.Core
+  commentId: N:Frent.Core
+  href: Frent.html
+  name: Frent.Core
+  nameWithType: Frent.Core
+  fullName: Frent.Core
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Core
+    name: Core
+    href: Frent.Core.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Core
+    name: Core
+    href: Frent.Core.html
+- uid: System.IEquatable{Frent.Core.ComponentID}
+  commentId: T:System.IEquatable{Frent.Core.ComponentID}
+  parent: System
+  definition: System.IEquatable`1
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  name: IEquatable<ComponentID>
+  nameWithType: IEquatable<ComponentID>
+  fullName: System.IEquatable<Frent.Core.ComponentID>
+  nameWithType.vb: IEquatable(Of ComponentID)
+  fullName.vb: System.IEquatable(Of Frent.Core.ComponentID)
+  name.vb: IEquatable(Of ComponentID)
+  spec.csharp:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: <
+  - uid: Frent.Core.ComponentID
+    name: ComponentID
+    href: Frent.Core.ComponentID.html
+  - name: '>'
+  spec.vb:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Frent.Core.ComponentID
+    name: ComponentID
+    href: Frent.Core.ComponentID.html
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.IEquatable`1
+  commentId: T:System.IEquatable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  name: IEquatable<T>
+  nameWithType: IEquatable<T>
+  fullName: System.IEquatable<T>
+  nameWithType.vb: IEquatable(Of T)
+  fullName.vb: System.IEquatable(Of T)
+  name.vb: IEquatable(Of T)
+  spec.csharp:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: Frent.Core.ComponentID.Type*
+  commentId: Overload:Frent.Core.ComponentID.Type
+  href: Frent.Core.ComponentID.html#Frent_Core_ComponentID_Type
+  name: Type
+  nameWithType: ComponentID.Type
+  fullName: Frent.Core.ComponentID.Type
+- uid: System.Type
+  commentId: T:System.Type
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.type
+  name: Type
+  nameWithType: Type
+  fullName: System.Type
+- uid: Frent.Core.ComponentID.Equals*
+  commentId: Overload:Frent.Core.ComponentID.Equals
+  href: Frent.Core.ComponentID.html#Frent_Core_ComponentID_Equals_Frent_Core_ComponentID_
+  name: Equals
+  nameWithType: ComponentID.Equals
+  fullName: Frent.Core.ComponentID.Equals
+- uid: System.IEquatable{Frent.Core.ComponentID}.Equals(Frent.Core.ComponentID)
+  commentId: M:System.IEquatable{Frent.Core.ComponentID}.Equals(Frent.Core.ComponentID)
+  parent: System.IEquatable{Frent.Core.ComponentID}
+  definition: System.IEquatable`1.Equals(`0)
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  name: Equals(ComponentID)
+  nameWithType: IEquatable<ComponentID>.Equals(ComponentID)
+  fullName: System.IEquatable<Frent.Core.ComponentID>.Equals(Frent.Core.ComponentID)
+  nameWithType.vb: IEquatable(Of ComponentID).Equals(ComponentID)
+  fullName.vb: System.IEquatable(Of Frent.Core.ComponentID).Equals(Frent.Core.ComponentID)
+  spec.csharp:
+  - uid: System.IEquatable{Frent.Core.ComponentID}.Equals(Frent.Core.ComponentID)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - uid: Frent.Core.ComponentID
+    name: ComponentID
+    href: Frent.Core.ComponentID.html
+  - name: )
+  spec.vb:
+  - uid: System.IEquatable{Frent.Core.ComponentID}.Equals(Frent.Core.ComponentID)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - uid: Frent.Core.ComponentID
+    name: ComponentID
+    href: Frent.Core.ComponentID.html
+  - name: )
+- uid: Frent.Core.ComponentID
+  commentId: T:Frent.Core.ComponentID
+  parent: Frent.Core
+  href: Frent.Core.ComponentID.html
+  name: ComponentID
+  nameWithType: ComponentID
+  fullName: Frent.Core.ComponentID
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: System.IEquatable`1.Equals(`0)
+  commentId: M:System.IEquatable`1.Equals(`0)
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  name: Equals(T)
+  nameWithType: IEquatable<T>.Equals(T)
+  fullName: System.IEquatable<T>.Equals(T)
+  nameWithType.vb: IEquatable(Of T).Equals(T)
+  fullName.vb: System.IEquatable(Of T).Equals(T)
+  spec.csharp:
+  - uid: System.IEquatable`1.Equals(`0)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - name: T
+  - name: )
+  spec.vb:
+  - uid: System.IEquatable`1.Equals(`0)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - name: T
+  - name: )
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: Frent.Core.ComponentID.GetHashCode*
+  commentId: Overload:Frent.Core.ComponentID.GetHashCode
+  href: Frent.Core.ComponentID.html#Frent_Core_ComponentID_GetHashCode
+  name: GetHashCode
+  nameWithType: ComponentID.GetHashCode
+  fullName: Frent.Core.ComponentID.GetHashCode
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Frent.Core.ComponentID.op_Equality*
+  commentId: Overload:Frent.Core.ComponentID.op_Equality
+  href: Frent.Core.ComponentID.html#Frent_Core_ComponentID_op_Equality_Frent_Core_ComponentID_Frent_Core_ComponentID_
+  name: operator ==
+  nameWithType: ComponentID.operator ==
+  fullName: Frent.Core.ComponentID.operator ==
+  nameWithType.vb: ComponentID.=
+  fullName.vb: Frent.Core.ComponentID.=
+  name.vb: =
+  spec.csharp:
+  - name: operator
+  - name: " "
+  - uid: Frent.Core.ComponentID.op_Equality*
+    name: ==
+    href: Frent.Core.ComponentID.html#Frent_Core_ComponentID_op_Equality_Frent_Core_ComponentID_Frent_Core_ComponentID_
+- uid: Frent.Core.ComponentID.op_Inequality*
+  commentId: Overload:Frent.Core.ComponentID.op_Inequality
+  href: Frent.Core.ComponentID.html#Frent_Core_ComponentID_op_Inequality_Frent_Core_ComponentID_Frent_Core_ComponentID_
+  name: operator !=
+  nameWithType: ComponentID.operator !=
+  fullName: Frent.Core.ComponentID.operator !=
+  nameWithType.vb: ComponentID.<>
+  fullName.vb: Frent.Core.ComponentID.<>
+  name.vb: <>
+  spec.csharp:
+  - name: operator
+  - name: " "
+  - uid: Frent.Core.ComponentID.op_Inequality*
+    name: '!='
+    href: Frent.Core.ComponentID.html#Frent_Core_ComponentID_op_Inequality_Frent_Core_ComponentID_Frent_Core_ComponentID_

@@ -1,0 +1,84 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.QueryDelegates.QueryEntityUniform`3
+  commentId: T:Frent.QueryDelegates.QueryEntityUniform`3
+  id: QueryDelegates.QueryEntityUniform`3
+  parent: Frent
+  children: []
+  langs:
+  - csharp
+  - vb
+  name: QueryDelegates.QueryEntityUniform<TUniform, T1, T2>
+  nameWithType: QueryDelegates.QueryEntityUniform<TUniform, T1, T2>
+  fullName: Frent.QueryDelegates.QueryEntityUniform<TUniform, T1, T2>
+  type: Delegate
+  source:
+    id: QueryEntityUniform
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\QueryDelegates.2.cs
+    startLine: 13
+  assemblies:
+  - Frent
+  namespace: Frent
+  syntax:
+    content: public delegate void QueryDelegates.QueryEntityUniform<TUniform, T1, T2>(Entity entity, in TUniform uniform, ref T1 comp1, ref T2 comp2)
+    parameters:
+    - id: entity
+      type: Frent.Entity
+    - id: uniform
+      type: '{TUniform}'
+    - id: comp1
+      type: '{T1}'
+    - id: comp2
+      type: '{T2}'
+    typeParameters:
+    - id: TUniform
+    - id: T1
+    - id: T2
+    content.vb: Public Delegate Sub QueryDelegates.QueryEntityUniform(Of TUniform, T1, T2)(entity As Entity, uniform As TUniform, comp1 As T1, comp2 As T2)
+  nameWithType.vb: QueryDelegates.QueryEntityUniform(Of TUniform, T1, T2)
+  fullName.vb: Frent.QueryDelegates.QueryEntityUniform(Of TUniform, T1, T2)
+  name.vb: QueryDelegates.QueryEntityUniform(Of TUniform, T1, T2)
+references:
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: Frent.Entity
+  commentId: T:Frent.Entity
+  parent: Frent
+  href: Frent.Entity.html
+  name: Entity
+  nameWithType: Entity
+  fullName: Frent.Entity
+- uid: '{TUniform}'
+  commentId: '!:TUniform'
+  definition: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: '{T1}'
+  commentId: '!:T1'
+  definition: T1
+  name: T1
+  nameWithType: T1
+  fullName: T1
+- uid: '{T2}'
+  commentId: '!:T2'
+  definition: T2
+  name: T2
+  nameWithType: T2
+  fullName: T2
+- uid: TUniform
+  name: TUniform
+  nameWithType: TUniform
+  fullName: TUniform
+- uid: T1
+  name: T1
+  nameWithType: T1
+  fullName: T1
+- uid: T2
+  name: T2
+  nameWithType: T2
+  fullName: T2

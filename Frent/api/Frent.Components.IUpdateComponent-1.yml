@@ -1,0 +1,136 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Components.IUpdateComponent`1
+  commentId: T:Frent.Components.IUpdateComponent`1
+  id: IUpdateComponent`1
+  parent: Frent.Components
+  children:
+  - Frent.Components.IUpdateComponent`1.Update(`0@)
+  langs:
+  - csharp
+  - vb
+  name: IUpdateComponent<TArg>
+  nameWithType: IUpdateComponent<TArg>
+  fullName: Frent.Components.IUpdateComponent<TArg>
+  type: Interface
+  source:
+    remote:
+      path: Frent/Components/IUpdateComponent.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: IUpdateComponent
+    path: Components/IUpdateComponent.cs
+    startLine: 10
+  assemblies:
+  - Frent
+  namespace: Frent.Components
+  syntax:
+    content: >-
+      [Variadic("TArg>", "|TArg$, |>", 15)]
+
+      [Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)]
+
+      public interface IUpdateComponent<TArg> : IComponent
+    typeParameters:
+    - id: TArg
+    content.vb: >-
+      <Variadic("TArg>", "|TArg$, |>", 15)>
+
+      <Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)>
+
+      Public Interface IUpdateComponent(Of TArg) Inherits IComponent
+  attributes:
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: TArg>
+    - type: System.String
+      value: '|TArg$, |>'
+    - type: System.Int32
+      value: 15
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: ref TArg arg
+    - type: System.String
+      value: '|ref TArg$ arg$, |'
+    - type: System.Int32
+      value: 16
+  nameWithType.vb: IUpdateComponent(Of TArg)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg)
+  name.vb: IUpdateComponent(Of TArg)
+- uid: Frent.Components.IUpdateComponent`1.Update(`0@)
+  commentId: M:Frent.Components.IUpdateComponent`1.Update(`0@)
+  id: Update(`0@)
+  parent: Frent.Components.IUpdateComponent`1
+  langs:
+  - csharp
+  - vb
+  name: Update(ref TArg)
+  nameWithType: IUpdateComponent<TArg>.Update(ref TArg)
+  fullName: Frent.Components.IUpdateComponent<TArg>.Update(ref TArg)
+  type: Method
+  source:
+    remote:
+      path: Frent/Components/IUpdateComponent.cs
+      branch: master
+      repo: https://github.com/itsBuggingMe/Frent.git
+    id: Update
+    path: Components/IUpdateComponent.cs
+    startLine: 14
+  assemblies:
+  - Frent
+  namespace: Frent.Components
+  syntax:
+    content: void Update(ref TArg arg)
+    parameters:
+    - id: arg
+      type: '{TArg}'
+    content.vb: Sub Update(arg As TArg)
+  overload: Frent.Components.IUpdateComponent`1.Update*
+  nameWithType.vb: IUpdateComponent(Of TArg).Update(TArg)
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg).Update(TArg)
+  name.vb: Update(TArg)
+references:
+- uid: Frent.Components
+  commentId: N:Frent.Components
+  href: Frent.html
+  name: Frent.Components
+  nameWithType: Frent.Components
+  fullName: Frent.Components
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Components
+    name: Components
+    href: Frent.Components.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Components
+    name: Components
+    href: Frent.Components.html
+- uid: Frent.Components.IUpdateComponent`1.Update*
+  commentId: Overload:Frent.Components.IUpdateComponent`1.Update
+  href: Frent.Components.IUpdateComponent-1.html#Frent_Components_IUpdateComponent_1_Update__0__
+  name: Update
+  nameWithType: IUpdateComponent<TArg>.Update
+  fullName: Frent.Components.IUpdateComponent<TArg>.Update
+  nameWithType.vb: IUpdateComponent(Of TArg).Update
+  fullName.vb: Frent.Components.IUpdateComponent(Of TArg).Update
+- uid: '{TArg}'
+  commentId: '!:TArg'
+  definition: TArg
+  name: TArg
+  nameWithType: TArg
+  fullName: TArg
+- uid: TArg
+  name: TArg
+  nameWithType: TArg
+  fullName: TArg

@@ -1,0 +1,182 @@
+### YamlMime:ManagedReference
+items:
+- uid: Frent.Components.IEntityUpdateComponent`4
+  commentId: T:Frent.Components.IEntityUpdateComponent`4
+  id: IEntityUpdateComponent`4
+  parent: Frent.Components
+  children:
+  - Frent.Components.IEntityUpdateComponent`4.Update(Frent.Entity,`0@,`1@,`2@,`3@)
+  langs:
+  - csharp
+  - vb
+  name: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>
+  type: Interface
+  source:
+    id: IEntityUpdateComponent
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\IEntityUpdateComponent.4.cs
+    startLine: 8
+  assemblies:
+  - Frent
+  namespace: Frent.Components
+  syntax:
+    content: >-
+      [Variadic("TArg>", "|TArg$, |>", 15)]
+
+      [Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)]
+
+      public interface IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4> : IComponent
+    typeParameters:
+    - id: TArg1
+    - id: TArg2
+    - id: TArg3
+    - id: TArg4
+    content.vb: >-
+      <Variadic("TArg>", "|TArg$, |>", 15)>
+
+      <Variadic("ref TArg arg", "|ref TArg$ arg$, |", 16)>
+
+      Public Interface IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4) Inherits IComponent
+  attributes:
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: TArg>
+    - type: System.String
+      value: '|TArg$, |>'
+    - type: System.Int32
+      value: 15
+  - type: Frent.Variadic.Generator.VariadicAttribute
+    ctor: Frent.Variadic.Generator.VariadicAttribute.#ctor(System.String,System.String,System.Int32)
+    arguments:
+    - type: System.String
+      value: ref TArg arg
+    - type: System.String
+      value: '|ref TArg$ arg$, |'
+    - type: System.Int32
+      value: 16
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+  name.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4)
+- uid: Frent.Components.IEntityUpdateComponent`4.Update(Frent.Entity,`0@,`1@,`2@,`3@)
+  commentId: M:Frent.Components.IEntityUpdateComponent`4.Update(Frent.Entity,`0@,`1@,`2@,`3@)
+  id: Update(Frent.Entity,`0@,`1@,`2@,`3@)
+  parent: Frent.Components.IEntityUpdateComponent`4
+  langs:
+  - csharp
+  - vb
+  name: Update(Entity, ref TArg1, ref TArg2, ref TArg3, ref TArg4)
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>.Update(Entity, ref TArg1, ref TArg2, ref TArg3, ref TArg4)
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>.Update(Frent.Entity, ref TArg1, ref TArg2, ref TArg3, ref TArg4)
+  type: Method
+  source:
+    id: Update
+    path: Frent.Variadic.Generator\Frent.Variadic.Generator.VariadicGenerator\IEntityUpdateComponent.4.cs
+    startLine: 12
+  assemblies:
+  - Frent
+  namespace: Frent.Components
+  syntax:
+    content: void Update(Entity entity, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4)
+    parameters:
+    - id: entity
+      type: Frent.Entity
+    - id: arg1
+      type: '{TArg1}'
+    - id: arg2
+      type: '{TArg2}'
+    - id: arg3
+      type: '{TArg3}'
+    - id: arg4
+      type: '{TArg4}'
+    content.vb: Sub Update(entity As Entity, arg1 As TArg1, arg2 As TArg2, arg3 As TArg3, arg4 As TArg4)
+  overload: Frent.Components.IEntityUpdateComponent`4.Update*
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4).Update(Entity, TArg1, TArg2, TArg3, TArg4)
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4).Update(Frent.Entity, TArg1, TArg2, TArg3, TArg4)
+  name.vb: Update(Entity, TArg1, TArg2, TArg3, TArg4)
+references:
+- uid: Frent.Components
+  commentId: N:Frent.Components
+  href: Frent.html
+  name: Frent.Components
+  nameWithType: Frent.Components
+  fullName: Frent.Components
+  spec.csharp:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Components
+    name: Components
+    href: Frent.Components.html
+  spec.vb:
+  - uid: Frent
+    name: Frent
+    href: Frent.html
+  - name: .
+  - uid: Frent.Components
+    name: Components
+    href: Frent.Components.html
+- uid: Frent.Components.IEntityUpdateComponent`4.Update*
+  commentId: Overload:Frent.Components.IEntityUpdateComponent`4.Update
+  href: Frent.Components.IEntityUpdateComponent-4.html#Frent_Components_IEntityUpdateComponent_4_Update_Frent_Entity__0___1___2___3__
+  name: Update
+  nameWithType: IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>.Update
+  fullName: Frent.Components.IEntityUpdateComponent<TArg1, TArg2, TArg3, TArg4>.Update
+  nameWithType.vb: IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4).Update
+  fullName.vb: Frent.Components.IEntityUpdateComponent(Of TArg1, TArg2, TArg3, TArg4).Update
+- uid: Frent.Entity
+  commentId: T:Frent.Entity
+  parent: Frent
+  href: Frent.Entity.html
+  name: Entity
+  nameWithType: Entity
+  fullName: Frent.Entity
+- uid: '{TArg1}'
+  commentId: '!:TArg1'
+  definition: TArg1
+  name: TArg1
+  nameWithType: TArg1
+  fullName: TArg1
+- uid: '{TArg2}'
+  commentId: '!:TArg2'
+  definition: TArg2
+  name: TArg2
+  nameWithType: TArg2
+  fullName: TArg2
+- uid: '{TArg3}'
+  commentId: '!:TArg3'
+  definition: TArg3
+  name: TArg3
+  nameWithType: TArg3
+  fullName: TArg3
+- uid: '{TArg4}'
+  commentId: '!:TArg4'
+  definition: TArg4
+  name: TArg4
+  nameWithType: TArg4
+  fullName: TArg4
+- uid: Frent
+  commentId: N:Frent
+  href: Frent.html
+  name: Frent
+  nameWithType: Frent
+  fullName: Frent
+- uid: TArg1
+  name: TArg1
+  nameWithType: TArg1
+  fullName: TArg1
+- uid: TArg2
+  name: TArg2
+  nameWithType: TArg2
+  fullName: TArg2
+- uid: TArg3
+  name: TArg3
+  nameWithType: TArg3
+  fullName: TArg3
+- uid: TArg4
+  name: TArg4
+  nameWithType: TArg4
+  fullName: TArg4
