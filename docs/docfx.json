@@ -33,8 +33,9 @@
     ],
     "output": "_site",
     "template": [
-      "default",
-      "modern"
+        "default",
+        "modern",
+        "templates/material"
     ],
     "globalMetadata": {
       "_appName": "Frent",
