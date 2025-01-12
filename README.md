@@ -1,4 +1,4 @@
-# [Frent](https://github.com/itsBuggingMe/Frent)
+# [Frent](https://itsbuggingme.github.io/Frent/)
 
 A high preformance archetyped based **ECF/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
 
@@ -34,7 +34,7 @@ record struct Velocity(Vector2 Delta) : IUpdateComponent<Position>
     public void Update(ref Position position) => position.Value += Delta;
 }
 ```
-Wanna start cooking? Check out the [Cookbook](Cookbook.md)!
+Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/)!
 
 # Features
 ## Implemented
