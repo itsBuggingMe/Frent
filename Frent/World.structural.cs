@@ -82,7 +82,6 @@ partial class World
     }
 
     //Tag
-
     internal bool Tag(Entity entity, EntityLocation entityLocation, TagID tagID)
     {
         if (GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID))

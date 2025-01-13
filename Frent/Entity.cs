@@ -1,8 +1,10 @@
 ﻿using Frent.Core;
 using Frent.Updating;
+using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent;
@@ -82,7 +84,7 @@ public partial struct Entity : IEquatable<Entity>
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
         //3x
-        return ref ((IComponentRunner<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
+        return ref ((ComponentStorage<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
     }//2, 0
 
     /// <summary>
@@ -171,10 +173,25 @@ public partial struct Entity : IEquatable<Entity>
     /// <param name="component">The component instance to add</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentAlreadyExistsException{T}"><see cref="Entity"/> already has a component of type <typeparamref name="T"/></exception>
-    public void Add<T>(in T component)
+    public void Add<T>(T component)
     {
-        AddCore(Component<T>.ID, typeof(T), out IComponentRunner to, out EntityLocation location);
-        ((IComponentRunner<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
+        AssertIsAlive(out var w, out var eloc);
+        w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
+        ((ComponentStorage<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
+    }
+
+    public void Add(ComponentID componentID, object component)
+    {
+        AssertIsAlive(out var w, out var eloc);
+        w.AddComponent(this, eloc, componentID, out var to, out var location);
+        to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
+    }
+
+    public void Add(object component)
+    {
+        AssertIsAlive(out var w, out var eloc);
+        w.AddComponent(this, eloc, Component.GetComponentID(component.GetType()), out var to, out var location);
+        to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
     }
 
     /// <summary>
@@ -184,10 +201,12 @@ public partial struct Entity : IEquatable<Entity>
     /// <param name="component">The component to add</param>
     public void Add(Type type, object component)
     {
-        if (!component.GetType().IsAssignableTo(type))
-            throw new ArgumentException("Component must be assignable to the given component type!", nameof(component));
-
-        AddCore(Component.GetComponentID(type), type, out IComponentRunner to, out EntityLocation location);
+        //check is slow, and we get InvalidCastException anyways
+        //if (!component.GetType().IsAssignableFrom(type))
+        //    throw new ArgumentException("Component must be assignable to the given component type!", nameof(component));
+        //
+        AssertIsAlive(out var w, out var eloc);
+        w.AddComponent(this, eloc, Component.GetComponentID(type), out var to, out var location);
         to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
     }
     #endregion
@@ -201,34 +220,14 @@ public partial struct Entity : IEquatable<Entity>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
     public void Remove<T>()
     {
-        if (!IsAlive(out var world, out var entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+        AssertIsAlive(out var w, out var eloc);
+        w.RemoveComponent((uint)EntityID, eloc, Component<T>.ID);
+    }
 
-        if (!world.AllowStructualChanges)
-        {
-            world.DeleteComponents.Push(new AddOrDeleteComponent(new EntityIDOnly(EntityID, EntityVersion), Component<T>.ID));
-            return;
-        }
-
-        RemoveCore(Component<T>.ID, typeof(T), out var nextLocation,  entityLocation, out int skipIndex, world);
-
-        int j = 0;
-        Archetype fromArchetype = entityLocation.Archetype(world);
-        Archetype nextArchetype = nextLocation.Archetype(world);
-
-        for (int i = 0; i < fromArchetype.Components.Length; i++)
-        {
-            if (i == skipIndex)
-            {
-                continue;
-            }
-            nextArchetype.Components[j++].PullComponentFrom(fromArchetype.Components[i], nextLocation, entityLocation);
-        }
-
-        Entity movedDown = fromArchetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-
-        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        world.EntityTable[(uint)EntityID].Location = nextLocation;
+    public void Remove(ComponentID componentID)
+    {
+        AssertIsAlive(out var w, out var eloc);
+        w.RemoveComponent((uint)EntityID, eloc, componentID);
     }
 
     /// <summary>
@@ -239,33 +238,8 @@ public partial struct Entity : IEquatable<Entity>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     public void Remove(Type type)
     {
-        if (!IsAlive(out var world, out var entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-        var compid = Component.GetComponentID(type);
-        if (!world.AllowStructualChanges)
-        {
-            world.DeleteComponents.Push(new AddOrDeleteComponent(new EntityIDOnly(EntityID, EntityVersion), compid));
-        }
-
-        RemoveCore(compid, type, out var nextLocation, entityLocation, out int skipIndex, world);
-
-        int j = 0;
-        Archetype fromArchetype = entityLocation.Archetype(world);
-        Archetype nextArchetype = nextLocation.Archetype(world);
-
-        for (int i = 0; i < fromArchetype.Components.Length; i++)
-        {
-            if (i == skipIndex)
-            {
-                continue;
-            }
-            nextArchetype.Components[j++].PullComponentFrom(nextArchetype.Components[i], nextLocation, entityLocation);
-        }
-
-        Entity movedDown = fromArchetype.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-
-        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        world.EntityTable[(uint)EntityID].Location = nextLocation;
+        AssertIsAlive(out var w, out var eloc);
+        w.RemoveComponent((uint)EntityID, eloc, Component.GetComponentID(type));
     }
     #endregion
 
@@ -323,20 +297,34 @@ public partial struct Entity : IEquatable<Entity>
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <typeparam name="T">The type to use as the tag.</typeparam>
-    public void Tag<T>() => TagCore(Core.Tag<T>.ID, typeof(T));
+    public bool Tag<T>()
+    {
+        AssertIsAlive(out var w, out var eloc);
+        return w.Tag(this, eloc, Core.Tag<T>.ID);
+    }
+
     /// <summary>
     /// Adds a tag to this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <param name="type">The type to use as a tag</param>
-    public void Tag(Type type) => TagCore(Core.Tag.GetTagID(type), type);
+    public bool Tag(Type type)
+    {
+        AssertIsAlive(out var w, out var eloc);
+        return w.Tag(this, eloc, Core.Tag.GetTagID(type));
+    }
+
     /// <summary>
     /// Adds a tag to this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
     /// </summary>
     /// <remarks>Prefer the <see cref="Tag(TagID)"/> or <see cref="Tag{T}()"/> overloads. Use <see cref="Tag{T}.ID"/> to get a <see cref="TagID"/> instance</remarks>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <param name="tagID">The tagID to use as the tag</param>
-    public void Tag(TagID tagID) => TagCore(tagID, tagID.Type);
+    public bool Tag(TagID tagID)
+    {
+        AssertIsAlive(out var w, out var eloc);
+        return w.Tag(this, eloc, tagID);
+    }
     #endregion
 
     #region Detach
@@ -346,21 +334,35 @@ public partial struct Entity : IEquatable<Entity>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
     /// <typeparam name="T">The type of tag to remove.</typeparam>
-    public bool Detach<T>() => DetachCore(Core.Tag<T>.ID, typeof(T));
+    public bool Detach<T>()
+    {
+        AssertIsAlive(out var w, out var eloc);
+        return w.Detach(this, eloc, Core.Tag<T>.ID);
+    }
+
     /// <summary>
     /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
     /// <param name="type">The type of tag to remove.</param>
-    public bool Detach(Type type) => DetachCore(Core.Tag.GetTagID(type), type);
+    public bool Detach(Type type)
+    {
+        AssertIsAlive(out var w, out var eloc);
+        return w.Detach(this, eloc, Core.Tag.GetTagID(type));
+    }
+
     /// <summary>
     /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
     /// <param name="tagID">The type of tag to remove.</param>
-    public bool Detach(TagID tagID) => DetachCore(tagID, tagID.Type);
+    public bool Detach(TagID tagID)
+    {
+        AssertIsAlive(out var w, out var eloc);
+        return w.Detach(this, eloc, tagID);
+    }
     #endregion
 
     #region Misc
@@ -469,31 +471,6 @@ public partial struct Entity : IEquatable<Entity>
         return false;
     }
 
-    private void AddCore(ComponentID componentID, Type type, out IComponentRunner lastTo, out EntityLocation nextLocation)
-    {
-        //this code is similar to TagCore
-        if (!IsAlive(out World? world, out EntityLocation entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-
-        Archetype from = entityLocation.Archetype(world);
-
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, componentID.ID, out _);
-
-        Archetype destination = edge.Add ??= Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, type, out var res), from.ArchetypeTagArray.AsSpan(), world, res, from.ArchetypeTagArray);
-        destination.CreateEntityLocation(out nextLocation) = this;
-
-        for (int i = 0; i < from.Components.Length; i++)
-        {
-            destination.Components[i].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
-        }
-
-        lastTo = destination.Components[^1];
-
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-
-        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        world.EntityTable[(uint)EntityID].Location = nextLocation;
-    }
     private Ref<T> TryGetCore<T>(out bool exists)
     {
         if (!IsAlive(out var world, out EntityLocation entityLocation))
@@ -513,20 +490,6 @@ public partial struct Entity : IEquatable<Entity>
         return Ref<T>.Create(((IComponentRunner<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
     }
 
-    private void RemoveCore(ComponentID componentID, Type type, out EntityLocation nextLocation, EntityLocation entityLocation, out int skipIndex, World world)
-    {
-        //this method is similar to DetachCore
-        Archetype from = entityLocation.Archetype(world);
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, componentID.ID, out _);
-        Archetype destination = edge.Remove ??= Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, type, out var arr), from.ArchetypeTagArray.AsSpan(), world, arr, from.ArchetypeTagArray);
-
-        destination.CreateEntityLocation(out nextLocation) = this;
-
-        skipIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID);
-        if (skipIndex >= MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_ComponentNotFoundException(type);
-    }
-
     internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation, Archetype archetype)
     {
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);
@@ -537,93 +500,11 @@ public partial struct Entity : IEquatable<Entity>
         return Ref<TComp>.Create(((IComponentRunner<TComp>)archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
     }
 
-    private static ReadOnlySpan<Type> Concat(ImmutableArray<Type> types, Type type, out ImmutableArray<Type> result)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void AssertIsAlive(out World world, out EntityLocation entityLocation)
     {
-        if (types.IndexOf(type) != -1)
-            FrentExceptions.Throw_InvalidOperationException($"This entity already has a component of type {type.Name}");
-
-        var builder = ImmutableArray.CreateBuilder<Type>(types.Length + 1);
-        builder.AddRange(types);
-        builder.Add(type);
-
-        result = builder.MoveToImmutable();
-        return result.AsSpan();
-    }
-
-    private static ReadOnlySpan<Type> Remove(ImmutableArray<Type> types, Type type, out ImmutableArray<Type> result)
-    {
-        int index = types.IndexOf(type);
-        if (index == -1)
-            FrentExceptions.Throw_ComponentNotFoundException(type);
-        result = types.RemoveAt(index);
-        return result.AsSpan();
-    }
-
-    private static ReadOnlySpan<Type> RemoveAt(ImmutableArray<Type> types, int index, out ImmutableArray<Type> result)
-    {
-        result = types.RemoveAt(index);
-        return result.AsSpan();
-    }
-
-    private void TagCore(TagID tagID, Type type)
-    {
-        //this code is similar to AddCore
-        if (!IsAlive(out World? world, out EntityLocation entityLocation))
+        if (!IsAlive(out world!/*we throw when null*/, out entityLocation))
             FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-
-        Archetype from = entityLocation.Archetype(world);
-
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, tagID.ID, out _);
-
-        Archetype destination = edge.AddTag ??= Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Concat(from.ArchetypeTagArray, type, out var res), world, from.ArchetypeTypeArray, res);
-        destination.CreateEntityLocation(out var nextLocation) = this;
-
-        Debug.Assert(from.Components.Length == destination.Components.Length);
-        Span<IComponentRunner> fromRunners = from.Components.AsSpan();
-        Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
-
-        for (int i = 0; i < fromRunners.Length; i++)
-            toRunners[i].PullComponentFrom(fromRunners[i], nextLocation, entityLocation);
-
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-
-        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        world.EntityTable[(uint)EntityID].Location = nextLocation;
-    }
-
-    private bool DetachCore(TagID tagID, Type type)
-    {
-        //this method is similar to RemoveCore
-
-        //ignore - it throws if null
-        if (!IsAlive(out var world, out var entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-
-        if (!GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID))
-            return false;
-
-        Archetype from = entityLocation.Archetype(world);
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, tagID.ID, out _);
-
-        int indexToRemoveAt = from.ArchetypeTagArray.IndexOf(type);
-
-        Archetype destination = edge.Remove ??= Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, type, out var arr), world, from.ArchetypeTypeArray, arr);
-
-        destination.CreateEntityLocation(out var nextLocation) = this;
-
-        Debug.Assert(from.Components.Length == destination.Components.Length);
-        Span<IComponentRunner> fromRunners = from.Components.AsSpan();
-        Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
-
-        for(int i = 0; i < fromRunners.Length; i++)
-            toRunners[i].PullComponentFrom(fromRunners[i], nextLocation, entityLocation);
-
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-
-        world.EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        world.EntityTable[(uint)EntityID].Location = nextLocation;
-
-        return true;
     }
 
     internal string DebuggerDisplayString => IsNull ? "null" : IsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;

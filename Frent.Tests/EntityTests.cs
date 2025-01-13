@@ -73,7 +73,7 @@ public class EntityTests
     [Test]
     public void EntityGet_ComponentDoesNotExist()
     {
-        Throws<ComponentNotFoundException<string>>(
+        Throws<ComponentNotFoundException>(
             () =>
             {
                 _ent.Get<string>();
@@ -108,8 +108,7 @@ public class EntityTests
     {
         _ent.Add<string>("I like Frent");
 
-        string removed = _ent.Remove<string>();
-        That(removed, Is.EqualTo("I like Frent"));
+        _ent.Remove<string>();
         That(_ent.Has<string>(), Is.False);
     }
 
@@ -154,12 +153,6 @@ public class EntityTests
     public void EntityTag_DetachReturnsFalse()
     {
         That(_ent.Detach<string>(), Is.False);
-    }
-
-    [Test]
-    public void EntityTag_DuplicateThrows()
-    {
-        Throws<InvalidOperationException>(() => _ent.Tag<EntityTests>());
     }
 
     [Test]
