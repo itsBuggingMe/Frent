@@ -4,33 +4,17 @@ using System.Runtime.CompilerServices;
 
 namespace Frent;
 
+[StackTraceHidden]
 internal class FrentExceptions
 {
     [DoesNotReturn]
-    [StackTraceHidden]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void Throw_InvalidOperationException(string message)
     {
         throw new InvalidOperationException(message);
     }
-    [DoesNotReturn]
-    [StackTraceHidden]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static T Throw_InvalidOperationException<T>(string message)
-    {
-        throw new InvalidOperationException(message);
-    }
 
     [DoesNotReturn]
-    [StackTraceHidden]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void Throw_ComponentNotFoundException<T>()
-    {
-        throw new ComponentNotFoundException<T>();
-    }
-
-    [DoesNotReturn]
-    [StackTraceHidden]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void Throw_ComponentNotFoundException(Type t)
     {
@@ -38,14 +22,41 @@ internal class FrentExceptions
     }
 
     [DoesNotReturn]
-    [StackTraceHidden]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void Throw_ComponentAlreadyExistsException<T>()
+    public static void Throw_ComponentNotFoundException(string message)
     {
-        throw new ComponentNotFoundException<T>();
+        throw new ComponentNotFoundException(message);
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void Throw_ComponentAlreadyExistsException(Type t)
+    {
+        throw new ComponentAlreadyExistsException(t);
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void Throw_ComponentAlreadyExistsException(string message)
+    {
+        throw new ComponentAlreadyExistsException(message);
     }
 }
 
-internal class ComponentAlreadyExistsException<T>() : Exception($"Component of type {typeof(T).FullName} already exists on entity!");
-internal class ComponentNotFoundException<T>() : Exception($"Component of type {typeof(T).FullName} not found");
-internal class ComponentNotFoundException(Type t) : Exception($"Component of type {t.FullName} not found");
+internal class ComponentAlreadyExistsException : Exception
+{
+    public ComponentAlreadyExistsException(Type t)
+        : base($"Component of type {t.FullName} already exists on entity!") { }
+
+    public ComponentAlreadyExistsException(string message)
+        : base(message) { }
+}
+
+internal class ComponentNotFoundException : Exception
+{
+    public ComponentNotFoundException(Type t)
+        : base($"Component of type {t.FullName} not found") { }
+
+    public ComponentNotFoundException(string message)
+        : base(message) { }
+}

@@ -1,7 +1,7 @@
 ﻿using Frent.Variadic.Generator;
 using static Frent.Components.Variadics;
 
-namespace Frent;
+namespace Frent.Systems;
 
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]

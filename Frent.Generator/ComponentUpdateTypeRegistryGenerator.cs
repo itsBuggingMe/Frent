@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Buffers;
+using System.CodeDom.Compiler;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
@@ -73,6 +74,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .Append("internal static partial class ").Append(model.Type).AppendLine("ComponentUpdateInitalizer_")
             .AppendLine("{")
                 .AppendLine("    [System.Runtime.CompilerServices.ModuleInitializer]")
+                .AppendLine("    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]")
                 .Append("    internal static void Initalize").Append(model.FullName.Replace('.', '_')).Append("() => Frent.Updating.GenerationServices.RegisterType(typeof(")
                     .Append(model.SubNamespace).Append('.').Append(model.Type).Append("), new Frent.Updating.Runners."); 
             (span.Count == 0 ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("RunnerFactory").Append('<').Append(model.SubNamespace).Append('.').Append(model.Type);

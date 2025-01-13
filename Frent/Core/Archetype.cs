@@ -85,7 +85,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
         int index = GlobalWorldTables.ComponentIndex(ID, Component<T>.ID);
         if (index > components.Length)
         {
-            FrentExceptions.Throw_ComponentNotFoundException<T>();
+            FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
             return default;
         }
         return ((IComponentRunner<T>)components[index]).AsSpan();
@@ -143,7 +143,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
         foreach (var comprunner in Components)
             comprunner.Delete(chunk, comp, _chunkIndex, (ushort)_componentIndex);
 
-        return _entities[chunk][comp] = _entities[_chunkIndex][_componentIndex];
+        return _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
     }
 
     internal void Update()

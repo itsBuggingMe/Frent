@@ -258,6 +258,10 @@ public partial class World : IDisposable
     {
         internal static NullUniformProvider Instance { get; } = new NullUniformProvider();
         [DebuggerHidden]
-        public T GetUniform<T>() => FrentExceptions.Throw_InvalidOperationException<T>("Initialize the world with an IUniformProvider in order to use uniforms");
+        public T GetUniform<T>()
+        {
+            FrentExceptions.Throw_InvalidOperationException("Initialize the world with an IUniformProvider in order to use uniforms");
+            return default!;
+        }
     }
 }

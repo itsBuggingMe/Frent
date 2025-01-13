@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Frent.Components;
+using Frent.Systems;
 
 namespace Frent.Tests;
 

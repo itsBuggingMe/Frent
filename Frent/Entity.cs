@@ -80,7 +80,7 @@ public partial struct Entity : IEquatable<Entity>
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_ComponentNotFoundException<T>();
+            FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
         //3x
         return ref ((IComponentRunner<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
     }//2, 0
@@ -532,7 +532,7 @@ public partial struct Entity : IEquatable<Entity>
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_ComponentNotFoundException<TComp>();
+            FrentExceptions.Throw_ComponentNotFoundException(typeof(TComp));
 
         return Ref<TComp>.Create(((IComponentRunner<TComp>)archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
     }
