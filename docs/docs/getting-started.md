@@ -6,10 +6,9 @@ Frent is on Nuget!
 > Frent is still in alpha. There may be bugs and the API is changing
 > Treat the currently available packages as a demo
 
-```
+```pwsh
 dotnet add package Frent --version 0.2.3-alpha
 ```
-
 
 
 ### Code Sample
