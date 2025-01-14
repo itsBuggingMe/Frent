@@ -162,6 +162,19 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
             comprunner.Run(this);
     }
 
+    internal void Update(ComponentID componentID)
+    {
+        if (_chunkIndex == 0 && _componentIndex == 0)
+            return;
+        
+        int compIndex = GlobalWorldTables.ComponentIndex(Data.ID, componentID);
+
+        if (compIndex >= MemoryHelpers.MaxComponentCount)
+            return;
+        
+        Components[componentID.ID].Run(this);
+    }
+
     internal void MultiThreadedUpdate(Config config)
     {
         throw new NotImplementedException();

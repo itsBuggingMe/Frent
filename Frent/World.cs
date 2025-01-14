@@ -5,7 +5,7 @@ using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
 using System.Diagnostics;
-using System.Numerics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -29,6 +29,7 @@ public partial class World : IDisposable
     internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
     private Archetype[] WorldArchetypeTable;
     private FastStack<(int ID, ushort Version)> _recycledEntityIds = FastStack<(int, ushort)>.Create(8);
+    private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
     private int _nextEntityID;
 
     internal readonly uint IDAsUInt;
@@ -110,6 +111,47 @@ public partial class World : IDisposable
         }
 
         ExitDisallowState();
+    }
+
+    public void Update<T>() where T : Attribute => Update(typeof(T));
+    
+    public void Update(Type attributeType)
+    {
+        EnterDisallowState();
+
+        ref var appliesTo = ref CollectionsMarshal.
+            GetValueRefOrAddDefault(_updatesByAttributes, attributeType, out bool exists); 
+        if(!exists)
+        {
+            appliesTo.Stack = FastStack<ComponentID>.Create(8);
+        }
+        //fill up the table with the correct IDs
+        //works for initalization as well as updating it
+        for(ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
+        {
+            if(ComponentHasAttributeOfType(new(i), attributeType))
+            {
+                appliesTo.Stack.Push(new(i));
+            }
+        }
+
+        foreach(var compid in appliesTo.Stack.AsSpan())
+        {
+            foreach(var item in _enabledArchetypes.AsSpan())
+            {
+                item?.Update(compid);
+            }
+        }
+
+        ExitDisallowState();
+    }
+    
+    private static bool ComponentHasAttributeOfType(ComponentID id, Type t)
+    {
+        return id
+            .Type
+            .GetMethod("Update", BindingFlags.Public | BindingFlags.Instance)?
+            .GetCustomAttribute(t) is null;
     }
 
     internal ref Archetype GetArchetype(uint archetypeID)
