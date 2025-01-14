@@ -68,7 +68,8 @@ public class AsteroidsGame : Game
         ]), default, new() { Radius = 25 });
         _player.Tag<Shootable>();
 
-        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player), _player.Get<Transform>(), default);
+        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player), _player.Get<Transform>(), _camera.IsAlive() && _camera.TryGet(out Ref<Camera> c) ? c.Component : default);
+        _player.Get<PlayerController>().Camera = _camera;
     }
 
     int timeSinceLastAsteroid = 0;
@@ -87,35 +88,35 @@ public class AsteroidsGame : Game
 
             if(Random.Shared.Next() % 2 == 0)
             {
-                //int width = GraphicsDevice.Viewport.Width;
-                //int height = GraphicsDevice.Viewport.Height;
-                //var playerPos = _player.Get<Transform>();
-                //var e = _world.Create<Transform, Velocity, Polygon, CircleCollision>(
-                //    RandomDirection() * 2000 + playerPos,
-                //    RandomDirection(),
-                //    new Polygon(default, _asteroidPolys[Random.Shared.Next(_asteroidPolys.Length)]),
-                //    new() { Radius = 16 }
-                //    );
-                //e.Tag<Asteroid>();
-                //e.Tag<Shootable>();
-                //
-                //_enemies.Add(e);
+                int width = GraphicsDevice.Viewport.Width;
+                int height = GraphicsDevice.Viewport.Height;
+                var playerPos = _player.Get<Transform>();
+                var e = _world.Create<Transform, Velocity, Polygon, CircleCollision>(
+                    RandomDirection() * 2000 + playerPos,
+                    RandomDirection(),
+                    new Polygon(default, _asteroidPolys[Random.Shared.Next(_asteroidPolys.Length)]),
+                    new() { Radius = 16 }
+                    );
+                e.Tag<Asteroid>();
+                e.Tag<Shootable>();
+                
+                _enemies.Add(e);
             }
             else
             {
-                //int width = GraphicsDevice.Viewport.Width;
-                //int height = GraphicsDevice.Viewport.Height;
-                //var playerPos = _player.Get<Transform>();
-                //var e = _world.Create<Transform, Velocity, Polygon, CircleCollision, EnemyController>(
-                //    RandomDirection() * 2000 + playerPos,
-                //    default,
-                //    new Polygon(default, _enemyPoly),
-                //    new() { Radius = 16 },
-                //    new(_player)
-                //    );
-                //e.Tag<Shootable>();
-                //
-                //_enemies.Add(e);
+                int width = GraphicsDevice.Viewport.Width;
+                int height = GraphicsDevice.Viewport.Height;
+                var playerPos = _player.Get<Transform>();
+                var e = _world.Create<Transform, Velocity, Polygon, CircleCollision, EnemyController>(
+                    RandomDirection() * 2000 + playerPos,
+                    default,
+                    new Polygon(default, _enemyPoly),
+                    new() { Radius = 28 },
+                    new(_player)
+                    );
+                e.Tag<Shootable>();
+                
+                _enemies.Add(e);
             }
         }
         else

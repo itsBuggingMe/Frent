@@ -103,10 +103,11 @@ internal struct PlayerController : IEntityUniformUpdateComponent<World, Transfor
 {
     private int _timeSinceShoot;
     private MouseState _pms;
+    public Entity Camera;
     public void Update(Entity entity, in World world, ref Transform transform, ref Velocity vel)
     {
         _timeSinceShoot++;
-        vel = vel.DXY * 0.97f;
+        vel = vel.DXY * 0.95f;
 
         var ks = Keyboard.GetState();
         var ms = Mouse.GetState();
@@ -115,7 +116,7 @@ internal struct PlayerController : IEntityUniformUpdateComponent<World, Transfor
 
         if (ks.IsKeyDown(Keys.W))
         {
-            vel += pointingDirection * 0.30f;
+            vel += pointingDirection * 0.60f;
 
             world.Create<Transform, Velocity, Triangle, DecayTimer, AngularVelocity, Tween>(
                 transform,//copy the transform of the player
@@ -135,6 +136,10 @@ internal struct PlayerController : IEntityUniformUpdateComponent<World, Transfor
             transform.Rotation -= 0.07f;
         if (ks.IsKeyDown(Keys.D))
             transform.Rotation += 0.07f;
+
+        var worldMousePos = Vector2.Transform(ms.Position.ToVector2(), Matrix.Invert(Camera.Get<Camera>().View));
+        var deltaToMouse = worldMousePos - transform;
+        transform.Rotation = MathF.Atan2(deltaToMouse.Y, deltaToMouse.X) + MathHelper.PiOver2;
         int delta = _pms.ScrollWheelValue - ms.ScrollWheelValue;
         if (delta != 0)
             transform.Rotation += Math.Sign(delta) * 0.1f;
