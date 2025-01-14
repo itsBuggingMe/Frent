@@ -148,10 +148,12 @@ public partial class World : IDisposable
     
     private static bool ComponentHasAttributeOfType(ComponentID id, Type t)
     {
-        return id
+        var member = id
             .Type
-            .GetMethod("Update", BindingFlags.Public | BindingFlags.Instance)?
-            .GetCustomAttribute(t) is null;
+            .GetMethod("Update", BindingFlags.Public | BindingFlags.Instance);
+        if(member is null)
+            return false;
+        return Attribute.IsDefined(member, t);
     }
 
     internal ref Archetype GetArchetype(uint archetypeID)
