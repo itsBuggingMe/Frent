@@ -34,7 +34,7 @@ partial class World
         //The jit likes to inline the outer create function and not inline
         //the inner functions - benchmarked to improve perf by 10-20%
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
-        EntityTable[(uint)id] = (eloc, version);
+        EntityTable[(uint)id] = new(eloc, version);
         return entity = new Entity(ID, Version, version, id);
     }
 

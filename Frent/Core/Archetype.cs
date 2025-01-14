@@ -131,12 +131,20 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
     {
         if (unchecked(--_componentIndex == -1))
         {
-            _entities[_chunkIndex].Return();
-            foreach (var comprunner in Components)
-                comprunner.Trim(_chunkIndex);
-
             _chunkIndex--;
             _componentIndex = _entities[_chunkIndex].Length - 1;
+
+            foreach (var comprunner in Components)
+                comprunner.Delete(chunk, comp, _chunkIndex, (ushort)_componentIndex);
+
+            var e =  _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
+
+            int index = _chunkIndex + 1;
+            _entities[index].Return();
+            foreach (var comprunner in Components)
+                comprunner.Trim(index);
+
+            return e;
         }
 
 

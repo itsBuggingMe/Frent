@@ -1,4 +1,5 @@
 ﻿using Frent.Buffers;
+using Frent.Collections;
 using Frent.Core;
 using System.Runtime.CompilerServices;
 
@@ -16,11 +17,19 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public ComponentID ComponentID => Component<TComponent>.ID;
     public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
     {
-        IComponentRunner<TComponent> componentRunner = (IComponentRunner<TComponent>)otherRunner;
-        ref var left = ref _chunks[me.ChunkIndex][me.ComponentIndex];
-        ref var right = ref componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
-        _chunks[me.ChunkIndex][me.ComponentIndex] = componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
+        try
+        {
+            IComponentRunner<TComponent> componentRunner = (IComponentRunner<TComponent>)otherRunner;
+            ref var left = ref _chunks[me.ChunkIndex][me.ComponentIndex];
+            ref var right = ref componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
+            _chunks[me.ChunkIndex][me.ComponentIndex] = componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
+        }
+        catch
+        {
+
+        }
     }
+    public void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other) => _chunks[me.ChunkIndex][me.ComponentIndex] = ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
 
     internal void Clear()
     {
@@ -41,6 +50,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
+
 }
 
 internal abstract class ComponentStorage<TComponent>

@@ -3,6 +3,9 @@ using Frent.Components;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Security.AccessControl;
 
 namespace Frent.Core;
 
@@ -15,10 +18,15 @@ public static class Component<T>
     /// <summary>
     /// The component ID for <typeparamref name="T"/>
     /// </summary>
-    public static readonly ComponentID ID;
+    public static ComponentID ID => _id;
+
+    private static readonly ComponentID _id;
+
+    internal static readonly TrimmableStack<T> TrimmableStack;
+
     static Component()
     {
-        ID = Component.GetComponentID(typeof(T));
+        (_id, TrimmableStack) = Component.GetExistingOrSetupNewComponent<T>();
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out IComponentRunnerFactory? type))
         {
@@ -65,14 +73,8 @@ public static class Component
             return (IComponentRunner)type.Create();
         }
 
-        if (t.IsAssignableTo(typeof(IComponent)))
-        {
-            throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
-        }
-        else
-        {
-            throw new InvalidOperationException($"{t.FullName} is not initalized. (Did you initalize T with Component.RegisterComponent<T>()?)");
-        }
+        Throw_ComponentTypeNotInit(t);
+        return null!;
     }
 
     /// <summary>
@@ -81,8 +83,27 @@ public static class Component
     /// <typeparam name="T">The type of component to implement</typeparam>
     public static void RegisterComponent<T>()
     {
-        //random size estimate of a managed type
-        NoneComponentRunnerTable[typeof(T)] = new NoneComponentRunnerFactory<T>();
+        if(GenerationServices.UserGeneratedTypeMap.ContainsKey(typeof(T)))
+            NoneComponentRunnerTable[typeof(T)] = new NoneComponentRunnerFactory<T>();
+    }
+
+    internal static (ComponentID ComponentID, TrimmableStack<T> Stack) GetExistingOrSetupNewComponent<T>()
+    {
+        var type = typeof(T);
+        if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
+        {
+            return (value, (TrimmableStack<T>)ComponentTable[value.ID].Stack);
+        }
+
+        ComponentID id = new ComponentID(Interlocked.Increment(ref NextComponentID));
+        ExistingComponentIDs[type] = id;
+
+        GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
+
+        TrimmableStack<T> stack = new TrimmableStack<T>();
+        ComponentTable.Push(new ComponentData(type, stack));
+
+        return (id, stack);
     }
 
     internal static ComponentID GetComponentID(Type t)
@@ -99,9 +120,34 @@ public static class Component
 
         GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
 
-        ComponentTable.Push(new ComponentData(t));
+        ComponentTable.Push(new ComponentData(t, GetTrimmableStack(t)));
 
         return id;
+    }
+
+    private static TrimmableStack GetTrimmableStack(Type type)
+    {
+        if(NoneComponentRunnerTable.TryGetValue(type, out var fac))
+            return (TrimmableStack)fac.CreateStack();
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out fac))
+            return (TrimmableStack)fac.CreateStack();
+        if (type == typeof(void))
+            return null!;
+        Throw_ComponentTypeNotInit(type);
+        return null!;
+    }
+
+    [DoesNotReturn]
+    private static void Throw_ComponentTypeNotInit(Type t)
+    {
+        if (t.IsAssignableTo(typeof(IComponent)))
+        {
+            throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
+        }
+        else
+        {
+            throw new InvalidOperationException($"{t.FullName} is not initalized. (Did you initalize T with Component.RegisterComponent<T>()?)");
+        }
     }
 
     //initalize default(ComponentID) to point to void

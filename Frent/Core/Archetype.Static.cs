@@ -12,6 +12,7 @@ partial class Archetype
 
     private static readonly Dictionary<long, ArchetypeData> ExistingArchetypes = [];
 
+    //TODO: make this use component Ids instead
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, World world, ImmutableArray<Type>? typeArray = null, ImmutableArray<Type>? tagTypesArray = null)
     {
         ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);

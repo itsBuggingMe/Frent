@@ -15,8 +15,6 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
     private T[] _buffer = new T[initalComponents];
     private int _nextIndex = 0;
 
-    private static bool NeedToWorryAboutGC => RuntimeHelpers.IsReferenceOrContainsReferences<T>();
-
     public readonly int Count => _nextIndex;
     public readonly T Top => _buffer[_nextIndex - 1];
     public readonly bool HasElements => _nextIndex > 0;
@@ -48,7 +46,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
     {
         var buffer = _buffer;
         var next = buffer[--_nextIndex];
-        if (NeedToWorryAboutGC)
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             buffer[_nextIndex] = default!;
         return next;
     }
@@ -79,7 +77,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
         if (index < buffer.Length)
         {
             buffer[index] = buffer[--_nextIndex];
-            if (NeedToWorryAboutGC)
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
                 buffer[_nextIndex] = default!;
         }
     }
@@ -92,7 +90,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
 
     public void Clear()
     {
-        if (NeedToWorryAboutGC)
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             AsSpan().Clear();
         _nextIndex = 0;
     }

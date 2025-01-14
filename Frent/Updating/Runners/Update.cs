@@ -1,4 +1,5 @@
 ﻿using Frent.Buffers;
+using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
@@ -21,6 +22,7 @@ public class UpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRun
     where TComp : IUpdateComponent
 {
     public object Create() => new Update<TComp>();
+    public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new Update<TComp>();
 }
 
@@ -43,5 +45,6 @@ public class UpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, ICompon
     where TComp : IUpdateComponent<TArg>
 {
     public object Create() => new Update<TComp, TArg>();
+    public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new Update<TComp, TArg>();
 }

@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 [assembly: InternalsVisibleTo("Frent.Tests")]
 namespace Frent;
@@ -20,10 +21,12 @@ public partial class World : IDisposable
     #region Static Version Management
     private static FastStack<(byte ID, byte Version)> _recycledWorldIDs = FastStack<(byte ID, byte Version)>.Create(16);
     private static byte _nextWorldID;
+    private static int _numWorldWithStructChange = 0;
+    internal static Action? ClearTempComponentStorage;
     #endregion
 
 
-    internal Table<(EntityLocation Location, ushort Version)> EntityTable = new Table<(EntityLocation, ushort Version)>(32);
+    internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
     private Archetype[] WorldArchetypeTable;
     private FastStack<(int ID, ushort Version)> _recycledEntityIds = FastStack<(int, ushort)>.Create(8);
     private int _nextEntityID;
@@ -40,9 +43,9 @@ public partial class World : IDisposable
     private volatile int _allowStructuralChanges;
 
     #region Operations
-    internal FastStack<EntityIDOnly> ToDelete = FastStack<EntityIDOnly>.Create(4);
-    internal FastStack<AddOrDeleteComponent> AddComponents = FastStack<AddOrDeleteComponent>.Create(4);
-    internal FastStack<AddOrDeleteComponent> DeleteComponents = FastStack<AddOrDeleteComponent>.Create(4);
+    internal FastStack<EntityIDOnly> DeleteEntityBuffer = FastStack<EntityIDOnly>.Create(4);
+    internal FastStack<AddComponent> AddComponentBuffer = FastStack<AddComponent>.Create(4);
+    internal FastStack<DeleteComponent> RemoveComponentBuffer = FastStack<DeleteComponent>.Create(4);
     #endregion
 
 
@@ -80,16 +83,8 @@ public partial class World : IDisposable
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
     {
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
-        EntityTable[(uint)id] = (entityLocation, version);
+        EntityTable[(uint)id] = new(entityLocation, version);
         return new Entity(ID, Version, version, id);
-    }
-
-    internal void DeleteEntityInternal(Entity entity, EntityLocation entityLocation)
-    {
-        //entity is guaranteed to be alive here
-        Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-        EntityTable[(uint)replacedEntity.EntityID] = (entityLocation, replacedEntity.EntityVersion);
-        EntityTable[(uint)entity.EntityID] = (EntityLocation.Default, ushort.MaxValue);
     }
 
     /// <summary>
@@ -149,6 +144,7 @@ public partial class World : IDisposable
 
     internal void EnterDisallowState()
     {
+        Interlocked.Increment(ref _numWorldWithStructChange);
         Interlocked.Increment(ref _allowStructuralChanges);
     }
 
@@ -156,29 +152,43 @@ public partial class World : IDisposable
     {
         if(Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
-            while (DeleteComponents.TryPop(out var item))
+            
+            while (RemoveComponentBuffer.TryPop(out var item))
             {
-                var record = EntityTable[(uint)item.Entity.ID];
-                if (record.Version == item.Entity.ID)
+                var id = (uint)item.Entity.ID;
+                var record = EntityTable[id];
+                if (record.Version == item.Entity.Version)
                 {
-                    //TODO: not make this shit
-                    new Entity(ID, Version, item.Entity.Version, item.Entity.ID).Remove(item.ComponentID.Type);
+                    RemoveComponent(item.Entity.ToEntity(this), record.Location, item.ComponentID);
                 }
             }
 
-            while (AddComponents.TryPop(out var item))
+            while (AddComponentBuffer.TryPop(out var command))
             {
-                throw new NotImplementedException();
+                var id = (uint)command.Entity.ID;
+                var record = EntityTable[id];
+                if (record.Version == command.Entity.Version)
+                {
+                    AddComponent(command.Entity.ToEntity(this), record.Location, command.ComponentID, 
+                        out var runner, 
+                        out var location);
+                    runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location, command.Index);
+                }
             }
 
-            while (ToDelete.TryPop(out var item))
+            while (DeleteEntityBuffer.TryPop(out var item))
             {
                 //double check that its alive
                 var record = EntityTable[(uint)item.ID];
                 if (record.Version == item.Version)
                 {
-                    DeleteEntityInternal(new Entity(ID, Version, item.Version, item.ID), record.Location);
+                    DeleteEntity(item.ID, item.Version, record.Location);
                 }
+            }
+
+            if (Interlocked.Decrement(ref _numWorldWithStructChange) == 0)
+            {
+                ClearTempComponentStorage?.Invoke();
             }
         }
     }
@@ -263,5 +273,11 @@ public partial class World : IDisposable
             FrentExceptions.Throw_InvalidOperationException("Initialize the world with an IUniformProvider in order to use uniforms");
             return default!;
         }
+    }
+
+    [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
+    internal record struct EntityLookup(EntityLocation Location, ushort Version)
+    {
+        private string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Chunk: {Location.ChunkIndex}, Component: {Location.ComponentIndex}, Version: {Version}";
     }
 }

@@ -28,6 +28,6 @@ internal static class MemoryHelpers
 
 internal static class MemoryHelpers<T>
 {
-    internal static ComponentArrayPool<T> _pool = new();
+    private static ComponentArrayPool<T> _pool = new();
     internal static ArrayPool<T> Pool => _pool;
 }

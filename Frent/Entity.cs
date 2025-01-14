@@ -84,7 +84,14 @@ public partial struct Entity : IEquatable<Entity>
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
         //3x
-        return ref ((ComponentStorage<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
+        try
+        {
+            return ref ((ComponentStorage<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
+        }
+        catch
+        {
+        }
+        return ref Unsafe.NullRef<T>();
     }//2, 0
 
     /// <summary>
@@ -166,6 +173,8 @@ public partial struct Entity : IEquatable<Entity>
     #endregion
 
     #region Add
+    //TODO: opt structural changes
+
     /// <summary>
     /// Adds a component to an <see cref="Entity"/>
     /// </summary>
@@ -176,23 +185,34 @@ public partial struct Entity : IEquatable<Entity>
     public void Add<T>(T component)
     {
         AssertIsAlive(out var w, out var eloc);
-        w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
-        ((ComponentStorage<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
+        if(w.AllowStructualChanges)
+        {
+            w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
+            ((ComponentStorage<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
+        }
+        else
+        {
+            Component<T>.TrimmableStack.PushStronglyTyped(component, out int index);
+            w.AddComponentBuffer.Push(new(new(EntityID, EntityVersion), Component<T>.ID, index));
+        }
     }
-
+        
     public void Add(ComponentID componentID, object component)
     {
         AssertIsAlive(out var w, out var eloc);
-        w.AddComponent(this, eloc, componentID, out var to, out var location);
-        to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
+        if(w.AllowStructualChanges)
+        {
+            w.AddComponent(this, eloc, componentID, out var to, out var location);
+            to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
+        }
+        else
+        {
+            int index = Component.ComponentTable[componentID.ID].Stack.Push(component);
+            w.AddComponentBuffer.Push(new(new(EntityID, EntityVersion), componentID, index));
+        }
     }
 
-    public void Add(object component)
-    {
-        AssertIsAlive(out var w, out var eloc);
-        w.AddComponent(this, eloc, Component.GetComponentID(component.GetType()), out var to, out var location);
-        to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
-    }
+    public void Add(object component) => Add(component.GetType(), component);
 
     /// <summary>
     /// Add a component to an <see cref="Entity"/>
@@ -206,8 +226,17 @@ public partial struct Entity : IEquatable<Entity>
         //    throw new ArgumentException("Component must be assignable to the given component type!", nameof(component));
         //
         AssertIsAlive(out var w, out var eloc);
-        w.AddComponent(this, eloc, Component.GetComponentID(type), out var to, out var location);
-        to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
+        var componentID = Component.GetComponentID(type);
+        if (w.AllowStructualChanges)
+        {
+            w.AddComponent(this, eloc, componentID, out var to, out var location);
+            to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
+        }
+        else
+        {
+            int index = Component.ComponentTable[componentID.ID].Stack.Push(component);
+            w.AddComponentBuffer.Push(new(new(EntityID, EntityVersion), componentID, index));
+        }
     }
     #endregion
 
@@ -218,16 +247,19 @@ public partial struct Entity : IEquatable<Entity>
     /// <typeparam name="T">The type of component</typeparam>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
-    public void Remove<T>()
-    {
-        AssertIsAlive(out var w, out var eloc);
-        w.RemoveComponent((uint)EntityID, eloc, Component<T>.ID);
-    }
+    public void Remove<T>() => Remove(Component<T>.ID);
 
     public void Remove(ComponentID componentID)
     {
         AssertIsAlive(out var w, out var eloc);
-        w.RemoveComponent((uint)EntityID, eloc, componentID);
+        if(w.AllowStructualChanges)
+        {
+            w.RemoveComponent(this, eloc, componentID);
+        }
+        else
+        {
+            w.RemoveComponentBuffer.Push(new(new(EntityID, EntityVersion), componentID));
+        }
     }
 
     /// <summary>
@@ -239,7 +271,15 @@ public partial struct Entity : IEquatable<Entity>
     public void Remove(Type type)
     {
         AssertIsAlive(out var w, out var eloc);
-        w.RemoveComponent((uint)EntityID, eloc, Component.GetComponentID(type));
+        var id = Component.GetComponentID(type);
+        if (w.AllowStructualChanges)
+        {
+            w.RemoveComponent(this, eloc, id);
+        }
+        else
+        {
+            w.RemoveComponentBuffer.Push(new(new(EntityID, EntityVersion), id));
+        }
     }
     #endregion
 
@@ -376,11 +416,11 @@ public partial struct Entity : IEquatable<Entity>
         {
             if(world.AllowStructualChanges)
             {
-                world.DeleteEntityInternal(this, entityLocation);
+                world.DeleteEntity(EntityID, EntityVersion, entityLocation);
             }
             else
             {
-                world.ToDelete.Push(new EntityIDOnly(EntityID, EntityVersion));
+                world.DeleteEntityBuffer.Push(new EntityIDOnly(EntityID, EntityVersion));
             }
         }
         else
@@ -408,8 +448,7 @@ public partial struct Entity : IEquatable<Entity>
     {
         get
         {
-            if (!IsAlive(out World? world, out _))
-                FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+            AssertIsAlive(out var world, out _);
             return world;
         }
     }

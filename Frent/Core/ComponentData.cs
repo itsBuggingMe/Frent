@@ -1,3 +1,5 @@
-﻿namespace Frent.Core;
+﻿using Frent.Collections;
 
-internal record struct ComponentData(Type Type);
+namespace Frent.Core;
+
+internal record struct ComponentData(Type Type, TrimmableStack Stack);

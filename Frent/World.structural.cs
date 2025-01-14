@@ -16,6 +16,8 @@ partial class World
      */ 
 
     //Add
+    //Note: this fucntion doesn't actually do the last step of setting the component in the new archetype
+    //the caller's job is to set the component
     internal Archetype AddComponent(Entity entity, EntityLocation entityLocation, ComponentID component, out IComponentRunner runner, out EntityLocation nextLocation)
     {
         Archetype from = entityLocation.Archetype(this);
@@ -40,14 +42,14 @@ partial class World
     }
 
     //Remove
-    internal void RemoveComponent(uint entityID, EntityLocation entityLocation, ComponentID component)
+    internal void RemoveComponent(Entity entity, EntityLocation entityLocation, ComponentID component)
     {
         Archetype from = entityLocation.Archetype(this);
 
         ref ArchetypeEdge edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, component.ID, out _);
         Archetype destination = edge.Remove ??= Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, component.Type, out var arr), from.ArchetypeTagArray.AsSpan(), this, arr, from.ArchetypeTagArray);
 
-        destination.CreateEntityLocation(out EntityLocation nextLocation);
+        destination.CreateEntityLocation(out EntityLocation nextLocation) = entity;
 
         int skipIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, component);
 
@@ -62,13 +64,13 @@ partial class World
             {
                 continue;
             }
-            destination.Components[j++].PullComponentFrom(destination.Components[i], nextLocation, entityLocation);
+            destination.Components[j++].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
         }
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
         EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        EntityTable[entityID].Location = nextLocation;
+        EntityTable[(uint)entity.EntityID].Location = nextLocation;
     }
 
     //Delete
@@ -76,8 +78,8 @@ partial class World
     {
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-        EntityTable[(uint)replacedEntity.EntityID] = (entityLocation, replacedEntity.EntityVersion);
-        EntityTable[(uint)entityID] = (EntityLocation.Default, ushort.MaxValue);
+        EntityTable[(uint)replacedEntity.EntityID] = new(entityLocation, replacedEntity.EntityVersion);
+        EntityTable[(uint)entityID] = new(EntityLocation.Default, ushort.MaxValue);
         _recycledEntityIds.Push((entityID, version));
     }
 

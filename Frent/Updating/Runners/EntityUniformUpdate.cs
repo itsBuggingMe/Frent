@@ -1,4 +1,5 @@
 ﻿using Frent.Buffers;
+using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
@@ -23,6 +24,7 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunne
     where TComp : IEntityUniformUpdateComponent<TUniform>
 {
     public object Create() => new EntityUniformUpdate<TComp, TUniform>();
+    public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform>();
 }
 
@@ -46,5 +48,6 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponen
     where TComp : IEntityUniformUpdateComponent<TUniform, TArg>
 {
     public object Create() => new EntityUniformUpdate<TComp, TUniform, TArg>();
+    public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform, TArg>();
 }

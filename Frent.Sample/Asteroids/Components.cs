@@ -177,7 +177,7 @@ internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : IUpdate
     public void Update(ref Transform arg)
     {
         if (Follow.IsAlive())
-            arg -= (arg.XY - Follow.Get<Transform>()    ) * Smoothing;
+            arg -= (arg.XY - Follow.Get<Transform>()) * Smoothing;
     }
 }
 
