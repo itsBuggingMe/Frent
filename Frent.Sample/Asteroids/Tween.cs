@@ -11,6 +11,7 @@ internal struct Tween(TweenType type, float length, Action<Entity, float> action
     public float Length = length;
     float DT;
 
+    [Tick]
     public void Update(Entity entity)
     {
         DT += 1;

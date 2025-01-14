@@ -4,6 +4,7 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
+using Frent.Updating.Runners;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -113,7 +114,7 @@ public partial class World : IDisposable
         ExitDisallowState();
     }
 
-    public void Update<T>() where T : Attribute => Update(typeof(T));
+    public void Update<T>() where T : UpdateTypeAttribute => Update(typeof(T));
     
     public void Update(Type attributeType)
     {
@@ -129,7 +130,8 @@ public partial class World : IDisposable
         //works for initalization as well as updating it
         for(ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
         {
-            if(ComponentHasAttributeOfType(new(i), attributeType))
+            var id = new ComponentID(i);
+            if (GenerationServices.TypeAttributeCache.TryGetValue(attributeType, out var compSet) && compSet.Contains(id.Type))
             {
                 appliesTo.Stack.Push(new(i));
             }
@@ -146,16 +148,6 @@ public partial class World : IDisposable
         ExitDisallowState();
     }
     
-    private static bool ComponentHasAttributeOfType(ComponentID id, Type t)
-    {
-        var member = id
-            .Type
-            .GetMethod("Update", BindingFlags.Public | BindingFlags.Instance);
-        if(member is null)
-            return false;
-        return Attribute.IsDefined(member, t);
-    }
-
     internal ref Archetype GetArchetype(uint archetypeID)
     {
         return ref WorldArchetypeTable[archetypeID];

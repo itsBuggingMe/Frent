@@ -6,6 +6,7 @@ using System.Buffers;
 using System.CodeDom.Compiler;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,9 +19,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)   
     {
         var models = context.SyntaxProvider.CreateSyntaxProvider(static (n, _) => n is TypeDeclarationSyntax typeDec && typeDec.BaseList is not null,
-            static (gsc, _) =>
+            static (gsc, ct) =>
             {
-                INamedTypeSymbol? symbol = gsc.SemanticModel.GetDeclaredSymbol(gsc.Node) as INamedTypeSymbol;
+                INamedTypeSymbol? symbol = gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) as INamedTypeSymbol;
 
                 if (symbol is not null)
                 {
@@ -28,6 +29,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     {
                         if (InterfaceImplementsIComponent(@interface))
                         {
+
                             string @namespace = symbol.ContainingNamespace.ToString();
                             int index = @namespace.IndexOf('.');
                             var genericArgs = @interface.TypeArguments.Length == 0 ? [] : new string[@interface.TypeArguments.Length];
@@ -35,19 +37,41 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                             for(int i = 0; i < @interface.TypeArguments.Length; i++)
                                 genericArgs[i] = @interface.TypeArguments[i].ToString();
 
+                            //stack allocate 6 slots
+                            var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
 
+                            foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
+                            {
+                                if(item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryConstants.UpdateMethodName)
+                                {
+                                    foreach(var attrList in method.AttributeLists)
+                                    {
+                                        foreach(var attr in attrList.Attributes)
+                                        {
+                                            if (gsc.SemanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor && 
+                                                InheritsFromBase(attrCtor.ContainingType, RegistryConstants.UpdateTypeAttributeName))
+                                            {
+                                                stackAttributes.Push(attrCtor.ContainingType.ToString());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            //TODO: avoid alloc?
                             return new ComponentUpdateItemModel(
                                 symbol.ToString(),
                                 symbol.Name,
                                 @interface.Name,
                                 index == -1 ? @namespace : @namespace.Substring(0, index),
                                 index == -1 ? string.Empty : @namespace.Substring(index + 1), 
-                                new EquatableArray<string>(genericArgs));
+                                new EquatableArray<string>(genericArgs),
+                                new EquatableArray<string>(stackAttributes.ToArray()));
                         }
                     }
                 }
 
-                return new ComponentUpdateItemModel(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new EquatableArray<string>(Array.Empty<string>()));
+                return new ComponentUpdateItemModel(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
             });
 
         IncrementalValuesProvider<(string Name, string Source)> file = models
@@ -75,14 +99,30 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .AppendLine("{")
                 .AppendLine("    [System.Runtime.CompilerServices.ModuleInitializer]")
                 .AppendLine("    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]")
-                .Append("    internal static void Initalize").Append(model.FullName.Replace('.', '_')).Append("() => Frent.Updating.GenerationServices.RegisterType(typeof(")
+                .Append("    internal static void Initalize").Append(model.FullName.Replace('.', '_')).AppendLine("()")
+                .AppendLine("    {")
+                .Append("        Frent.Updating.GenerationServices.RegisterType(typeof(")
                     .Append(model.SubNamespace).Append('.').Append(model.Type).Append("), new Frent.Updating.Runners."); 
             (span.Count == 0 ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("RunnerFactory").Append('<').Append(model.SubNamespace).Append('.').Append(model.Type);
 
         foreach(var item in model.GenericArguments)
             sb.Append(", ").Append(item);
 
-        sb.AppendLine(">());").AppendLine("}");
+        sb.AppendLine(">());");
+        
+        foreach(var attrType in model.Attributes)
+        {
+            sb.Append("        GenerationServices.RegisterUpdateMethodAttribute(")
+                .Append("typeof(")
+                .Append(attrType)
+                .Append("), typeof(")
+                .Append(model.SubNamespace).Append('.').Append(model.Type)
+                .AppendLine("));");
+        }
+
+        //end method ^& class
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
 
         string source = sb.ToString();
         sb.Clear();
@@ -113,11 +153,21 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         Launched = true;
     }
 
+    private static bool InheritsFromBase(INamedTypeSymbol? typeSymbol, string baseTypeName)
+    {
+        while (typeSymbol != null)
+        {
+            if (typeSymbol.ToDisplayString() == baseTypeName)
+                return true;
+            typeSymbol = typeSymbol.BaseType;
+        }
+        return false;
+    }
     private static bool InterfaceImplementsIComponent(INamedTypeSymbol namedTypeSymbol) => 
         (namedTypeSymbol.Interfaces.Length == 1 && 
         namedTypeSymbol.Interfaces[0].ConstructedFrom.ToString() == RegistryConstants.TargetInterfaceName) ||
         namedTypeSymbol.Interfaces.Length == 0 && 
         namedTypeSymbol.ConstructedFrom.ToString() == RegistryConstants.TargetInterfaceName;
 
-    internal record struct ComponentUpdateItemModel(string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments);
+    internal record struct ComponentUpdateItemModel(string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
 }

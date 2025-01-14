@@ -141,7 +141,7 @@ public class AsteroidsGame : Game
         }
 
         _world.InlineQueryEntityUniform<InlineOuterCollisionQuery, World, CircleCollision, Transform>(default);
-        _world.Update();
+        _world.Update<TickAttribute>();
         base.Update(gameTime);
     }
 
@@ -152,28 +152,7 @@ public class AsteroidsGame : Game
         _sb.Begin(view: _camera.Get<Camera>().View);
 
         DrawGrid();
-
-        _world.QueryUniform((in ShapeBatch sb, ref Line l, ref Transform pos) => sb.FillLine(Vector2.Rotate(l.A, pos.Rotation) + pos.XY, Vector2.Rotate(l.B, pos.Rotation) + pos.XY, l.Thickness, Color.White * l.Opacity));
-        _world.QueryUniform((in ShapeBatch sb, ref Triangle l, ref Transform pos) => sb.FillEquilateralTriangle(pos.XY, l.Size, Color.White * l.Opacity, rotation: pos.Rotation));
-        _world.QueryUniform((in ShapeBatch sb, ref Polygon l, ref Transform position) =>
-        {
-            Debug.Assert(l.Thickness != 0);
-            var verticies = l.Verticies;
-
-            float scale = position.Scale;
-            float sine = MathF.Sin(position.Rotation);
-            float cos = MathF.Cos(position.Rotation);
-
-            foreach(var (a, b) in l)
-            {
-                sb.FillLine(Rotate(a - l.Origin) + position.XY, Rotate(b - l.Origin) + position.XY, l.Thickness, Color.White);
-            }
-
-            Vector2 Rotate(Vector2 value)
-            {
-                return new Vector2(value.X * cos - value.Y * sine, value.X * sine + value.Y * cos) * scale;
-            }
-        });
+        _world.Update<DrawAttribute>();
 
         _sb.End();
         base.Draw(gameTime);

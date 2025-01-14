@@ -172,7 +172,7 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             return;
         
-        Components[componentID.ID].Run(this);
+        Components[compIndex].Run(this);
     }
 
     internal void MultiThreadedUpdate(Config config)

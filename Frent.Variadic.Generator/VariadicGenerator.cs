@@ -166,7 +166,7 @@ namespace Frent.Variadic.Generator
             }
         }
 
-        internal struct GenerationModel
+        internal struct GenerationModel 
         {
             public string SourceCode;
             public string FileName;

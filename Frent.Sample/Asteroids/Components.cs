@@ -7,11 +7,15 @@ using Microsoft.Xna.Framework.Input;
 using System.Collections;
 using System.Transactions;
 using Frent.Core;
+using Apos.Shapes;
+using System.Diagnostics;
+using BenchmarkDotNet.Attributes;
 
 namespace Frent.Sample.Asteroids;
 
 internal struct DecayTimer(int Frames) : IEntityUpdateComponent
 {
+    [Tick]
     public void Update(Entity entity)
     {
         if(--Frames < 0)
@@ -39,6 +43,8 @@ internal struct Velocity(float dx, float dy) : IUpdateComponent<Transform>
     public float DX = dx;
     public float DY = dy;
     public readonly Vector2 DXY => new Vector2(DX, DY);
+
+    [Tick]
     public void Update(ref Transform arg)
     {
         arg.X += DX;
@@ -51,14 +57,34 @@ internal struct Velocity(float dx, float dy) : IUpdateComponent<Transform>
     public static implicit operator Velocity(Vector2 pos) => new(pos.X, pos.Y);
 }
 
-internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2) : IEnumerable<(Vector2 A, Vector2 B)>
+internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2) : IEnumerable<(Vector2 A, Vector2 B)>, IUniformUpdateComponent<ShapeBatch, Transform>
 {
     public float Thickness = thickness;
     public Vector2 Origin = origin;
     public Vector2[] Verticies = verticies;
 
+    [Draw]
+    public void Update(in ShapeBatch sb, ref Transform position)
+    {
+        Debug.Assert(Thickness != 0);
+        var verticies = Verticies;
 
-    PolygonEnumerator GetEnumerator() => new PolygonEnumerator(Verticies);
+        float scale = position.Scale;
+        float sine = MathF.Sin(position.Rotation);
+        float cos = MathF.Cos(position.Rotation);
+
+        foreach (var (a, b) in this)
+        {
+            sb.FillLine(Rotate(a - Origin) + position.XY, Rotate(b - Origin) + position.XY, Thickness, Color.White);
+        }
+
+        Vector2 Rotate(Vector2 value)
+        {
+            return new Vector2(value.X * cos - value.Y * sine, value.X * sine + value.Y * cos) * scale;
+        }
+    }
+
+    public PolygonEnumerator GetEnumerator() => new PolygonEnumerator(Verticies);
     IEnumerator<(Vector2 A, Vector2 B)> IEnumerable<(Vector2 A, Vector2 B)>.GetEnumerator() => new PolygonEnumerator(Verticies);
     IEnumerator IEnumerable.GetEnumerator() => new PolygonEnumerator(Verticies);
 
@@ -91,12 +117,18 @@ internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2
     }
 }
 
-internal struct Line
+internal struct Line : IUniformUpdateComponent<ShapeBatch, Transform>
 {
     public float Thickness;
     public float Opacity;
     public Vector2 A;
     public Vector2 B;
+
+    [Draw]
+    public void Update(in ShapeBatch sb, ref Transform pos)
+    {
+        sb.FillLine(Vector2.Rotate(A, pos.Rotation) + pos.XY, Vector2.Rotate(B, pos.Rotation) + pos.XY, Thickness, Color.White * Opacity);
+    }
 }
 
 internal struct PlayerController : IEntityUniformUpdateComponent<World, Transform, Velocity>
@@ -104,6 +136,8 @@ internal struct PlayerController : IEntityUniformUpdateComponent<World, Transfor
     private int _timeSinceShoot;
     private MouseState _pms;
     public Entity Camera;
+
+    [Tick]
     public void Update(Entity entity, in World world, ref Transform transform, ref Velocity vel)
     {
         _timeSinceShoot++;
@@ -158,6 +192,8 @@ internal struct EnemyController(Entity target) : IEntityUpdateComponent<Transfor
 {
     public Entity Target = target;
     private int _shootTimer;
+
+    [Tick]
     public void Update(Entity entity, ref Transform arg1, ref Velocity arg2)
     {
         if (!Target.IsAlive())
@@ -179,6 +215,7 @@ internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : IUpdate
     public Entity Follow = toFollow;
     public float Smoothing = smoothing;
 
+    [Tick]
     public void Update(ref Transform arg)
     {
         if (Follow.IsAlive())
@@ -189,6 +226,8 @@ internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : IUpdate
 internal struct Camera : IUniformUpdateComponent<Viewport, Transform>
 {
     public Matrix View;
+
+    [Tick]
     public void Update(in Viewport uniform, ref Transform transform)
     {
         int width = uniform.Width;
@@ -197,10 +236,15 @@ internal struct Camera : IUniformUpdateComponent<Viewport, Transform>
     }
 }
 
-internal struct Triangle
+internal struct Triangle : IUniformUpdateComponent<ShapeBatch, Transform>
 {
     public float Size;
     public float Opacity;
+
+    public void Update(in ShapeBatch sb, ref Transform pos)
+    {
+        sb.FillEquilateralTriangle(pos.XY, Size, Color.White * Opacity, rotation: pos.Rotation);
+    }
 }
 
 internal struct AngularVelocity(float dt)  : IUpdateComponent<Transform>
@@ -208,6 +252,7 @@ internal struct AngularVelocity(float dt)  : IUpdateComponent<Transform>
     //delta theta???
     public float DT = dt;
 
+    [Tick]
     public void Update(ref Transform arg)
     {
         arg.Rotation += DT;
@@ -229,6 +274,8 @@ internal struct CircleCollision
 internal struct BulletBehavior(Entity entity) : IUpdateComponent<CircleCollision>
 {
     public Entity Parent = entity;
+
+    [Tick]
     public void Update(ref CircleCollision arg)
     {
         if(!arg.CollidesWith.IsNull && arg.CollidesWith != Parent && arg.CollidesWith.IsAlive() && arg.CollidesWith.Tagged<Shootable>())
