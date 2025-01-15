@@ -26,6 +26,8 @@ public partial class World : IDisposable
     internal static Action? ClearTempComponentStorage;
     #endregion
 
+    internal static World? QuickWorldCache;
+    internal static ushort WorldCachePackedValue;
 
     internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
     private Archetype[] WorldArchetypeTable;
@@ -242,8 +244,7 @@ public partial class World : IDisposable
         GlobalWorldTables.Worlds[ID] = null!;
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
         foreach(var item in WorldArchetypeTable.AsSpan())
-            if(item is not null)
-                item.ReleaseArrays();
+            item?.ReleaseArrays();
 
 
         _isDisposed = true;

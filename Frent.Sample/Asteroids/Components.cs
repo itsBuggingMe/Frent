@@ -240,7 +240,7 @@ internal struct Triangle : IUniformUpdateComponent<ShapeBatch, Transform>
 {
     public float Size;
     public float Opacity;
-
+    [Draw]
     public void Update(in ShapeBatch sb, ref Transform pos)
     {
         sb.FillEquilateralTriangle(pos.XY, Size, Color.White * Opacity, rotation: pos.Rotation);
