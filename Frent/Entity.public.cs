@@ -23,7 +23,7 @@ partial struct Entity
     {
         AssertIsAlive(out var _, out var entityLocation);
         ComponentID compid = Component<T>.ID;
-        return GlobalWorldTables.ComponentIndex(0, compid) < MemoryHelpers.MaxComponentCount;
+        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
     }
 
     /// <summary>

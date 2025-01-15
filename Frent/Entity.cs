@@ -109,9 +109,57 @@ public partial struct Entity : IEquatable<Entity>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void AssertIsAlive(out World world, out EntityLocation entityLocation)
     {
-        if (!IsAlive(out world!/*we throw when null*/, out entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+        if(World.WorldCachePackedValue == PackedWorldInfo)
+        {
+            var tableItem = (world = World.QuickWorldCache!).EntityTable.GetValueNoCheck(EntityID);
+            if(tableItem.Version == EntityVersion)
+            {
+                entityLocation = tableItem.Location;
+                return;
+            }
+        }
+
+        world = default!;
+        entityLocation = default;
+        Throw_EntityIsDead();
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void AssertIsAliveWorld(out World world)
+    {
+        if(!(World.WorldCachePackedValue == PackedWorldInfo && 
+            (world = World.QuickWorldCache!).EntityTable.GetValueNoCheck(EntityID).Version == EntityVersion ||
+            IsAliveCold(out world!, out _)))
+        {
+            Throw_EntityIsDead();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void AssertIsAliveEntityLocation(out EntityLocation eloc)
+    {
+        if(World.WorldCachePackedValue == PackedWorldInfo)
+        {
+            var tableItem = World.QuickWorldCache!.EntityTable.GetValueNoCheck(EntityID);
+            if(tableItem.Version == EntityVersion)
+            {
+                eloc = tableItem.Location;
+                return;
+            }
+        }
+        
+        eloc = default;
+        Throw_EntityIsDead();
+    }
+
+    private void AssertIsAlive()
+    {
+        if(!IsAlive())
+            Throw_EntityIsDead();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void Throw_EntityIsDead() => FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage); 
 
     internal string DebuggerDisplayString => IsNull ? "null" : IsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
     internal const string EntityIsDeadMessage = "Entity is Dead";
