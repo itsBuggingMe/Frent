@@ -160,7 +160,8 @@ public partial struct Entity : IEquatable<Entity>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void Throw_EntityIsDead() => FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage); 
 
-    internal string DebuggerDisplayString => IsNull ? "null" : IsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
+    //captial N null to distinguish between actual null and default
+    internal string DebuggerDisplayString => IsNull ? "Null" : IsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
     internal const string EntityIsDeadMessage = "Entity is Dead";
     internal const string DoesNotHaveTagMessage = "This Entity does not have this tag";
 
