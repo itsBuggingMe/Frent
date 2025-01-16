@@ -2,3 +2,5 @@
   href: getting-started.md
 - name: What's an ECF?
   href: ecf.md
+- name: Making Components
+  href: components.md
