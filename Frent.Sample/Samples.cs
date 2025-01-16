@@ -96,7 +96,7 @@ internal class Samples
     }
     #endregion
 }
-record struct Pos(float X) : IEntityUpdateComponent
+record struct Pos(float X) : IEntityComponent
 {
     public void Update(Entity entity)
     {
@@ -106,7 +106,7 @@ record struct Pos(float X) : IEntityUpdateComponent
     }
 }
 
-record struct Vel(float DX) : IUniformUpdateComponent<float, Pos>
+record struct Vel(float DX) : IUniformComponent<float, Pos>
 {
     public void Update(in float dt, ref Pos pos)
     {
@@ -117,7 +117,7 @@ struct WriteQuery : IQueryUniform<byte, int>
 {
     public void Run(in byte uniform, ref int x) => Console.Write($"{x + uniform}, ");
 }
-struct ConsoleText(ConsoleColor Color) : IUpdateComponent<string>
+struct ConsoleText(ConsoleColor Color) : IComponent<string>
 {
     public void Update(ref string str)
     {

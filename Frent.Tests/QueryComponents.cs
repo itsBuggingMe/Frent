@@ -5,7 +5,7 @@ using Frent.Systems;
 
 namespace Frent.Tests;
 
-struct CounterComponent : IUpdateComponent
+struct CounterComponent : IComponent
 {
     public StrongBox<int> Counter;
 
@@ -14,7 +14,7 @@ struct CounterComponent : IUpdateComponent
     public void Update() => Counter.Value++;
 }
 
-struct ArgCounterComponent : IUpdateComponent<int>
+struct ArgCounterComponent : IComponent<int>
 {
     public StrongBox<int> Counter;
 
@@ -23,7 +23,7 @@ struct ArgCounterComponent : IUpdateComponent<int>
     public void Update(ref int arg) => Counter.Value++;
 }
 
-struct UniformCounterComponent : IUniformUpdateComponent<int>
+struct UniformCounterComponent : IUniformComponent<int>
 {
     public StrongBox<int> Counter;
 
@@ -32,7 +32,7 @@ struct UniformCounterComponent : IUniformUpdateComponent<int>
     public void Update(in int uniform) => Counter.Value++;
 }
 
-struct UniformArgCounterComponent : IUniformUpdateComponent<int, int>
+struct UniformArgCounterComponent : IUniformComponent<int, int>
 {
     public StrongBox<int> Counter;
 
@@ -41,7 +41,7 @@ struct UniformArgCounterComponent : IUniformUpdateComponent<int, int>
     public void Update(in int uniform, ref int arg) => Counter.Value++;
 }
 
-struct EntityCounterComponent : IEntityUpdateComponent
+struct EntityCounterComponent : IEntityComponent
 {
     public StrongBox<int> Counter;
 
@@ -50,7 +50,7 @@ struct EntityCounterComponent : IEntityUpdateComponent
     public void Update(Entity entity) => Counter.Value++;
 }
 
-struct EntityArgCounterComponent : IEntityUpdateComponent<int>
+struct EntityArgCounterComponent : IEntityComponent<int>
 {
     public StrongBox<int> Counter;
 
@@ -59,7 +59,7 @@ struct EntityArgCounterComponent : IEntityUpdateComponent<int>
     public void Update(Entity entity, ref int arg) => Counter.Value++;
 }
 
-struct EntityUniformCounterComponent : IEntityUniformUpdateComponent<int>
+struct EntityUniformCounterComponent : IEntityUniformComponent<int>
 {
     public StrongBox<int> Counter;
 
@@ -74,7 +74,7 @@ struct EntityUniformCounterComponent : IEntityUniformUpdateComponent<int>
     }
 }
 
-struct EntityUniformArgCounterComponent : IEntityUniformUpdateComponent<int, int>
+struct EntityUniformArgCounterComponent : IEntityUniformComponent<int, int>
 {
     public StrongBox<int> Counter;
 

@@ -10,7 +10,7 @@ using static Frent.Updating.Variadics;
 namespace Frent.Updating.Runners;
 
 internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform>, TComp>
-    where TComp : IEntityUniformUpdateComponent<TUniform>
+    where TComp : IEntityUniformComponent<TUniform>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, new() { Uniform = b.World.UniformProvider.GetUniform<TUniform>() }, b.GetEntitySpan(), b.GetComponentSpan<TComp>());
     internal record struct Action : IQueryEntity<TComp>
@@ -21,7 +21,7 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<Entity
 }
 
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
-    where TComp : IEntityUniformUpdateComponent<TUniform>
+    where TComp : IEntityUniformComponent<TUniform>
 {
     public object Create() => new EntityUniformUpdate<TComp, TUniform>();
     public object CreateStack() => new TrimmableStack<TComp>();
@@ -33,7 +33,7 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunne
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
 internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform, TArg>, TComp>
-    where TComp : IEntityUniformUpdateComponent<TUniform, TArg>
+    where TComp : IEntityUniformComponent<TUniform, TArg>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, new() { Uniform = b.World.UniformProvider.GetUniform<TUniform>() }, b.GetEntitySpan(), b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
     internal record struct Action : IQueryEntity<TComp, TArg>
@@ -45,7 +45,7 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<
 
 [Variadic(GenArgFrom, GenArgPattern, 15)]
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
-    where TComp : IEntityUniformUpdateComponent<TUniform, TArg>
+    where TComp : IEntityUniformComponent<TUniform, TArg>
 {
     public object Create() => new EntityUniformUpdate<TComp, TUniform, TArg>();
     public object CreateStack() => new TrimmableStack<TComp>();

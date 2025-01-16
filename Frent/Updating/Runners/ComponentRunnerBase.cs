@@ -17,31 +17,12 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public ComponentID ComponentID => Component<TComponent>.ID;
     public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
     {
-        try
-        {
-            IComponentRunner<TComponent> componentRunner = (IComponentRunner<TComponent>)otherRunner;
-            ref var left = ref _chunks[me.ChunkIndex][me.ComponentIndex];
-            ref var right = ref componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
-            _chunks[me.ChunkIndex][me.ComponentIndex] = componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
-        }
-        catch
-        {
-
-        }
+        IComponentRunner<TComponent> componentRunner = (IComponentRunner<TComponent>)otherRunner;
+        ref var left = ref _chunks[me.ChunkIndex][me.ComponentIndex];
+        ref var right = ref componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
+        _chunks[me.ChunkIndex][me.ComponentIndex] = componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
     }
     public void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other) => _chunks[me.ChunkIndex][me.ComponentIndex] = ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
-
-    internal void Clear()
-    {
-        if (_chunks.Length == 1)
-        {
-            _chunks[0][0] = default!;
-        }
-        else
-        {
-            _chunks = [new Chunk<TComponent>(1)];
-        }
-    }
 
     public void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom)
     {

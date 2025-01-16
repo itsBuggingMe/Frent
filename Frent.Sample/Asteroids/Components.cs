@@ -13,7 +13,7 @@ using BenchmarkDotNet.Attributes;
 
 namespace Frent.Sample.Asteroids;
 
-internal struct DecayTimer(int Frames) : IEntityUpdateComponent
+internal struct DecayTimer(int Frames) : IEntityComponent
 {
     [Tick]
     public void Update(Entity entity)
@@ -38,7 +38,7 @@ internal struct Transform(float x, float y)
     public static implicit operator Transform(Vector2 pos) => new(pos.X, pos.Y);
 }
 
-internal struct Velocity(float dx, float dy) : IUpdateComponent<Transform>
+internal struct Velocity(float dx, float dy) : IComponent<Transform>
 {
     public float DX = dx;
     public float DY = dy;
@@ -57,7 +57,7 @@ internal struct Velocity(float dx, float dy) : IUpdateComponent<Transform>
     public static implicit operator Velocity(Vector2 pos) => new(pos.X, pos.Y);
 }
 
-internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2) : IEnumerable<(Vector2 A, Vector2 B)>, IUniformUpdateComponent<ShapeBatch, Transform>
+internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2) : IEnumerable<(Vector2 A, Vector2 B)>, IUniformComponent<ShapeBatch, Transform>
 {
     public float Thickness = thickness;
     public Vector2 Origin = origin;
@@ -117,7 +117,7 @@ internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2
     }
 }
 
-internal struct Line : IUniformUpdateComponent<ShapeBatch, Transform>
+internal struct Line : IUniformComponent<ShapeBatch, Transform>
 {
     public float Thickness;
     public float Opacity;
@@ -131,7 +131,7 @@ internal struct Line : IUniformUpdateComponent<ShapeBatch, Transform>
     }
 }
 
-internal struct PlayerController : IEntityUniformUpdateComponent<World, Transform, Velocity>
+internal struct PlayerController : IEntityUniformComponent<World, Transform, Velocity>
 {
     private int _timeSinceShoot;
     private MouseState _pms;
@@ -188,7 +188,7 @@ internal struct PlayerController : IEntityUniformUpdateComponent<World, Transfor
     }
 }
 
-internal struct EnemyController(Entity target) : IEntityUpdateComponent<Transform, Velocity>
+internal struct EnemyController(Entity target) : IEntityComponent<Transform, Velocity>
 {
     public Entity Target = target;
     private int _shootTimer;
@@ -210,7 +210,7 @@ internal struct EnemyController(Entity target) : IEntityUpdateComponent<Transfor
     }
 }
 
-internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : IUpdateComponent<Transform>
+internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : IComponent<Transform>
 {
     public Entity Follow = toFollow;
     public float Smoothing = smoothing;
@@ -223,7 +223,7 @@ internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : IUpdate
     }
 }
 
-internal struct Camera : IUniformUpdateComponent<Viewport, Transform>
+internal struct Camera : IUniformComponent<Viewport, Transform>
 {
     public Matrix View;
 
@@ -236,7 +236,7 @@ internal struct Camera : IUniformUpdateComponent<Viewport, Transform>
     }
 }
 
-internal struct Triangle : IUniformUpdateComponent<ShapeBatch, Transform>
+internal struct Triangle : IUniformComponent<ShapeBatch, Transform>
 {
     public float Size;
     public float Opacity;
@@ -247,7 +247,7 @@ internal struct Triangle : IUniformUpdateComponent<ShapeBatch, Transform>
     }
 }
 
-internal struct AngularVelocity(float dt)  : IUpdateComponent<Transform>
+internal struct AngularVelocity(float dt)  : IComponent<Transform>
 {
     //delta theta???
     public float DT = dt;
@@ -259,7 +259,7 @@ internal struct AngularVelocity(float dt)  : IUpdateComponent<Transform>
     }
 }
 
-internal struct CircleCollision
+internal struct CircleCollision : IComponentBase
 {
     public float Radius;
     public Entity CollidesWith;
@@ -271,7 +271,7 @@ internal struct CircleCollision
     }
 }
 
-internal struct BulletBehavior(Entity entity) : IUpdateComponent<CircleCollision>
+internal struct BulletBehavior(Entity entity) : IComponent<CircleCollision>
 {
     public Entity Parent = entity;
 

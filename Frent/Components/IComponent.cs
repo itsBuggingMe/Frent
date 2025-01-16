@@ -1,15 +1,16 @@
-﻿namespace Frent.Components;
+﻿using Frent.Variadic.Generator;
+using static Frent.Components.Variadics;
 
-/*  ALL COMPONENT TYPES                                 |Interface|Storage
- *  Arbitary data                                           X       X
- *  Update Only                                             X       X
- *  Update with N components                                X       X
- *  Update with N components + uniform                      X       X
- *  Update with N components + entityid                     X       X
- *  Update with N components + uniform + entityid           X       X
- *  Update with uniform                                     X       X
- *  Update with entityid                                    X       X
- *  Update with uniform + entityid                          X       X
- */
+namespace Frent.Components;
 
-public interface IComponent;
+public interface IComponent : IComponentBase
+{
+    void Update();
+}
+
+[Variadic(TArgFrom, TArgPattern, 15)]
+[Variadic(RefArgFrom, RefArgPattern)]
+public interface IComponent<TArg> : IComponentBase
+{
+    void Update(ref TArg arg);
+}

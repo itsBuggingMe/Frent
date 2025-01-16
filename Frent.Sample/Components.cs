@@ -23,7 +23,7 @@ internal record struct SinglePixel(Color Color)
 {
     public static implicit operator SinglePixel(Color co) => new(co);
 }
-internal struct Velocity(Vector2 dxy) : IUniformUpdateComponent<GameRoot, Position, Friction>
+internal struct Velocity(Vector2 dxy) : IUniformComponent<GameRoot, Position, Friction>
 {
     public Vector2 DXY = dxy;
     public static implicit operator Velocity(Vector2 dxy) => new(dxy);
@@ -33,7 +33,7 @@ internal struct Velocity(Vector2 dxy) : IUniformUpdateComponent<GameRoot, Positi
         DXY *= friction.Coefficient;
     }
 }
-internal record struct MouseController : IEntityUniformUpdateComponent<GameRoot, Velocity, Position>
+internal record struct MouseController : IEntityUniformComponent<GameRoot, Velocity, Position>
 {
     public void Update(Entity e, in GameRoot uniform, ref Velocity vel, ref Position arg)
     {

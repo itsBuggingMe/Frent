@@ -3,14 +3,14 @@ using static Frent.Components.Variadics;
 
 namespace Frent.Components;
 
-public interface IEntityUniformUpdateComponent<TUniform> : IComponent
+public interface IEntityUniformComponent<TUniform> : IComponentBase
 {
     public void Update(Entity entity, in TUniform uniform);
 }
 
 [Variadic(TArgFrom, TArgPattern, 15)]
 [Variadic(RefArgFrom, RefArgPattern)]
-public interface IEntityUniformUpdateComponent<TUniform, TArg> : IComponent
+public interface IEntityUniformComponent<TUniform, TArg> : IComponentBase
 {
     public void Update(Entity entity, in TUniform uniform, ref TArg arg);
 }

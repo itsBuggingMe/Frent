@@ -119,9 +119,8 @@ public partial struct Entity : IEquatable<Entity>
             }
         }
 
-        world = default!;
-        entityLocation = default;
-        Throw_EntityIsDead();
+        if (!IsAlive(out world!, out entityLocation))
+            Throw_EntityIsDead();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

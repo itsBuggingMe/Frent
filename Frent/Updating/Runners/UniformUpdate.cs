@@ -9,7 +9,7 @@ using static Frent.Updating.Variadics;
 namespace Frent.Updating.Runners;
 
 internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<TComp, TUniform>, TComp>
-    where TComp : IUniformUpdateComponent<TUniform>
+    where TComp : IUniformComponent<TUniform>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpan<Action>
         (b.CurrentWriteChunk, b.LastChunkComponentCount, new() { Uniform = b.World.UniformProvider.GetUniform<TUniform>() }, b.GetComponentSpan<TComp>());
@@ -21,7 +21,7 @@ internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdat
 }
 
 public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
-    where TComp : IUniformUpdateComponent<TUniform>
+    where TComp : IUniformComponent<TUniform>
 {
     public object Create() => new UniformUpdate<TComp, TUniform>();
     public object CreateStack() => new TrimmableStack<TComp>();
@@ -33,7 +33,7 @@ public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFacto
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
 internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformUpdate<TComp, TUniform, TArg>, TComp>
-    where TComp : IUniformUpdateComponent<TUniform, TArg>
+    where TComp : IUniformComponent<TUniform, TArg>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpan<Action>
         (b.CurrentWriteChunk, b.LastChunkComponentCount, new() { Uniform = b.World.UniformProvider.GetUniform<TUniform>() }, b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
@@ -47,7 +47,7 @@ internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<Unifor
 
 [Variadic(GenArgFrom, GenArgPattern, 15)]
 public class UniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
-    where TComp : IUniformUpdateComponent<TUniform, TArg>
+    where TComp : IUniformComponent<TUniform, TArg>
 {
     public object Create() => new UniformUpdate<TComp, TUniform, TArg>();
     public object CreateStack() => new TrimmableStack<TComp>();

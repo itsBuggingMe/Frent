@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Frent.Tests;
 
-struct UpdateComponent1 : IUpdateComponent<int>
+struct UpdateComponent1 : IComponent<int>
 {
     public void Update(ref int arg) => arg++;
 }
@@ -17,7 +17,7 @@ struct UpdateComponent2 : IUpdateComponent<int, long>
     }
 }
 
-struct UniformComponent : IUniformUpdateComponent<int, int>
+struct UniformComponent : IUniformComponent<int, int>
 {
     public void Update(in int uniform, ref int arg) => arg += uniform;
 }

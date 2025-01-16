@@ -39,7 +39,7 @@ public static class Component<T>
             throw new InvalidOperationException($"{typeof(T).FullName} is not initalized correctly. (Is the source generator working?)");
         }
 
-        var fac = new NoneComponentRunnerFactory<T>();
+        var fac = new NoneUpdateRunnerFactory<T>();
         Component.NoneComponentRunnerTable[typeof(T)] = fac;
         RunnerInstance = fac;
     }
@@ -84,7 +84,7 @@ public static class Component
     public static void RegisterComponent<T>()
     {
         if(GenerationServices.UserGeneratedTypeMap.ContainsKey(typeof(T)))
-            NoneComponentRunnerTable[typeof(T)] = new NoneComponentRunnerFactory<T>();
+            NoneComponentRunnerTable[typeof(T)] = new NoneUpdateRunnerFactory<T>();
     }
 
     internal static (ComponentID ComponentID, TrimmableStack<T> Stack) GetExistingOrSetupNewComponent<T>()
@@ -140,7 +140,7 @@ public static class Component
     [DoesNotReturn]
     private static void Throw_ComponentTypeNotInit(Type t)
     {
-        if (t.IsAssignableTo(typeof(IComponent)))
+        if (t.IsAssignableTo(typeof(IComponentBase)))
         {
             throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
         }

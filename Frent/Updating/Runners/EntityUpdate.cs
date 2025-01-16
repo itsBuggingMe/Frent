@@ -9,7 +9,7 @@ using static Frent.Updating.Variadics;
 namespace Frent.Updating.Runners;
 
 internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TComp>
-    where TComp : IEntityUpdateComponent
+    where TComp : IEntityComponent
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetEntitySpan(), b.GetComponentSpan<TComp>());
     internal struct Action : IQueryEntity<TComp>
@@ -18,7 +18,7 @@ internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TC
     }
 }
 public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
-    where TComp : IEntityUpdateComponent
+    where TComp : IEntityComponent
 {
     public object Create() => new EntityUpdate<TComp>();
     public object CreateStack() => new TrimmableStack<TComp>();
@@ -30,7 +30,7 @@ public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, ICompon
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
 internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TComp, TArg>, TComp>
-    where TComp : IEntityUpdateComponent<TArg>
+    where TComp : IEntityComponent<TArg>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetEntitySpan(), b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
     internal struct Action : IQueryEntity<TComp, TArg>
@@ -41,7 +41,7 @@ internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TCom
 
 [Variadic(GenArgFrom, GenArgPattern, 15)]
 public class EntityUpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
-    where TComp : IEntityUpdateComponent<TArg>
+    where TComp : IEntityComponent<TArg>
 {
     public object Create() => new EntityUpdate<TComp, TArg>();
     public object CreateStack() => new TrimmableStack<TComp>();

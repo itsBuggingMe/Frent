@@ -92,7 +92,7 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    /// Updates all component instances in the world that implement a component interface, e.g., <see cref="IUpdateComponent"/>
+    /// Updates all component instances in the world that implement a component interface, e.g., <see cref="IComponent"/>
     /// </summary>
     public void Update()
     {

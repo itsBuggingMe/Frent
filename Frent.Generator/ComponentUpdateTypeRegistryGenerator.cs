@@ -101,13 +101,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .AppendLine("    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]")
                 .Append("    internal static void Initalize").Append(model.FullName.Replace('.', '_')).AppendLine("()")
                 .AppendLine("    {")
-                .Append("        Frent.Updating.GenerationServices.RegisterType(typeof(")
+                .Append("        GenerationServices.RegisterType(typeof(")
                     .Append(model.SubNamespace).Append('.').Append(model.Type).Append("), new Frent.Updating.Runners."); 
-            (span.Count == 0 ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("RunnerFactory").Append('<').Append(model.SubNamespace).Append('.').Append(model.Type);
+            (model.ImplInterface == RegistryConstants.TargetInterfaceName ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("UpdateRunnerFactory").Append('<').Append(model.SubNamespace).Append('.').Append(model.Type);
 
         foreach(var item in model.GenericArguments)
             sb.Append(", ").Append(item);
-
+        
         sb.AppendLine(">());");
         
         foreach(var attrType in model.Attributes)
@@ -165,9 +165,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     }
     private static bool InterfaceImplementsIComponent(INamedTypeSymbol namedTypeSymbol) => 
         (namedTypeSymbol.Interfaces.Length == 1 && 
-        namedTypeSymbol.Interfaces[0].ConstructedFrom.ToString() == RegistryConstants.TargetInterfaceName) ||
+        namedTypeSymbol.Interfaces[0].ConstructedFrom.ToString() == RegistryConstants.FullyQualifiedTargetInterfaceName) ||
         namedTypeSymbol.Interfaces.Length == 0 && 
-        namedTypeSymbol.ConstructedFrom.ToString() == RegistryConstants.TargetInterfaceName;
+        namedTypeSymbol.ConstructedFrom.ToString() == RegistryConstants.FullyQualifiedTargetInterfaceName;
 
     internal record struct ComponentUpdateItemModel(string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
 }

@@ -9,7 +9,7 @@ using static Frent.Updating.Variadics;
 namespace Frent.Updating.Runners;
 
 internal class Update<TComp> : ComponentRunnerBase<Update<TComp>, TComp>
-    where TComp : IUpdateComponent
+    where TComp : IComponent
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpan<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetComponentSpan<TComp>());
     internal struct Action : IQuery<TComp>
@@ -19,7 +19,7 @@ internal class Update<TComp> : ComponentRunnerBase<Update<TComp>, TComp>
 }
 
 public class UpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
-    where TComp : IUpdateComponent
+    where TComp : IComponent
 {
     public object Create() => new Update<TComp>();
     public object CreateStack() => new TrimmableStack<TComp>();
@@ -31,7 +31,7 @@ public class UpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRun
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
 internal class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TComp>
-    where TComp : IUpdateComponent<TArg>
+    where TComp : IComponent<TArg>
 {
     public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpan<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
     internal struct Action : IQuery<TComp, TArg>
@@ -42,7 +42,7 @@ internal class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TC
 
 [Variadic(GenArgFrom, GenArgPattern, 15)]
 public class UpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
-    where TComp : IUpdateComponent<TArg>
+    where TComp : IComponent<TArg>
 {
     public object Create() => new Update<TComp, TArg>();
     public object CreateStack() => new TrimmableStack<TComp>();
