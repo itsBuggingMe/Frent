@@ -8,7 +8,7 @@ struct UpdateComponent1 : IComponent<int>
     public void Update(ref int arg) => arg++;
 }
 
-struct UpdateComponent2 : IUpdateComponent<int, long>
+struct UpdateComponent2 : IComponent<int, long>
 {
     public void Update(ref int arg1, ref long arg2)
     {

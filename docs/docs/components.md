@@ -11,7 +11,7 @@ record struct Component2(float X) : IComponent
 {
     public void Update()
 	{
-		 X++;
+		X++;
 	}
 }
 ```
@@ -31,7 +31,7 @@ record struct Component4(float X) : IEntityComponent
 {
 	public void Update(Entity self)
 	{
-		if(self.TryGet<Component3>(out Ref<Component3> val)
+		if(self.TryGet<Component3>(out Ref<Component3> val))
 			X += val.Ref.X;
 	}
 }
@@ -49,14 +49,22 @@ record struct Component5(float X) : IUniformComponent<float>
 In addition there is an `IEntityUniformComponent` interface for when you need to use both uniforms and entities in an update function. All of these interfaces have their own additional generic interfaces that allow up for 15 component arguments.
 
 ### Interface Summary
+
 `IComponent`
+
 `IComponent<T1, ...>`
 
+
 `IEntityComponent`
+
 `IEntityComponent<T1, ...>`
 
+
 `IUniformComponent<TUniform>`
+
 `IUniformComponent<TUniform, T1, ...>`
 
+
 `IEntityUniformComponent<TUniform>`
+
 `IEntityUniformComponent<TUniform, T1, ...>`

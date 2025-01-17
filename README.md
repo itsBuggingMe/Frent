@@ -29,12 +29,12 @@ world.Query((ref Position pos, ref Velocity vel) => pos.Value += vel.Delta);
 Console.WriteLine(entity.Get<Position>().Value);
 
 record struct Position(Vector2 Value);
-record struct Velocity(Vector2 Delta) : IUpdateComponent<Position>
+record struct Velocity(Vector2 Delta) : IComponent<Position>
 {
     public void Update(ref Position position) => position.Value += Delta;
 }
 ```
-Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/)!
+Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs/getting-started.html)!
 
 # Features
 ## Implemented
@@ -54,6 +54,10 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/)!
 - [x]  Programmical Entity Creation
 - [X]  Tests
 - [X]  Entity Tag
+- [X]  World Update Filtering
 
 ## Future
 - [ ]  Multithreading
+- [ ]  Comprehensive docs
+- [ ]  100% Test coverage
+- [ ]  More samples, examples, & explanations!

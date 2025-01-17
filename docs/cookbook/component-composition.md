@@ -20,7 +20,7 @@ for (int i = 0; i < 3; i++)
 //Update the three entities
 world.Update();
 
-struct ConsoleText(ConsoleColor Color) : IUpdateComponent<string>
+struct ConsoleText(ConsoleColor Color) : IComponent<string>
 {
     public void Update(ref string str)
     {
