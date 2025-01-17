@@ -8,7 +8,7 @@ partial class WorldStructQueryExtensions
 {
     //IQueryEntity
     //IQueryEntityUniform
-
+    
     public static void InlineQuery<TQuery>(this World world, TQuery onEach)
         where TQuery : IQueryEntity
     {

@@ -45,7 +45,7 @@ partial struct Entity
     /// </summary>
     /// <typeparam name="T">The type of component.</typeparam>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentNotFoundException{T}"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
     /// <returns>A reference to the component in memory.</returns>
     public ref T Get<T>()
     {
@@ -68,7 +68,7 @@ partial struct Entity
     /// </summary>
     /// <param name="type">The type of component to get</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentNotFoundException{T}"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     /// <returns>The component of type <paramref name="type"/></returns>
     public object Get(Type type)
     {
@@ -149,7 +149,7 @@ partial struct Entity
     /// <typeparam name="T">The type of component</typeparam>
     /// <param name="component">The component instance to add</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentAlreadyExistsException{T}"><see cref="Entity"/> already has a component of type <typeparamref name="T"/></exception>
+    /// <exception cref="ComponentAlreadyExistsException"><see cref="Entity"/> already has a component of type <typeparamref name="T"/></exception>
     public void Add<T>(T component)
     {
         AssertIsAlive(out var w, out var eloc);
@@ -165,6 +165,12 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Adds a boxed component as the given component ID type
+    /// </summary>
+    /// <param name="componentID">The ID representing the component type to add as.</param>
+    /// <param name="component"></param>
+    /// <remarks><paramref name="component"/> must be assignable to the type represented by <paramref name="componentID"/></remarks>
     public void Add(ComponentID componentID, object component)
     {
         AssertIsAlive(out var w, out var eloc);
@@ -180,6 +186,10 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Adds a component to this <see cref="Entity"/> as its own type
+    /// </summary>
+    /// <param name="component">The component, which could be boxed</param>
     public void Add(object component) => Add(component.GetType(), component);
 
     /// <summary>
@@ -217,6 +227,10 @@ partial struct Entity
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
     public void Remove<T>() => Remove(Component<T>.ID);
 
+    /// <summary>
+    /// Removes a component from this entity
+    /// </summary>
+    /// <param name="componentID">The <see cref="ComponentID"/> of the component to be removed</param>
     public void Remove(ComponentID componentID)
     {
         AssertIsAlive(out var w, out var eloc);
