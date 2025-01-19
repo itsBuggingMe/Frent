@@ -8,57 +8,13 @@ using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
 
-[Variadic("Archetype<T>", "Archetype<|T$, |>")]
-[Variadic("typeof(T)", "|typeof(T$), |")]
-[Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
-[Variadic("[Component<T>.CreateInstance()]", "[|Component<T$>.CreateInstance(), |]")]
-internal class Archetype<T>
-{
-    public static readonly ImmutableArray<Type> ArchetypeTypes = new Type[] { typeof(T) }.ToImmutableArray();
-    public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
-
-    //ArchetypeTypes init first, then ID
-    public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), [], ArchetypeTypes);
-    public static readonly uint IDasUInt = (uint)ID.ID;
-
-    //this method is literally only called once per world
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    internal static Archetype CreateNewArchetype(World world)
-    {
-        IComponentRunner[] runners = [Component<T>.CreateInstance()];
-        var archetype = new Archetype(world, runners, Archetype.ArchetypeTable[ID.ID]);
-        world.ArchetypeAdded(archetype);
-        return archetype;
-    }
-
-    internal class OfComponent<C>
-    {
-        public static int Index = GlobalWorldTables.ComponentIndex(ID, Component<C>.ID);
-    }
-}
-
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
-internal partial class Archetype(World world, IComponentRunner[] components, ArchetypeData archetypeData)
+internal partial class Archetype
 {
-    internal ArchetypeID ID => Data.ID;
-    internal int MaxChunkSize => Data.MaxChunkSize;
-    internal ImmutableArray<Type> ArchetypeTypeArray => Data.ComponentTypes;
-    internal ImmutableArray<Type> ArchetypeTagArray => Data.TagTypes;
-
-    //48 bytes
-    //thats chonky
-    internal readonly World World = world;
-    internal readonly ArchetypeData Data = archetypeData;
-    //the "raw" ID value
-    //im ok with using bcl dictionary b/c inital capacity is zero
-    internal readonly Dictionary<int, ArchetypeEdge> Graph = [];
-
-    internal IComponentRunner[] Components = components;
-    private Chunk<Entity>[] _entities = [new Chunk<Entity>(1)];
-
-    private ushort _chunkIndex;
-    private int _componentIndex;
-    private int _chunkSize = 1;
+    internal static int MaxChunkSize => MemoryHelpers.MaxArchetypeChunkSize;
+    internal ArchetypeID ID => _archetypeID;
+    internal ImmutableArray<Type> ArchetypeTypeArray => _archetypeID.Types;
+    internal ImmutableArray<Type> ArchetypeTagArray => _archetypeID.Tags;
 
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Name))}";
 
@@ -103,26 +59,36 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
 
     private void CreateChunks()
     {
-        _chunkIndex++;
-        _componentIndex = 0;
-
         _chunkSize = Math.Min(MaxChunkSize, _chunkSize << 2);
-        Chunk<Entity>.NextChunk(ref _entities, _chunkSize, _chunkIndex);
-        foreach (var comprunner in Components)
-            comprunner.AllocateNextChunk(_chunkSize, _chunkIndex);
+
+        if(_chunkSize >= 16)
+        {//try to keep chunk sizes >= 16
+            _chunkIndex++;
+            _componentIndex = 0;
+
+            Chunk<Entity>.NextChunk(ref _entities, _chunkSize, _chunkIndex);
+            foreach (var comprunner in Components)
+                comprunner.AllocateNextChunk(_chunkSize, _chunkIndex);
+        }
+        else
+        {//resize existing array
+            Array.Resize(ref _entities[0].Buffer, _chunkSize);
+            foreach (var comprunner in Components)
+                comprunner.ResizeChunk(_chunkSize, 0);
+        }
     }
 
-    public void EnsureCapacity(int size)
+    public void EnsureCapacity(int count)
     {
-        _chunkSize = MaxChunkSize;
+        _chunkSize = Math.Min(MaxChunkSize, MemoryHelpers.RoundUpToNextMultipleOf16(count));
 
-        while (size > 0)
+        while (count > 0)
         {
             Chunk<Entity>.NextChunk(ref _entities, _chunkSize, _chunkIndex);
             foreach (var comprunner in Components)
                 comprunner.AllocateNextChunk(_chunkSize, _chunkIndex);
 
-            size -= _chunkSize;
+            count -= _chunkSize;
         }
     }
 
@@ -154,25 +120,25 @@ internal partial class Archetype(World world, IComponentRunner[] components, Arc
         return _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
     }
 
-    internal void Update()
+    internal void Update(World world)
     {
         if (_chunkIndex == 0 && _componentIndex == 0)
             return;
         foreach (var comprunner in Components)
-            comprunner.Run(this);
+            comprunner.Run(world, this);
     }
 
-    internal void Update(ComponentID componentID)
+    internal void Update(World world, ComponentID componentID)
     {
         if (_chunkIndex == 0 && _componentIndex == 0)
             return;
         
-        int compIndex = GlobalWorldTables.ComponentIndex(Data.ID, componentID);
+        int compIndex = GlobalWorldTables.ComponentIndex(ID, componentID);
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             return;
         
-        Components[compIndex].Run(this);
+        Components[compIndex].Run(world, this);
     }
 
     internal void MultiThreadedUpdate(Config config)

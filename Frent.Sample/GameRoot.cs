@@ -101,7 +101,7 @@ namespace Frent.Sample
             }
 
             _world.Update();
-            _world.InlineQueryUniform<QueryCollison, GameRoot, Velocity, Position, Bounds>(default);
+            //_world.InlineQueryUniform<QueryCollison, GameRoot, Velocity, Position, Bounds>(default);
 
             base.Update(gameTime);
         }
@@ -121,14 +121,14 @@ namespace Frent.Sample
             GraphicsDevice.Clear(Color.CornflowerBlue);
             SpriteBatch.Begin();
             QuerySprites querySprites = new QuerySprites(this);
-            _world.InlineQuery<QuerySprites, SinglePixel, Position, Bounds>(querySprites);
+            //_world.InlineQuery<QuerySprites, SinglePixel, Position, Bounds>(querySprites);
             SpriteBatch.End();
             base.Draw(gameTime);
         }
         public T GetUniform<T>() => (T)(object)this;
     }
 
-    internal struct QuerySprites(GameRoot gameRoot) : IQuery<SinglePixel, Position, Bounds>
+    internal struct QuerySprites(GameRoot gameRoot) : IAction<SinglePixel, Position, Bounds>
     {
         public void Run(ref SinglePixel singlePixel, ref Position position, ref Bounds bounds)
         {
@@ -139,9 +139,9 @@ namespace Frent.Sample
 
     internal struct UserCreated;
 
-    internal struct QueryCollison : IQueryUniform<GameRoot, Velocity, Position, Bounds>
+    internal struct QueryCollison : IUniformAction<GameRoot, Velocity, Position, Bounds>
     {
-        public void Run(in GameRoot gameRoot, ref Velocity velocity, ref Position position, ref Bounds bounds)
+        public void Run(GameRoot gameRoot, ref Velocity velocity, ref Position position, ref Bounds bounds)
         {
             Rectangle window = gameRoot.GraphicsDevice.Viewport.Bounds;
             Vector2 half = bounds.Size * 0.5f;

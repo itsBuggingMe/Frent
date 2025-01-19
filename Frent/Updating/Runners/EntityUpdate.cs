@@ -11,12 +11,20 @@ namespace Frent.Updating.Runners;
 internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TComp>
     where TComp : IEntityComponent
 {
-    public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetEntitySpan(), b.GetComponentSpan<TComp>());
-    internal struct Action : IQueryEntity<TComp>
+    public override void Run(World world, Archetype b) =>
+        ChunkHelpers<TComp>.EnumerateComponentsWithEntity(
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            default(Action),
+            b.GetEntitySpan(),
+            b.GetComponentSpan<TComp>());
+
+    internal struct Action : IEntityAction<TComp>
     {
         public void Run(Entity entity, ref TComp t) => t.Update(entity);
     }
 }
+
 public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IEntityComponent
 {
@@ -32,8 +40,16 @@ public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, ICompon
 internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TComp, TArg>, TComp>
     where TComp : IEntityComponent<TArg>
 {
-    public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, default, b.GetEntitySpan(), b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
-    internal struct Action : IQueryEntity<TComp, TArg>
+    public override void Run(World world, Archetype b) =>
+        ChunkHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            default(Action),
+            b.GetEntitySpan(),
+            b.GetComponentSpan<TComp>(),
+            b.GetComponentSpan<TArg>());
+
+    internal struct Action : IEntityAction<TComp, TArg>
     {
         public void Run(Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, ref t1);
     }

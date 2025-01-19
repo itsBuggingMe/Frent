@@ -5,12 +5,12 @@ namespace Frent.Components;
 
 public interface IEntityUniformComponent<TUniform> : IComponentBase
 {
-    public void Update(Entity entity, in TUniform uniform);
+    public void Update(Entity entity, TUniform uniform);
 }
 
 [Variadic(TArgFrom, TArgPattern, 15)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IEntityUniformComponent<TUniform, TArg> : IComponentBase
 {
-    public void Update(Entity entity, in TUniform uniform, ref TArg arg);
+    public void Update(Entity entity, TUniform uniform, ref TArg arg);
 }

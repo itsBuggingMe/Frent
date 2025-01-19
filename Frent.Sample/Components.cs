@@ -27,7 +27,7 @@ internal struct Velocity(Vector2 dxy) : IUniformComponent<GameRoot, Position, Fr
 {
     public Vector2 DXY = dxy;
     public static implicit operator Velocity(Vector2 dxy) => new(dxy);
-    public void Update(in GameRoot uniform, ref Position pos, ref Friction friction)
+    public void Update(GameRoot uniform, ref Position pos, ref Friction friction)
     {
         pos.XY += DXY * uniform.DeltaTime;
         DXY *= friction.Coefficient;
@@ -35,7 +35,7 @@ internal struct Velocity(Vector2 dxy) : IUniformComponent<GameRoot, Position, Fr
 }
 internal record struct MouseController : IEntityUniformComponent<GameRoot, Velocity, Position>
 {
-    public void Update(Entity e, in GameRoot uniform, ref Velocity vel, ref Position arg)
+    public void Update(Entity e, GameRoot uniform, ref Velocity vel, ref Position arg)
     {
         if (uniform.MouseState.MiddleButton == ButtonState.Pressed && !e.Tagged<UserCreated>())
         {

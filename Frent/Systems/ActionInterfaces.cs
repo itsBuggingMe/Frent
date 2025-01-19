@@ -5,7 +5,7 @@ namespace Frent.Systems;
 
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
-public interface IQuery<TArg>
+public interface IAction<TArg>
 {
     void Run(ref TArg arg);
 }
@@ -13,31 +13,31 @@ public interface IQuery<TArg>
 
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
-public interface IQueryEntity<TArg>
+public interface IEntityAction<TArg>
 {
     void Run(Entity entity, ref TArg arg);
 }
 
-public interface IQueryEntity
+public interface IEntityAction
 {
     void Run(Entity entity);
 }
 
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
-public interface IQueryEntityUniform<TUniform, TArg>
+public interface IEntityUniformAction<TUniform, TArg>
 {
-    void Run(Entity entity, in TUniform uniform, ref TArg arg);
+    void Run(Entity entity, TUniform uniform, ref TArg arg);
 }
 
-public interface IQueryEntityUniform<TUniform>
+public interface IEntityUniformAction<TUniform>
 {
-    void Run(Entity entity, in TUniform uniform);
+    void Run(Entity entity, TUniform uniform);
 
 }
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
-public interface IQueryUniform<TUniform, TArg>
+public interface IUniformAction<TUniform, TArg>
 {
-    void Run(in TUniform uniform, ref TArg arg);
+    void Run(TUniform uniform, ref TArg arg);
 }//uniform only doesnt really make any sense

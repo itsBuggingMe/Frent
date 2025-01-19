@@ -95,7 +95,12 @@ public static class Component
             return (value, (TrimmableStack<T>)ComponentTable[value.ID].Stack);
         }
 
-        ComponentID id = new ComponentID(Interlocked.Increment(ref NextComponentID));
+        int nextIDInt = Interlocked.Increment(ref NextComponentID);
+
+        if (nextIDInt == ushort.MaxValue)
+            throw new InvalidOperationException($"Exceeded maximum unique component type count of 65535");
+
+        ComponentID id = new ComponentID((ushort)nextIDInt);
         ExistingComponentIDs[type] = id;
 
         GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
@@ -115,7 +120,12 @@ public static class Component
 
         //although this part is thread safe...
         //NOTHING ELSE IS YET!!!!
-        ComponentID id = new ComponentID(Interlocked.Increment(ref NextComponentID));
+        int nextIDInt = Interlocked.Increment(ref NextComponentID);
+
+        if (nextIDInt == ushort.MaxValue)
+            throw new InvalidOperationException($"Exceeded maximum unique component type count of 65535");
+
+        ComponentID id = new ComponentID((ushort)nextIDInt);
         ExistingComponentIDs[t] = id;
 
         GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);

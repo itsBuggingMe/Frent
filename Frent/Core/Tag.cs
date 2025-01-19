@@ -37,7 +37,12 @@ internal class Tag
             return tagID;
         }
 
-        TagID newID = new TagID(Interlocked.Increment(ref _nextTagID));
+        int id = Interlocked.Increment(ref _nextTagID);
+
+        if (id == ushort.MaxValue)
+            throw new Exception("Exceeded max tag count of 65535");
+
+        TagID newID = new TagID((ushort)id);
         ExistingTagIDs[type] = newID;
         TagTable.Push(type);
 

@@ -1,16 +1,33 @@
-﻿namespace Frent.Systems;
+﻿using System.Collections.Immutable;
+using System.Data;
+
+namespace Frent.Systems;
 internal struct QueryHash
 {
     public QueryHash() { }
-    private HashCode _state = new HashCode();
+    private int _state = 12582917;
 
     public static QueryHash New() => new QueryHash();
+    public static QueryHash New(ImmutableArray<Rule> rules)
+    {
+        var hash = new QueryHash();
+        foreach(var rule in rules)
+        {
+            hash.AddRule(rule);
+        }
+        return hash;
+    }
 
     public QueryHash AddRule(Rule rule)
     {
-        _state.Add(rule);
+        _state *= rule.GetHashCode();
         return this;
     }
 
-    public int ToHashCode() => _state.ToHashCode();
+    public int ToHashCodeIncludeDisable() => _state;
+    public int ToHashCodeExcludeDisable()
+    {
+        _state *= Rule.NotTag(Core.Tag<Disable>.ID).GetHashCode();
+        return _state;
+    }
 }

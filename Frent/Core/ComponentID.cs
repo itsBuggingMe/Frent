@@ -5,8 +5,8 @@
 /// </summary>
 public readonly struct ComponentID : IEquatable<ComponentID>
 {
-    internal ComponentID(int id) => ID = id;
-    internal readonly int ID;
+    internal ComponentID(ushort id) => ID = id;
+    internal readonly ushort ID;
 
     /// <summary>
     /// The type of component this component ID represents

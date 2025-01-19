@@ -1,19 +1,50 @@
-﻿using Frent.Variadic.Generator;
+﻿    using Frent.Variadic.Generator;
 using Frent.Core;
+using System.Collections.Immutable;
+using System.Data;
 
 namespace Frent.Systems;
 
-[Variadic("QueryHashes<T>", "QueryHashes<|T$, |>")]
-[Variadic("        .AddRule(Rule.HasComponent(Component<T>.ID))", "|        .AddRule(Rule.HasComponent(Component<T$>.ID))\n|")]
-internal static class QueryHashes<T>
+[Variadic("        Rule.HasComponent(Component<T>.ID),", "|        Rule.HasComponent(Component<T$>.ID),\n|")]
+[Variadic("            Rule.NotComponent(Component<N>.ID),", "|            Rule.NotComponent(Component<N$>.ID),\n|")]
+[Variadic("<T>", "<|T$, |>")]
+[Variadic("<N>", "<|N$, |>")]
+public readonly struct With<T> : IConstantQueryHashProvider
 {
-    public static readonly int Hash = QueryHash.New()
-        .AddRule(Rule.HasComponent(Component<T>.ID))
-        .ToHashCode();
-}
+    private static readonly ImmutableArray<Rule> _rules = MemoryHelpers.ReadOnlySpanToImmutableArray(
+    [
+        Rule.HasComponent(Component<T>.ID),
+    ]);
 
-internal static class QueryHashes
-{
-    //https://xkcd.com/221/
-    public static readonly int Hash = 4;
+    private static readonly int _hashCache = QueryHash.New(_rules).ToHashCodeIncludeDisable();
+    public ImmutableArray<Rule> Rules => _rules;
+    public int ToHashCode() => _hashCache;
+
+    public readonly struct ButNot<N> : IConstantQueryHashProvider
+    {
+        private static readonly ImmutableArray<Rule> _rulesNot = MemoryHelpers.ConcatImmutable(_rules, 
+        [
+            Rule.NotComponent(Component<N>.ID),
+        ]);
+
+        private static readonly int _hashCache = QueryHash.New(_rulesNot).ToHashCodeIncludeDisable();
+        public ImmutableArray<Rule> Rules => _rulesNot;
+        public int ToHashCode() => _hashCache;
+
+
+        public readonly struct IncludeDisabled : IConstantQueryHashProvider
+        {
+            private static readonly int _hashCache = QueryHash.New(_rulesNot).ToHashCodeIncludeDisable();
+            public ImmutableArray<Rule> Rules => _rulesNot;
+            public int ToHashCode() => _hashCache;
+        }
+    }
+
+
+    public readonly struct IncludeDisabled : IConstantQueryHashProvider
+    {
+        private static readonly int _hashCache = QueryHash.New(_rules).ToHashCodeIncludeDisable();
+        public ImmutableArray<Rule> Rules => _rules;
+        public int ToHashCode() => _hashCache;
+    }
 }

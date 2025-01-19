@@ -12,11 +12,18 @@ namespace Frent.Updating.Runners;
 internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform>, TComp>
     where TComp : IEntityUniformComponent<TUniform>
 {
-    public override void Run(Archetype b) => ChunkHelpers<TComp>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, new() { Uniform = b.World.UniformProvider.GetUniform<TUniform>() }, b.GetEntitySpan(), b.GetComponentSpan<TComp>());
-    internal record struct Action : IQueryEntity<TComp>
+    public override void Run(World world, Archetype b) =>
+        ChunkHelpers<TComp>.EnumerateComponentsWithEntity(
+            b.CurrentWriteChunk, 
+            b.LastChunkComponentCount, 
+            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() }, 
+            b.GetEntitySpan(), 
+            b.GetComponentSpan<TComp>());
+
+    internal record struct Action : IEntityAction<TComp>
     {
         public TUniform Uniform;
-        public void Run(Entity entity, ref TComp t1) => t1.Update(entity, in Uniform);
+        public void Run(Entity entity, ref TComp t1) => t1.Update(entity, Uniform);
     }
 }
 
@@ -35,13 +42,22 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunne
 internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform, TArg>, TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
-    public override void Run(Archetype b) => ChunkHelpers<TComp, TArg>.EnumerateChunkSpanEntity<Action>(b.CurrentWriteChunk, b.LastChunkComponentCount, new() { Uniform = b.World.UniformProvider.GetUniform<TUniform>() }, b.GetEntitySpan(), b.GetComponentSpan<TComp>(), b.GetComponentSpan<TArg>());
-    internal record struct Action : IQueryEntity<TComp, TArg>
+    public override void Run(World world, Archetype b) =>
+        ChunkHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
+            b.GetEntitySpan(),
+            b.GetComponentSpan<TComp>(),
+            b.GetComponentSpan<TArg>());
+
+    internal record struct Action : IEntityAction<TComp, TArg>
     {
         public TUniform Uniform;
-        public void Run(Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, in Uniform, ref t1);
+        public void Run(Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, Uniform, ref t1);
     }
 }
+
 
 [Variadic(GenArgFrom, GenArgPattern, 15)]
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>

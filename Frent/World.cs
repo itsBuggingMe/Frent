@@ -5,6 +5,7 @@ using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
 using Frent.Updating.Runners;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -30,7 +31,9 @@ public partial class World : IDisposable
     internal static ushort WorldCachePackedValue;
 
     internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
-    private Archetype[] WorldArchetypeTable;
+    internal Archetype[] WorldArchetypeTable;
+    internal Dictionary<ArchetypeEdgeKey, ArchetypeID> ArchetypeGraphEdges = [];
+
     private FastStack<(int ID, ushort Version)> _recycledEntityIds = FastStack<(int, ushort)>.Create(8);
     private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
     private int _nextEntityID;
@@ -42,7 +45,7 @@ public partial class World : IDisposable
 
     internal Dictionary<int, Query> QueryCache = [];
 
-    private FastStack<Archetype> _enabledArchetypes = FastStack<Archetype>.Create(16);
+    private FastStack<ArchetypeID> _enabledArchetypes = FastStack<ArchetypeID>.Create(16);
 
     private volatile int _allowStructuralChanges;
 
@@ -102,14 +105,14 @@ public partial class World : IDisposable
         {
             foreach (var element in _enabledArchetypes.AsSpan())
             {
-                element.MultiThreadedUpdate(CurrentConfig);
+                element.Archetype(this).MultiThreadedUpdate(CurrentConfig);
             }
         }
         else
         {
             foreach (var element in _enabledArchetypes.AsSpan())
             {
-                element.Update();
+                element.Archetype(this).Update(this);
             }
         }
 
@@ -132,10 +135,10 @@ public partial class World : IDisposable
         //works for initalization as well as updating it
         for(ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
         {
-            var id = new ComponentID(i);
+            var id = new ComponentID((ushort)i);
             if (GenerationServices.TypeAttributeCache.TryGetValue(attributeType, out var compSet) && compSet.Contains(id.Type))
             {
-                appliesTo.Stack.Push(new(i));
+                appliesTo.Stack.Push(id);
             }
         }
 
@@ -143,36 +146,33 @@ public partial class World : IDisposable
         {
             foreach(var item in _enabledArchetypes.AsSpan())
             {
-                item?.Update(compid);
+                item.Archetype(this).Update(this, compid);
             }
         }
 
         ExitDisallowState();
     }
-    
-    internal ref Archetype GetArchetype(uint archetypeID)
-    {
-        return ref WorldArchetypeTable[archetypeID];
-    }
 
-    internal void ArchetypeAdded(Archetype archetype)
+    internal void ArchetypeAdded(ArchetypeID archetype)
     {
-        if (!GlobalWorldTables.HasTag(archetype.ID.ID, Tag<Disable>.ID))
+        if (!GlobalWorldTables.HasTag(archetype, Tag<Disable>.ID))
             _enabledArchetypes.Push(archetype);
         foreach (var qkvp in QueryCache)
         {
-            qkvp.Value.TryAttachArchetype(archetype);
+            qkvp.Value.TryAttachArchetype(archetype.Archetype(this));
         }
     }
 
-    internal Query CreateQuery(params Rule[] rules)
+    internal Query CreateQuery(ImmutableArray<Rule> rules)
     {
-        Query q = new Query(rules);
-        foreach (var element in WorldArchetypeTable.AsSpan())
+        Query q = new Query(this, rules);
+        foreach (ref var element in WorldArchetypeTable.AsSpan())
             if (element is not null)
                 q.TryAttachArchetype(element);
         return q;
     }
+
+    internal Query CreateQueryFromSpan(ReadOnlySpan<Rule> rules) => CreateQuery(MemoryHelpers.ReadOnlySpanToImmutableArray(rules));
 
     internal void UpdateArchetypeTable(int newSize)
     {
@@ -243,8 +243,9 @@ public partial class World : IDisposable
 
         GlobalWorldTables.Worlds[ID] = null!;
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
-        foreach(var item in WorldArchetypeTable.AsSpan())
-            item?.ReleaseArrays();
+        foreach(ref var item in WorldArchetypeTable.AsSpan())
+            if(item is not null)
+                item.ReleaseArrays();
 
 
         _isDisposed = true;
@@ -261,13 +262,14 @@ public partial class World : IDisposable
         if (components.Length < 0 || components.Length > 16)
             throw new ArgumentException("0-16 components per entity only", nameof(components));
 
-        //poverty InlineArray
+        //"InlineArray"
         Span<Type?> types = ((Span<Type?>)([null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]))[..components.Length];
 
         for (int i = 0; i < components.Length; i++)
             types[i] = components[i].GetType();
 
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, [], this);
+
         ref Entity entity = ref archetype.CreateEntityLocation(out EntityLocation loc);
         entity = CreateEntityFromLocation(loc);
 
@@ -278,6 +280,21 @@ public partial class World : IDisposable
         }
 
         return entity;
+    }
+
+    /// <summary>
+    /// Creates an <see cref="Entity"/> with zero components
+    /// </summary>
+    [SkipLocalsInit]
+    public Entity Create()
+    {
+        var archetypeID = Archetype.Default;
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<Type>.Empty, ImmutableArray<Type>.Empty);
+        ref var entity = ref archetype.CreateEntityLocation(out var eloc);
+
+        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
+        EntityTable[(uint)id] = new(eloc, version);
+        return entity = new Entity(ID, Version, version, id);
     }
 
     /// <summary>

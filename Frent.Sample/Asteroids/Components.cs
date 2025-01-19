@@ -64,7 +64,7 @@ internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2
     public Vector2[] Verticies = verticies;
 
     [Draw]
-    public void Update(in ShapeBatch sb, ref Transform position)
+    public void Update(ShapeBatch sb, ref Transform position)
     {
         Debug.Assert(Thickness != 0);
         var verticies = Verticies;
@@ -125,7 +125,7 @@ internal struct Line : IUniformComponent<ShapeBatch, Transform>
     public Vector2 B;
 
     [Draw]
-    public void Update(in ShapeBatch sb, ref Transform pos)
+    public void Update(ShapeBatch sb, ref Transform pos)
     {
         sb.FillLine(Vector2.Rotate(A, pos.Rotation) + pos.XY, Vector2.Rotate(B, pos.Rotation) + pos.XY, Thickness, Color.White * Opacity);
     }
@@ -138,7 +138,7 @@ internal struct PlayerController : IEntityUniformComponent<World, Transform, Vel
     public Entity Camera;
 
     [Tick]
-    public void Update(Entity entity, in World world, ref Transform transform, ref Velocity vel)
+    public void Update(Entity entity, World world, ref Transform transform, ref Velocity vel)
     {
         _timeSinceShoot++;
         vel = vel.DXY * 0.95f;
@@ -228,7 +228,7 @@ internal struct Camera : IUniformComponent<Viewport, Transform>
     public Matrix View;
 
     [Tick]
-    public void Update(in Viewport uniform, ref Transform transform)
+    public void Update(Viewport uniform, ref Transform transform)
     {
         int width = uniform.Width;
         int height = uniform.Height;
@@ -241,7 +241,7 @@ internal struct Triangle : IUniformComponent<ShapeBatch, Transform>
     public float Size;
     public float Opacity;
     [Draw]
-    public void Update(in ShapeBatch sb, ref Transform pos)
+    public void Update(ShapeBatch sb, ref Transform pos)
     {
         sb.FillEquilateralTriangle(pos.XY, Size, Color.White * Opacity, rotation: pos.Rotation);
     }

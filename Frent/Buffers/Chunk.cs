@@ -7,28 +7,28 @@ namespace Frent.Buffers;
 
 internal struct Chunk<TData>
 {
-    TData[] _buffer;
+    internal TData[] Buffer;
     public ref TData this[int i]
     {
         [DebuggerHidden]
-        get => ref _buffer.UnsafeArrayIndex(i);
+        get => ref Buffer.UnsafeArrayIndex(i);
     }
 
     public Chunk(int len)
     {
-        _buffer = MemoryHelpers<TData>.Pool.Rent(len);
+        Buffer = MemoryHelpers<TData>.Pool.Rent(len);
     }
 
     public void Return()
     {
-        MemoryHelpers<TData>.Pool.Return(_buffer);
-        _buffer = null!;
+        MemoryHelpers<TData>.Pool.Return(Buffer);
+        Buffer = null!;
     }
 
-    public Span<TData> AsSpan() => _buffer;
+    public Span<TData> AsSpan() => Buffer;
 
     [DebuggerHidden]
-    public Span<TData> AsSpan(int start, int length) => _buffer.AsSpan(start, length);
+    public Span<TData> AsSpan(int start, int length) => Buffer.AsSpan(start, length);
 
 
     public static void NextChunk(ref Chunk<TData>[] chunks, int size, int newChunkIndex)
@@ -41,5 +41,5 @@ internal struct Chunk<TData>
         chunks[newChunkIndex] = nextChunk;
     }
 
-    public int Length => _buffer.Length;
+    public int Length => Buffer.Length;
 }

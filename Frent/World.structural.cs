@@ -3,6 +3,7 @@ using Frent.Updating;
 using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent;
@@ -22,9 +23,22 @@ partial class World
     {
         Archetype from = entityLocation.Archetype(this);
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, component.ID, out _);
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges, 
+            ArchetypeEdgeKey.Component(component, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag), 
+            out bool exist);
 
-        Archetype destination = edge.Add ??= Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, component.Type, out var res), from.ArchetypeTagArray.AsSpan(), this, res, from.ArchetypeTagArray);
+        Archetype destination;
+
+        if(!exist)
+        {
+            destination = Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, component.Type, out var res), from.ArchetypeTagArray.AsSpan(), this, res, from.ArchetypeTagArray);
+            edge = destination.ID;
+        }
+        else
+        {
+            destination = WorldArchetypeTable[edge.ID];
+        }
+
         destination.CreateEntityLocation(out nextLocation) = entity;
 
         for (int i = 0; i < from.Components.Length; i++)
@@ -46,8 +60,22 @@ partial class World
     {
         Archetype from = entityLocation.Archetype(this);
 
-        ref ArchetypeEdge edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, component.ID, out _);
-        Archetype destination = edge.Remove ??= Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, component.Type, out var arr), from.ArchetypeTagArray.AsSpan(), this, arr, from.ArchetypeTagArray);
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges, 
+            ArchetypeEdgeKey.Component(component, entityLocation.ArchetypeID, ArchetypeEdgeType.RemoveTag), 
+            out bool exist);
+
+
+        Archetype destination;
+
+        if (!exist)
+        {
+            destination = Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, component.Type, out var arr), from.ArchetypeTagArray.AsSpan(), this, arr, from.ArchetypeTagArray);
+            edge = destination.ID;
+        }
+        else
+        {
+            destination = WorldArchetypeTable[edge.ID];
+        }
 
         destination.CreateEntityLocation(out EntityLocation nextLocation) = entity;
 
@@ -91,9 +119,21 @@ partial class World
 
         Archetype from = entityLocation.Archetype(this);
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, tagID.ID, out _);
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges, 
+            ArchetypeEdgeKey.Tag(tagID, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag), 
+            out bool exist);
 
-        Archetype destination = edge.AddTag ??= Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Concat(from.ArchetypeTagArray, tagID.Type, out var res), this, from.ArchetypeTypeArray, res);
+        Archetype destination;
+        if (!exist)
+        {
+            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Concat(from.ArchetypeTagArray, tagID.Type, out var res), this, from.ArchetypeTypeArray, res);
+            edge = destination.ID;
+        }
+        else
+        {
+            destination = WorldArchetypeTable[edge.ID];
+        }
+
         destination.CreateEntityLocation(out var nextLocation) = entity;
 
         Debug.Assert(from.Components.Length == destination.Components.Length);
@@ -118,9 +158,20 @@ partial class World
             return false;
 
         Archetype from = entityLocation.Archetype(this);
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(from.Graph, tag.ID, out _);
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges, 
+            ArchetypeEdgeKey.Tag(tag, from.ID, ArchetypeEdgeType.RemoveTag), 
+            out bool exist);
 
-        Archetype destination = edge.Remove ??= Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tag.Type, out var arr), this, from.ArchetypeTypeArray, arr);
+        ref Archetype destination = ref Unsafe.NullRef<Archetype>();
+        if (!exist)
+        {
+            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tag.Type, out var arr), this, from.ArchetypeTypeArray, arr);
+            edge = destination.ID;
+        }
+        else
+        {
+            destination = ref WorldArchetypeTable[edge.ID];
+        }
 
         destination.CreateEntityLocation(out var nextLocation) = entity;
 

@@ -31,5 +31,5 @@ internal static class GlobalWorldTables
 
     public static int ComponentIndex(ArchetypeID archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(component.ID) & Tag.IndexBits;
     public static int ComponentIndex(uint archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype).UnsafeArrayIndex(component.ID) & Tag.IndexBits;
-    public static bool HasTag(ushort archetype, TagID tag) => (ComponentTagLocationTable.UnsafeArrayIndex(archetype).UnsafeArrayIndex(tag.ID) & Tag.HasTagMask) != 0;
+    public static bool HasTag(ArchetypeID archetype, TagID tag) => (ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(tag.ID) & Tag.HasTagMask) != 0;
 }

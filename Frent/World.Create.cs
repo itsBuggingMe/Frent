@@ -23,8 +23,7 @@ partial class World
     [SkipLocalsInit]//we save 2 instructions...
     public Entity Create<T>(T comp)
     {
-        int index = Archetype<T>.ID.ID;
-        Archetype archetype = WorldArchetypeTable.UnsafeArrayIndex(index) ??= Archetype<T>.CreateNewArchetype(this);
+        Archetype archetype = Archetype<T>.CreateNewOrGetExistingArchetype(this);
         ref var entity = ref archetype.CreateEntityLocation(out var eloc);
 
         //4x deref per component
@@ -47,6 +46,6 @@ partial class World
     public void EnsureCapacity<T>(int entityCount)
     {
         int id = Archetype<T>.ID.ID;
-        EnsureCapacityCore(WorldArchetypeTable[id] ??= Archetype<T>.CreateNewArchetype(this), entityCount);
+        EnsureCapacityCore(Archetype<T>.CreateNewOrGetExistingArchetype(this), entityCount);
     }
 }

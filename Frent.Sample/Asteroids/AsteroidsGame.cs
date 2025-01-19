@@ -82,7 +82,7 @@ public class AsteroidsGame : Game
 
 
         timeSinceLastAsteroid++;
-        if(timeSinceLastAsteroid >= 15 && _player.IsAlive() && _enemies.Count < 30)
+        if(timeSinceLastAsteroid >= 15 && _player.IsAlive() && _enemies.Count < 300)
         {
             timeSinceLastAsteroid = 0;
 
@@ -140,7 +140,8 @@ public class AsteroidsGame : Game
             }
         }
 
-        _world.InlineQueryEntityUniform<InlineOuterCollisionQuery, World, CircleCollision, Transform>(default);
+        _world.Query<With<CircleCollision, Transform>>()
+            .InlineEntityUniform<InlineOuterCollisionQuery, World, CircleCollision, Transform>(default);
         _world.Update<TickAttribute>();
         base.Update(gameTime);
     }
@@ -259,15 +260,16 @@ public class AsteroidsGame : Game
 }
 
 
-internal struct InlineOuterCollisionQuery : IQueryEntityUniform<World, CircleCollision, Transform>
+internal struct InlineOuterCollisionQuery : IEntityUniformAction<World, CircleCollision, Transform>
 {
-    public void Run(Entity entity, in World uniform, ref CircleCollision arg1, ref Transform arg2)
+    public void Run(Entity entity, World uniform, ref CircleCollision arg1, ref Transform arg2)
     {
-        uniform.InlineQueryEntity<InlineCollisionQuery, CircleCollision, Transform>(new(entity, arg1, arg2));
+        uniform.Query<With<CircleCollision, Transform>>()
+            .InlineEntity<InlineCollisionQuery, CircleCollision, Transform>(new(entity, arg1, arg2));
     }
 }
 
-internal struct InlineCollisionQuery(Entity original, CircleCollision originalCollison, Vector2 location) : IQueryEntity<CircleCollision, Transform>
+internal struct InlineCollisionQuery(Entity original, CircleCollision originalCollison, Vector2 location) : IEntityAction<CircleCollision, Transform>
 {
     public void Run(Entity entity, ref CircleCollision arg, ref Transform pos)
     {

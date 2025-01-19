@@ -6,10 +6,11 @@ namespace Frent.Updating;
 
 internal interface IComponentRunner
 {
-    internal void Run(Archetype archetype);
+    internal void Run(World world, Archetype b);
     internal void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);
     internal void Trim(int chunkIndex);
     internal void AllocateNextChunk(int size, int chunkIndex);
+    internal void ResizeChunk(int size, int chunkIndex);
     internal void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other);
     internal void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other);
     internal void SetAt(object component, ushort chunkIndex, ushort compIndex);

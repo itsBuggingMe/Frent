@@ -7,7 +7,7 @@ namespace Frent.Core;
 /// <summary>
 /// Represents an entity's type, or set of component and tag types that make it up
 /// </summary>
-public struct EntityType : IEquatable<EntityType>
+public struct EntityType : IEquatable<ArchetypeID>
 {
     internal EntityType(ushort id) => ID = id;
     internal ushort ID;
@@ -15,12 +15,12 @@ public struct EntityType : IEquatable<EntityType>
     /// <summary>
     /// The component types
     /// </summary>
-    public readonly ImmutableArray<Type> Types => Archetype.ArchetypeTable[ID].ComponentTypes;
+    public readonly ImmutableArray<Type> Types => Core.Archetype.ArchetypeTable[ID].ComponentTypes;
 
     /// <summary>
     /// The tag types
     /// </summary>
-    public readonly ImmutableArray<Type> Tags => Archetype.ArchetypeTable[ID].TagTypes;
+    public readonly ImmutableArray<Type> Tags => Core.Archetype.ArchetypeTable[ID].TagTypes;
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> has a component represented by a <see cref="ComponentID"/>
@@ -34,7 +34,7 @@ public struct EntityType : IEquatable<EntityType>
     /// </summary>
     /// <param name="tagID">The ID of the tag type to check if this <see cref="EntityType"/> has</param>
     /// <returns><see langword="true"/> if this Entity type has a tag of the specified tag ID, <see langword="false"/> otherwise</returns>
-    public bool HasTag(TagID tagID) => GlobalWorldTables.HasTag(ID, tagID);
+    public bool HasTag(TagID tagID) => GlobalWorldTables.HasTag(this, tagID);
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> represents the same ID as <paramref name="other"/>
@@ -71,4 +71,6 @@ public struct EntityType : IEquatable<EntityType>
     /// <param name="right">The second EntityType</param>
     /// <returns><see langword="true"/> if they represent different IDs, <see langword="false"/> otherwise</returns>
     public static bool operator !=(EntityType left, EntityType right) => !left.Equals(right);
+
+    internal ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(ID);
 }

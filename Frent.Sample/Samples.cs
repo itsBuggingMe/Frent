@@ -52,10 +52,10 @@ internal class Samples
         for (int i = 0; i < 5; i++)
             world.Create<int>(i);
 
-        world.Query((ref int x) => Console.Write($"{x++}, "));
+        //world.Query((ref int x) => Console.Write($"{x++}, "));
         Console.WriteLine();
 
-        world.InlineQueryUniform<WriteQuery, byte, int>(default(WriteQuery));
+        //world.InlineQueryUniform<WriteQuery, byte, int>(default(WriteQuery));
     }
     #endregion
 
@@ -108,14 +108,14 @@ record struct Pos(float X) : IEntityComponent
 
 record struct Vel(float DX) : IUniformComponent<float, Pos>
 {
-    public void Update(in float dt, ref Pos pos)
+    public void Update(float dt, ref Pos pos)
     {
         pos.X += DX * dt;
     }
 }
-struct WriteQuery : IQueryUniform<byte, int>
+struct WriteQuery : IUniformAction<byte, int>
 {
-    public void Run(in byte uniform, ref int x) => Console.Write($"{x + uniform}, ");
+    public void Run(byte uniform, ref int x) => Console.Write($"{x + uniform}, ");
 }
 struct ConsoleText(ConsoleColor Color) : IComponent<string>
 {
