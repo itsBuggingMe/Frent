@@ -4,8 +4,8 @@ using Frent.Variadic.Generator;
 namespace Frent.Systems;
 
 [Variadic("archetype.GetComponentSpan<T>()", "|archetype.GetComponentSpan<T$>(), |")]
-[Variadic("ref arg", "|ref arg$, |")]
-[Variadic("ref T arg", "|ref T$ arg$, |")]
+[Variadic("Span<T> arg", "|Span<T$> arg$, |")]
+[Variadic(", arg", "|, arg$|")]
 [Variadic("T>", "|T$, |>")]
 public static partial class ChunkQueryExtensions
 {
