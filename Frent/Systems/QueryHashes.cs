@@ -1,7 +1,6 @@
-﻿    using Frent.Variadic.Generator;
-using Frent.Core;
+﻿using Frent.Core;
+using Frent.Variadic.Generator;
 using System.Collections.Immutable;
-using System.Data;
 
 namespace Frent.Systems;
 
@@ -22,7 +21,7 @@ public readonly struct With<T> : IConstantQueryHashProvider
 
     public readonly struct ButNot<N> : IConstantQueryHashProvider
     {
-        private static readonly ImmutableArray<Rule> _rulesNot = MemoryHelpers.ConcatImmutable(_rules, 
+        private static readonly ImmutableArray<Rule> _rulesNot = MemoryHelpers.ConcatImmutable(_rules,
         [
             Rule.NotComponent(Component<N>.ID),
         ]);

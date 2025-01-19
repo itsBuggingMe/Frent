@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
- 
+
 namespace Frent.Core
 {
     /// <summary>
@@ -18,7 +18,7 @@ namespace Frent.Core
         private readonly Func<bool>? _callback0;
         private readonly Func<object, bool>? _callback1;
         private GCHandle _weakTargetObj;
-        
+
         static Gen2GcCallback()
         {
             Register(() =>
@@ -32,13 +32,13 @@ namespace Frent.Core
         {
             _callback0 = callback;
         }
- 
+
         private Gen2GcCallback(Func<object, bool> callback, object targetObj)
         {
             _callback1 = callback;
             _weakTargetObj = GCHandle.Alloc(targetObj, GCHandleType.Weak);
         }
- 
+
         /// <summary>
         /// Schedule 'callback' to be called in the next GC.  If the callback returns true it is
         /// rescheduled for the next Gen 2 GC.  Otherwise the callbacks stop.
@@ -48,7 +48,7 @@ namespace Frent.Core
             // Create a unreachable object that remembers the callback function and target object.
             new Gen2GcCallback(callback);
         }
- 
+
         /// <summary>
         /// Schedule 'callback' to be called in the next GC.  If the callback returns true it is
         /// rescheduled for the next Gen 2 GC.  Otherwise the callbacks stop.
@@ -61,7 +61,7 @@ namespace Frent.Core
             // Create a unreachable object that remembers the callback function and target object.
             new Gen2GcCallback(callback, targetObj);
         }
- 
+
         ~Gen2GcCallback()
         {
             if (_weakTargetObj.IsAllocated)
@@ -74,7 +74,7 @@ namespace Frent.Core
                     _weakTargetObj.Free();
                     return;
                 }
- 
+
                 // Execute the callback method.
                 try
                 {
@@ -116,7 +116,7 @@ namespace Frent.Core
 #endif
                 }
             }
- 
+
             // Resurrect ourselves by re-registering for finalization.
             GC.ReRegisterForFinalize(this);
         }

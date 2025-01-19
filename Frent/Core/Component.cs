@@ -2,10 +2,7 @@
 using Frent.Components;
 using Frent.Updating;
 using Frent.Updating.Runners;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using System.Security.AccessControl;
 
 namespace Frent.Core;
 
@@ -83,61 +80,65 @@ public static class Component
     /// <typeparam name="T">The type of component to implement</typeparam>
     public static void RegisterComponent<T>()
     {
-        if(GenerationServices.UserGeneratedTypeMap.ContainsKey(typeof(T)))
+        if (!GenerationServices.UserGeneratedTypeMap.ContainsKey(typeof(T)))
             NoneComponentRunnerTable[typeof(T)] = new NoneUpdateRunnerFactory<T>();
     }
 
     internal static (ComponentID ComponentID, TrimmableStack<T> Stack) GetExistingOrSetupNewComponent<T>()
     {
-        var type = typeof(T);
-        if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
+        lock (GlobalWorldTables.BufferChangeLock)
         {
-            return (value, (TrimmableStack<T>)ComponentTable[value.ID].Stack);
+            var type = typeof(T);
+            if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
+            {
+                return (value, (TrimmableStack<T>)ComponentTable[value.ID].Stack);
+            }
+
+            int nextIDInt = ++NextComponentID;
+
+            if (nextIDInt == ushort.MaxValue)
+                throw new InvalidOperationException($"Exceeded maximum unique component type count of 65535");
+
+            ComponentID id = new ComponentID((ushort)nextIDInt);
+            ExistingComponentIDs[type] = id;
+
+            GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
+
+            TrimmableStack<T> stack = new TrimmableStack<T>();
+            ComponentTable.Push(new ComponentData(type, stack));
+
+            return (id, stack);
         }
-
-        int nextIDInt = Interlocked.Increment(ref NextComponentID);
-
-        if (nextIDInt == ushort.MaxValue)
-            throw new InvalidOperationException($"Exceeded maximum unique component type count of 65535");
-
-        ComponentID id = new ComponentID((ushort)nextIDInt);
-        ExistingComponentIDs[type] = id;
-
-        GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
-
-        TrimmableStack<T> stack = new TrimmableStack<T>();
-        ComponentTable.Push(new ComponentData(type, stack));
-
-        return (id, stack);
     }
 
     internal static ComponentID GetComponentID(Type t)
     {
-        if (ExistingComponentIDs.TryGetValue(t, out ComponentID value))
+        lock (GlobalWorldTables.BufferChangeLock)
         {
-            return value;
+            if (ExistingComponentIDs.TryGetValue(t, out ComponentID value))
+            {
+                return value;
+            }
+
+            int nextIDInt = ++NextComponentID;
+
+            if (nextIDInt == ushort.MaxValue)
+                throw new InvalidOperationException($"Exceeded maximum unique component type count of 65535");
+
+            ComponentID id = new ComponentID((ushort)nextIDInt);
+            ExistingComponentIDs[t] = id;
+
+            GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
+
+            ComponentTable.Push(new ComponentData(t, GetTrimmableStack(t)));
+
+            return id;
         }
-
-        //although this part is thread safe...
-        //NOTHING ELSE IS YET!!!!
-        int nextIDInt = Interlocked.Increment(ref NextComponentID);
-
-        if (nextIDInt == ushort.MaxValue)
-            throw new InvalidOperationException($"Exceeded maximum unique component type count of 65535");
-
-        ComponentID id = new ComponentID((ushort)nextIDInt);
-        ExistingComponentIDs[t] = id;
-
-        GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
-
-        ComponentTable.Push(new ComponentData(t, GetTrimmableStack(t)));
-
-        return id;
     }
 
     private static TrimmableStack GetTrimmableStack(Type type)
     {
-        if(NoneComponentRunnerTable.TryGetValue(type, out var fac))
+        if (NoneComponentRunnerTable.TryGetValue(type, out var fac))
             return (TrimmableStack)fac.CreateStack();
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out fac))
             return (TrimmableStack)fac.CreateStack();

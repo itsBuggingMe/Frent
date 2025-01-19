@@ -4,13 +4,10 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 [assembly: InternalsVisibleTo("Frent.Tests")]
 namespace Frent;
@@ -27,6 +24,7 @@ public partial class World : IDisposable
     internal static Action? ClearTempComponentStorage;
     #endregion
 
+    internal static Table<EntityLookup> QuickWorkTable = new Table<EntityLookup>(32);
     internal static World? QuickWorldCache;
     internal static ushort WorldCachePackedValue;
 
@@ -120,20 +118,20 @@ public partial class World : IDisposable
     }
 
     public void Update<T>() where T : UpdateTypeAttribute => Update(typeof(T));
-    
+
     public void Update(Type attributeType)
     {
         EnterDisallowState();
 
         ref var appliesTo = ref CollectionsMarshal.
-            GetValueRefOrAddDefault(_updatesByAttributes, attributeType, out bool exists); 
-        if(!exists)
+            GetValueRefOrAddDefault(_updatesByAttributes, attributeType, out bool exists);
+        if (!exists)
         {
             appliesTo.Stack = FastStack<ComponentID>.Create(8);
         }
         //fill up the table with the correct IDs
         //works for initalization as well as updating it
-        for(ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
+        for (ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
         {
             var id = new ComponentID((ushort)i);
             if (GenerationServices.TypeAttributeCache.TryGetValue(attributeType, out var compSet) && compSet.Contains(id.Type))
@@ -142,15 +140,44 @@ public partial class World : IDisposable
             }
         }
 
-        foreach(var compid in appliesTo.Stack.AsSpan())
+        foreach (var compid in appliesTo.Stack.AsSpan())
         {
-            foreach(var item in _enabledArchetypes.AsSpan())
+            foreach (var item in _enabledArchetypes.AsSpan())
             {
                 item.Archetype(this).Update(this, compid);
             }
         }
 
         ExitDisallowState();
+    }
+
+    /// <summary>
+    /// Creates a custom query from the given set of rules. For an entity to be queried, all rules must apply
+    /// </summary>
+    /// <param name="rules">The rules governing which entities are queried</param>
+    /// <param name="world">The world to query on</param>
+    /// <returns>A query object representing all the entities that satisfy all the rules</returns>
+    public static Query CustomQuery(this World world, params Rule[] rules)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        QueryHash queryHash = QueryHash.New();
+        foreach (Rule rule in rules)
+            queryHash.AddRule(rule);
+
+        return CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, queryHash.ToHashCodeIncludeDisable(), out _) ??= world.CreateQueryFromSpan([.. rules]);
+    }
+
+    //we could use static abstract methods IF NOT FOR DOTNET6
+    public static Query Query<T>(this World world)
+        where T : struct, IConstantQueryHashProvider
+    {
+        ref Query? cachedValue = ref CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, default(T).GetHashCode(), out bool exists);
+        if (!exists)
+        {
+            cachedValue = world.CreateQuery(default(T).Rules);
+        }
+        return cachedValue!;
     }
 
     internal void ArchetypeAdded(ArchetypeID archetype)
@@ -188,9 +215,9 @@ public partial class World : IDisposable
 
     internal void ExitDisallowState()
     {
-        if(Interlocked.Decrement(ref _allowStructuralChanges) == 0)
+        if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
-            
+
             while (RemoveComponentBuffer.TryPop(out var item))
             {
                 var id = (uint)item.Entity.ID;
@@ -207,8 +234,8 @@ public partial class World : IDisposable
                 var record = EntityTable[id];
                 if (record.Version == command.Entity.Version)
                 {
-                    AddComponent(command.Entity.ToEntity(this), record.Location, command.ComponentID, 
-                        out var runner, 
+                    AddComponent(command.Entity.ToEntity(this), record.Location, command.ComponentID,
+                        out var runner,
                         out var location);
                     runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location, command.Index);
                 }
@@ -243,8 +270,8 @@ public partial class World : IDisposable
 
         GlobalWorldTables.Worlds[ID] = null!;
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
-        foreach(ref var item in WorldArchetypeTable.AsSpan())
-            if(item is not null)
+        foreach (ref var item in WorldArchetypeTable.AsSpan())
+            if (item is not null)
                 item.ReleaseArrays();
 
 
@@ -257,16 +284,17 @@ public partial class World : IDisposable
     /// <param name="components">The components to use</param>
     /// <returns>The created entity</returns>
     /// <exception cref="ArgumentException">Thrown when the length of <paramref name="components"/> is > 16.</exception>
+    [SkipLocalsInit]
     public Entity CreateFromObjects(ReadOnlySpan<object> components)
     {
         if (components.Length < 0 || components.Length > 16)
             throw new ArgumentException("0-16 components per entity only", nameof(components));
 
         //"InlineArray"
-        Span<Type?> types = ((Span<Type?>)([null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]))[..components.Length];
+        Span<ComponentID> types = ((Span<ComponentID>)([default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default]))[..components.Length];
 
         for (int i = 0; i < components.Length; i++)
-            types[i] = components[i].GetType();
+            types[i] = Component.GetComponentID(components[i].GetType());
 
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, [], this);
 
@@ -289,7 +317,7 @@ public partial class World : IDisposable
     public Entity Create()
     {
         var archetypeID = Archetype.Default;
-        Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<Type>.Empty, ImmutableArray<Type>.Empty);
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
         ref var entity = ref archetype.CreateEntityLocation(out var eloc);
 
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
@@ -304,7 +332,7 @@ public partial class World : IDisposable
     /// <param name="count">Number of entity spaces to allocate</param>
     /// <remarks>Use this method when creating a large number of entities</remarks>
     /// <exception cref="ArgumentException">Thrown when the length of <paramref name="componentTypes"/> is > 16.</exception>
-    public void EnsureCapacity(ReadOnlySpan<Type> componentTypes, int count)
+    public void EnsureCapacity(ReadOnlySpan<ComponentID> componentTypes, int count)
     {
         if (componentTypes.Length == 0 || componentTypes.Length > 16)
             throw new ArgumentException("1-16 components per entity only", nameof(componentTypes));

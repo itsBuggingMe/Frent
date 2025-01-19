@@ -1,8 +1,7 @@
-﻿using System.Buffers;
-using System.Diagnostics;
+﻿using Frent.Core;
+using System.Buffers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Frent.Core;
 
 namespace Frent.Buffers;
 
@@ -17,7 +16,7 @@ internal class ComponentArrayPool<T> : ArrayPool<T>
 
         Buckets = new T[13][];
     }
-    
+
     private T[][] Buckets;
 
     public override T[] Rent(int minimumLength)
@@ -27,7 +26,7 @@ internal class ComponentArrayPool<T> : ArrayPool<T>
 
         int bucketIndex = BitOperations.Log2((uint)minimumLength) - 4;
 
-        if((uint)bucketIndex < (uint)Buckets.Length)
+        if ((uint)bucketIndex < (uint)Buckets.Length)
         {
             ref T[] item = ref Buckets[bucketIndex];
 

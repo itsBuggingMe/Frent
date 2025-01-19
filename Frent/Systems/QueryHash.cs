@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Data;
 
 namespace Frent.Systems;
 internal struct QueryHash
@@ -11,7 +10,7 @@ internal struct QueryHash
     public static QueryHash New(ImmutableArray<Rule> rules)
     {
         var hash = new QueryHash();
-        foreach(var rule in rules)
+        foreach (var rule in rules)
         {
             hash.AddRule(rule);
         }

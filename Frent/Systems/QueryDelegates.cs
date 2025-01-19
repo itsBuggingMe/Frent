@@ -8,8 +8,8 @@ public static partial class QueryDelegates
 {
     public delegate void Query<T>(ref T comp1);
     public delegate void QueryEntity<T>(Entity entity, ref T comp1);
-    public delegate void QueryEntityUniform<TUniform, T>(Entity entity, in TUniform uniform, ref T comp1);
-    public delegate void QueryUniform<TUniform, T>(in TUniform uniform, ref T comp1);
+    public delegate void QueryEntityUniform<TUniform, T>(Entity entity, TUniform uniform, ref T comp1);
+    public delegate void QueryUniform<TUniform, T>(TUniform uniform, ref T comp1);
 }
 partial class QueryDelegates
 {

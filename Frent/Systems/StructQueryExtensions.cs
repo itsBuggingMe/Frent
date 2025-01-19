@@ -50,7 +50,7 @@ public static partial class StructQueryExtensions
         }
     }
 
-    private struct UniformAction<TAction, TUniform, T>(TAction action, TUniform uniform) : IAction<T>
+    internal struct UniformAction<TAction, TUniform, T>(TAction action, TUniform uniform) : IAction<T>
         where TAction : struct, IUniformAction<TUniform, T>
     {
         public void Run(ref T arg) => action.Run(uniform, ref arg);
@@ -71,7 +71,7 @@ public static partial class StructQueryExtensions
         }
     }
 
-    private struct EntityUniformAction<TAction, TUniform, T>(TAction action, TUniform uniform) : IEntityAction<T>
+    internal struct EntityUniformAction<TAction, TUniform, T>(TAction action, TUniform uniform) : IEntityAction<T>
         where TAction : struct, IEntityUniformAction<TUniform, T>
     {
         public void Run(Entity entity, ref T arg) => action.Run(entity, uniform, ref arg);

@@ -15,12 +15,12 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// <summary>
     /// The component types
     /// </summary>
-    public readonly ImmutableArray<Type> Types => Core.Archetype.ArchetypeTable[ID].ComponentTypes;
+    public readonly ImmutableArray<ComponentID> Types => Core.Archetype.ArchetypeTable[ID].ComponentTypes;
 
     /// <summary>
     /// The tag types
     /// </summary>
-    public readonly ImmutableArray<Type> Tags => Core.Archetype.ArchetypeTable[ID].TagTypes;
+    public readonly ImmutableArray<TagID> Tags => Core.Archetype.ArchetypeTable[ID].TagTypes;
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> has a component represented by a <see cref="ComponentID"/>

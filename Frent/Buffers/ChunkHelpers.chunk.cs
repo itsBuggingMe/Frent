@@ -4,7 +4,7 @@ using Frent.Variadic.Generator;
 namespace Frent.Buffers;
 
 [Variadic("Span<Chunk<TArg>> data1", "|Span<Chunk<TArg$>> data$, |")]
-[Variadic("        var chunkLast1 = data1[curChk].AsSpan()[..lastChkCompCount];", 
+[Variadic("        var chunkLast1 = data1[curChk].AsSpan()[..lastChkCompCount];",
     "|        var chunkLast$ = data$[curChk].AsSpan()[..lastChkCompCount];\n|")]
 [Variadic("        data1 = data1[..curChk];", "|        data$ = data$[..curChk];\n|")]
 [Variadic("ref chunkLast1[j]", "|ref chunkLast$[j], |")]
@@ -48,7 +48,7 @@ partial class ChunkHelpers<TArg>
         {
             arg1 = arg1[..arg1.Length];
 
-            for(int i = 0; i < arg1.Length; i++)
+            for (int i = 0; i < arg1.Length; i++)
             {
                 action.Run(ref arg1[i]);
             }

@@ -1,9 +1,9 @@
 ﻿using Frent.Collections;
 using Frent.Updating;
+using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Frent.Variadic.Generator;
 
 namespace Frent.Core;
 
@@ -13,11 +13,10 @@ namespace Frent.Core;
 [Variadic("[Component<T>.CreateInstance()]", "[|Component<T$>.CreateInstance(), |]")]
 internal static class Archetype<T>
 {
-    public static readonly ImmutableArray<Type> ArchetypeTypes = new Type[] { typeof(T) }.ToImmutableArray();
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
 
     //ArchetypeTypes init first, then ID
-    public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeTypes.AsSpan(), [], ArchetypeTypes);
+    public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeComponentIDs.AsSpan(), [], ArchetypeComponentIDs, ImmutableArray<TagID>.Empty);
     public static readonly uint IDasUInt = ID.ID;
 
     internal static Archetype CreateNewOrGetExistingArchetype(World world)
@@ -53,7 +52,7 @@ partial class Archetype
     private static readonly Dictionary<long, ArchetypeData> ExistingArchetypes = [];
 
     //TODO: make this use component Ids instead
-    internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, World world, ImmutableArray<Type>? typeArray = null, ImmutableArray<Type>? tagTypesArray = null)
+    internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
         ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
         ref Archetype archetype = ref world.WorldArchetypeTable[id.ID];
@@ -62,7 +61,7 @@ partial class Archetype
 
         IComponentRunner[] componentRunners = new IComponentRunner[types.Length];
         for (int i = 0; i < types.Length; i++)
-            componentRunners[i] = Component.GetComponentRunnerFromType(types[i]);
+            componentRunners[i] = Component.GetComponentRunnerFromType(types[i].Type);
 
         archetype = new Archetype(id, componentRunners);
         world.ArchetypeAdded(archetype.ID);
@@ -73,58 +72,61 @@ partial class Archetype
     //initalize default(ArchetypeID) to point to empty archetype
     static Archetype() => GetArchetypeID([], []);
 
-    internal static ArchetypeID GetArchetypeID(ReadOnlySpan<Type> types, ReadOnlySpan<Type> tagTypes, ImmutableArray<Type>? typesArray = null, ImmutableArray<Type>? tagTypesArray = null)
+    internal static ArchetypeID GetArchetypeID(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, ImmutableArray<ComponentID>? typesArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
-        ref ArchetypeData? slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);
-        ArchetypeID finalID;
-
-        if (exists)
+        lock (GlobalWorldTables.BufferChangeLock)
         {
-            //can't be null if entry exists
-            finalID = slot!.ID;
+            ref ArchetypeData slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);
+            ArchetypeID finalID;
+
+            if (exists)
+            {
+                //can't be null if entry exists
+                finalID = slot!.ID;
+            }
+            else
+            {
+                int nextIDInt = Interlocked.Increment(ref NextArchetypeID);
+                if (nextIDInt == ushort.MaxValue)
+                    throw new InvalidOperationException($"Exceeded maximum unique archetype count of 65535");
+                finalID = new ArchetypeID((ushort)nextIDInt);
+
+                var arr = typesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(types);
+                var tagArr = tagTypesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(tagTypes);
+
+                slot = CreateArchetypeData(finalID, arr, tagArr);
+                ArchetypeTable.Push(slot);
+                ModifyComponentLocationTable(arr, tagArr, finalID.ID);
+            }
+
+            return finalID;
         }
-        else
-        {
-            int nextIDInt = Interlocked.Increment(ref NextArchetypeID);
-            if (nextIDInt == ushort.MaxValue)
-                throw new InvalidOperationException($"Exceeded maximum unique archetype count of 65535");
-            finalID = new ArchetypeID((ushort)nextIDInt);
-
-            var arr = typesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(types);
-            var tagArr = tagTypesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(tagTypes);
-
-            slot = CreateArchetypeData(finalID, arr, tagArr);
-            ArchetypeTable.Push(slot);
-            ModifyComponentLocationTable(arr, tagArr, finalID.ID);
-        }
-
-        return finalID;
     }
 
-    public static ArchetypeData CreateArchetypeData(ArchetypeID id, ImmutableArray<Type> componentTypes, ImmutableArray<Type> tagTypes)
+    public static ArchetypeData CreateArchetypeData(ArchetypeID id, ImmutableArray<ComponentID> componentTypes, ImmutableArray<TagID> tagTypes)
     {
         return new ArchetypeData(id, componentTypes, tagTypes);
     }
 
-    private static void ModifyComponentLocationTable(ImmutableArray<Type> archetypeTypes, ImmutableArray<Type> archetypeTags, int id)
+    private static void ModifyComponentLocationTable(ImmutableArray<ComponentID> archetypeTypes, ImmutableArray<TagID> archetypeTags, int id)
     {
         if (GlobalWorldTables.ComponentTagLocationTable.Length == id)
         {
             int size = Math.Max(id << 1, 1);
             Array.Resize(ref GlobalWorldTables.ComponentTagLocationTable, size);
-            foreach(var world in GlobalWorldTables.Worlds.AsSpan())
+            foreach (var world in GlobalWorldTables.Worlds.AsSpan())
             {
-                if(world is World w)
-                {   
+                if (world is World w)
+                {
                     w.UpdateArchetypeTable(size);
                 }
             }
         }
 
-        for (int i = 0; i < archetypeTypes.Length; i++)
-        {
-            _ = Component.GetComponentID(archetypeTypes[i]);
-        }
+        //for (int i = 0; i < archetypeTypes.Length; i++)
+        //{
+        //    _ = Component.GetComponentID(archetypeTypes[i].Type);
+        //}
 
         ref var componentTable = ref GlobalWorldTables.ComponentTagLocationTable[id];
         componentTable = new byte[GlobalWorldTables.ComponentTagTableBufferSize];
@@ -132,16 +134,16 @@ partial class Archetype
 
         for (int i = 0; i < archetypeTypes.Length; i++)
         {
-            componentTable[Component.GetComponentID(archetypeTypes[i]).ID] = (byte)i;
+            componentTable[archetypeTypes[i].ID] = (byte)i;
         }
 
-        for(int i = 0; i < archetypeTags.Length; i++)
+        for (int i = 0; i < archetypeTags.Length; i++)
         {
-            componentTable[Tag.GetTagID(archetypeTags[i]).ID] |= Tag.HasTagMask;
+            componentTable[archetypeTags[i].ID] |= Tag.HasTagMask;
         }
     }
 
-    private static long GetHash(ReadOnlySpan<Type> types, ReadOnlySpan<Type> andMoreTypes)
+    private static long GetHash(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> andMoreTypes)
     {
         HashCode h1 = new();
 

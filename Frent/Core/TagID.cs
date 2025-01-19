@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a specific type as a tag, and can be used for tag related queries
 /// </summary>
-public readonly struct TagID : IEquatable<TagID>
+public readonly struct TagID : ITypeID, IEquatable<TagID>
 {
     internal TagID(ushort id) => ID = id;
     internal readonly ushort ID;

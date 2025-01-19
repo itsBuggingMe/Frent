@@ -1,7 +1,6 @@
 ﻿using Frent.Core;
 using Frent.Updating;
 using System.Collections.Immutable;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -14,7 +13,7 @@ partial class World
      *  This file contains all core functions related to structual changes on the world
      *  The only core structual change function not here is create, since it needs to be source generated
      *  These functions take all the data it needs, with no validation that an entity is alive
-     */ 
+     */
 
     //Add
     //Note: this fucntion doesn't actually do the last step of setting the component in the new archetype
@@ -23,15 +22,15 @@ partial class World
     {
         Archetype from = entityLocation.Archetype(this);
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges, 
-            ArchetypeEdgeKey.Component(component, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag), 
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
+            ArchetypeEdgeKey.Component(component, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag),
             out bool exist);
 
         Archetype destination;
 
-        if(!exist)
+        if (!exist)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, component.Type, out var res), from.ArchetypeTagArray.AsSpan(), this, res, from.ArchetypeTagArray);
+            destination = Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, component, out var res), from.ArchetypeTagArray.AsSpan(), this, res, from.ArchetypeTagArray);
             edge = destination.ID;
         }
         else
@@ -60,8 +59,8 @@ partial class World
     {
         Archetype from = entityLocation.Archetype(this);
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges, 
-            ArchetypeEdgeKey.Component(component, entityLocation.ArchetypeID, ArchetypeEdgeType.RemoveTag), 
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
+            ArchetypeEdgeKey.Component(component, entityLocation.ArchetypeID, ArchetypeEdgeType.RemoveTag),
             out bool exist);
 
 
@@ -69,7 +68,7 @@ partial class World
 
         if (!exist)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, component.Type, out var arr), from.ArchetypeTagArray.AsSpan(), this, arr, from.ArchetypeTagArray);
+            destination = Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, component, out var arr), from.ArchetypeTagArray.AsSpan(), this, arr, from.ArchetypeTagArray);
             edge = destination.ID;
         }
         else
@@ -119,14 +118,14 @@ partial class World
 
         Archetype from = entityLocation.Archetype(this);
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges, 
-            ArchetypeEdgeKey.Tag(tagID, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag), 
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
+            ArchetypeEdgeKey.Tag(tagID, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag),
             out bool exist);
 
         Archetype destination;
         if (!exist)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Concat(from.ArchetypeTagArray, tagID.Type, out var res), this, from.ArchetypeTypeArray, res);
+            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Concat(from.ArchetypeTagArray, tagID, out var res), this, from.ArchetypeTypeArray, res);
             edge = destination.ID;
         }
         else
@@ -158,14 +157,14 @@ partial class World
             return false;
 
         Archetype from = entityLocation.Archetype(this);
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges, 
-            ArchetypeEdgeKey.Tag(tag, from.ID, ArchetypeEdgeType.RemoveTag), 
+        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
+            ArchetypeEdgeKey.Tag(tag, from.ID, ArchetypeEdgeType.RemoveTag),
             out bool exist);
 
         ref Archetype destination = ref Unsafe.NullRef<Archetype>();
         if (!exist)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tag.Type, out var arr), this, from.ArchetypeTypeArray, arr);
+            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tag, out var arr), this, from.ArchetypeTypeArray, arr);
             edge = destination.ID;
         }
         else
@@ -190,12 +189,13 @@ partial class World
         return true;
     }
 
-    private static ReadOnlySpan<Type> Concat(ImmutableArray<Type> types, Type type, out ImmutableArray<Type> result)
+    private static ReadOnlySpan<T> Concat<T>(ImmutableArray<T> types, T type, out ImmutableArray<T> result)
+        where T : ITypeID
     {
         if (types.IndexOf(type) != -1)
-            FrentExceptions.Throw_InvalidOperationException($"This entity already has a component of type {type.Name}");
+            FrentExceptions.Throw_InvalidOperationException($"This entity already has a component of type {type.Type.Name}");
 
-        var builder = ImmutableArray.CreateBuilder<Type>(types.Length + 1);
+        var builder = ImmutableArray.CreateBuilder<T>(types.Length + 1);
         builder.AddRange(types);
         builder.Add(type);
 
@@ -203,11 +203,12 @@ partial class World
         return result.AsSpan();
     }
 
-    private static ReadOnlySpan<Type> Remove(ImmutableArray<Type> types, Type type, out ImmutableArray<Type> result)
+    private static ReadOnlySpan<T> Remove<T>(ImmutableArray<T> types, T type, out ImmutableArray<T> result)
+        where T : ITypeID
     {
         int index = types.IndexOf(type);
         if (index == -1)
-            FrentExceptions.Throw_ComponentNotFoundException(type);
+            FrentExceptions.Throw_ComponentNotFoundException(type.Type);
         result = types.RemoveAt(index);
         return result.AsSpan();
     }

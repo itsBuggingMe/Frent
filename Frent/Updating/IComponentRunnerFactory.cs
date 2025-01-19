@@ -1,6 +1,4 @@
-﻿using Frent.Collections;
-
-namespace Frent.Updating;
+﻿namespace Frent.Updating;
 
 /// <summary>
 /// Defines an object for creating component runners

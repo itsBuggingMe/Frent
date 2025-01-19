@@ -1,6 +1,5 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using System.Collections;
 using System.Collections.Immutable;
 
 namespace Frent.Systems;
@@ -32,7 +31,7 @@ public partial class Query
     {
         foreach (var rule in _rules)
         {
-            if(!rule.RuleApplies(id))
+            if (!rule.RuleApplies(id))
             {
                 return false;
             }

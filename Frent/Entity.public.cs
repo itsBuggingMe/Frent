@@ -1,16 +1,12 @@
 ﻿using Frent.Core;
-using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 
 namespace Frent;
 
 partial struct Entity
 {
-
     #region Public API
 
     #region Has
@@ -21,9 +17,21 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public bool Has<T>()
     {
-        AssertIsAlive(out var _, out var entityLocation);
-        ComponentID compid = Component<T>.ID;
-        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
+        if (World.WorldCachePackedValue == PackedWorldInfo)
+        {
+            var tableItem = World.QuickWorldCache.EntityTable.GetValueNoCheck(EntityID);
+            if (tableItem.Version == EntityVersion)
+            {
+                _ = tableItem.Location;
+                return true;
+            }
+        }
+
+        if (!IsAliveCold(out var world, out var entityLocation))
+            Throw_EntityIsDead();
+        //ComponentID compid = Component<T>.ID;
+        //return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
+        return true;
     }
 
     /// <summary>
@@ -439,7 +447,7 @@ partial struct Entity
     /// Gets the component types for this entity, ordered in update order
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public ImmutableArray<Type> ComponentTypes
+    public ImmutableArray<ComponentID> ComponentTypes
     {
         get
         {
@@ -453,7 +461,7 @@ partial struct Entity
     /// Gets tags the entity has 
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public ImmutableArray<Type> TagTypes
+    public ImmutableArray<TagID> TagTypes
     {
         get
         {

@@ -32,22 +32,25 @@ internal class Tag
 
     internal static TagID GetTagID(Type type)
     {
-        if(ExistingTagIDs.TryGetValue(type, out TagID tagID))
+        lock (GlobalWorldTables.BufferChangeLock)
         {
-            return tagID;
+            if (ExistingTagIDs.TryGetValue(type, out TagID tagID))
+            {
+                return tagID;
+            }
+
+            int id = Interlocked.Increment(ref _nextTagID);
+
+            if (id == ushort.MaxValue)
+                throw new Exception("Exceeded max tag count of 65535");
+
+            TagID newID = new TagID((ushort)id);
+            ExistingTagIDs[type] = newID;
+            TagTable.Push(type);
+
+            GlobalWorldTables.ModifyComponentTagTableIfNeeded(newID.ID);
+
+            return newID;
         }
-
-        int id = Interlocked.Increment(ref _nextTagID);
-
-        if (id == ushort.MaxValue)
-            throw new Exception("Exceeded max tag count of 65535");
-
-        TagID newID = new TagID((ushort)id);
-        ExistingTagIDs[type] = newID;
-        TagTable.Push(type);
-
-        GlobalWorldTables.ModifyComponentTagTableIfNeeded(newID.ID);
-
-        return newID;
     }
 }

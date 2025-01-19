@@ -26,17 +26,17 @@ public interface IEntityChunkAction
 [Variadic(TArgFrom, TArgPattern)]
 public interface IEntityUniformChunkAction<TUniform, TArg>
 {
-    void RunChunk(ReadOnlySpan<Entity> entity, in TUniform uniform, Span<TArg> arg);
+    void RunChunk(ReadOnlySpan<Entity> entity, TUniform uniform, Span<TArg> arg);
 }
 
 public interface IEntityUniformChunkAction<TUniform>
 {
-    void RunChunk(ReadOnlySpan<Entity> entity, in TUniform uniform);
+    void RunChunk(ReadOnlySpan<Entity> entity, TUniform uniform);
 }
 
 [Variadic(SpanArgFrom, SpanArgPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 public interface IUniformChunkAction<TUniform, TArg>
 {
-    void RunChunk(in TUniform uniform, Span<TArg> arg);
+    void RunChunk(TUniform uniform, Span<TArg> arg);
 }

@@ -1,6 +1,5 @@
 ﻿using Frent.Core;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -42,7 +41,7 @@ public partial struct Entity : IEquatable<Entity>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool IsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
-        if(World.WorldCachePackedValue == Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).PackedWorldInfo)
+        if (World.WorldCachePackedValue == Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).PackedWorldInfo)
         {
             world = World.QuickWorldCache;
             var tableItem = world!.EntityTable[(uint)EntityID];
@@ -109,24 +108,24 @@ public partial struct Entity : IEquatable<Entity>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void AssertIsAlive(out World world, out EntityLocation entityLocation)
     {
-        if(World.WorldCachePackedValue == PackedWorldInfo)
+        if (World.WorldCachePackedValue == PackedWorldInfo)
         {
             var tableItem = (world = World.QuickWorldCache!).EntityTable.GetValueNoCheck(EntityID);
-            if(tableItem.Version == EntityVersion)
+            if (tableItem.Version == EntityVersion)
             {
                 entityLocation = tableItem.Location;
                 return;
             }
         }
 
-        if (!IsAlive(out world!, out entityLocation))
+        if (!IsAliveCold(out world!, out entityLocation))
             Throw_EntityIsDead();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void AssertIsAliveWorld(out World world)
     {
-        if(!(World.WorldCachePackedValue == PackedWorldInfo && 
+        if (!(World.WorldCachePackedValue == PackedWorldInfo &&
             (world = World.QuickWorldCache!).EntityTable.GetValueNoCheck(EntityID).Version == EntityVersion ||
             IsAliveCold(out world!, out _)))
         {
@@ -137,28 +136,28 @@ public partial struct Entity : IEquatable<Entity>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void AssertIsAliveEntityLocation(out EntityLocation eloc)
     {
-        if(World.WorldCachePackedValue == PackedWorldInfo)
+        if (World.WorldCachePackedValue == PackedWorldInfo)
         {
             var tableItem = World.QuickWorldCache!.EntityTable.GetValueNoCheck(EntityID);
-            if(tableItem.Version == EntityVersion)
+            if (tableItem.Version == EntityVersion)
             {
                 eloc = tableItem.Location;
                 return;
             }
         }
-        
+
         eloc = default;
         Throw_EntityIsDead();
     }
 
     private void AssertIsAlive()
     {
-        if(!IsAlive())
+        if (!IsAlive())
             Throw_EntityIsDead();
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private void Throw_EntityIsDead() => FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage); 
+    private void Throw_EntityIsDead() => FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
     internal string DebuggerDisplayString => IsNull ? "Null" : IsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
@@ -167,20 +166,20 @@ public partial struct Entity : IEquatable<Entity>
 
     private class EntityDebugView(Entity target)
     {
-        public ImmutableArray<Type> ComponentTypes => target.ComponentTypes;
-        public ImmutableArray<Type> Tags => target.TagTypes;
+        public ImmutableArray<ComponentID> ComponentTypes => target.ComponentTypes;
+        public ImmutableArray<TagID> Tags => target.TagTypes;
 
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
         public object[] Components
         {
             get
             {
-                if(!target.IsAlive(out World? world, out var eloc))
+                if (!target.IsAlive(out World? world, out var eloc))
                     return Array.Empty<object>();
 
                 object[] objects = new object[ComponentTypes.Length];
                 Archetype archetype = eloc.Archetype(world);
-                for(int i = 0; i < objects.Length; i++)
+                for (int i = 0; i < objects.Length; i++)
                 {
                     objects[i] = archetype.Components[i].GetAt(eloc.ChunkIndex, eloc.ComponentIndex);
                 }

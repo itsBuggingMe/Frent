@@ -1,8 +1,13 @@
 ﻿using Frent.Buffers;
+using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
 
-static partial class DelegateQueryExtensions
+[Variadic("archetype.GetComponentSpan<T>()", "|archetype.GetComponentSpan<T$>(), |")]
+[Variadic("ref arg", "|ref arg$, |")]
+[Variadic("ref T arg", "|ref T$ arg$, |")]
+[Variadic("T>", "|T$, |>")]
+public static partial class DelegateQueryExtensions
 {
     public static void Run<T>(this Query query, QueryDelegates.Query<T> action)
     {

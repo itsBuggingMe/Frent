@@ -4,7 +4,6 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
 using Frent.Variadic.Generator;
-using System.Diagnostics;
 using static Frent.Updating.Variadics;
 
 namespace Frent.Updating.Runners;
@@ -14,10 +13,10 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<Entity
 {
     public override void Run(World world, Archetype b) =>
         ChunkHelpers<TComp>.EnumerateComponentsWithEntity(
-            b.CurrentWriteChunk, 
-            b.LastChunkComponentCount, 
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() }, 
-            b.GetEntitySpan(), 
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
+            b.GetEntitySpan(),
             b.GetComponentSpan<TComp>());
 
     internal record struct Action : IEntityAction<TComp>

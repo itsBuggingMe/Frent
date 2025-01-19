@@ -1,9 +1,7 @@
 ﻿using Frent.Buffers;
 using Frent.Updating;
-using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
@@ -13,10 +11,10 @@ internal partial class Archetype
 {
     internal static int MaxChunkSize => MemoryHelpers.MaxArchetypeChunkSize;
     internal ArchetypeID ID => _archetypeID;
-    internal ImmutableArray<Type> ArchetypeTypeArray => _archetypeID.Types;
-    internal ImmutableArray<Type> ArchetypeTagArray => _archetypeID.Tags;
+    internal ImmutableArray<ComponentID> ArchetypeTypeArray => _archetypeID.Types;
+    internal ImmutableArray<TagID> ArchetypeTagArray => _archetypeID.Tags;
 
-    internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Name))}";
+    internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
 
     internal int EntityCount
     {
@@ -61,7 +59,7 @@ internal partial class Archetype
     {
         _chunkSize = Math.Min(MaxChunkSize, _chunkSize << 2);
 
-        if(_chunkSize >= 16)
+        if (_chunkSize >= 16)
         {//try to keep chunk sizes >= 16
             _chunkIndex++;
             _componentIndex = 0;
@@ -103,7 +101,7 @@ internal partial class Archetype
             foreach (var comprunner in Components)
                 comprunner.Delete(chunk, comp, _chunkIndex, (ushort)_componentIndex);
 
-            var e =  _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
+            var e = _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
 
             int index = _chunkIndex + 1;
             _entities[index].Return();
@@ -132,12 +130,12 @@ internal partial class Archetype
     {
         if (_chunkIndex == 0 && _componentIndex == 0)
             return;
-        
+
         int compIndex = GlobalWorldTables.ComponentIndex(ID, componentID);
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             return;
-        
+
         Components[compIndex].Run(world, this);
     }
 
@@ -148,7 +146,7 @@ internal partial class Archetype
 
     internal void ReleaseArrays()
     {
-        for(int i = 0; i <= _chunkIndex; i++)
+        for (int i = 0; i <= _chunkIndex; i++)
         {
             _entities[i].Return();
             foreach (var comprunner in Components)

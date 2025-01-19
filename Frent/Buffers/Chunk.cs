@@ -1,7 +1,5 @@
 ﻿using Frent.Core;
 using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace Frent.Buffers;
 
@@ -34,7 +32,7 @@ internal struct Chunk<TData>
     public static void NextChunk(ref Chunk<TData>[] chunks, int size, int newChunkIndex)
     {
         //these arrays are too small to pool
-        if(newChunkIndex == chunks.Length)
+        if (newChunkIndex == chunks.Length)
             Array.Resize(ref chunks, newChunkIndex << 1);
 
         var nextChunk = new Chunk<TData>(size);

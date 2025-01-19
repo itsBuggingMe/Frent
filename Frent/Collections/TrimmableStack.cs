@@ -1,8 +1,6 @@
 ﻿using Frent.Buffers;
 using Frent.Core;
-using System;
 using System.Runtime.CompilerServices;
-using System.Transactions;
 
 namespace Frent.Collections;
 
@@ -47,7 +45,7 @@ internal sealed class TrimmableStack<T> : TrimmableStack
 
     public void Clear()
     {
-        if(RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             StrongBuffer.AsSpan().Clear();
         _nextIndex = 0;
     }

@@ -1,3 +1,3 @@
 ﻿using System.Collections.Immutable;
 namespace Frent.Core;
-internal record class ArchetypeData(ArchetypeID ID, ImmutableArray<Type> ComponentTypes, ImmutableArray<Type> TagTypes);
+internal record struct ArchetypeData(ArchetypeID ID, ImmutableArray<ComponentID> ComponentTypes, ImmutableArray<TagID> TagTypes);

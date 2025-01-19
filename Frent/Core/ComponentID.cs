@@ -3,7 +3,7 @@
 /// <summary>
 /// A lightweight struct that represents a component type. Used for fast lookups
 /// </summary>
-public readonly struct ComponentID : IEquatable<ComponentID>
+public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
 {
     internal ComponentID(ushort id) => ID = id;
     internal readonly ushort ID;

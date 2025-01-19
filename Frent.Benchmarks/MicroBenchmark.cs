@@ -66,7 +66,6 @@ public class MicroBenchmark
     [BenchmarkCategory(Categories.Has)]
     public void Has()
     {
-        for (int i = 0; i < 100_000; i++)
-            _entity.Has<int>();
+        //_entity.Has<int>();
     }
 }
