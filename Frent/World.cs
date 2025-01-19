@@ -157,25 +157,23 @@ public partial class World : IDisposable
     /// <param name="rules">The rules governing which entities are queried</param>
     /// <param name="world">The world to query on</param>
     /// <returns>A query object representing all the entities that satisfy all the rules</returns>
-    public static Query CustomQuery(this World world, params Rule[] rules)
+    public Query CustomQuery(params Rule[] rules)
     {
-        ArgumentNullException.ThrowIfNull(world);
-
         QueryHash queryHash = QueryHash.New();
         foreach (Rule rule in rules)
             queryHash.AddRule(rule);
 
-        return CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, queryHash.ToHashCodeIncludeDisable(), out _) ??= world.CreateQueryFromSpan([.. rules]);
+        return CollectionsMarshal.GetValueRefOrAddDefault(QueryCache, queryHash.ToHashCodeIncludeDisable(), out _) ??= CreateQueryFromSpan([.. rules]);
     }
 
     //we could use static abstract methods IF NOT FOR DOTNET6
-    public static Query Query<T>(this World world)
+    public Query Query<T>()
         where T : struct, IConstantQueryHashProvider
     {
-        ref Query? cachedValue = ref CollectionsMarshal.GetValueRefOrAddDefault(world.QueryCache, default(T).GetHashCode(), out bool exists);
+        ref Query? cachedValue = ref CollectionsMarshal.GetValueRefOrAddDefault(QueryCache, default(T).GetHashCode(), out bool exists);
         if (!exists)
         {
-            cachedValue = world.CreateQuery(default(T).Rules);
+            cachedValue = CreateQuery(default(T).Rules);
         }
         return cachedValue!;
     }
