@@ -86,7 +86,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
     /// <summary>
     /// DO NOT ALTER WHILE SPAN IS IN USE
     /// </summary>
-    public readonly Span<T> AsSpan() => new(_buffer, 0, _nextIndex);
+    public readonly Span<T> AsSpan() => _buffer.AsSpan(0, _nextIndex);
 
     public void Clear()
     {

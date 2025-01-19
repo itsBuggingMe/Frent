@@ -4,6 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Frent.Benchmarks.Program;
+using Frent.Systems;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Benchmarks;
 
@@ -20,12 +25,19 @@ public class MicroBenchmark
 
     private World _world;
     private Entity _entity;
+    private Query _query;
 
     [GlobalSetup]
     public void Setup()
     {
         _world = new World();
-        _entity = _world.Create<int, double, long, string>(default, default, default, default);
+    }
+    
+    [Benchmark]
+    [BenchmarkCategory(Categories.Has)]
+    public void Sys()
+    {
+        _query.Inline<Increment, Component1>(default);
     }
 
     /*
@@ -60,7 +72,6 @@ public class MicroBenchmark
             w.Create<int, int, int>(default, default, default);
     }
     #endregion
-    */
 
     [Benchmark]
     [BenchmarkCategory(Categories.Has)]
@@ -68,4 +79,5 @@ public class MicroBenchmark
     {
         //_entity.Has<int>();
     }
+    */
 }

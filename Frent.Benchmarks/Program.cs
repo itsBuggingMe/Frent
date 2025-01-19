@@ -1,16 +1,16 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using System.Reflection;
-
+using Frent.Systems;
 
 namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Has());
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => { });
 
     #region Bench Helpers
-    private static void RunBenchmark<T>(Action<T> disasmCall )
+    private static void RunBenchmark<T>(Action<T> disasmCall)
     {
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
@@ -19,9 +19,9 @@ public class Program
             false
 #endif
             )
-            JitTest<MicroBenchmark>(b => b.Has());
+            JitTest(disasmCall);
         else
-            BenchmarkRunner.Run<MicroBenchmark>();
+            BenchmarkRunner.Run<T>();
     }
 
     private static void JitTest<T>(Action<T> call)
@@ -40,5 +40,20 @@ public class Program
             Thread.Sleep(100);
         }
     }
-#endregion
+    #endregion
+
+    internal struct Increment : IAction<Component1>
+    {
+        public void Run(ref Component1 arg) => arg.Value++;
+    }
+
+    internal record struct Component1(int Value);
+
+    internal record struct Component2(int Value);
+
+    internal record struct Component3(int Value);
+
+    internal record struct Component4(int Value);
+
+    internal record struct Component5(int Value);
 }

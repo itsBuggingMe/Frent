@@ -1,5 +1,7 @@
-﻿using Frent.Systems;
+﻿using Frent.Core;
+using Frent.Systems;
 using Frent.Variadic.Generator;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Buffers;
 
@@ -11,11 +13,13 @@ namespace Frent.Buffers;
 [Variadic("data1[i].AsSpan()", "|data$[i].AsSpan(), |")]
 [Variadic("Span<TArg> arg1", "|Span<TArg$> arg$, |")]
 [Variadic("ref arg1[i]", "|ref arg$[i], |")]
+[Variadic("chunkLast1[..start]", "|chunkLast$[..start], |")]
 [Variadic("            arg1 = arg1[..arg1.Length];", "|            arg$ = arg$[..arg1.Length];\n|")]
 [Variadic("data1);", "|data$, |);\n")]
 [Variadic("TArg>", "|TArg$, |>")]
 partial class ChunkHelpers<TArg>
 {
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void EnumerateChunks<TChunkAction, TAction>(int curChk, int lastChkCompCount, TChunkAction chunk, TAction action, Span<Chunk<TArg>> data1)
         where TChunkAction : struct, IChunkAction<TArg>
         where TAction : struct, IAction<TArg>
@@ -24,7 +28,10 @@ partial class ChunkHelpers<TArg>
         //Code side is also smaller
         var chunkLast1 = data1[curChk].AsSpan()[..lastChkCompCount];
 
-        for (int j = 0; j < chunkLast1.Length; j++)
+        int start = MemoryHelpers.RoundDownToNextMultipleOf16(chunkLast1.Length);
+        chunk.RunChunk(chunkLast1[..start]);
+
+        for (int j = start; j < chunkLast1.Length; j++)
         {
             action.Run(ref chunkLast1[j]);
         }

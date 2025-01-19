@@ -16,7 +16,7 @@ public static partial class DelegateQueryExtensions
             ChunkHelpers<T>.EnumerateComponents(
                 archetype.ChunkCount,
                 archetype.LastChunkComponentCount,
-                default(Action<T>),
+                new Action<T>(action),
                 archetype.GetComponentSpan<T>());
         }
     }

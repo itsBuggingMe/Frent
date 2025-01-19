@@ -13,6 +13,7 @@ internal static class MemoryHelpers
     public static uint RoundDownToPowerOfTwo(uint value) => BitOperations.RoundUpToPowerOf2((value >> 1) + 1);
 
     public static int RoundUpToNextMultipleOf16(int value) => (value + 15) & ~15;
+    public static int RoundDownToNextMultipleOf16(int value) => value & ~15;
 
     public static ImmutableArray<T> ReadOnlySpanToImmutableArray<T>(ReadOnlySpan<T> span)
     {
