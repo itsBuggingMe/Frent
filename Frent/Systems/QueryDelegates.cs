@@ -1,6 +1,6 @@
 ﻿using Frent.Variadic.Generator;
 
-namespace Frent;
+namespace Frent.Systems;
 
 [Variadic("T>", "|T$, |>")]
 [Variadic("ref T comp1", "|ref T$ comp$, |")]

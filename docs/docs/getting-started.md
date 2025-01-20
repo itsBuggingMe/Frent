@@ -58,7 +58,7 @@ Let's make one last component to draw things to the console.
 ```csharp
 struct Character(char c) : IComponent<Position>
 {
-	public char Char = c;
+    public char Char = c;
     public void Update(ref Position pos)
     {
         Console.SetCursorPosition(pos.X, pos.Y);

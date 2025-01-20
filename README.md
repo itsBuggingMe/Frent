@@ -1,5 +1,6 @@
 # [Frent](https://itsbuggingme.github.io/Frent/) 
-[![NuGet](https://img.shields.io/nuget/v/Frent.svg)](https://www.nuget.org/packages/Frent/) [![NuGet](https://img.shields.io/nuget/dt/Frent.svg)](https://www.nuget.org/packages/Frent/) ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/w/itsBuggingMe/Frent/master)
+[![NuGet](https://img.shields.io/nuget/v/Frent.svg)](https://www.nuget.org/packages/Frent/) [![NuGet](https://img.shields.io/nuget/dt/Frent.svg)](https://www.nuget.org/packages/Frent/) ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/w/itsBuggingMe/Frent/master) ![GitHub Repo stars](https://img.shields.io/github/stars/ItsBuggingMe/Frent)
+
 
 A high preformance archetyped based **[ECF](https://itsbuggingme.github.io/Frent/docs/ecf.html)/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
 
@@ -60,5 +61,7 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
 # Contributing
-Wanna help? Anything works!
-Report bugs, suggest APIs, and more!
+Wanna help?
+
+Report bugs, suggest APIs, and give general feedback.
+Just open an issue before starting a large feature.
