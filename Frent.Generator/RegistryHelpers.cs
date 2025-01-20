@@ -1,8 +1,17 @@
 ﻿
+using System.Text;
+
 namespace Frent.Generator;
 
-public class RegistryConstants
+public static class RegistryHelpers
 {
+    public static StringBuilder AppendNamespace(this StringBuilder sb, string @namespace)
+    {
+        if(@namespace == string.Empty)
+            return sb;
+        return sb.Append(@namespace).Append('.');
+    }
+
     public const string UpdateTypeAttributeName = "Frent.Updating.UpdateTypeAttribute";
     public const string UpdateMethodName = "Update";
     public const string FileName = "ComponentUpdateTypeRegistry.g.cs";

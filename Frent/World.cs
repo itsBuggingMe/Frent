@@ -80,6 +80,8 @@ public partial class World : IDisposable
     {
         CurrentConfig = config ?? Config.Singlethreaded;
         UniformProvider = uniformProvider ?? NullUniformProvider.Instance;
+        if (_nextWorldID == byte.MaxValue)
+            throw new Exception("Max world count reached");
         (ID, Version) = _recycledWorldIDs.TryPop(out var id) ? id : (_nextWorldID++, byte.MaxValue);
         IDAsUInt = ID;
         GlobalWorldTables.Worlds[ID] = this;
