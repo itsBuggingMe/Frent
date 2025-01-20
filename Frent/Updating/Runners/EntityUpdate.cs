@@ -18,7 +18,14 @@ internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TC
             default(Action),
             b.GetEntitySpan(),
             b.GetComponentSpan<TComp>());
-
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        MultiThreadHelpers<TComp>.EnumerateComponentsWithEntity(
+            countdown,
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            default(Action),
+            b.GetEntitySpan(),
+            b.GetComponentSpan<TComp>());
     internal struct Action : IEntityAction<TComp>
     {
         public void Run(Entity entity, ref TComp t) => t.Update(entity);
@@ -48,7 +55,15 @@ internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TCom
             b.GetEntitySpan(),
             b.GetComponentSpan<TComp>(),
             b.GetComponentSpan<TArg>());
-
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        MultiThreadHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
+            countdown,
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            default(Action),
+            b.GetEntitySpan(),
+            b.GetComponentSpan<TComp>(),
+            b.GetComponentSpan<TArg>());
     internal struct Action : IEntityAction<TComp, TArg>
     {
         public void Run(Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, ref t1);

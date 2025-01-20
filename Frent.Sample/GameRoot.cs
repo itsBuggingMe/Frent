@@ -33,8 +33,8 @@ namespace Frent.Sample
 
         public GameRoot(int count)
         {
-            _count = count;
-            _world = new World(this);
+            _count = 1_000_000;
+            _world = new World(this, Config.Multithreaded);
             _manager = new GraphicsDeviceManager(this);
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
@@ -76,7 +76,7 @@ namespace Frent.Sample
         protected override void Update(GameTime gameTime)
         {
             MouseState = Mouse.GetState();
-            Window.Title = $"FPS: {1000 / gameTime.ElapsedGameTime.TotalMilliseconds}";
+            Window.Title = $"FPS: {1000 / gameTime.ElapsedGameTime.TotalMilliseconds} T: {ThreadPool.ThreadCount}";
             DeltaTime = (float)(gameTime.ElapsedGameTime.TotalMilliseconds / 16.666);
 
             if(Keyboard.GetState().IsKeyDown(Keys.Space))
@@ -101,7 +101,7 @@ namespace Frent.Sample
             }
 
             _world.Update();
-            //_world.InlineQueryUniform<QueryCollison, GameRoot, Velocity, Position, Bounds>(default);
+            _world.Query<With<Velocity, Position, Bounds>>().ParallelUniform<QueryCollison, GameRoot, Velocity, Position, Bounds>(default);
 
             base.Update(gameTime);
         }
@@ -121,7 +121,7 @@ namespace Frent.Sample
             GraphicsDevice.Clear(Color.CornflowerBlue);
             SpriteBatch.Begin();
             QuerySprites querySprites = new QuerySprites(this);
-            //_world.InlineQuery<QuerySprites, SinglePixel, Position, Bounds>(querySprites);
+            _world.Query<With<SinglePixel, Position, Bounds>>().Inline<QuerySprites, SinglePixel, Position, Bounds>(querySprites);
             SpriteBatch.End();
             base.Draw(gameTime);
         }

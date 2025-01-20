@@ -7,6 +7,7 @@ namespace Frent.Updating;
 internal interface IComponentRunner
 {
     internal void Run(World world, Archetype b);
+    internal void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
     internal void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);
     internal void Trim(int chunkIndex);
     internal void AllocateNextChunk(int size, int chunkIndex);

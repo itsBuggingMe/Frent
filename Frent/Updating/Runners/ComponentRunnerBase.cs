@@ -9,6 +9,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     where TSelf : IComponentRunner<TComponent>, new()
 {
     public abstract void Run(World world, Archetype b);
+    public abstract void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
     protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
     public void Trim(int index) => _chunks[index].Return();
     public void AllocateNextChunk(int chunkSize, int chunkIndex) => Chunk<TComponent>.NextChunk(ref _chunks, chunkSize, chunkIndex);

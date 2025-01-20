@@ -19,7 +19,6 @@ namespace Frent.Buffers;
 [Variadic("TArg>", "|TArg$, |>")]
 partial class ChunkHelpers<TArg>
 {
-    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void EnumerateChunks<TChunkAction, TAction>(int curChk, int lastChkCompCount, TChunkAction chunk, TAction action, Span<Chunk<TArg>> data1)
         where TChunkAction : struct, IChunkAction<TArg>
         where TAction : struct, IAction<TArg>
@@ -48,7 +47,7 @@ partial class ChunkHelpers<TArg>
         where TAction : struct, IAction<TArg>
         => EnumerateChunks(curChk, lastChkCompCount, new OnEachChunkAction<TAction>(action), action, data1);
 
-    private struct OnEachChunkAction<TInnerAction>(TInnerAction action) : IChunkAction<TArg>
+    internal struct OnEachChunkAction<TInnerAction>(TInnerAction action) : IChunkAction<TArg>
         where TInnerAction : struct, IAction<TArg>
     {
         public void RunChunk(Span<TArg> arg1)
@@ -87,7 +86,7 @@ partial class ChunkHelpers<TArg>
         where TAction : struct, IEntityAction<TArg>
         => EnumerateChunksWithEntity(curChk, lastChkCompCount, new OnEachChunkWithEntityAction<TAction>(action), action, entities, data1);
 
-    private struct OnEachChunkWithEntityAction<TInnerAction>(TInnerAction action) : IEntityChunkAction<TArg>
+    internal struct OnEachChunkWithEntityAction<TInnerAction>(TInnerAction action) : IEntityChunkAction<TArg>
         where TInnerAction : struct, IEntityAction<TArg>
     {
         public void RunChunk(ReadOnlySpan<Entity> entities, Span<TArg> arg1)
@@ -127,7 +126,7 @@ partial class ChunkHelpers
         where TAction : struct, IEntityAction
         => EnumerateChunksWithEntity(curChk, lastChkCompCount, new OnEachChunkAction<TAction>(action), action, entities);
 
-    private struct OnEachChunkAction<TInnerAction>(TInnerAction action) : IEntityChunkAction
+    internal struct OnEachChunkAction<TInnerAction>(TInnerAction action) : IEntityChunkAction
         where TInnerAction : struct, IEntityAction
     {
         public void RunChunk(ReadOnlySpan<Entity> arg1)

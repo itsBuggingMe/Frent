@@ -4,6 +4,7 @@ using Frent.Core;
 namespace Frent.Updating.Runners;
 internal class NoneUpdate<TComp> : ComponentRunnerBase<NoneUpdate<TComp>, TComp>
 {
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) { }
     public override void Run(World world, Archetype b) { }
 }
 

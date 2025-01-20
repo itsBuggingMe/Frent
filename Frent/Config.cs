@@ -5,23 +5,19 @@
 /// </summary>
 /// <param name="threadCount">The number of threads to use when multithreading</param>
 /// <param name="multiThreadedUpdate">Whether or not to multithread <see cref="World.Update"/></param>
-public class Config(int threadCount, bool multiThreadedUpdate)
+public class Config
 {
-    /// <summary>
-    /// The number of threads to use when multithreading
-    /// </summary>
-    public int ThreadCount { get; } = threadCount;
     /// <summary>
     /// Whether or not to multithread <see cref="World.Update"/>
     /// </summary>
-    public bool MultiThreadedUpdate { get; } = multiThreadedUpdate;
+    public bool MultiThreadedUpdate { get; init; }
 
     /// <summary>
     /// The default multithreaded config
     /// </summary>
-    public static Config Multithreaded { get; } = new Config(Math.Min(1, Environment.ProcessorCount - 2), true);
+    public static Config Multithreaded { get; } = new Config() { MultiThreadedUpdate = true };
     /// <summary>
     /// The default singlethreaded config
     /// </summary>
-    public static Config Singlethreaded { get; } = new Config(1, false);
+    public static Config Singlethreaded { get; } = new Config() { MultiThreadedUpdate = false };
 }

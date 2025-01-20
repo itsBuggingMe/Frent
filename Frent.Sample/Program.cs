@@ -26,7 +26,7 @@ internal class Program
         }
         else if(userOption == 1)
         {
-            using var p = new GameRoot(args.Length == 0 ? 100_000 : int.Parse(args[0]));
+            using var p = new GameRoot(args.Length == 0 ? 200_000 : int.Parse(args[0]));
             p.Run();
         }
         else

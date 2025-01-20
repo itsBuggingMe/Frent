@@ -18,7 +18,14 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<Entity
             new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
             b.GetEntitySpan(),
             b.GetComponentSpan<TComp>());
-
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        MultiThreadHelpers<TComp>.EnumerateComponentsWithEntity(
+            countdown,
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
+            b.GetEntitySpan(),
+            b.GetComponentSpan<TComp>());
     internal record struct Action : IEntityAction<TComp>
     {
         public TUniform Uniform;
@@ -43,6 +50,15 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<
 {
     public override void Run(World world, Archetype b) =>
         ChunkHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
+            b.GetEntitySpan(),
+            b.GetComponentSpan<TComp>(),
+            b.GetComponentSpan<TArg>());
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        MultiThreadHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
+            countdown,
             b.CurrentWriteChunk,
             b.LastChunkComponentCount,
             new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },

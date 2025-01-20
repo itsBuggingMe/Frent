@@ -17,7 +17,13 @@ internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdat
             b.LastChunkComponentCount,
             new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
             b.GetComponentSpan<TComp>());
-
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        MultiThreadHelpers<TComp>.EnumerateComponents(
+            countdown,
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
+            b.GetComponentSpan<TComp>());
     internal struct Action : IAction<TComp>
     {
         public TUniform Uniform;
@@ -43,6 +49,14 @@ internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<Unifor
 {
     public override void Run(World world, Archetype b) =>
         ChunkHelpers<TComp, TArg>.EnumerateComponents(
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
+            b.GetComponentSpan<TComp>(),
+            b.GetComponentSpan<TArg>());
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        MultiThreadHelpers<TComp, TArg>.EnumerateComponents(
+            countdown,
             b.CurrentWriteChunk,
             b.LastChunkComponentCount,
             new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },

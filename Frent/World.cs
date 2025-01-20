@@ -43,6 +43,8 @@ public partial class World : IDisposable
 
     internal Dictionary<int, Query> QueryCache = [];
 
+    internal CountdownEvent SharedCountdown => _sharedCountdown;
+    private CountdownEvent _sharedCountdown = new(0);
     private FastStack<ArchetypeID> _enabledArchetypes = FastStack<ArchetypeID>.Create(16);
 
     private volatile int _allowStructuralChanges;
@@ -98,23 +100,27 @@ public partial class World : IDisposable
     public void Update()
     {
         EnterDisallowState();
-
-        if (CurrentConfig.MultiThreadedUpdate)
+        try
         {
-            foreach (var element in _enabledArchetypes.AsSpan())
+            if (CurrentConfig.MultiThreadedUpdate)
             {
-                element.Archetype(this).MultiThreadedUpdate(CurrentConfig);
+                foreach (var element in _enabledArchetypes.AsSpan())
+                {
+                    element.Archetype(this).MultiThreadedUpdate(_sharedCountdown, this);
+                }
+            }
+            else
+            {
+                foreach (var element in _enabledArchetypes.AsSpan())
+                {
+                    element.Archetype(this).Update(this);
+                }
             }
         }
-        else
+        finally
         {
-            foreach (var element in _enabledArchetypes.AsSpan())
-            {
-                element.Archetype(this).Update(this);
-            }
+            ExitDisallowState();
         }
-
-        ExitDisallowState();
     }
 
     public void Update<T>() where T : UpdateTypeAttribute => Update(typeof(T));
@@ -123,32 +129,37 @@ public partial class World : IDisposable
     {
         EnterDisallowState();
 
-        ref var appliesTo = ref CollectionsMarshal.
-            GetValueRefOrAddDefault(_updatesByAttributes, attributeType, out bool exists);
-        if (!exists)
+        try
         {
-            appliesTo.Stack = FastStack<ComponentID>.Create(8);
-        }
-        //fill up the table with the correct IDs
-        //works for initalization as well as updating it
-        for (ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
-        {
-            var id = new ComponentID((ushort)i);
-            if (GenerationServices.TypeAttributeCache.TryGetValue(attributeType, out var compSet) && compSet.Contains(id.Type))
+            ref var appliesTo = ref CollectionsMarshal.
+                GetValueRefOrAddDefault(_updatesByAttributes, attributeType, out bool exists);
+            if (!exists)
             {
-                appliesTo.Stack.Push(id);
+                appliesTo.Stack = FastStack<ComponentID>.Create(8);
+            }
+            //fill up the table with the correct IDs
+            //works for initalization as well as updating it
+            for (ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
+            {
+                var id = new ComponentID((ushort)i);
+                if (GenerationServices.TypeAttributeCache.TryGetValue(attributeType, out var compSet) && compSet.Contains(id.Type))
+                {
+                    appliesTo.Stack.Push(id);
+                }
+            }
+
+            foreach (var compid in appliesTo.Stack.AsSpan())
+            {
+                foreach (var item in _enabledArchetypes.AsSpan())
+                {
+                    item.Archetype(this).Update(this, compid);
+                }
             }
         }
-
-        foreach (var compid in appliesTo.Stack.AsSpan())
+        finally
         {
-            foreach (var item in _enabledArchetypes.AsSpan())
-            {
-                item.Archetype(this).Update(this, compid);
-            }
+            ExitDisallowState();
         }
-
-        ExitDisallowState();
     }
 
     /// <summary>
@@ -272,6 +283,7 @@ public partial class World : IDisposable
             if (item is not null)
                 item.ReleaseArrays();
 
+        _sharedCountdown.Dispose();
 
         _isDisposed = true;
     }
@@ -288,8 +300,7 @@ public partial class World : IDisposable
         if (components.Length < 0 || components.Length > 16)
             throw new ArgumentException("0-16 components per entity only", nameof(components));
 
-        //"InlineArray"
-        Span<ComponentID> types = ((Span<ComponentID>)([default, default, default, default, default, default, default, default, default, default, default, default, default, default, default, default]))[..components.Length];
+        Span<ComponentID> types = stackalloc ComponentID[components.Length];
 
         for (int i = 0; i < components.Length; i++)
             types[i] = Component.GetComponentID(components[i].GetType());

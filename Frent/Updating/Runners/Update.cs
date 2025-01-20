@@ -18,6 +18,14 @@ internal class Update<TComp> : ComponentRunnerBase<Update<TComp>, TComp>
             default(Action),
             b.GetComponentSpan<TComp>());
 
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        MultiThreadHelpers<TComp>.EnumerateComponents(
+            countdown,
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            default(Action),
+            b.GetComponentSpan<TComp>());
+
     internal struct Action : IAction<TComp>
     {
         public void Run(ref TComp t) => t.Update();
@@ -42,6 +50,15 @@ internal class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TC
 {
     public override void Run(World world, Archetype b) =>
         ChunkHelpers<TComp, TArg>.EnumerateComponents(
+            b.CurrentWriteChunk,
+            b.LastChunkComponentCount,
+            default(Action),
+            b.GetComponentSpan<TComp>(),
+            b.GetComponentSpan<TArg>());
+
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        MultiThreadHelpers<TComp, TArg>.EnumerateComponents(
+            countdown,
             b.CurrentWriteChunk,
             b.LastChunkComponentCount,
             default(Action),

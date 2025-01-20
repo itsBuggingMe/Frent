@@ -139,9 +139,12 @@ internal partial class Archetype
         Components[compIndex].Run(world, this);
     }
 
-    internal void MultiThreadedUpdate(Config config)
+    internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
     {
-        throw new NotImplementedException();
+        if (_chunkIndex == 0 && _componentIndex == 0)
+            return;
+        foreach (var comprunner in Components)
+            comprunner.MultithreadedRun(countdown, world, this);
     }
 
     internal void ReleaseArrays()
