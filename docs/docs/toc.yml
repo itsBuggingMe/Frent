@@ -4,3 +4,5 @@
   href: ecf.md
 - name: Making Components
   href: components.md
+- name: Filtering Updates
+  href: filter-components.md

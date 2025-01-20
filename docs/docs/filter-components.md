@@ -17,10 +17,10 @@ class SomeOtherAttribute : Frent.Updating.UpdateTypeAttribute;
 
 record struct DrawComponent : IComponent
 {
-	[Draw]
+    [Draw]
     public void Update()
     {
-		Console.WriteLine("Draw called!");	    
+        Console.WriteLine("Draw called!");	    
     }
 }
 ```
