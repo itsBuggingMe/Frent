@@ -1,4 +1,5 @@
-# [Frent](https://itsbuggingme.github.io/Frent/)
+# [Frent](https://itsbuggingme.github.io/Frent/) 
+[![NuGet](https://img.shields.io/nuget/v/Frent.svg)](https://www.nuget.org/packages/Frent/) [![NuGet](https://img.shields.io/nuget/dt/Frent.svg)](https://www.nuget.org/packages/Frent/)! [GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/w/itsBuggingMe/Frent/master)
 
 A high preformance archetyped based **[ECF](https://itsbuggingme.github.io/Frent/docs/ecf.html)/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
 
@@ -7,7 +8,7 @@ A high preformance archetyped based **[ECF](https://itsbuggingme.github.io/Frent
 While Frent's implementation is an archetype based ECS, thats not why Frent was made. Frent is primarily an **ECF** - Entity Component Framework - that allows you to easily use composition for code reuse rather than inheritance with minimal boilerplate. Think Unity's Monobehavior powered by the principles and speed of an ECS, as well as less boilerplate.
 
 > [!CAUTION]
-> Frent is still in beta.
+> Frent is still in beta and is not completely stavle.
 
 ## Quick Example
 

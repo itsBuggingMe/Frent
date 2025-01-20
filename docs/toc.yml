@@ -1,6 +1,6 @@
 - name: Docs
   href: docs/
-- name: API
-  href: api/
 - name: Cookbook
   href: cookbook/
+- name: API
+  href: api/
