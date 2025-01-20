@@ -29,7 +29,7 @@ struct UniformCounterComponent : IUniformComponent<int>
 
     public UniformCounterComponent(StrongBox<int> counter) => Counter = counter;
 
-    public void Update(in int uniform) => Counter.Value++;
+    public void Update(int uniform) => Counter.Value++;
 }
 
 struct UniformArgCounterComponent : IUniformComponent<int, int>
@@ -38,7 +38,7 @@ struct UniformArgCounterComponent : IUniformComponent<int, int>
 
     public UniformArgCounterComponent(StrongBox<int> counter) => Counter = counter;
 
-    public void Update(in int uniform, ref int arg) => Counter.Value++;
+    public void Update(int uniform, ref int arg) => Counter.Value++;
 }
 
 struct EntityCounterComponent : IEntityComponent
@@ -65,11 +65,8 @@ struct EntityUniformCounterComponent : IEntityUniformComponent<int>
 
     public EntityUniformCounterComponent(StrongBox<int> counter) => Counter = counter;
 
-    public void Update(Entity entity, in int uniform)
+    public void Update(Entity entity, int uniform)
     {
-        if(Counter is null)
-        { 
-        }
         Counter.Value++;
     }
 }
@@ -80,10 +77,10 @@ struct EntityUniformArgCounterComponent : IEntityUniformComponent<int, int>
 
     public EntityUniformArgCounterComponent(StrongBox<int> counter) => Counter = counter;
 
-    public void Update(Entity entity, in int uniform, ref int arg) => Counter.Value++;
+    public void Update(Entity entity, int uniform, ref int arg) => Counter.Value++;
 }
 
-struct InlineCounterQuery : IQuery<int>
+struct InlineCounterQuery : IAction<int>
 {
     public StrongBox<int> Counter;
 
@@ -92,7 +89,7 @@ struct InlineCounterQuery : IQuery<int>
     public void Run(ref int component) => Counter.Value++;
 }
 
-struct InlineArgCounterQuery : IQuery<int, int>
+struct InlineArgCounterQuery : IAction<int, int>
 {
     public StrongBox<int> Counter;
 
@@ -101,20 +98,20 @@ struct InlineArgCounterQuery : IQuery<int, int>
     public void Run(ref int component, ref int arg) => Counter.Value++;
 }
 
-struct InlineUniformCounterQuery : IQueryUniform<int, int>
+struct InlineUniformCounterQuery : IUniformAction<int, int>
 {
     public StrongBox<int> Counter;
 
     public InlineUniformCounterQuery(StrongBox<int> counter) => Counter = counter;
 
-    public void Run(in int uniform, ref int component) => Counter.Value++;
+    public void Run(int uniform, ref int component) => Counter.Value++;
 }
 
-struct InlineUniformArgCounterQuery : IQueryUniform<int, int, int>
+struct InlineUniformArgCounterQuery : IUniformAction<int, int, int>
 {
     public StrongBox<int> Counter;
 
     public InlineUniformArgCounterQuery(StrongBox<int> counter) => Counter = counter;
 
-    public void Run(in int uniform, ref int component, ref int arg) => Counter.Value++;
+    public void Run(int uniform, ref int component, ref int arg) => Counter.Value++;
 }

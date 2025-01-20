@@ -17,21 +17,9 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public bool Has<T>()
     {
-        if (World.WorldCachePackedValue == PackedWorldInfo)
-        {
-            var tableItem = World.QuickWorldCache.EntityTable.GetValueNoCheck(EntityID);
-            if (tableItem.Version == EntityVersion)
-            {
-                _ = tableItem.Location;
-                return true;
-            }
-        }
-
-        if (!IsAliveCold(out var world, out var entityLocation))
-            Throw_EntityIsDead();
-        //ComponentID compid = Component<T>.ID;
-        //return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
-        return true;
+        AssertIsAlive(out var _, out var entityLocation);
+        ComponentID compid = Component<T>.ID;
+        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
     }
 
     /// <summary>

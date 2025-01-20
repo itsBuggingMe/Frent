@@ -19,7 +19,7 @@ struct UpdateComponent2 : IComponent<int, long>
 
 struct UniformComponent : IUniformComponent<int, int>
 {
-    public void Update(in int uniform, ref int arg) => arg += uniform;
+    public void Update(int uniform, ref int arg) => arg += uniform;
 }
 
 internal struct Component1();

@@ -1,4 +1,5 @@
 using Frent.Core;
+using Frent.Systems;
 using System.Runtime.CompilerServices;
 using static NUnit.Framework.Assert;
 using static System.Linq.Enumerable;
@@ -65,7 +66,7 @@ public class WorldTests
     {
         var (w, q) = GenerateWorld<DummyComponent>();
 
-        Throws<InvalidOperationException>(() => w.QueryUniform((in float uniform, ref int x) => { }), "No uniform provider provided");
+        Throws<InvalidOperationException>(() => w.Query<With<int>>().RunUniform((float uniform, ref int x) => { }), "No uniform provider provided");
 
         w.Dispose();
     }
@@ -138,7 +139,7 @@ public class WorldTests
     public void World_InlineQuery_CounterQuery([Values(0, 1, 2, 500, 1_000, 10_000, 512, 2048)] int iterations)
     {
         var box = new StrongBox<int>(0);
-        That(RunInlineQueryTest(w => w.InlineQuery<InlineCounterQuery, int>(new(box)), iterations), Is.EqualTo(box.Value),
+        That(RunInlineQueryTest(w => w.Query<With<int>>().Inline<InlineCounterQuery, int>(new(box)), iterations), Is.EqualTo(box.Value),
             $"Inline query updates were skipped in {nameof(InlineCounterQuery)}");
     }
 
@@ -146,7 +147,7 @@ public class WorldTests
     public void World_InlineQuery_ArgCounterQuery([Values(0, 1, 2, 500, 1_000, 10_000, 512, 2048)] int iterations)
     {
         var box = new StrongBox<int>(0);
-        That(RunInlineQueryTest(w => w.InlineQuery<InlineArgCounterQuery, int, int>(new(box)), iterations), Is.EqualTo(box.Value),
+        That(RunInlineQueryTest(w => w.Query<With<int>>().Inline<InlineArgCounterQuery, int, int>(new(box)), iterations), Is.EqualTo(box.Value),
             $"Inline query updates were skipped in {nameof(InlineArgCounterQuery)}");
     }
 
@@ -154,7 +155,7 @@ public class WorldTests
     public void World_InlineQuery_UniformCounterQuery([Values(0, 1, 2, 500, 1_000, 10_000, 512, 2048)] int iterations)
     {
         var box = new StrongBox<int>(0);
-        That(RunInlineQueryTest(w => w.InlineQueryUniform<InlineUniformCounterQuery, int, int>(new(box)), iterations), Is.EqualTo(box.Value),
+        That(RunInlineQueryTest(w => w.Query<With<int>>().InlineUniform<InlineUniformCounterQuery, int, int>(new(box)), iterations), Is.EqualTo(box.Value),
             $"Inline query updates were skipped in {nameof(InlineUniformCounterQuery)}");
     }
 
@@ -162,7 +163,7 @@ public class WorldTests
     public void World_InlineQuery_UniformArgCounterQuery([Values(0, 1, 2, 500, 1_000, 10_000, 512, 2048)] int iterations)
     {
         var box = new StrongBox<int>(0);
-        That(RunInlineQueryTest(w => w.InlineQueryUniform<InlineUniformArgCounterQuery, int, int, int>(new(box)), iterations), Is.EqualTo(box.Value),
+        That(RunInlineQueryTest(w => w.Query<With<int>>().InlineUniform<InlineUniformArgCounterQuery, int, int, int>(new(box)), iterations), Is.EqualTo(box.Value),
             $"Inline query updates were skipped in {nameof(InlineUniformArgCounterQuery)}");
     }
 

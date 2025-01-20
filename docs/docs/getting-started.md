@@ -1,13 +1,13 @@
 
 # Getting Started
 
-Frent is on Nuget!
+Frent is on [Nuget](https://www.nuget.org/packages/Frent/)!
 
 > [!CAUTION]
 > Frent is still in beta.
 
 ```pwsh
-dotnet add package Frent --version 1.0.0-beta
+dotnet add package Frent --version 0.3.0-beta
 ```
 
 ## Creating a World

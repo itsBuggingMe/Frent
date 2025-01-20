@@ -161,7 +161,7 @@ partial class World
             ArchetypeEdgeKey.Tag(tag, from.ID, ArchetypeEdgeType.RemoveTag),
             out bool exist);
 
-        ref Archetype destination = ref Unsafe.NullRef<Archetype>();
+        Archetype destination;
         if (!exist)
         {
             destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tag, out var arr), this, from.ArchetypeTypeArray, arr);
@@ -169,7 +169,7 @@ partial class World
         }
         else
         {
-            destination = ref WorldArchetypeTable[edge.ID];
+            destination = WorldArchetypeTable[edge.ID];
         }
 
         destination.CreateEntityLocation(out var nextLocation) = entity;

@@ -8,7 +8,7 @@ A high preformance archetyped based **[ECF](https://itsbuggingme.github.io/Frent
 While Frent's implementation is an archetype based ECS, thats not why Frent was made. Frent is primarily an **ECF** - Entity Component Framework - that allows you to easily use composition for code reuse rather than inheritance with minimal boilerplate. Think Unity's Monobehavior powered by the principles and speed of an ECS, as well as less boilerplate.
 
 > [!CAUTION]
-> Frent is still in beta and is not completely stavle.
+> Frent is still in beta and is not completely stable.
 
 ## Quick Example
 
@@ -59,3 +59,6 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 - [ ]  Comprehensive docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
+# Contributing
+Wanna help? Anything works!
+Report bugs, suggest APIs, and more!

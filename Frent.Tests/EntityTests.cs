@@ -174,10 +174,10 @@ public class EntityTests
         _ent.Add<string>("Hello");
 
         var componentTypes = _ent.ComponentTypes;
-        Contains(typeof(int), componentTypes);
-        Contains(typeof(double), componentTypes);
-        Contains(typeof(float), componentTypes);
-        Contains(typeof(string), componentTypes);
+        Contains(Component<int>.ID, componentTypes);
+        Contains(Component<string>.ID, componentTypes);
+        Contains(Component<double>.ID, componentTypes);
+        Contains(Component<float>.ID, componentTypes);
     }
 
     [TearDown]

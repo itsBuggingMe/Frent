@@ -3,12 +3,10 @@
 /// <summary>
 /// Config information for a <see cref="World"/>
 /// </summary>
-/// <param name="threadCount">The number of threads to use when multithreading</param>
-/// <param name="multiThreadedUpdate">Whether or not to multithread <see cref="World.Update"/></param>
 public class Config
 {
     /// <summary>
-    /// Whether or not to multithread <see cref="World.Update"/>
+    /// Whether or not to multithread
     /// </summary>
     public bool MultiThreadedUpdate { get; init; }
 

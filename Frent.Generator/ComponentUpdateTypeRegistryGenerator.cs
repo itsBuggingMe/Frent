@@ -109,7 +109,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .AppendLine("    {")
                 .Append("        GenerationServices.RegisterType(typeof(")
                 .AppendNamespace(model.SubNamespace).Append(model.Type).Append("), new Frent.Updating.Runners."); 
-            (model.ImplInterface == RegistryHelpers.TargetInterfaceName ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("UpdateRunnerFactory").Append('<').Append(model.SubNamespace).Append(model.Type);
+            (model.ImplInterface == RegistryHelpers.TargetInterfaceName ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("UpdateRunnerFactory").Append('<').AppendNamespace(model.SubNamespace).Append(model.Type);
 
         foreach(var item in model.GenericArguments)
             sb.Append(", ").Append(item);

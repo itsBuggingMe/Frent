@@ -1,6 +1,7 @@
 ﻿using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
+using Microsoft.Diagnostics.Tracing.Parsers.JScript;
 using System;
 
 namespace Frent.Sample;
@@ -16,7 +17,7 @@ internal class Samples
         //Create three entities
         for (int i = 0; i < 3; i++)
         {
-            world.Create<string, ConsoleText>("\"Hello, World!\"", new(ConsoleColor.Blue));
+            world.Create<string, ConsoleText>("Hello, World!", new(ConsoleColor.Blue));
         }
 
         //Update the three entities
@@ -52,10 +53,10 @@ internal class Samples
         for (int i = 0; i < 5; i++)
             world.Create<int>(i);
 
-        //world.Query((ref int x) => Console.Write($"{x++}, "));
+        world.Query<With<int>>().Run((ref int x) => Console.Write($"{x++}, "));
         Console.WriteLine();
 
-        //world.InlineQueryUniform<WriteQuery, byte, int>(default(WriteQuery));
+        world.Query<With<int>>().InlineUniform<WriteQuery, byte, int>(default);
     }
     #endregion
 
@@ -113,10 +114,12 @@ record struct Vel(float DX) : IUniformComponent<float, Pos>
         pos.X += DX * dt;
     }
 }
+
 struct WriteQuery : IUniformAction<byte, int>
 {
     public void Run(byte uniform, ref int x) => Console.Write($"{x + uniform}, ");
 }
+
 struct ConsoleText(ConsoleColor Color) : IComponent<string>
 {
     public void Update(ref string str)
