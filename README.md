@@ -55,9 +55,9 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 - [X]  Tests
 - [X]  Entity Tag
 - [X]  World Update Filtering
+- [X]  Multithreading
 
 ## Future
-- [ ]  Multithreading
 - [ ]  Comprehensive docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
