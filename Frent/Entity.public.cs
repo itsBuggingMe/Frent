@@ -11,28 +11,29 @@ partial struct Entity
 
     #region Has
     /// <summary>
+    /// Checks of this <see cref="Entity"/> has a component specified by <paramref name="componentID"/>
+    /// </summary>
+    /// <param name="componentID">The component ID of the component type to check</param>
+    /// <returns><see langword="true"/> if the entity has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
+    public bool Has(ComponentID componentID)
+    {
+        AssertIsAlive(out var _, out var entityLocation);
+        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
+    }
+
+    /// <summary>
     /// Checks to see if this <see cref="Entity"/> has a component of Type <typeparamref name="T"/>
     /// </summary>
     /// <typeparam name="T">The type of component to check.</typeparam>
     /// <returns><see langword="true"/> if the entity has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
-    public bool Has<T>()
-    {
-        AssertIsAlive(out var _, out var entityLocation);
-        ComponentID compid = Component<T>.ID;
-        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
-    }
+    public bool Has<T>() => Has(Component<T>.ID);
 
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> has a component of Type <paramref name="type"/>
     /// </summary>
     /// <param name="type">The component type to check if this entity has</param>
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
-    public bool Has(Type type)
-    {
-        AssertIsAlive(out var _, out var entityLocation);
-        ComponentID compid = Component.GetComponentID(type);
-        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid) < MemoryHelpers.MaxComponentCount;
-    }
+    public bool Has(Type type) => Has(Component.GetComponentID(type));
     #endregion
 
     #region Get
