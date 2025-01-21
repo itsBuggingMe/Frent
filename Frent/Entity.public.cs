@@ -11,9 +11,9 @@ partial struct Entity
 
     #region Has
     /// <summary>
-    /// Checks of this <see cref="Entity"/> has a component specified by <paramref name="componentID"/>
+    /// Checks of this <see cref="Entity"/> has a component specified by <paramref name="componentID"/>.
     /// </summary>
-    /// <param name="componentID">The component ID of the component type to check</param>
+    /// <param name="componentID">The component ID of the component type to check.</param>
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool Has(ComponentID componentID)
     {
@@ -22,18 +22,43 @@ partial struct Entity
     }
 
     /// <summary>
-    /// Checks to see if this <see cref="Entity"/> has a component of Type <typeparamref name="T"/>
+    /// Checks to see if this <see cref="Entity"/> has a component of Type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type of component to check.</typeparam>
     /// <returns><see langword="true"/> if the entity has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public bool Has<T>() => Has(Component<T>.ID);
 
     /// <summary>
-    /// Checks to see if this <see cref="Entity"/> has a component of Type <paramref name="type"/>
+    /// Checks to see if this <see cref="Entity"/> has a component of Type <paramref name="type"/>.
     /// </summary>
-    /// <param name="type">The component type to check if this entity has</param>
+    /// <param name="type">The component type to check if this entity has.</param>
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
     public bool Has(Type type) => Has(Component.GetComponentID(type));
+
+    /// <summary>
+    /// Checks of this <see cref="Entity"/> has a component specified by <paramref name="componentID"/> without throwing when dead.
+    /// </summary>
+    /// <param name="componentID">The component ID of the component type to check.</param>
+    /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
+    public bool TryHas(ComponentID componentID)
+    {
+        if(!IsAlive(out var _, out var entityLocation))
+            return false;
+        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
+    }
+
+    /// <summary>
+    /// Checks of this <see cref="Entity"/> has a component specified by <typeparamref name="T"/> without throwing when dead.
+    /// </summary>
+    /// <typeparam name="T">The type of component to check.</typeparam>
+    /// <returns><see langword="true"/> if the entity is alive and has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    public bool TryHas<T>() => TryHas(Component<T>.ID);
+    /// <summary>
+    /// Checks of this <see cref="Entity"/> has a component specified by <paramref name="type"/> without throwing when dead.
+    /// </summary>
+    /// <param name="type">The type of the component type to check.</param>
+    /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
+    public bool TryHas(Type type) => TryHas(Component.GetComponentID(type));
     #endregion
 
     #region Get
@@ -89,7 +114,6 @@ partial struct Entity
     /// <typeparam name="T">The type of component.</typeparam>
     /// <param name="value">A wrapper over a reference to the component when <see langword="true"/>.</param>
     /// <returns><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public bool TryGet<T>(out Ref<T> value)
     {
         value = TryGetCore<T>(out bool exists)!;
@@ -102,7 +126,6 @@ partial struct Entity
     /// <typeparam name="T">The type of component.</typeparam>
     /// <param name="exists"><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</param>
     /// <returns>Potentially a reference to the component</returns>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public ref T? TryGet<T>(out bool exists)
     {
         var @ref = TryGetCore<T>(out exists);
@@ -115,7 +138,6 @@ partial struct Entity
     /// <param name="value">A wrapper over a reference to the component when <see langword="true"/>.</param>
     /// <param name="type">The type of component to try and get</param>
     /// <returns><see langword="true"/> if this entity has a component of type <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public bool TryGet(Type type, [NotNullWhen(true)] out object? value)
     {
         if (!IsAlive(out World? world, out EntityLocation entityLocation))

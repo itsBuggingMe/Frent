@@ -64,7 +64,7 @@ public partial struct Entity : IEquatable<Entity>
                 if (ver == EntityVersion)
                 {
                     //refresh the cache
-                    World.WorldCachePackedValue = Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).PackedWorldInfo;
+                    World.WorldCachePackedValue = PackedWorldInfo;
                     World.QuickWorldCache = world;
 
                     entityLocation = loc;
@@ -81,7 +81,11 @@ public partial struct Entity : IEquatable<Entity>
 
     private Ref<T> TryGetCore<T>(out bool exists)
     {
-        AssertIsAlive(out var world, out var entityLocation);
+        if(!IsAlive(out var world, out var entityLocation))
+        {
+            exists = false;
+            return default;
+        }
 
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
 
