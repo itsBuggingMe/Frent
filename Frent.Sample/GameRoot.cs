@@ -33,7 +33,7 @@ namespace Frent.Sample
 
         public GameRoot(int count)
         {
-            _count = 1_000_000;
+            _count = count;
             _world = new World(this, Config.Multithreaded);
             _manager = new GraphicsDeviceManager(this);
             IsMouseVisible = true;

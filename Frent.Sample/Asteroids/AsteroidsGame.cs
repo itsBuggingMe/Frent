@@ -68,7 +68,7 @@ public class AsteroidsGame : Game
         ]), default, new() { Radius = 25 });
         _player.Tag<Shootable>();
 
-        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player), _player.Get<Transform>(), _camera.IsAlive() && _camera.TryGet(out Ref<Camera> c) ? c.Component : default);
+        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player, smoothing: 0.08f), _player.Get<Transform>(), _camera.IsAlive() && _camera.TryGet(out Ref<Camera> c) ? c.Component : default);
         _player.Get<PlayerController>().Camera = _camera;
     }
 
@@ -82,7 +82,7 @@ public class AsteroidsGame : Game
 
 
         timeSinceLastAsteroid++;
-        if(timeSinceLastAsteroid >= 15 && _player.IsAlive() && _enemies.Count < 300)
+        if(timeSinceLastAsteroid >= 15 && _player.IsAlive() && _enemies.Count < 30)
         {
             timeSinceLastAsteroid = 0;
 
