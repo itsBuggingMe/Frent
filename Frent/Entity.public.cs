@@ -17,7 +17,7 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool Has(ComponentID componentID)
     {
-        AssertIsAlive(out var _, out var entityLocation);
+        AssertIsAlive(out EntityLocation entityLocation);
         return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
     }
 
@@ -42,7 +42,7 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool TryHas(ComponentID componentID)
     {
-        if(!IsAlive(out var _, out var entityLocation))
+        if(!InternalIsAlive(out var _, out var entityLocation))
             return false;
         return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
     }
@@ -140,10 +140,7 @@ partial struct Entity
     /// <returns><see langword="true"/> if this entity has a component of type <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
     public bool TryGet(Type type, [NotNullWhen(true)] out object? value)
     {
-        if (!IsAlive(out World? world, out EntityLocation entityLocation))
-        {
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-        }
+        AssertIsAlive(out var world, out var entityLocation);
 
         ComponentID componentId = Component.GetComponentID(type);
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentId);
@@ -239,14 +236,6 @@ partial struct Entity
 
     #region Remove
     /// <summary>
-    /// Removes a component from an <see cref="Entity"/>
-    /// </summary>
-    /// <typeparam name="T">The type of component</typeparam>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
-    public void Remove<T>() => Remove(Component<T>.ID);
-
-    /// <summary>
     /// Removes a component from this entity
     /// </summary>
     /// <param name="componentID">The <see cref="ComponentID"/> of the component to be removed</param>
@@ -266,40 +255,22 @@ partial struct Entity
     /// <summary>
     /// Removes a component from an <see cref="Entity"/>
     /// </summary>
+    /// <typeparam name="T">The type of component</typeparam>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
+    public void Remove<T>() => Remove(Component<T>.ID);
+
+    /// <summary>
+    /// Removes a component from an <see cref="Entity"/>
+    /// </summary>
     /// <param name="type">The type of component to remove</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
-    public void Remove(Type type)
-    {
-        AssertIsAlive(out var w, out var eloc);
-        var id = Component.GetComponentID(type);
-        if (w.AllowStructualChanges)
-        {
-            w.RemoveComponent(this, eloc, id);
-        }
-        else
-        {
-            w.RemoveComponentBuffer.Push(new(new(EntityID, EntityVersion), id));
-        }
-    }
+    public void Remove(Type type) => Remove(Component.GetComponentID(type));
     #endregion
 
     #region Tag
-    /// <summary>
-    /// Checks whether this <see cref="Entity"/> has a specific tag, using a generic type parameter to represent the tag.
-    /// </summary>
-    /// <typeparam name="T">The type used as the tag.</typeparam>
-    /// <returns>
-    /// <see langword="true"/> if the tag of type <typeparamref name="T"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
-    /// </returns>
-    /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
-    public bool Tagged<T>()
-    {
-        if (!IsAlive(out _, out var entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-        TagID tagid = Core.Tag<T>.ID;
-        return GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagid);
-    }
+
 
     /// <summary>
     /// Checks whether this <see cref="Entity"/> has a specific tag, using a <see cref="TagID"/> to represent the tag.
@@ -311,10 +282,19 @@ partial struct Entity
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
     public bool Tagged(TagID tagID)
     {
-        if (!IsAlive(out _, out var entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+        AssertIsAlive(out EntityLocation entityLocation);
         return GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID);
     }
+
+    /// <summary>
+    /// Checks whether this <see cref="Entity"/> has a specific tag, using a generic type parameter to represent the tag.
+    /// </summary>
+    /// <typeparam name="T">The type used as the tag.</typeparam>
+    /// <returns>
+    /// <see langword="true"/> if the tag of type <typeparamref name="T"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
+    public bool Tagged<T>() => Tagged(Core.Tag<T>.ID);
 
     /// <summary>
     /// Checks whether this <see cref="Entity"/> has a specific tag, using a <see cref="Type"/> to represent the tag.
@@ -325,13 +305,7 @@ partial struct Entity
     /// <see langword="true"/> if the tag represented by <paramref name="type"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> not alive.</exception>
-    public bool Tagged(Type type)
-    {
-        if (!IsAlive(out _, out var entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
-        TagID tagid = Core.Tag.GetTagID(type);
-        return GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagid);
-    }
+    public bool Tagged(Type type) => Tagged(Core.Tag.GetTagID(type));
 
     /// <summary>
     /// Adds a tag to this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
@@ -413,7 +387,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public void Delete()
     {
-        if (IsAlive(out World? world, out EntityLocation entityLocation))
+        if (InternalIsAlive(out World? world, out EntityLocation entityLocation))
         {
             if (world.AllowStructualChanges)
             {
@@ -434,7 +408,7 @@ partial struct Entity
     /// Checks to see if this <see cref="Entity"/> is still alive
     /// </summary>
     /// <returns><see langword="true"/> if this entity is still alive (not deleted), otherwise <see langword="false"/></returns>
-    public bool IsAlive() => IsAlive(out _, out _);
+    public bool IsAlive => InternalIsAlive();
 
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> instance is the null entity: <see langword="default"/>(<see cref="Entity"/>)
@@ -462,8 +436,7 @@ partial struct Entity
     {
         get
         {
-            if (!IsAlive(out World? world, out EntityLocation loc))
-                FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+            AssertIsAlive(out var world, out var loc);
             return loc.Archetype(world).ArchetypeTypeArray;
         }
     }
@@ -476,8 +449,7 @@ partial struct Entity
     {
         get
         {
-            if (!IsAlive(out World? world, out EntityLocation loc))
-                FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+            AssertIsAlive(out var world, out var loc);
             return loc.Archetype(world).ArchetypeTagArray;
         }
     }
@@ -489,5 +461,4 @@ partial struct Entity
     #endregion
 
     #endregion
-
 }

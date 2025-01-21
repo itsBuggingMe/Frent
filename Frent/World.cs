@@ -25,8 +25,8 @@ public partial class World : IDisposable
     #endregion
 
     internal static Table<EntityLookup> QuickWorkTable = new Table<EntityLookup>(32);
-    internal static World? QuickWorldCache;
-    internal static ushort WorldCachePackedValue;
+    internal static volatile World? QuickWorldCache;
+    internal static volatile ushort WorldCachePackedValue;
 
     internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
     internal Archetype[] WorldArchetypeTable;
@@ -39,6 +39,7 @@ public partial class World : IDisposable
     internal readonly uint IDAsUInt;
     internal readonly byte ID;
     internal readonly byte Version;
+    internal readonly ushort PackedIDVersion;
     private bool _isDisposed = false;
 
     internal Dictionary<int, Query> QueryCache = [];
@@ -87,6 +88,7 @@ public partial class World : IDisposable
         GlobalWorldTables.Worlds[ID] = this;
 
         WorldArchetypeTable = new Archetype[GlobalWorldTables.ComponentTagLocationTable.Length];
+        PackedIDVersion = new Entity(ID, Version, 0, 0).PackedWorldInfo;
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
@@ -278,6 +280,12 @@ public partial class World : IDisposable
     {
         if (_isDisposed)
             throw new InvalidOperationException("World is already disposed!");
+
+        if(WorldCachePackedValue == PackedIDVersion)
+        {
+            WorldCachePackedValue = 0;
+            QuickWorldCache = null!;
+        }
 
         GlobalWorldTables.Worlds[ID] = null!;
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));

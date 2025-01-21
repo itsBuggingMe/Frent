@@ -1,5 +1,6 @@
 ﻿using Frent.Core;
 using Frent.Updating;
+using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -38,40 +39,70 @@ public partial struct Entity : IEquatable<Entity>
     #endregion
 
     #region Internal Helpers
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool IsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
+
+    #region IsAlive
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
-        if (World.WorldCachePackedValue == Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).PackedWorldInfo)
+        if (World.WorldCachePackedValue == PackedWorldInfo)
         {
             world = World.QuickWorldCache;
-            var tableItem = world!.EntityTable[(uint)EntityID];
+            var tableItem = world!.EntityTable.GetValueNoCheck(EntityID);
             entityLocation = tableItem.Location;
             return tableItem.Version == EntityVersion;
         }
         return IsAliveCold(out world, out entityLocation);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool InternalIsAlive([NotNullWhen(true)] out World? world)
+    {
+        if (World.WorldCachePackedValue == PackedWorldInfo)
+        {
+            world = World.QuickWorldCache;
+            return world!.EntityTable.GetValueNoCheck(EntityID).Version == EntityVersion;
+        }
+        return IsAliveCold(out world, out _);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool InternalIsAlive(out EntityLocation entityLocation)
+    {
+        if (World.WorldCachePackedValue == PackedWorldInfo)
+        {
+            var tableItem = World.QuickWorldCache!.EntityTable.GetValueNoCheck(EntityID);
+            entityLocation = tableItem.Location;
+            return tableItem.Version == EntityVersion;
+        }
+        return IsAliveCold(out _, out entityLocation);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool InternalIsAlive()
+    {
+        if (World.WorldCachePackedValue == PackedWorldInfo)
+        {
+            return World.QuickWorldCache!.EntityTable.GetValueNoCheck(EntityID).Version == EntityVersion;
+        }
+        return IsAliveCold(out _, out _);
+    }
+    
     private bool IsAliveCold([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
-        var span = GlobalWorldTables.Worlds.AsSpan();
-        int worldId = WorldID;
-        if (span.Length > worldId)
+        world = GlobalWorldTables.Worlds.GetValueNoCheck(WorldID);
+        if (world.Version == WorldVersion)
         {
-            world = span[worldId];
-            if (world.Version == WorldVersion)
+            var (loc, ver) = world.EntityTable[(uint)EntityID];
+            if (ver == EntityVersion)
             {
-                var (loc, ver) = world.EntityTable[(uint)EntityID];
-                if (ver == EntityVersion)
-                {
-                    //refresh the cache
-                    World.WorldCachePackedValue = PackedWorldInfo;
-                    World.QuickWorldCache = world;
+                //refresh the cache
+                World.WorldCachePackedValue = PackedWorldInfo;
+                World.QuickWorldCache = world;
 
-                    entityLocation = loc;
-                    return true;
-                }
-
+                entityLocation = loc;
+                return true;
             }
+
         }
 
         entityLocation = default;
@@ -79,26 +110,61 @@ public partial struct Entity : IEquatable<Entity>
         return false;
     }
 
+    #endregion IsAlive
+
+    #region AssertIsAlive
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void AssertIsAlive(out World world, out EntityLocation entityLocation)
+    {
+        if (InternalIsAlive(out world!, out entityLocation))
+            return;
+        Throw_EntityIsDead();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void AssertIsAlive(out World world)
+    {
+        if (InternalIsAlive(out world!))
+            return;
+        Throw_EntityIsDead();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void AssertIsAlive(out EntityLocation entityLocation)
+    {
+        if (InternalIsAlive(out entityLocation))
+            return;
+        Throw_EntityIsDead();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void AssertIsAlive()
+    {
+        if (InternalIsAlive())
+            return;
+        Throw_EntityIsDead();
+    }
+    #endregion AssertIsAlive
+
     private Ref<T> TryGetCore<T>(out bool exists)
     {
-        if(!IsAlive(out var world, out var entityLocation))
-        {
-            exists = false;
-            return default;
-        }
+        if (!InternalIsAlive(out var world, out var entityLocation))
+            goto doesntExist;
 
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
-        {
-            exists = false;
-            return default;
-        }
+            goto doesntExist;
 
         exists = true;
-        return Ref<T>.Create(((IComponentRunner<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
+        return Ref<T>.Create(((ComponentStorage<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
+
+    doesntExist:
+        exists = false;
+        return default;
     }
 
+    //TODO: opt
     internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation, Archetype archetype)
     {
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);
@@ -106,65 +172,14 @@ public partial struct Entity : IEquatable<Entity>
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(typeof(TComp));
 
-        return Ref<TComp>.Create(((IComponentRunner<TComp>)archetype.Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void AssertIsAlive(out World world, out EntityLocation entityLocation)
-    {
-        if (World.WorldCachePackedValue == PackedWorldInfo)
-        {
-            var tableItem = (world = World.QuickWorldCache!).EntityTable.GetValueNoCheck(EntityID);
-            if (tableItem.Version == EntityVersion)
-            {
-                entityLocation = tableItem.Location;
-                return;
-            }
-        }
-
-        if (!IsAliveCold(out world!, out entityLocation))
-            Throw_EntityIsDead();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void AssertIsAliveWorld(out World world)
-    {
-        if (!(World.WorldCachePackedValue == PackedWorldInfo &&
-            (world = World.QuickWorldCache!).EntityTable.GetValueNoCheck(EntityID).Version == EntityVersion ||
-            IsAliveCold(out world!, out _)))
-        {
-            Throw_EntityIsDead();
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void AssertIsAliveEntityLocation(out EntityLocation eloc)
-    {
-        if (World.WorldCachePackedValue == PackedWorldInfo)
-        {
-            var tableItem = World.QuickWorldCache!.EntityTable.GetValueNoCheck(EntityID);
-            if (tableItem.Version == EntityVersion)
-            {
-                eloc = tableItem.Location;
-                return;
-            }
-        }
-
-        eloc = default;
-        Throw_EntityIsDead();
-    }
-
-    private void AssertIsAlive()
-    {
-        if (!IsAlive())
-            Throw_EntityIsDead();
+        return Ref<TComp>.Create(((ComponentStorage<TComp>)archetype.Components.UnsafeArrayIndex(compIndex)).Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).AsSpan(), entityLocation.ComponentIndex);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private void Throw_EntityIsDead() => FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+    private void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
-    internal string DebuggerDisplayString => IsNull ? "Null" : IsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
+    internal string DebuggerDisplayString => IsNull ? "Null" : InternalIsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
     internal const string EntityIsDeadMessage = "Entity is Dead";
     internal const string DoesNotHaveTagMessage = "This Entity does not have this tag";
 
@@ -178,7 +193,7 @@ public partial struct Entity : IEquatable<Entity>
         {
             get
             {
-                if (!target.IsAlive(out World? world, out var eloc))
+                if (!target.InternalIsAlive(out World? world, out var eloc))
                     return Array.Empty<object>();
 
                 object[] objects = new object[ComponentTypes.Length];
@@ -240,6 +255,6 @@ public partial struct Entity : IEquatable<Entity>
     /// Serves as the default hash function.
     /// </summary>
     /// <returns>A hash code for the current <see cref="Entity"/>.</returns>
-    public override int GetHashCode() => HashCode.Combine(WorldID, EntityVersion, EntityID);
+    public override int GetHashCode() => PackedValue.GetHashCode();
     #endregion
 }

@@ -7,7 +7,7 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => { });
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Opt());
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)

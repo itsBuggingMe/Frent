@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static Frent.Benchmarks.Program;
 using Frent.Systems;
+using Frent.Core;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -31,13 +32,22 @@ public class MicroBenchmark
     public void Setup()
     {
         _world = new World();
+        _entity = _world.Create<int, double>(default, default);
     }
-    
+
+    int x;
     [Benchmark]
     [BenchmarkCategory(Categories.Has)]
-    public void Sys()
+    public void Opt()
     {
-        _query.Inline<Increment, Component1>(default);
+        _entity.TryGet<int>(out Ref<int> value);
+    }
+
+    [Benchmark]
+    [BenchmarkCategory(Categories.Has)]
+    public void Norm()
+    {
+
     }
 
     /*

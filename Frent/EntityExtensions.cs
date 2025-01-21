@@ -24,11 +24,10 @@ public static partial class EntityExtensions
     /// <typeparam name="T">The component type to deconstruct</typeparam>
     /// <param name="comp">The reference to the entity's component of type <typeparamref name="T"/></param>
     /// <exception cref="InvalidOperationException">The entity is not alive</exception>
-    /// <exception cref="ComponentNotFoundException{T}">The entity does not have a component of type <typeparamref name="T"/></exception>
+    /// <exception cref="ComponentNotFoundException">The entity does not have a component of type <typeparamref name="T"/></exception>
     public static void Deconstruct<T>(ref this Entity e, out Ref<T> comp)
     {
-        if (!e.IsAlive(out var world, out EntityLocation entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(Entity.EntityIsDeadMessage);
+        e.AssertIsAlive(out var world, out var entityLocation);
 
         Archetype archetype = entityLocation.Archetype(world);
 
@@ -41,11 +40,10 @@ public static partial class EntityExtensions
     /// <typeparam name="T">The component type to deconstruct</typeparam>
     /// <param name="comp">The entity's component of type <typeparamref name="T"/></param>
     /// <exception cref="InvalidOperationException">The entity is not alive</exception>
-    /// <exception cref="ComponentNotFoundException{T}">The entity does not have a component of type <typeparamref name="T"/></exception>
+    /// <exception cref="ComponentNotFoundException">The entity does not have a component of type <typeparamref name="T"/></exception>
     public static void Deconstruct<T>(ref this Entity e, out T comp)
     {
-        if (!e.IsAlive(out var world, out EntityLocation entityLocation))
-            FrentExceptions.Throw_InvalidOperationException(Entity.EntityIsDeadMessage);
+        e.AssertIsAlive(out var world, out var entityLocation);
 
         Archetype archetype = entityLocation.Archetype(world);
 
