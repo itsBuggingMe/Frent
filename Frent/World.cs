@@ -20,14 +20,17 @@ public partial class World : IDisposable
     #region Static Version Management
     private static FastStack<(byte ID, byte Version)> _recycledWorldIDs = FastStack<(byte ID, byte Version)>.Create(16);
     private static byte _nextWorldID;
-    private static int _numWorldWithStructChange = 0;
-    internal static Action? ClearTempComponentStorage;
     #endregion
 
     internal static Table<EntityLookup> QuickWorkTable = new Table<EntityLookup>(32);
 
+    internal static readonly ushort DefaultWorldCachePackedValue = new Entity(byte.MaxValue, byte.MaxValue, 0, 0).PackedWorldInfo;
+
+    //the idea is what work is usually done at one world at a time
+    //we can save a lookup and a deref by storing it statically
+    //this saves a few nano seconds and makes the public entity apis 2x as fast
     internal static volatile World? QuickWorldCache;
-    internal static volatile ushort WorldCachePackedValue;
+    internal static volatile ushort WorldCachePackedValue = DefaultWorldCachePackedValue;
 
     internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
     internal Archetype[] WorldArchetypeTable;
@@ -52,9 +55,7 @@ public partial class World : IDisposable
     private volatile int _allowStructuralChanges;
 
     #region Operations
-    internal FastStack<EntityIDOnly> DeleteEntityBuffer = FastStack<EntityIDOnly>.Create(4);
-    internal FastStack<AddComponent> AddComponentBuffer = FastStack<AddComponent>.Create(4);
-    internal FastStack<DeleteComponent> RemoveComponentBuffer = FastStack<DeleteComponent>.Create(4);
+    internal CommandBuffer WorldUpdateCommandBuffer;
     #endregion
 
 
@@ -82,14 +83,18 @@ public partial class World : IDisposable
     {
         CurrentConfig = config ?? Config.Singlethreaded;
         UniformProvider = uniformProvider ?? NullUniformProvider.Instance;
-        if (_nextWorldID == byte.MaxValue)
-            throw new Exception("Max world count reached");
         (ID, Version) = _recycledWorldIDs.TryPop(out var id) ? id : (_nextWorldID++, byte.MaxValue);
         IDAsUInt = ID;
+
+        if (_nextWorldID == byte.MaxValue)
+            throw new Exception("Max world count reached");
+        
         GlobalWorldTables.Worlds[ID] = this;
 
         WorldArchetypeTable = new Archetype[GlobalWorldTables.ComponentTagLocationTable.Length];
         PackedIDVersion = new Entity(ID, Version, 0, 0).PackedWorldInfo;
+
+        WorldUpdateCommandBuffer = new CommandBuffer(this);
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
@@ -223,7 +228,6 @@ public partial class World : IDisposable
 
     internal void EnterDisallowState()
     {
-        Interlocked.Increment(ref _numWorldWithStructChange);
         Interlocked.Increment(ref _allowStructuralChanges);
     }
 
@@ -231,44 +235,8 @@ public partial class World : IDisposable
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
-
-            while (RemoveComponentBuffer.TryPop(out var item))
-            {
-                var id = (uint)item.Entity.ID;
-                var record = EntityTable[id];
-                if (record.Version == item.Entity.Version)
-                {
-                    RemoveComponent(item.Entity.ToEntity(this), record.Location, item.ComponentID);
-                }
-            }
-
-            while (AddComponentBuffer.TryPop(out var command))
-            {
-                var id = (uint)command.Entity.ID;
-                var record = EntityTable[id];
-                if (record.Version == command.Entity.Version)
-                {
-                    AddComponent(command.Entity.ToEntity(this), record.Location, command.ComponentID,
-                        out var runner,
-                        out var location);
-                    runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location, command.Index);
-                }
-            }
-
-            while (DeleteEntityBuffer.TryPop(out var item))
-            {
-                //double check that its alive
-                var record = EntityTable[(uint)item.ID];
-                if (record.Version == item.Version)
-                {
-                    DeleteEntity(item.ID, item.Version, record.Location);
-                }
-            }
-
-            if (Interlocked.Decrement(ref _numWorldWithStructChange) == 0)
-            {
-                ClearTempComponentStorage?.Invoke();
-            }
+            //i plan on adding events later, so even more command buffer events could be added during playback
+            while (WorldUpdateCommandBuffer.PlayBack()) ;
         }
     }
 
@@ -284,7 +252,10 @@ public partial class World : IDisposable
 
         if(WorldCachePackedValue == PackedIDVersion)
         {
-            WorldCachePackedValue = 0;
+            for(int i = 0; i < 10; i++)
+            {
+                WorldCachePackedValue = DefaultWorldCachePackedValue;
+            }
             QuickWorldCache = null!;
         }
 
@@ -369,6 +340,7 @@ public partial class World : IDisposable
     internal class NullUniformProvider : IUniformProvider
     {
         internal static NullUniformProvider Instance { get; } = new NullUniformProvider();
+
         [DebuggerHidden]
         public T GetUniform<T>()
         {
@@ -380,6 +352,6 @@ public partial class World : IDisposable
     [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
     internal record struct EntityLookup(EntityLocation Location, ushort Version)
     {
-        private string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Chunk: {Location.ChunkIndex}, Component: {Location.ComponentIndex}, Version: {Version}";
+        private readonly string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Chunk: {Location.ChunkIndex}, Component: {Location.ComponentIndex}, Version: {Version}";
     }
 }

@@ -67,7 +67,7 @@ internal class Samples
         using World world = new World();
         Entity ent = world.Create<int, double, float>(69, 3.14, 2.71f);
         //true
-        Console.WriteLine(ent.IsAlive());
+        Console.WriteLine(ent.IsAlive);
         //true
         Console.WriteLine(ent.Has<int>());
         //false

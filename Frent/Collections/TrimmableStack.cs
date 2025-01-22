@@ -25,7 +25,7 @@ internal sealed class TrimmableStack<T> : TrimmableStack
     public TrimmableStack() : base(new T[1])
     {
         Gen2GcCallback.Gen2CollectionOccured += Trim;
-        World.ClearTempComponentStorage += Clear;
+        CommandBuffer.ClearTempComponentStorage += Clear;
     }
 
     public void PushStronglyTyped(in T comp, out int index)

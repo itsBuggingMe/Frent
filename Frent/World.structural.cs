@@ -105,8 +105,8 @@ partial class World
     {
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-        EntityTable[(uint)replacedEntity.EntityID] = new(entityLocation, replacedEntity.EntityVersion);
-        EntityTable[(uint)entityID] = new(EntityLocation.Default, ushort.MaxValue);
+        EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
+        EntityTable.GetValueNoCheck(entityID) = new(EntityLocation.Default, ushort.MaxValue);
         _recycledEntityIds.Push((entityID, version));
     }
 

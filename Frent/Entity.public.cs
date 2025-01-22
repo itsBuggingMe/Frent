@@ -173,8 +173,7 @@ partial struct Entity
         }
         else
         {
-            Component<T>.TrimmableStack.PushStronglyTyped(component, out int index);
-            w.AddComponentBuffer.Push(new(new(EntityID, EntityVersion), Component<T>.ID, index));
+            w.WorldUpdateCommandBuffer.AddComponent(this, component);
         }
     }
 
@@ -194,8 +193,7 @@ partial struct Entity
         }
         else
         {
-            int index = Component.ComponentTable[componentID.ID].Stack.Push(component);
-            w.AddComponentBuffer.Push(new(new(EntityID, EntityVersion), componentID, index));
+            w.WorldUpdateCommandBuffer.AddComponent(this, componentID, component);
         }
     }
 
@@ -225,8 +223,7 @@ partial struct Entity
         }
         else
         {
-            int index = Component.ComponentTable[componentID.ID].Stack.Push(component);
-            w.AddComponentBuffer.Push(new(new(EntityID, EntityVersion), componentID, index));
+            w.WorldUpdateCommandBuffer.AddComponent(this, type, component);
         }
     }
     #endregion
@@ -245,7 +242,7 @@ partial struct Entity
         }
         else
         {
-            w.RemoveComponentBuffer.Push(new(new(EntityID, EntityVersion), componentID));
+            w.WorldUpdateCommandBuffer.RemoveComponent(this, componentID);
         }
     }
 
@@ -392,7 +389,7 @@ partial struct Entity
             }
             else
             {
-                world.DeleteEntityBuffer.Push(new EntityIDOnly(EntityID, EntityVersion));
+                world.WorldUpdateCommandBuffer.DeleteEntity(this);
             }
         }
         else

@@ -52,7 +52,7 @@ public class AsteroidsGame : Game
     {
         foreach(var item in _enemies)
         {
-            if(item.IsAlive())
+            if(item.IsAlive)
             {
                 item.Delete();
             }
@@ -68,7 +68,7 @@ public class AsteroidsGame : Game
         ]), default, new() { Radius = 25 });
         _player.Tag<Shootable>();
 
-        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player, smoothing: 0.08f), _player.Get<Transform>(), _camera.IsAlive() && _camera.TryGet(out Ref<Camera> c) ? c.Component : default);
+        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player, smoothing: 0.08f), _player.Get<Transform>(), _camera.IsAlive && _camera.TryGet(out Ref<Camera> c) ? c.Component : default);
         _player.Get<PlayerController>().Camera = _camera;
     }
 
@@ -82,7 +82,7 @@ public class AsteroidsGame : Game
 
 
         timeSinceLastAsteroid++;
-        if(timeSinceLastAsteroid >= 15 && _player.IsAlive() && _enemies.Count < 30)
+        if(timeSinceLastAsteroid >= 15 && _player.IsAlive && _enemies.Count < 30)
         {
             timeSinceLastAsteroid = 0;
 
@@ -123,18 +123,18 @@ public class AsteroidsGame : Game
         {
             for(int i = _enemies.Count - 1; i >= 0; i--)
             {
-                if(!_enemies[i].IsAlive())
+                if(!_enemies[i].IsAlive)
                 {
                     _enemies.RemoveAt(i);
                 }
             }
         }
 
-        if(!_player.IsAlive())
+        if(!_player.IsAlive)
         {
             Reset();
 
-            foreach(var e in _enemies.Where(e => e.IsAlive()))
+            foreach(var e in _enemies.Where(e => e.IsAlive))
             {
                 e.Get<EnemyController>().Target = _player;
             }

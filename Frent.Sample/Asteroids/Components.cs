@@ -196,7 +196,7 @@ internal struct EnemyController(Entity target) : IEntityComponent<Transform, Vel
     [Tick]
     public void Update(Entity entity, ref Transform arg1, ref Velocity arg2)
     {
-        if (!Target.IsAlive())
+        if (!Target.IsAlive)
             return;
         var pointTo = -Vector2.Normalize(arg1.XY - Target.Get<Transform>());
         arg2 += pointTo * 0.01f;
@@ -218,7 +218,7 @@ internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : ICompon
     [Tick]
     public void Update(ref Transform arg)
     {
-        if (Follow.IsAlive())
+        if (Follow.IsAlive)
             arg -= (arg.XY - Follow.Get<Transform>()) * Smoothing;
     }
 }
@@ -278,7 +278,7 @@ internal struct BulletBehavior(Entity entity) : IComponent<CircleCollision>
     [Tick]
     public void Update(ref CircleCollision arg)
     {
-        if(!arg.CollidesWith.IsNull && arg.CollidesWith != Parent && arg.CollidesWith.IsAlive() && arg.CollidesWith.Tagged<Shootable>())
+        if(!arg.CollidesWith.IsNull && arg.CollidesWith != Parent && arg.CollidesWith.IsAlive && arg.CollidesWith.Tagged<Shootable>())
         {
             AsteroidsGame.BlowUpEntity(arg.CollidesWith);
             arg.CollidesWith.Delete();
