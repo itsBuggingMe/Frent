@@ -40,12 +40,9 @@ partial struct Entity
     /// </summary>
     /// <param name="componentID">The component ID of the component type to check.</param>
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryHas(ComponentID componentID)
-    {
-        if(!InternalIsAlive(out var _, out var entityLocation))
-            return false;
-        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
-    }
+    public bool TryHas(ComponentID componentID) => 
+        InternalIsAlive(out EntityLocation entityLocation) && 
+        GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
 
     /// <summary>
     /// Checks of this <see cref="Entity"/> has a component specified by <typeparamref name="T"/> without throwing when dead.

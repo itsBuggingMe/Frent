@@ -40,7 +40,7 @@ public class MicroBenchmark
     [BenchmarkCategory(Categories.Has)]
     public void Opt()
     {
-        _entity.TryGet<int>(out Ref<int> value);
+
     }
 
     [Benchmark]

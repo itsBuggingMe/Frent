@@ -25,6 +25,7 @@ public partial class World : IDisposable
     #endregion
 
     internal static Table<EntityLookup> QuickWorkTable = new Table<EntityLookup>(32);
+
     internal static volatile World? QuickWorldCache;
     internal static volatile ushort WorldCachePackedValue;
 
