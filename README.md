@@ -60,6 +60,8 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 - [ ]  Comprehensive docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
+- [ ]  Command buffer?
+- [ ]  Events?
 # Contributing
 Wanna help?
 
