@@ -32,10 +32,10 @@ public partial struct Entity : IEquatable<Entity>
         EntityID = entityID;
     }
 
+    internal int EntityID;
+    internal ushort EntityVersion;
     internal byte WorldVersion;
     internal byte WorldID;
-    internal ushort EntityVersion;
-    internal int EntityID;
     #endregion
 
     #region Internal Helpers
@@ -211,12 +211,12 @@ public partial struct Entity : IEquatable<Entity>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct EntityWorldInfoAccess
     {
+        internal EntityIDOnly EntityIDOnly;
         internal ushort PackedWorldInfo;
-        internal ushort EntityVersion;
-        internal int EntityID;
     }
 
     internal ushort PackedWorldInfo => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).PackedWorldInfo;
+    internal EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).EntityIDOnly;
     internal long PackedValue => Unsafe.As<Entity, long>(ref this);
     #endregion
 
