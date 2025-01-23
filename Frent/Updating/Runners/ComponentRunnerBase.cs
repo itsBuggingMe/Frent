@@ -1,6 +1,7 @@
 ﻿using Frent.Buffers;
 using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Events;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Updating.Runners;
@@ -16,6 +17,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public void ResizeChunk(int chunkSize, int chunkIndex) => Array.Resize(ref _chunks[chunkIndex].Buffer, chunkSize);
     public void SetAt(object component, ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex] = (TComponent)component;
     public object GetAt(ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex]!;
+    public void InvokeGenericActionWith(MulticastGenericAction<Entity> action, Entity e, ushort chunkIndex, ushort componentIndex) => action.Invoke(e, _chunks[chunkIndex][componentIndex]);
     public ComponentID ComponentID => Component<TComponent>.ID;
     public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
     {
@@ -33,7 +35,6 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
-
 }
 
 internal abstract class ComponentStorage<TComponent>

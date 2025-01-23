@@ -1,5 +1,8 @@
 ﻿using Frent.Core;
+using Frent.Core.Events;
+using Frent.Core.Structures;
 using Frent.Updating;
+using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -85,13 +88,23 @@ partial class World
 
         int j = 0;
 
+        var destinationComponents = destination.Components;
         for (int i = 0; i < from.Components.Length; i++)
         {
             if (i == skipIndex)
             {
+                int potCompIndex = GlobalWorldTables.ComponentIndex(destination.ID, Component<OnComponentRemoved>.ID);
+                if ((uint)potCompIndex < (uint)destinationComponents.Length)
+                {
+                    var @event = ((ComponentStorage<OnComponentRemoved>)destinationComponents[potCompIndex]).Chunks[nextLocation.ChunkIndex][nextLocation.ComponentIndex];
+                    @event.Invoke(entity, component);
+                    if(@event.GenericComponentRemoved is not null)
+                        from.Components[i].InvokeGenericActionWith(@event.GenericComponentRemoved, entity, entityLocation.ChunkIndex, entityLocation.ChunkIndex);
+                }
+
                 continue;
             }
-            destination.Components[j++].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
+            destinationComponents[j++].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
         }
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);

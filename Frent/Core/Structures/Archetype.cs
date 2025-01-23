@@ -1,4 +1,5 @@
 ﻿using Frent.Buffers;
+using Frent.Core.Structures;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;

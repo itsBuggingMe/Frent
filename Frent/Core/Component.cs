@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Components;
+using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Diagnostics.CodeAnalysis;

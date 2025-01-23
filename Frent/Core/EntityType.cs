@@ -1,5 +1,6 @@
 ﻿global using ArchetypeID = Frent.Core.EntityType;
 using System.Collections.Immutable;
+using Frent.Core.Structures;
 
 namespace Frent.Core;
 

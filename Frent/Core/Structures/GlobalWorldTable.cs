@@ -1,6 +1,6 @@
 ﻿using Frent.Collections;
 
-namespace Frent.Core;
+namespace Frent.Core.Structures;
 
 internal static class GlobalWorldTables
 {

@@ -2,6 +2,7 @@
 using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Core.Structures;
 using Frent.Systems;
 using Frent.Updating;
 using System.Collections.Immutable;

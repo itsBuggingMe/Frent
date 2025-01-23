@@ -1,4 +1,5 @@
 ﻿using Frent.Core;
+using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
