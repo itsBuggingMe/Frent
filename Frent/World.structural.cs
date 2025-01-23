@@ -52,8 +52,9 @@ partial class World
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
-        EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        EntityTable[(uint)entity.EntityID].Location = nextLocation;
+        EntityTable.IndexWithInt(movedDown.EntityID).Location = entityLocation;
+        EntityTable.IndexWithInt(entity.EntityID).Location = nextLocation;
+
         return destination;
     }
 
@@ -93,15 +94,6 @@ partial class World
         {
             if (i == skipIndex)
             {
-                int potCompIndex = GlobalWorldTables.ComponentIndex(destination.ID, Component<OnComponentRemoved>.ID);
-                if ((uint)potCompIndex < (uint)destinationComponents.Length)
-                {
-                    var @event = ((ComponentStorage<OnComponentRemoved>)destinationComponents[potCompIndex]).Chunks[nextLocation.ChunkIndex][nextLocation.ComponentIndex];
-                    @event.Invoke(entity, component);
-                    if(@event.GenericComponentRemoved is not null)
-                        from.Components[i].InvokeGenericActionWith(@event.GenericComponentRemoved, entity, entityLocation.ChunkIndex, entityLocation.ChunkIndex);
-                }
-
                 continue;
             }
             destinationComponents[j++].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
@@ -111,6 +103,15 @@ partial class World
 
         EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         EntityTable[(uint)entity.EntityID].Location = nextLocation;
+
+        int potCompIndex = GlobalWorldTables.ComponentIndex(destination.ID, Component<OnComponentRemoved>.ID);
+        if ((uint)potCompIndex < (uint)destinationComponents.Length)
+        {
+            var @event = ((ComponentStorage<OnComponentRemoved>)destinationComponents[potCompIndex]).Chunks[nextLocation.ChunkIndex][nextLocation.ComponentIndex];
+            @event.Invoke(entity, component);
+            if (@event.GenericComponentRemoved is not null)
+                from.Components[skipIndex].InvokeGenericActionWith(@event.GenericComponentRemoved, entity, entityLocation.ChunkIndex, entityLocation.ChunkIndex);
+        }
     }
 
     //Delete

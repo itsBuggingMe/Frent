@@ -1,6 +1,9 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Frent.Collections;
+using Frent.Core.Events;
+using Frent.Core.Structures;
+using Frent.Updating.Runners;
 
 namespace Frent.Core;
 
@@ -150,10 +153,12 @@ public class CommandBuffer
             var record = _world.EntityTable[id];
             if (record.Version == command.Entity.Version)
             {
-                _world.AddComponent(command.Entity.ToEntity(_world), record.Location, command.ComponentID,
+                Entity concrete = command.Entity.ToEntity(_world);
+                var archetype = _world.AddComponent(concrete, record.Location, command.ComponentID,
                     out var runner,
                     out var location);
                 runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location, command.Index);
+                OnComponentAdded.TryInvokeAction(archetype, runner, concrete, command.ComponentID, location.ChunkIndex, location.ComponentIndex);
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using Frent.Core;
+using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
@@ -169,8 +170,9 @@ partial struct Entity
         AssertIsAlive(out var w, out var eloc);
         if (w.AllowStructualChanges)
         {
-            w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
+            var archetype = w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
             ((ComponentStorage<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
+            OnComponentAdded.TryInvokeAction(archetype, to, this, Component<T>.ID, location.ChunkIndex, location.ComponentIndex);
         }
         else
         {
@@ -189,8 +191,10 @@ partial struct Entity
         AssertIsAlive(out var w, out var eloc);
         if (w.AllowStructualChanges)
         {
-            w.AddComponent(this, eloc, componentID, out var to, out var location);
+            var archetype = w.AddComponent(this, eloc, componentID, out var to, out var location);
+            //we don't check IsAssignableTo. The reason is perf - we get InvalidCastException anyways
             to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
+            OnComponentAdded.TryInvokeAction(archetype, to, this, componentID, location.ChunkIndex, location.ComponentIndex);
         }
         else
         {
@@ -209,24 +213,7 @@ partial struct Entity
     /// </summary>
     /// <param name="type">The type to add the component as. Note that a component of type DerivedClass and BaseClass are different component types.</param>
     /// <param name="component">The component to add</param>
-    public void Add(Type type, object component)
-    {
-        //check is slow, and we get InvalidCastException anyways
-        //if (!component.GetType().IsAssignableFrom(type))
-        //    throw new ArgumentException("Component must be assignable to the given component type!", nameof(component));
-        //
-        AssertIsAlive(out var w, out var eloc);
-        var componentID = Component.GetComponentID(type);
-        if (w.AllowStructualChanges)
-        {
-            w.AddComponent(this, eloc, componentID, out var to, out var location);
-            to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
-        }
-        else
-        {
-            w.WorldUpdateCommandBuffer.AddComponent(this, type, component);
-        }
-    }
+    public void Add(Type type, object component) => Add(Component.GetComponentID(type), component);
     #endregion
 
     #region Remove
