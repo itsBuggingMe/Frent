@@ -363,6 +363,8 @@ partial struct Entity
     #endregion
 
     #region Events
+    //TODO: finish all these
+    //right now, its implemented as auto events which increase the size of the entity
     public event Action<Entity, ComponentID> OnComponentAdded;
     public event Action<Entity, ComponentID> OnComponentRemoved;
     public IGenericAction<Entity> OnComponentAddedGeneric { get; set; }

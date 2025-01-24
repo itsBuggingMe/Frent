@@ -14,9 +14,53 @@ partial class World
 {
     /*  
      *  This file contains all core functions related to structual changes on the world
-     *  The only core structual change function not here is create, since it needs to be source generated
+     *  The only core structual change function not here is the normal create function, since it needs to be source generated
      *  These functions take all the data it needs, with no validation that an entity is alive
      */
+    /// <summary>
+    /// Note - This function DOES NOT invoke events, as it is also used for command buffer entity creation
+    /// </summary>
+    internal void AddComponentRange(Entity entity, ReadOnlySpan<(ComponentID Component, int Index)> comps)
+    {
+        EntityLocation location = EntityTable[(uint)entity.EntityID].Location;
+        Archetype currentArchetype = location.Archetype(this);
+
+        ReadOnlySpan<ComponentID> existingComponentIDs = currentArchetype.ArchetypeTypeArray.AsSpan();
+        int newCompCount = comps.Length + existingComponentIDs.Length;
+        if((uint)newCompCount > 16)
+            FrentExceptions.Throw_InvalidOperationException("Too many components");
+        
+        Span<ComponentID> allComps = stackalloc ComponentID[newCompCount];
+        existingComponentIDs.CopyTo(allComps);
+        int j = 0;
+        for(int i = existingComponentIDs.Length; i < comps.Length; i++)
+            allComps[i] = comps[j++].Component;
+        var tags =  currentArchetype.ArchetypeTagArray;
+
+        var destination = Archetype.CreateOrGetExistingArchetype(allComps, tags.AsSpan(), this, null, tags);
+        destination.CreateEntityLocation(out var nextELoc) = entity;
+
+        for(int i = 0; i < currentArchetype.Components.Length; i++)
+        {
+            destination.Components[i].PullComponentFrom(currentArchetype.Components[i], nextELoc, location);
+        }
+
+        j = 0;
+        for(int i = existingComponentIDs.Length; i < currentArchetype.Components.Length; i++)
+        {
+            var componentLocation = comps[j++];
+            currentArchetype.Components[i].PullComponentFrom(
+                Component.ComponentTable[componentLocation.Component.ID].Stack, 
+                nextELoc, 
+                componentLocation.Index);
+        }
+
+        
+        Entity movedDown = currentArchetype.DeleteEntity(location.ChunkIndex, location.ComponentIndex);
+
+        EntityTable.IndexWithInt(movedDown.EntityID).Location = location;
+        EntityTable.IndexWithInt(entity.EntityID).Location = nextELoc;
+    }
 
     //Add
     //Note: this fucntion doesn't actually do the last step of setting the component in the new archetype

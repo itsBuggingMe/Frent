@@ -310,6 +310,13 @@ public partial class World : IDisposable
     /// </summary>
     public Entity Create()
     {
+        var entity = CreateEntityWithoutEvent();
+        EntityCreated?.Invoke(entity);
+        return entity;
+    }
+
+    internal Entity CreateEntityWithoutEvent()
+    {
         var archetypeID = Archetype.Default;
         Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
         ref var entity = ref archetype.CreateEntityLocation(out var eloc);
@@ -318,8 +325,12 @@ public partial class World : IDisposable
         EntityTable[(uint)id] = new(eloc, version);
 
         entity = new Entity(ID, Version, version, id);
-        EntityCreated?.Invoke(entity);
         return entity;
+    }
+
+    internal void InvokeEntityCreated(Entity entity)
+    {
+        EntityCreated?.Invoke(entity);
     }
 
     /// <summary>

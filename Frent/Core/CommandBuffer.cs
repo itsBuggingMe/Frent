@@ -152,13 +152,16 @@ public class CommandBuffer
 
     public CommandBuffer WithBoxed(Type type, object component) => WithBoxed(Component.GetComponentID(type), component);
 
-    public void End()
+    public Entity End()
     {
         //CreateCommand points to a segment of the _createEntityComponents stack
+        var e = _world.CreateEntityWithoutEvent();
         _createEntityBuffer.Push(new CreateCommand(
+            e.EntityIDOnly,
             _lastCreateEntityComponentsBufferIndex, 
             _createEntityBuffer.Count - _lastCreateEntityComponentsBufferIndex));
         _lastCreateEntityComponentsBufferIndex = -1;
+        return e;
     }
     #endregion
 
@@ -226,7 +229,10 @@ public class CommandBuffer
 
         while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
-            throw new NotImplementedException();
+            Entity concrete = createCommand.Entity.ToEntity(_world);
+            _world.AddComponentRange(concrete, _createEntityComponents.AsSpan()
+                .Slice(createCommand.BufferIndex, createCommand.BufferLength));
+            _world.InvokeEntityCreated(concrete);
         }
 
         if (Interlocked.Decrement(ref _activeCommandBuffers) == 0)

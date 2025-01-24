@@ -55,12 +55,12 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 - [X]  Entity Tags
 - [X]  World Update Filtering
 - [X]  Multithreading
+- [X]  Command buffer?
 
 ## Future
 - [ ]  Comprehensive docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
-- [ ]  Command buffer?
 - [ ]  Events?
 # Contributing
 Wanna help?
