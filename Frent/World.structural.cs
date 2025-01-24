@@ -166,24 +166,31 @@ partial class World
         EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         EntityTable[(uint)entity.EntityID].Location = nextLocation;
 
+        int potIndex = GlobalWorldTables.ComponentIndex(from.ID, Component<OnTagged>.ID);
+        if(potIndex < toRunners.Length)
+        {
+            ((ComponentStorage<OnTagged>)toRunners[potIndex]).Chunks[nextLocation.ChunkIndex][nextLocation.ComponentIndex]
+                .Invoke(entity, tagID);
+        }
+
         return true;
     }
 
     //Detach
-    internal bool Detach(Entity entity, EntityLocation entityLocation, TagID tag)
+    internal bool Detach(Entity entity, EntityLocation entityLocation, TagID tagID)
     {
-        if (!GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tag))
+        if (!GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID))
             return false;
 
         Archetype from = entityLocation.Archetype(this);
         ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
-            ArchetypeEdgeKey.Tag(tag, from.ID, ArchetypeEdgeType.RemoveTag),
+            ArchetypeEdgeKey.Tag(tagID, from.ID, ArchetypeEdgeType.RemoveTag),
             out bool exist);
 
         Archetype destination;
         if (!exist)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tag, out var arr), this, from.ArchetypeTypeArray, arr);
+            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tagID, out var arr), this, from.ArchetypeTypeArray, arr);
             edge = destination.ID;
         }
         else
@@ -204,6 +211,13 @@ partial class World
 
         EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         EntityTable[(uint)entity.EntityID].Location = nextLocation;
+
+        int potIndex = GlobalWorldTables.ComponentIndex(from.ID, Component<OnDetached>.ID);
+        if (potIndex < toRunners.Length)
+        {
+            ((ComponentStorage<OnDetached>)toRunners[potIndex]).Chunks[nextLocation.ChunkIndex][nextLocation.ComponentIndex]
+                .Invoke(entity, tagID);
+        }
 
         return true;
     }

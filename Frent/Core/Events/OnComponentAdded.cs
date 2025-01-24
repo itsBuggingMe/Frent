@@ -1,12 +1,10 @@
 ﻿using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
-using System.Security.AccessControl;
-using System.Text;
 
 namespace Frent.Core.Events;
 
-public struct OnComponentAdded
+internal struct OnComponentAdded
 {
     public event Action<Entity, ComponentID> ComponentAdded;
     public MulticastGenericAction<Entity>? GenericComponentAdded { get; set; }

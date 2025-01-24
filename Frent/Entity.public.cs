@@ -172,7 +172,7 @@ partial struct Entity
         {
             var archetype = w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
             ((ComponentStorage<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
-            OnComponentAdded.TryInvokeAction(archetype, to, this, Component<T>.ID, location.ChunkIndex, location.ComponentIndex);
+            Core.Events.OnComponentAdded.TryInvokeAction(archetype, to, this, Component<T>.ID, location.ChunkIndex, location.ComponentIndex);
         }
         else
         {
@@ -194,7 +194,7 @@ partial struct Entity
             var archetype = w.AddComponent(this, eloc, componentID, out var to, out var location);
             //we don't check IsAssignableTo. The reason is perf - we get InvalidCastException anyways
             to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
-            OnComponentAdded.TryInvokeAction(archetype, to, this, componentID, location.ChunkIndex, location.ComponentIndex);
+            Core.Events.OnComponentAdded.TryInvokeAction(archetype, to, this, componentID, location.ChunkIndex, location.ComponentIndex);
         }
         else
         {
@@ -359,6 +359,90 @@ partial struct Entity
     {
         AssertIsAlive(out var w, out var eloc);
         return w.Detach(this, eloc, tagID);
+    }
+    #endregion
+
+    #region Events
+    public event Action<Entity, ComponentID> OnComponentAdded;
+    public event Action<Entity, ComponentID> OnComponentRemoved;
+    public IGenericAction<Entity> OnComponentAddedGeneric { get; set; }
+    public IGenericAction<Entity> OnComponentRemovedGeneric { get; set; }
+
+    public event Action<Entity, TagID> OnTagged
+    {
+        add
+        {
+            if (value is null || !InternalIsAlive(out var world, out var location))
+                return;
+
+            Archetype archetype = location.Archetype(world);
+            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnTagged>.ID);
+            var comparr = archetype.Components;
+            if (mayhapsIndex < comparr.Length)
+            {
+                ref var comp = ref ((ComponentStorage<OnTagged>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
+                comp.Tagged += value;
+            }
+            else
+            {
+                //special case???
+                var t = new OnTagged();
+                t.Tagged += value;
+                world.WorldUpdateCommandBuffer.AddComponent(this, t);
+            }
+        }
+        remove
+        {
+            if (value is null || !InternalIsAlive(out var world, out var location))
+                return;
+
+            Archetype archetype = location.Archetype(world);
+            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnTagged>.ID);
+            var comparr = archetype.Components;
+            if (mayhapsIndex < comparr.Length)
+            {
+                ref var comp = ref ((ComponentStorage<OnTagged>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
+                comp.Tagged -= value;
+            }
+        }
+    }
+    //TODO: refactor?
+    public event Action<Entity, TagID> OnDetach
+    {
+        add
+        {
+            if (value is null || !InternalIsAlive(out var world, out var location))
+                return;
+
+            Archetype archetype = location.Archetype(world);
+            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnTagged>.ID);
+            var comparr = archetype.Components;
+            if (mayhapsIndex < comparr.Length)
+            {
+                ref var comp = ref ((ComponentStorage<OnDetached>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
+                comp.Detached += value;
+            }
+            else
+            {
+                var t = new OnTagged();
+                t.Tagged += value;
+                world.WorldUpdateCommandBuffer.AddComponent(this, t);
+            }
+        }
+        remove
+        {
+            if (value is null || !InternalIsAlive(out var world, out var location))
+                return;
+
+            Archetype archetype = location.Archetype(world);
+            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnDetached>.ID);
+            var comparr = archetype.Components;
+            if (mayhapsIndex < comparr.Length)
+            {
+                ref var comp = ref ((ComponentStorage<OnDetached>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
+                comp.Detached -= value;
+            }
+        }
     }
     #endregion
 

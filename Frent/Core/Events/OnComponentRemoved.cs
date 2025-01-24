@@ -1,6 +1,6 @@
 ﻿namespace Frent.Core.Events;
 
-public struct OnComponentRemoved
+internal struct OnComponentRemoved
 {
     public event Action<Entity, ComponentID> ComponentRemoved;
     public MulticastGenericAction<Entity>? GenericComponentRemoved { get; set; }
