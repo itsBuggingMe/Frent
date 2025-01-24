@@ -91,7 +91,7 @@ public partial struct Entity : IEquatable<Entity>
     private bool IsAliveCold([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
         world = GlobalWorldTables.Worlds.GetValueNoCheck(WorldID);
-        if (world.Version == WorldVersion)
+        if (world?.Version == WorldVersion)
         {
             var (loc, ver) = world.EntityTable[(uint)EntityID];
             if (ver == EntityVersion)

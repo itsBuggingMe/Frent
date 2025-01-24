@@ -55,6 +55,8 @@ partial class World
         EntityTable.IndexWithInt(movedDown.EntityID).Location = entityLocation;
         EntityTable.IndexWithInt(entity.EntityID).Location = nextLocation;
 
+        ComponentAdded?.Invoke(entity);
+
         return destination;
     }
 
@@ -104,6 +106,8 @@ partial class World
         EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         EntityTable[(uint)entity.EntityID].Location = nextLocation;
 
+        ComponentRemoved?.Invoke(entity);
+
         int potCompIndex = GlobalWorldTables.ComponentIndex(destination.ID, Component<OnComponentRemoved>.ID);
         if ((uint)potCompIndex < (uint)destinationComponents.Length)
         {
@@ -115,13 +119,14 @@ partial class World
     }
 
     //Delete
-    internal void DeleteEntity(int entityID, ushort version, EntityLocation entityLocation)
+    internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
     {
+        EntityDeleted?.Invoke(entity);
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
         EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
-        EntityTable.GetValueNoCheck(entityID) = new(EntityLocation.Default, ushort.MaxValue);
-        _recycledEntityIds.Push((entityID, version));
+        EntityTable.GetValueNoCheck(entity.EntityID) = new(EntityLocation.Default, ushort.MaxValue);
+        _recycledEntityIds.Push(entity.EntityIDOnly);
     }
 
     //Tag

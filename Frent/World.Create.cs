@@ -19,7 +19,6 @@ partial class World
     /// <param name="comp"></param>
     /// <typeparam name="T">The type of the component</typeparam>
     /// <returns>An <see cref="Entity"/> that can be used to acsess the component data</returns>
-    [SkipLocalsInit]//we save 2 instructions...
     public Entity Create<T>(T comp)
     {
         Archetype archetype = Archetype<T>.CreateNewOrGetExistingArchetype(this);
@@ -31,9 +30,11 @@ partial class World
         //manually inlined from World.CreateEntityFromLocation
         //The jit likes to inline the outer create function and not inline
         //the inner functions - benchmarked to improve perf by 10-20%
-        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
+        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
         EntityTable[(uint)id] = new(eloc, version);
-        return entity = new Entity(ID, Version, version, id);
+        entity = new Entity(ID, Version, version, id);
+        EntityCreated?.Invoke(entity);
+        return entity;
     }
 
     //might remove this due to code size

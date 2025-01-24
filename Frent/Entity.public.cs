@@ -373,7 +373,7 @@ partial struct Entity
         {
             if (world.AllowStructualChanges)
             {
-                world.DeleteEntity(EntityID, EntityVersion, entityLocation);
+                world.DeleteEntity(this, entityLocation);
             }
             else
             {

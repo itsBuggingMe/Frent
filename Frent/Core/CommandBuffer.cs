@@ -1,3 +1,4 @@
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Frent.Collections;
@@ -169,7 +170,7 @@ public class CommandBuffer
             var record = _world.EntityTable[(uint)item.ID];
             if (record.Version == item.Version)
             {
-                _world.DeleteEntity(item.ID, item.Version, record.Location);
+                _world.DeleteEntity(item.ToEntity(_world), record.Location);
             }
         }
 

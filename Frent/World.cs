@@ -37,7 +37,7 @@ public partial class World : IDisposable
     internal Archetype[] WorldArchetypeTable;
     internal Dictionary<ArchetypeEdgeKey, ArchetypeID> ArchetypeGraphEdges = [];
 
-    private FastStack<(int ID, ushort Version)> _recycledEntityIds = FastStack<(int, ushort)>.Create(8);
+    private FastStack<EntityIDOnly> _recycledEntityIds = FastStack<EntityIDOnly>.Create(8);
     private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
     private int _nextEntityID;
 
@@ -55,10 +55,12 @@ public partial class World : IDisposable
 
     private volatile int _allowStructuralChanges;
 
-    #region Operations
     internal CommandBuffer WorldUpdateCommandBuffer;
-    #endregion
 
+    public event Action<Entity> EntityCreated;
+    public event Action<Entity> EntityDeleted;
+    public event Action<Entity> ComponentAdded;
+    public event Action<Entity> ComponentRemoved;
 
     /// <summary>
     /// The current uniform provider used when updating components/queries with uniforms
@@ -100,7 +102,7 @@ public partial class World : IDisposable
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
     {
-        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
+        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
         EntityTable[(uint)id] = new(entityLocation, version);
         return new Entity(ID, Version, version, id);
     }
@@ -251,7 +253,9 @@ public partial class World : IDisposable
         if (_isDisposed)
             throw new InvalidOperationException("World is already disposed!");
 
-        if(WorldCachePackedValue == PackedIDVersion)
+        GlobalWorldTables.Worlds[ID] = null!;
+
+        if (WorldCachePackedValue == PackedIDVersion)
         {
             for(int i = 0; i < 10; i++)
             {
@@ -260,7 +264,6 @@ public partial class World : IDisposable
             QuickWorldCache = null!;
         }
 
-        GlobalWorldTables.Worlds[ID] = null!;
         _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
         foreach (ref var item in WorldArchetypeTable.AsSpan())
             if (item is not null)
@@ -277,7 +280,6 @@ public partial class World : IDisposable
     /// <param name="components">The components to use</param>
     /// <returns>The created entity</returns>
     /// <exception cref="ArgumentException">Thrown when the length of <paramref name="components"/> is > 16.</exception>
-    [SkipLocalsInit]
     public Entity CreateFromObjects(ReadOnlySpan<object> components)
     {
         if (components.Length < 0 || components.Length > 16)
@@ -299,22 +301,25 @@ public partial class World : IDisposable
             archetypeComponents[i].SetAt(components[i], loc.ChunkIndex, loc.ComponentIndex);
         }
 
+        EntityCreated?.Invoke(entity);
         return entity;
     }
 
     /// <summary>
     /// Creates an <see cref="Entity"/> with zero components
     /// </summary>
-    [SkipLocalsInit]
     public Entity Create()
     {
         var archetypeID = Archetype.Default;
         Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
         ref var entity = ref archetype.CreateEntityLocation(out var eloc);
 
-        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : (_nextEntityID++, (ushort)0);
+        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
         EntityTable[(uint)id] = new(eloc, version);
-        return entity = new Entity(ID, Version, version, id);
+
+        entity = new Entity(ID, Version, version, id);
+        EntityCreated?.Invoke(entity);
+        return entity;
     }
 
     /// <summary>
