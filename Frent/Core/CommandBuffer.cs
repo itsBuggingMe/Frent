@@ -8,6 +8,9 @@ using Frent.Updating.Runners;
 
 namespace Frent.Core;
 
+/// <summary>
+/// Stores a set of structual changes that can be applied to a <see cref="World"/>
+/// </summary>
 public class CommandBuffer
 {
     private static int _activeCommandBuffers;
@@ -39,7 +42,7 @@ public class CommandBuffer
     }
 
     /// <summary>
-    /// Queues up a delete entity action
+    /// Deletes a component from when <see cref="PlayBack"/> is called
     /// </summary>
     /// <param name="entity">The entity that will be deleted on playback</param>
     public void DeleteEntity(Entity entity)
@@ -48,17 +51,37 @@ public class CommandBuffer
         _deleteEntityBuffer.Push(entity.EntityIDOnly);
     }
     
-
+    /// <summary>
+    /// Removes a component from when <see cref="PlayBack"/> is called
+    /// </summary>
+    /// <param name="entity">The entity to remove a component from</param>
+    /// <param name="component">The component to remove</param>
     public void RemoveComponent(Entity entity, ComponentID component)
     {
         SetIsActive();
         _removeComponentBuffer.Push(new DeleteComponent(entity.EntityIDOnly, component));
     }
 
+    /// <summary>
+    /// Removes a component from when <see cref="PlayBack"/> is called
+    /// </summary>
+    /// <typeparam name="T">The component type to remove</typeparam>
+    /// <param name="entity">The entity to remove a component from</param>
     public void RemoveComponent<T>(Entity entity) => RemoveComponent(entity, Component<T>.ID);
 
+    /// <summary>
+    /// Removes a component from when <see cref="PlayBack"/> is called
+    /// </summary>
+    /// <param name="entity">The entity to remove a component from</param>
+    /// <param name="type">The type of component to remove</param>
     public void RemoveComponent(Entity entity, Type type) => RemoveComponent(entity, Component.GetComponentID(type));
 
+    /// <summary>
+    /// Adds a component to an entity when <see cref="PlayBack"/> is called
+    /// </summary>
+    /// <typeparam name="T">The component type to add</typeparam>
+    /// <param name="entity">The entity to add to</param>
+    /// <param name="component">The component to add</param>
     public void AddComponent<T>(Entity entity, T component)
     {
         SetIsActive();
@@ -66,6 +89,13 @@ public class CommandBuffer
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, Component<T>.ID, index));
     }
 
+    /// <summary>
+    /// Adds a component to an entity when <see cref="PlayBack"/> is called
+    /// </summary>
+    /// <param name="entity">The entity to add to</param>
+    /// <param name="component">The component to add</param>
+    /// <param name="componentID">The ID of the component type to add as</param>
+    /// <remarks><paramref name="component"/> must be assignable to <see cref="ComponentID.Type"/></remarks>
     public void AddComponent(Entity entity, ComponentID componentID, object component)
     {
         SetIsActive();
@@ -73,7 +103,20 @@ public class CommandBuffer
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, componentID, index));
     }
 
+    /// <summary>
+    /// Adds a component to an entity when <see cref="PlayBack"/> is called
+    /// </summary>
+    /// <param name="entity">The entity to add to</param>
+    /// <param name="component">The component to add</param>
+    /// <param name="componentType">The type to add the component as</param>
+    /// <remarks><paramref name="component"/> must be assignable to <paramref name="Type"/></remarks>
     public void AddComponent(Entity entity, Type componentType, object component) => AddComponent(entity, Component.GetComponentID(componentType), component);
+    
+    /// <summary>
+    /// Adds a component to an entity when <see cref="PlayBack"/> is called
+    /// </summary>
+    /// <param name="entity">The entity to add to</param>
+    /// <param name="component">The component to add</param>
     public void AddComponent(Entity entity, object component) => AddComponent(entity, component.GetType(), component);
 
     #region Create
@@ -119,6 +162,9 @@ public class CommandBuffer
     }
     #endregion
 
+    /// <summary>
+    /// Removes all commands without playing them back
+    /// </summary>
     public void Clear()
     {
         _isInactive = false;
@@ -132,6 +178,10 @@ public class CommandBuffer
         }
     }
 
+    /// <summary>
+    /// Plays all the queued commands, applying them to a world
+    /// </summary>
+    /// <returns><see langword="true"/> when at least one change was made; <see langword="false"/> when this command buffer is empty and not active.</returns>
     public bool PlayBack()
     {
         bool flag = false;
