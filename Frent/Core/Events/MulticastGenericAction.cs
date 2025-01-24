@@ -3,7 +3,7 @@
 namespace Frent.Core.Events;
 
 //linked list, just like `MulticastDelegate`
-public class MulticastGenericAction<T> : IGenericAction<T>, IEnumerable<IGenericAction<T>>
+internal class MulticastGenericAction<T> : IGenericAction<T>, IEnumerable<IGenericAction<T>>
 {
     private static int _nextActionID;
 
