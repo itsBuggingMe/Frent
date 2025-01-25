@@ -33,6 +33,8 @@ public partial struct Entity : IEquatable<Entity>
         EntityID = entityID;
     }
 
+    //WARNING
+    //DO NOT CHANGE STRUCT LAYOUT
     internal int EntityID;
     internal ushort EntityVersion;
     internal byte WorldVersion;

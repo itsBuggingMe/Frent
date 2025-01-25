@@ -128,7 +128,7 @@ partial struct Entity
     public ref T? TryGet<T>(out bool exists)
     {
         var @ref = TryGetCore<T>(out exists);
-        return ref @ref.Component!;
+        return ref @ref.Val!;
     }
 
     /// <summary>
@@ -367,8 +367,53 @@ partial struct Entity
     //right now, its implemented as auto events which increase the size of the entity
     public event Action<Entity, ComponentID> OnComponentAdded;
     public event Action<Entity, ComponentID> OnComponentRemoved;
-    public IGenericAction<Entity> OnComponentAddedGeneric { get; set; }
-    public IGenericAction<Entity> OnComponentRemovedGeneric { get; set; }
+
+    public MulticastGenericAction<Entity>? OnComponentAddedGeneric
+    {
+        set
+        {
+            if (value is null || !InternalIsAlive(out var world, out var location))
+                return;
+
+            Archetype archetype = location.Archetype(world);
+            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnComponentAdded>.ID);
+            var comparr = archetype.Components;
+            if (mayhapsIndex < comparr.Length)
+            {
+                ref var comp = ref ((ComponentStorage<OnComponentAdded>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
+                comp.GenericComponentAdded += value;
+            }
+            else
+            {
+                //special case???
+                var t = new OnComponentAdded();
+                t.GenericComponentAdded += value;
+                world.WorldUpdateCommandBuffer.AddComponent(this, t);
+            }
+        }
+        get => TryGet(out Ref<OnComponentAdded> compAdded) ? compAdded.Val.GenericComponentAdded : null;
+    }
+    public MulticastGenericAction<Entity>? OnComponentRemovedGeneric
+    {
+        set
+        {
+            if (value is null)
+                return;
+
+            if(TryGet(out Ref<OnComponentAdded> compAdded))
+            {
+                compAdded.Val.GenericComponentAdded += value;
+            }
+            else
+            {
+                if()
+                {
+
+                }
+            }
+        }
+        get => TryGet(out Ref<OnComponentAdded> compAdded) ? compAdded.Val.GenericComponentAdded : null;
+    }
 
     public event Action<Entity, TagID> OnTagged
     {
