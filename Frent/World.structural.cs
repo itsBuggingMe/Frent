@@ -1,8 +1,7 @@
-﻿using Frent.Core;
-using Frent.Core.Events;
+﻿using Frent.Collections;
+using Frent.Core;
 using Frent.Core.Structures;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -135,11 +134,18 @@ partial class World
 
         int j = 0;
 
+        TrimmableStack? tmpEventComponentStorage = null;
+        int tmpEventComponentIndex = -1;
+
         var destinationComponents = destination.Components;
         for (int i = 0; i < from.Components.Length; i++)
         {
             if (i == skipIndex)
             {
+                if(entityLocation.HasEvent(EntityFlags.GenericRemoveComp))
+                {
+                    from.Components[i].PushComponentToStack(entityLocation.ChunkIndex, entityLocation.ComponentIndex, out tmpEventComponentIndex);
+                }
                 continue;
             }
             destinationComponents[j++].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
@@ -148,17 +154,15 @@ partial class World
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
         EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        EntityTable[(uint)entity.EntityID].Location = nextLocation;
+        ref var finalTableLocation = ref EntityTable[(uint)entity.EntityID];
+        finalTableLocation.Location = nextLocation;
 
         ComponentRemoved?.Invoke(entity);
-
-        int potCompIndex = GlobalWorldTables.ComponentIndex(destination.ID, Component<OnComponentRemoved>.ID);
-        if ((uint)potCompIndex < (uint)destinationComponents.Length)
+        ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp, out bool eventExist);
+        if(eventExist)
         {
-            var @event = ((ComponentStorage<OnComponentRemoved>)destinationComponents[potCompIndex]).Chunks[nextLocation.ChunkIndex][nextLocation.ComponentIndex];
-            @event.Invoke(entity, component);
-            if (@event.GenericComponentRemoved is not null)
-                from.Components[skipIndex].InvokeGenericActionWith(@event.GenericComponentRemoved, entity, entityLocation.ChunkIndex, entityLocation.ChunkIndex);
+            eventData.Remove.NormalEvent.Invoke(entity, component);
+            tmpEventComponentStorage?.InvokeEventWith(eventData.Remove.GenericEvent, entity, tmpEventComponentIndex);
         }
     }
 
@@ -166,11 +170,28 @@ partial class World
     internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
     {
         EntityDeleted?.Invoke(entity);
+        if(entityLocation.HasEvent(EntityFlags.OnDelete))
+        {
+            InvokeEvents(this, entity);
+        }
+        else if(entityLocation.HasEvent(EntityFlags.Events))
+        {
+            EventLookup.Remove(entity.EntityIDOnly);
+        }
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
         EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
         EntityTable.GetValueNoCheck(entity.EntityID) = new(EntityLocation.Default, ushort.MaxValue);
         _recycledEntityIds.Push(entity.EntityIDOnly);
+
+        //let the jit decide whether or not to inline
+        static void InvokeEvents(World world, Entity entity)
+        {
+            foreach (var @event in world.EventLookup[entity.EntityIDOnly].Delete.AsSpan())
+            {
+                @event.Invoke(entity);
+            }
+        }
     }
 
     //Tag
@@ -210,12 +231,9 @@ partial class World
         EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         EntityTable[(uint)entity.EntityID].Location = nextLocation;
 
-        int potIndex = GlobalWorldTables.ComponentIndex(from.ID, Component<OnTagged>.ID);
-        if(potIndex < toRunners.Length)
-        {
-            ((ComponentStorage<OnTagged>)toRunners[potIndex]).Chunks[nextLocation.ChunkIndex][nextLocation.ComponentIndex]
-                .Invoke(entity, tagID);
-        }
+        ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.Tagged, out bool eventExist);
+        if (eventExist)
+            eventData.Tag.Invoke(entity, tagID);
 
         return true;
     }
@@ -256,12 +274,10 @@ partial class World
         EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
         EntityTable[(uint)entity.EntityID].Location = nextLocation;
 
-        int potIndex = GlobalWorldTables.ComponentIndex(from.ID, Component<OnDetached>.ID);
-        if (potIndex < toRunners.Length)
-        {
-            ((ComponentStorage<OnDetached>)toRunners[potIndex]).Chunks[nextLocation.ChunkIndex][nextLocation.ComponentIndex]
-                .Invoke(entity, tagID);
-        }
+
+        ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.Detach, out bool eventExist);
+        if (eventExist)
+            eventData.Detach.Invoke(entity, tagID);
 
         return true;
     }

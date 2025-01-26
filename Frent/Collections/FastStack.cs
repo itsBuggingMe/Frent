@@ -11,6 +11,10 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
 {
     [DebuggerStepThrough]
     public static FastStack<T> Create(int initalComponents) => new FastStack<T>(initalComponents);
+    public static FastStack<T> Create(T[] initalBuffer) => new FastStack<T>()
+    {
+        _buffer = initalBuffer
+    };
 
     private T[] _buffer = new T[initalComponents];
     private int _nextIndex = 0;

@@ -51,7 +51,7 @@ public class EntityTests
 
         bool exists = _ent.TryGet<string>(out Ref<string> strRef);
         IsTrue(exists);
-        That(strRef.Component, Is.EqualTo("I like Frent"));
+        That(strRef.Value, Is.EqualTo("I like Frent"));
     }
 
     [Test]
@@ -88,10 +88,10 @@ public class EntityTests
 
         _ent.Deconstruct(out Ref<double> d, out Ref<int> i, out Ref<float> f, out Ref<string> str);
 
-        d.Component = 4;
-        str.Component = "New Value";
-        That(d.Component, Is.EqualTo(4));
-        That(str.Component, Is.EqualTo("New Value"));
+        d.Value = 4;
+        str.Value = "New Value";
+        That(d.Value, Is.EqualTo(4));
+        That(str.Value, Is.EqualTo("New Value"));
     }
 
     [Test]

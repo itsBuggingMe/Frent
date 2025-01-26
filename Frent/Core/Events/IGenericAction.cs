@@ -13,5 +13,5 @@ public interface IGenericAction<TParam>
     /// <typeparam name="T">The unbound generic parameter</typeparam>
     /// <param name="param">The first parameter</param>
     /// <param name="type">The generic parameter</param>
-    public void Invoke<T>(TParam param, T type);
+    public void Invoke<T>(TParam param, ref T type);
 }

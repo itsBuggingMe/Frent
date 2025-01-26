@@ -79,7 +79,7 @@ internal class Samples
         {
             Console.WriteLine(strRef);
             //reassign the string value
-            strRef.Component = "Do you like Frent?";
+            strRef.Value = "Do you like Frent?";
         }
 
         //If we didn't add a string earlier, this would throw instead
@@ -87,8 +87,8 @@ internal class Samples
 
         //You can also deconstruct components from the entity to reassign many at once
         ent.Deconstruct(out Ref<double> d, out Ref<int> i, out Ref<float> f, out Ref<string> str);
-        d.Component = 4;
-        str.Component = "Hello, World!";
+        d.Value = 4;
+        str.Value = "Hello, World!";
 
         //You can also deconstruct like this - you just can'y assign the value of the struct
         //This also won't work with the tuple deconstruction syntax unfortunately due to a bug w/ the C# compiler

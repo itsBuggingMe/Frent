@@ -22,6 +22,7 @@ public class CommandBuffer
     internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(4);
     internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(4);
     internal FastStack<(ComponentID, int index)> _createEntityComponents = FastStack<(ComponentID, int index)>.Create(4);
+
     internal World _world;
     //-1 indicates normal state
     internal int _lastCreateEntityComponentsBufferIndex = -1;
@@ -212,7 +213,14 @@ public class CommandBuffer
                     out var runner,
                     out var location);
                 runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location, command.Index);
-                OnComponentAdded.TryInvokeAction(archetype, runner, concrete, command.ComponentID, location.ChunkIndex, location.ComponentIndex);
+
+
+                if(record.Location.HasEvent(EntityFlags.AddComp | EntityFlags.GenericAddComp))
+                {
+                    ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
+                    events.Add.NormalEvent.Invoke(concrete, command.ComponentID);
+                    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.ChunkIndex, location.ComponentIndex);
+                }
             }
         }
 

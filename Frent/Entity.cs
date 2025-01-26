@@ -1,4 +1,6 @@
-﻿using Frent.Core;
+﻿using Frent.Collections;
+using Frent.Core;
+using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;

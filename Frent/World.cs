@@ -64,7 +64,7 @@ public partial class World : IDisposable
     public event Action<Entity> ComponentAdded;
     public event Action<Entity> ComponentRemoved;
 
-    internal IDTable<EventData> Events;
+    internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
 
     /// <summary>
     /// The current uniform provider used when updating components/queries with uniforms
@@ -247,6 +247,19 @@ public partial class World : IDisposable
         }
     }
 
+    internal ref EventRecord TryGetEventData(EntityLocation entityLocation, EntityIDOnly entity, EntityFlags eventType, out bool exists)
+    {
+        if(entityLocation.HasEvent(eventType))
+        {
+            exists = true;
+            return ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity);
+        }
+
+
+        exists = false;
+        return ref Unsafe.NullRef<EventRecord>();
+    }
+
     internal bool AllowStructualChanges => _allowStructuralChanges == 0;
 
     /// <summary>
@@ -373,6 +386,8 @@ public partial class World : IDisposable
     [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
     internal record struct EntityLookup(EntityLocation Location, ushort Version)
     {
+        internal EntityLocation Location = Location;
+        internal ushort Version = Version;
         private readonly string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Chunk: {Location.ChunkIndex}, Component: {Location.ComponentIndex}, Version: {Version}";
     }
 }

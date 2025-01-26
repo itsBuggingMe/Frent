@@ -17,7 +17,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public void ResizeChunk(int chunkSize, int chunkIndex) => Array.Resize(ref _chunks[chunkIndex].Buffer, chunkSize);
     public void SetAt(object component, ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex] = (TComponent)component;
     public object GetAt(ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex]!;
-    public void InvokeGenericActionWith(MulticastGenericAction<Entity> action, Entity e, ushort chunkIndex, ushort componentIndex) => action.Invoke(e, _chunks[chunkIndex][componentIndex]);
+    public void InvokeGenericActionWith(GenericEvent? action, Entity e, ushort chunkIndex, ushort componentIndex) => action?.Invoke(e, ref _chunks[chunkIndex][componentIndex]);
     public ComponentID ComponentID => Component<TComponent>.ID;
     public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
     {
@@ -34,6 +34,12 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
         _chunks[chunkTo][compTo] = from;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
+    }
+
+    public TrimmableStack PushComponentToStack(ushort chunkIndex, ushort componentIndex, out int index)
+    {
+        Component<TComponent>.TrimmableStack.PushStronglyTyped(_chunks[chunkIndex][componentIndex], out index);
+        return Component<TComponent>.TrimmableStack;
     }
 }
 

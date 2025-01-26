@@ -68,7 +68,7 @@ public class AsteroidsGame : Game
         ]), default, new() { Radius = 25 });
         _player.Tag<Shootable>();
 
-        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player, smoothing: 0.08f), _player.Get<Transform>(), _camera.IsAlive && _camera.TryGet(out Ref<Camera> c) ? c.Component : default);
+        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player, smoothing: 0.08f), _player.Get<Transform>(), _camera.IsAlive && _camera.TryGet(out Ref<Camera> c) ? c.Value : default);
         _player.Get<PlayerController>().Camera = _camera;
     }
 
@@ -226,20 +226,20 @@ public class AsteroidsGame : Game
         {
             World w = entity.World;
 
-            float scale = transform.Component.Scale;
-            float sine = MathF.Sin(transform.Component.Rotation);
-            float cos = MathF.Cos(transform.Component.Rotation);
+            float scale = transform.Value.Scale;
+            float sine = MathF.Sin(transform.Value.Rotation);
+            float cos = MathF.Cos(transform.Value.Rotation);
 
-            foreach (var (a, b) in polygon.Component)
+            foreach (var (a, b) in polygon.Value)
             {
-                var a1 = Rotate(a - polygon.Component.Origin) + transform.Component.XY;
-                var b1 = Rotate(b - polygon.Component.Origin) + transform.Component.XY;
+                var a1 = Rotate(a - polygon.Value.Origin) + transform.Value.XY;
+                var b1 = Rotate(b - polygon.Value.Origin) + transform.Value.XY;
                 var lineCenter = (a1 + b1) * 0.5f;
-                var distanceFromPolyCenter = lineCenter - transform.Component.XY;
+                var distanceFromPolyCenter = lineCenter - transform.Value.XY;
 
                 w.Create<Line, Transform, Velocity, AngularVelocity, DecayTimer, Tween>(
-                    new() { A = a1 - lineCenter, B = b1 - lineCenter, Thickness = polygon.Component.Thickness, Opacity = 1 },
-                    transform.Component.XY + distanceFromPolyCenter,
+                    new() { A = a1 - lineCenter, B = b1 - lineCenter, Thickness = polygon.Value.Thickness, Opacity = 1 },
+                    transform.Value.XY + distanceFromPolyCenter,
                     (Vector2.Normalize(distanceFromPolyCenter) + RandomDirection()) * 4,
                     new((Random.Shared.NextSingle() - 0.5f)),
                     new(30),

@@ -1,5 +1,6 @@
 ﻿using Frent.Buffers;
 using Frent.Core;
+using Frent.Core.Events;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
@@ -9,6 +10,7 @@ internal abstract class TrimmableStack
     protected Array _buffer;
     public Array Buffer => _buffer;
 
+    public abstract void InvokeEventWith(GenericEvent? genericEvent, Entity entity, int index);
     public abstract int Push(object value);
 
     protected TrimmableStack(Array array)
@@ -17,6 +19,7 @@ internal abstract class TrimmableStack
     }
 }
 
+//maybe replace with ID table?
 internal sealed class TrimmableStack<T> : TrimmableStack
 {
     public T[] StrongBuffer => UnsafeExtensions.UnsafeCast<T[]>(Buffer);
@@ -58,4 +61,6 @@ internal sealed class TrimmableStack<T> : TrimmableStack
 
         FastStackArrayPool<T>.ResizeArrayFromPool(ref Unsafe.As<Array, T[]>(ref _buffer), (int)newSize);
     }
+
+    public override void InvokeEventWith(GenericEvent? genericEvent, Entity entity, int index) => genericEvent?.Invoke(entity, ref StrongBuffer[index]);
 }

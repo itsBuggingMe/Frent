@@ -4,6 +4,7 @@ using Frent.Core.Structures;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -128,7 +129,7 @@ partial struct Entity
     public ref T? TryGet<T>(out bool exists)
     {
         var @ref = TryGetCore<T>(out exists);
-        return ref @ref.Val!;
+        return ref @ref.Value!;
     }
 
     /// <summary>
@@ -172,7 +173,13 @@ partial struct Entity
         {
             var archetype = w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
             ((ComponentStorage<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
-            Core.Events.OnComponentAdded.TryInvokeAction(archetype, to, this, Component<T>.ID, location.ChunkIndex, location.ComponentIndex);
+
+            ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
+            if (exists)
+            {
+                eventRecord.Add.NormalEvent.Invoke(this, Component<T>.ID);
+                to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.ChunkIndex, location.ComponentIndex);
+            }
         }
         else
         {
@@ -194,7 +201,13 @@ partial struct Entity
             var archetype = w.AddComponent(this, eloc, componentID, out var to, out var location);
             //we don't check IsAssignableTo. The reason is perf - we get InvalidCastException anyways
             to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
-            Core.Events.OnComponentAdded.TryInvokeAction(archetype, to, this, componentID, location.ChunkIndex, location.ComponentIndex);
+
+            ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
+            if(exists)
+            {
+                eventRecord.Add.NormalEvent.Invoke(this, componentID);
+                to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.ChunkIndex, location.ComponentIndex);
+            }
         }
         else
         {
@@ -363,131 +376,184 @@ partial struct Entity
     #endregion
 
     #region Events
-    //TODO: finish all these
-    //right now, its implemented as auto events which increase the size of the entity
-    public event Action<Entity, ComponentID> OnComponentAdded;
-    public event Action<Entity, ComponentID> OnComponentRemoved;
-
-    public MulticastGenericAction<Entity>? OnComponentAddedGeneric
+    public event Action<Entity> OnDelete
     {
-        set
+        add
         {
-            if (value is null || !InternalIsAlive(out var world, out var location))
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return;
-
-            Archetype archetype = location.Archetype(world);
-            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnComponentAdded>.ID);
-            var comparr = archetype.Components;
-            if (mayhapsIndex < comparr.Length)
-            {
-                ref var comp = ref ((ComponentStorage<OnComponentAdded>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
-                comp.GenericComponentAdded += value;
-            }
-            else
-            {
-                //special case???
-                var t = new OnComponentAdded();
-                t.GenericComponentAdded += value;
-                world.WorldUpdateCommandBuffer.AddComponent(this, t);
-            }
+            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
+            EventRecord.Initalize(exists, ref events);
+            events.Delete.Push(value);
+            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.OnDelete;
         }
-        get => TryGet(out Ref<OnComponentAdded> compAdded) ? compAdded.Val.GenericComponentAdded : null;
-    }
-    public MulticastGenericAction<Entity>? OnComponentRemovedGeneric
-    {
-        set
+        remove
         {
-            if (value is null)
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return;
-
-            if(TryGet(out Ref<OnComponentAdded> compAdded))
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.OnDelete, out bool exists);
+            if (exists)
             {
-                compAdded.Val.GenericComponentAdded += value;
-            }
-            else
-            {
-                if()
+                events.Delete.Remove(value);
+                if (!events.Add.NormalEvent.HasListeners)
                 {
-
+                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.OnDelete;
                 }
             }
         }
-        get => TryGet(out Ref<OnComponentAdded> compAdded) ? compAdded.Val.GenericComponentAdded : null;
+    }
+
+    public event Action<Entity, ComponentID> OnComponentAdded
+    {
+        add
+        {
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+                return;
+            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
+            EventRecord.Initalize(exists, ref events);
+            events.Add.NormalEvent.Add(value);
+            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.AddComp;
+        }
+        remove
+        {
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+                return;
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.AddComp, out bool exists);
+            if (exists)
+            {
+                events.Add.NormalEvent.Remove(value);
+                if (!events.Add.NormalEvent.HasListeners)
+                {
+                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.AddComp;
+                }
+            }
+        }
+    }
+
+    public event Action<Entity, ComponentID> OnComponentRemoved
+    {
+        add
+        {
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+                return;
+            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
+            EventRecord.Initalize(exists, ref events);
+            events.Remove.NormalEvent.Add(value);
+            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.RemoveComp;
+        }
+        remove
+        {
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+                return;
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.RemoveComp, out bool exists);
+            if (exists)
+            {
+                events.Remove.NormalEvent.Remove(value);
+                if (!events.Remove.NormalEvent.HasListeners)
+                {
+                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.RemoveComp;
+                }
+            }
+        }
+    }
+
+    public GenericEvent? OnComponentAddedGeneric
+    {
+        set
+        {
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+                return;
+            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
+            EventRecord.Initalize(exists, ref events);
+            events.Add.GenericEvent = value;
+            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.GenericAddComp;
+        }
+        get
+        {
+            if (!InternalIsAlive(out var world, out EntityLocation entityLocation))
+                return null;
+
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.GenericAddComp, out bool exists);
+            if (exists)
+                return events.Add.GenericEvent;
+            return null;
+        }
+    }
+
+    public GenericEvent? OnComponentRemovedGeneric
+    {
+        set
+        {
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+                return;
+            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
+            EventRecord.Initalize(exists, ref events);
+            events.Remove.GenericEvent = value;
+            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.GenericRemoveComp;
+        }
+        get
+        {
+            if (!InternalIsAlive(out var world, out EntityLocation entityLocation))
+                return null;
+
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.GenericRemoveComp, out bool exists);
+            if (exists)
+                return events.Remove.GenericEvent;
+            return null;
+        }
     }
 
     public event Action<Entity, TagID> OnTagged
     {
         add
         {
-            if (value is null || !InternalIsAlive(out var world, out var location))
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return;
-
-            Archetype archetype = location.Archetype(world);
-            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnTagged>.ID);
-            var comparr = archetype.Components;
-            if (mayhapsIndex < comparr.Length)
-            {
-                ref var comp = ref ((ComponentStorage<OnTagged>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
-                comp.Tagged += value;
-            }
-            else
-            {
-                //special case???
-                var t = new OnTagged();
-                t.Tagged += value;
-                world.WorldUpdateCommandBuffer.AddComponent(this, t);
-            }
+            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
+            EventRecord.Initalize(exists, ref events);
+            events.Tag.Add(value);
+            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.Tagged;
         }
         remove
         {
-            if (value is null || !InternalIsAlive(out var world, out var location))
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return;
-
-            Archetype archetype = location.Archetype(world);
-            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnTagged>.ID);
-            var comparr = archetype.Components;
-            if (mayhapsIndex < comparr.Length)
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.Tagged, out bool exists);
+            if(exists)
             {
-                ref var comp = ref ((ComponentStorage<OnTagged>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
-                comp.Tagged -= value;
+                events.Tag.Remove(value);
+                if(!events.Tag.HasListeners)
+                {
+                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.Tagged;
+                }
             }
         }
     }
+
     //TODO: refactor?
     public event Action<Entity, TagID> OnDetach
     {
         add
         {
-            if (value is null || !InternalIsAlive(out var world, out var location))
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return;
-
-            Archetype archetype = location.Archetype(world);
-            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnTagged>.ID);
-            var comparr = archetype.Components;
-            if (mayhapsIndex < comparr.Length)
-            {
-                ref var comp = ref ((ComponentStorage<OnDetached>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
-                comp.Detached += value;
-            }
-            else
-            {
-                var t = new OnTagged();
-                t.Tagged += value;
-                world.WorldUpdateCommandBuffer.AddComponent(this, t);
-            }
+            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
+            EventRecord.Initalize(exists, ref events);
+            events.Detach.Add(value);
+            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.Detach;
         }
         remove
         {
-            if (value is null || !InternalIsAlive(out var world, out var location))
+            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return;
-
-            Archetype archetype = location.Archetype(world);
-            int mayhapsIndex = GlobalWorldTables.ComponentIndex(archetype.ID, Component<OnDetached>.ID);
-            var comparr = archetype.Components;
-            if (mayhapsIndex < comparr.Length)
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.Detach, out bool exists);
+            if (exists)
             {
-                ref var comp = ref ((ComponentStorage<OnDetached>)comparr[mayhapsIndex]).Chunks[location.ChunkIndex][location.ComponentIndex];
-                comp.Detached -= value;
+                events.Detach.Remove(value);
+                if (!events.Detach.HasListeners)
+                {
+                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.Detach;
+                }
             }
         }
     }
