@@ -2,11 +2,13 @@
 using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Systems;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -61,6 +63,8 @@ public partial class World : IDisposable
     public event Action<Entity> EntityDeleted;
     public event Action<Entity> ComponentAdded;
     public event Action<Entity> ComponentRemoved;
+
+    internal IDTable<EventData> Events;
 
     /// <summary>
     /// The current uniform provider used when updating components/queries with uniforms
