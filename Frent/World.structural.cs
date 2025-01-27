@@ -174,7 +174,7 @@ partial class World
         {
             InvokeEvents(this, entity);
         }
-        else if(entityLocation.HasEvent(EntityFlags.Events))
+        if(entityLocation.HasEvent(EntityFlags.Events))
         {
             EventLookup.Remove(entity.EntityIDOnly);
         }

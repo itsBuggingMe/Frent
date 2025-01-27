@@ -8,6 +8,7 @@ using Frent.Core;
 using Frent.Systems;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Parsers.IIS_Trace;
+using System.Reflection.Metadata;
 
 namespace Frent.Sample.Asteroids;
 
@@ -50,7 +51,7 @@ public class AsteroidsGame : Game
 
     private void Reset()
     {
-        foreach(var item in _enemies)
+        foreach (var item in _enemies)
         {
             if(item.IsAlive)
             {
@@ -67,6 +68,7 @@ public class AsteroidsGame : Game
             new Vector2(-10, 10),
         ]), default, new() { Radius = 25 });
         _player.Tag<Shootable>();
+        _player.OnDelete += _ => Reset();
 
         _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player, smoothing: 0.08f), _player.Get<Transform>(), _camera.IsAlive && _camera.TryGet(out Ref<Camera> c) ? c.Value : default);
         _player.Get<PlayerController>().Camera = _camera;
@@ -127,16 +129,6 @@ public class AsteroidsGame : Game
                 {
                     _enemies.RemoveAt(i);
                 }
-            }
-        }
-
-        if(!_player.IsAlive)
-        {
-            Reset();
-
-            foreach(var e in _enemies.Where(e => e.IsAlive))
-            {
-                e.Get<EnemyController>().Target = _player;
             }
         }
 

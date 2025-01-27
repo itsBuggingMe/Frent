@@ -9,9 +9,9 @@ internal struct EventRecord
     internal ComponentEvent Remove;
     internal FrugalStack<Action<Entity>> Delete;
 
-    public static void Initalize(bool actuallyInitalize, ref EventRecord record)
+    public static void Initalize(bool exists, ref EventRecord record)
     {
-        if(actuallyInitalize)
+        if(!exists)
         {
             record.Tag = new TagEvent();
             record.Detach = new TagEvent();

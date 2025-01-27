@@ -13,9 +13,9 @@ internal struct EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort 
 
     public static EntityLocation Default { get; } = new EntityLocation(new(ushort.MaxValue), ushort.MaxValue, ushort.MaxValue);
 
-    public bool HasEvent(EntityFlags entityFlags)
+    public readonly bool HasEvent(EntityFlags entityFlags)
     {
-        var res =  (Flags & entityFlags) != Flags;
+        var res =  (Flags & entityFlags) != EntityFlags.None;
         return res;
     }
 
