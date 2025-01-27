@@ -1,12 +1,7 @@
 ﻿using Frent.Variadic.Generator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.Buffers;
-using System.CodeDom.Compiler;
-using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -16,7 +11,7 @@ namespace Frent.Generator;
 [Generator(LanguageNames.CSharp)]
 public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 {
-    public void Initialize(IncrementalGeneratorInitializationContext context)   
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var models = context.SyntaxProvider.CreateSyntaxProvider(static (n, _) => n is TypeDeclarationSyntax typeDec && typeDec.BaseList is not null,
             static (gsc, ct) =>
@@ -35,7 +30,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                             int index = @namespace.IndexOf('.');
                             var genericArgs = @interface.TypeArguments.Length == 0 ? [] : new string[@interface.TypeArguments.Length];
 
-                            for(int i = 0; i < @interface.TypeArguments.Length; i++)
+                            for (int i = 0; i < @interface.TypeArguments.Length; i++)
                                 genericArgs[i] = @interface.TypeArguments[i].ToString();
 
                             //stack allocate 6 slots
@@ -43,13 +38,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                             foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
                             {
-                                if(item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
+                                if (item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
                                 {
-                                    foreach(var attrList in method.AttributeLists)
+                                    foreach (var attrList in method.AttributeLists)
                                     {
-                                        foreach(var attr in attrList.Attributes)
+                                        foreach (var attr in attrList.Attributes)
                                         {
-                                            if (gsc.SemanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor && 
+                                            if (gsc.SemanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor &&
                                                 InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
                                             {
                                                 stackAttributes.Push(attrCtor.ContainingType.ToString());
@@ -65,7 +60,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                                 symbol.Name,
                                 @interface.Name,
                                 index == -1 ? @namespace : @namespace.Substring(0, index),
-                                index == -1 ? string.Empty : @namespace.Substring(index + 1), 
+                                index == -1 ? string.Empty : @namespace.Substring(index + 1),
                                 new EquatableArray<string>(genericArgs),
                                 new EquatableArray<string>(stackAttributes.ToArray()));
                         }
@@ -95,7 +90,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .AppendLine("using System.Runtime.CompilerServices;")
             .AppendLine();
 
-        if(model.BaseNamespace != string.Empty)
+        if (model.BaseNamespace != string.Empty)
             sb
                 .Append("namespace ").Append(model.BaseNamespace).Append(';').AppendLine();
 
@@ -108,15 +103,15 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append("    internal static void Initalize").Append(model.FullName.Replace('.', '_')).AppendLine("()")
                 .AppendLine("    {")
                 .Append("        GenerationServices.RegisterType(typeof(")
-                .AppendNamespace(model.SubNamespace).Append(model.Type).Append("), new Frent.Updating.Runners."); 
-            (model.ImplInterface == RegistryHelpers.TargetInterfaceName ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("UpdateRunnerFactory").Append('<').AppendNamespace(model.SubNamespace).Append(model.Type);
+                .AppendNamespace(model.SubNamespace).Append(model.Type).Append("), new Frent.Updating.Runners.");
+        (model.ImplInterface == RegistryHelpers.TargetInterfaceName ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count)).Append("UpdateRunnerFactory").Append('<').AppendNamespace(model.SubNamespace).Append(model.Type);
 
-        foreach(var item in model.GenericArguments)
+        foreach (var item in model.GenericArguments)
             sb.Append(", ").Append(item);
-        
+
         sb.AppendLine(">());");
-        
-        foreach(var attrType in model.Attributes)
+
+        foreach (var attrType in model.Attributes)
         {
             sb.Append("        GenerationServices.RegisterUpdateMethodAttribute(")
                 .Append("typeof(")
@@ -169,10 +164,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
         return false;
     }
-    private static bool InterfaceImplementsIComponent(INamedTypeSymbol namedTypeSymbol) => 
-        (namedTypeSymbol.Interfaces.Length == 1 && 
+    private static bool InterfaceImplementsIComponent(INamedTypeSymbol namedTypeSymbol) =>
+        (namedTypeSymbol.Interfaces.Length == 1 &&
         namedTypeSymbol.Interfaces[0].ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName) ||
-        namedTypeSymbol.Interfaces.Length == 0 && 
+        namedTypeSymbol.Interfaces.Length == 0 &&
         namedTypeSymbol.ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName;
 
     internal record struct ComponentUpdateItemModel(string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);

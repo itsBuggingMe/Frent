@@ -1,8 +1,5 @@
-﻿using Frent.Collections;
-using Frent.Core;
-using Frent.Core.Events;
+﻿using Frent.Core;
 using Frent.Core.Structures;
-using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -91,7 +88,7 @@ public partial struct Entity : IEquatable<Entity>
         }
         return IsAliveCold(out _, out _);
     }
-    
+
     private bool IsAliveCold([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
         world = GlobalWorldTables.Worlds.GetValueNoCheck(WorldID);

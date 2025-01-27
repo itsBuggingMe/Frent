@@ -1,8 +1,6 @@
 ﻿using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
-using Microsoft.Diagnostics.Tracing.Parsers.JScript;
-using System;
 
 namespace Frent.Sample;
 

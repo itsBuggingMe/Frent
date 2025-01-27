@@ -24,7 +24,7 @@ internal class Program
             using var p = new AsteroidsGame();
             p.Run();
         }
-        else if(userOption == 1)
+        else if (userOption == 1)
         {
             using var p = new GameRoot(args.Length == 0 ? 200_000 : int.Parse(args[0]));
             p.Run();

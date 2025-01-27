@@ -1,5 +1,4 @@
 ﻿using Frent.Components;
-using System.Runtime.CompilerServices;
 
 namespace Frent.Tests;
 
@@ -12,7 +11,7 @@ struct UpdateComponent2 : IComponent<int, long>
 {
     public void Update(ref int arg1, ref long arg2)
     {
-        arg1++; 
+        arg1++;
         arg2++;
     }
 }

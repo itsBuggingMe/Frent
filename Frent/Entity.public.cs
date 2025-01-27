@@ -43,8 +43,8 @@ partial struct Entity
     /// </summary>
     /// <param name="componentID">The component ID of the component type to check.</param>
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryHas(ComponentID componentID) => 
-        InternalIsAlive(out EntityLocation entityLocation) && 
+    public bool TryHas(ComponentID componentID) =>
+        InternalIsAlive(out EntityLocation entityLocation) &&
         GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
 
     /// <summary>
@@ -203,7 +203,7 @@ partial struct Entity
             to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
 
             ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
-            if(exists)
+            if (exists)
             {
                 eventRecord.Add.NormalEvent.Invoke(this, componentID);
                 to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.ChunkIndex, location.ComponentIndex);
@@ -519,10 +519,10 @@ partial struct Entity
             if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return;
             ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.Tagged, out bool exists);
-            if(exists)
+            if (exists)
             {
                 events.Tag.Remove(value);
-                if(!events.Tag.HasListeners)
+                if (!events.Tag.HasListeners)
                 {
                     world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.Tagged;
                 }

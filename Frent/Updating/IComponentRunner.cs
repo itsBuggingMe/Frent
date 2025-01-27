@@ -2,7 +2,6 @@
 using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
-using System.Numerics;
 
 namespace Frent.Updating;
 

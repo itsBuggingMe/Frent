@@ -1,6 +1,4 @@
 ﻿using Frent.Buffers;
-using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
@@ -30,7 +28,7 @@ internal struct FrugalStack<T>()
 
     public bool TryPop(out T value)
     {
-        if(_nextIndex == 0)
+        if (_nextIndex == 0)
         {
             value = default!;
             return false;
@@ -53,7 +51,7 @@ internal struct FrugalStack<T>()
     {
         int nextIndex = _nextIndex;
         Span<T> items = _buffer.AsSpan()[..nextIndex];
-        for(int i = 0; i < nextIndex; i++)
+        for (int i = 0; i < nextIndex; i++)
         {
             if (EqualityComparer<T>.Default.Equals(items[i], item))
             {

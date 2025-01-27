@@ -11,7 +11,7 @@ internal struct EventRecord
 
     public static void Initalize(bool exists, ref EventRecord record)
     {
-        if(!exists)
+        if (!exists)
         {
             record.Tag = new TagEvent();
             record.Detach = new TagEvent();

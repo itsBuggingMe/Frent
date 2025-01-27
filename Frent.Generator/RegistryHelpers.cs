@@ -7,7 +7,7 @@ public static class RegistryHelpers
 {
     public static StringBuilder AppendNamespace(this StringBuilder sb, string @namespace)
     {
-        if(@namespace == string.Empty)
+        if (@namespace == string.Empty)
             return sb;
         return sb.Append(@namespace).Append('.');
     }

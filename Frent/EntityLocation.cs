@@ -15,7 +15,7 @@ internal struct EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort 
 
     public readonly bool HasEvent(EntityFlags entityFlags)
     {
-        var res =  (Flags & entityFlags) != EntityFlags.None;
+        var res = (Flags & entityFlags) != EntityFlags.None;
         return res;
     }
 
@@ -42,6 +42,6 @@ internal enum EntityFlags : ushort
     OnDelete = 1 << 6,
 
     Events = Tagged | Detach | AddComp | RemoveComp | GenericAddComp | GenericAddComp | OnDelete,
-    
+
     //NeedsDispose = 1 << 4,
 }

@@ -1,7 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using System.Reflection;
 using Frent.Systems;
+using System.Reflection;
 
 namespace Frent.Benchmarks;
 
@@ -33,7 +33,7 @@ public class Program
             ?.Invoke(t, []);
 
         //jit warmup
-        for(int i = 0; i < 5; i++)
+        for (int i = 0; i < 5; i++)
         {
             for (int j = 0; j < 32; j++)
                 call(t);

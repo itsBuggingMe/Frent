@@ -1,4 +1,3 @@
-using Frent.Core;
 using Frent.Systems;
 using System.Runtime.CompilerServices;
 using static NUnit.Framework.Assert;
@@ -55,12 +54,12 @@ public class WorldTests
         using World world = new World();
         Entity[] e = Range(0, 1000).Select(_ => world.Create<UpdateComponent1, int>(default, default)).ToArray();
         That(e.All(e => e.IsAlive()), "No entities have been killed");
-        for(int i = 0; i < e.Length; i++)
+        for (int i = 0; i < e.Length; i++)
             e[i].Delete();
         That(e.All(e => !e.IsAlive()), "All entities have been killed");
         var x = e.Where(e => e.IsAlive());
     }
-    
+
     [Test]
     public void World_Query_Uniform()
     {

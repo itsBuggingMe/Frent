@@ -1,5 +1,4 @@
 ﻿using Frent.Systems;
-using System.Diagnostics;
 using Frent.Variadic.Generator;
 
 namespace Frent.Buffers;
@@ -35,7 +34,7 @@ partial class MultiThreadHelpers<TArg>
         countdown.Wait();
     }
 
-    internal struct ActionState<TAction>(CountdownEvent counter, Chunk<TArg> data, TAction action) 
+    internal struct ActionState<TAction>(CountdownEvent counter, Chunk<TArg> data, TAction action)
         where TAction : struct, IChunkAction<TArg>
     {
         public void Execute()

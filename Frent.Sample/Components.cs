@@ -1,5 +1,4 @@
-﻿using CommandLine;
-using Frent.Components;
+﻿using Frent.Components;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 

@@ -4,7 +4,6 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent;
@@ -26,35 +25,35 @@ partial class World
 
         ReadOnlySpan<ComponentID> existingComponentIDs = currentArchetype.ArchetypeTypeArray.AsSpan();
         int newCompCount = comps.Length + existingComponentIDs.Length;
-        if((uint)newCompCount > 16)
+        if ((uint)newCompCount > 16)
             FrentExceptions.Throw_InvalidOperationException("Too many components");
-        
+
         Span<ComponentID> allComps = stackalloc ComponentID[newCompCount];
         existingComponentIDs.CopyTo(allComps);
         int j = 0;
-        for(int i = existingComponentIDs.Length; i < comps.Length; i++)
+        for (int i = existingComponentIDs.Length; i < comps.Length; i++)
             allComps[i] = comps[j++].Component;
-        var tags =  currentArchetype.ArchetypeTagArray;
+        var tags = currentArchetype.ArchetypeTagArray;
 
         var destination = Archetype.CreateOrGetExistingArchetype(allComps, tags.AsSpan(), this, null, tags);
         destination.CreateEntityLocation(out var nextELoc) = entity;
 
-        for(int i = 0; i < currentArchetype.Components.Length; i++)
+        for (int i = 0; i < currentArchetype.Components.Length; i++)
         {
             destination.Components[i].PullComponentFrom(currentArchetype.Components[i], nextELoc, location);
         }
 
         j = 0;
-        for(int i = existingComponentIDs.Length; i < currentArchetype.Components.Length; i++)
+        for (int i = existingComponentIDs.Length; i < currentArchetype.Components.Length; i++)
         {
             var componentLocation = comps[j++];
             currentArchetype.Components[i].PullComponentFrom(
-                Component.ComponentTable[componentLocation.Component.ID].Stack, 
-                nextELoc, 
+                Component.ComponentTable[componentLocation.Component.ID].Stack,
+                nextELoc,
                 componentLocation.Index);
         }
 
-        
+
         Entity movedDown = currentArchetype.DeleteEntity(location.ChunkIndex, location.ComponentIndex);
 
         EntityTable.IndexWithInt(movedDown.EntityID).Location = location;
@@ -142,7 +141,7 @@ partial class World
         {
             if (i == skipIndex)
             {
-                if(entityLocation.HasEvent(EntityFlags.GenericRemoveComp))
+                if (entityLocation.HasEvent(EntityFlags.GenericRemoveComp))
                 {
                     from.Components[i].PushComponentToStack(entityLocation.ChunkIndex, entityLocation.ComponentIndex, out tmpEventComponentIndex);
                 }
@@ -159,7 +158,7 @@ partial class World
 
         ComponentRemoved?.Invoke(entity);
         ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp, out bool eventExist);
-        if(eventExist)
+        if (eventExist)
         {
             eventData.Remove.NormalEvent.Invoke(entity, component);
             tmpEventComponentStorage?.InvokeEventWith(eventData.Remove.GenericEvent, entity, tmpEventComponentIndex);
@@ -170,11 +169,11 @@ partial class World
     internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
     {
         EntityDeleted?.Invoke(entity);
-        if(entityLocation.HasEvent(EntityFlags.OnDelete))
+        if (entityLocation.HasEvent(EntityFlags.OnDelete))
         {
             InvokeEvents(this, entity);
         }
-        if(entityLocation.HasEvent(EntityFlags.Events))
+        if (entityLocation.HasEvent(EntityFlags.Events))
         {
             EventLookup.Remove(entity.EntityIDOnly);
         }

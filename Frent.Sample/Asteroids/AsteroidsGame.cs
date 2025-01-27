@@ -1,14 +1,9 @@
 ﻿using Apos.Shapes;
-using Microsoft.Diagnostics.Tracing.Parsers;
+using Frent.Core;
+using Frent.Systems;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Diagnostics;
-using Frent.Core;
-using Frent.Systems;
-using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
-using Microsoft.Diagnostics.Tracing.Parsers.IIS_Trace;
-using System.Reflection.Metadata;
 
 namespace Frent.Sample.Asteroids;
 
@@ -53,7 +48,7 @@ public class AsteroidsGame : Game
     {
         foreach (var item in _enemies)
         {
-            if(item.IsAlive)
+            if (item.IsAlive)
             {
                 item.Delete();
             }
@@ -84,11 +79,11 @@ public class AsteroidsGame : Game
 
 
         timeSinceLastAsteroid++;
-        if(timeSinceLastAsteroid >= 15 && _player.IsAlive && _enemies.Count < 30)
+        if (timeSinceLastAsteroid >= 15 && _player.IsAlive && _enemies.Count < 30)
         {
             timeSinceLastAsteroid = 0;
 
-            if(Random.Shared.Next() % 2 == 0)
+            if (Random.Shared.Next() % 2 == 0)
             {
                 int width = GraphicsDevice.Viewport.Width;
                 int height = GraphicsDevice.Viewport.Height;
@@ -101,7 +96,7 @@ public class AsteroidsGame : Game
                     );
                 e.Tag<Asteroid>();
                 e.Tag<Shootable>();
-                
+
                 _enemies.Add(e);
             }
             else
@@ -117,15 +112,15 @@ public class AsteroidsGame : Game
                     new(_player)
                     );
                 e.Tag<Shootable>();
-                
+
                 _enemies.Add(e);
             }
         }
         else
         {
-            for(int i = _enemies.Count - 1; i >= 0; i--)
+            for (int i = _enemies.Count - 1; i >= 0; i--)
             {
-                if(!_enemies[i].IsAlive)
+                if (!_enemies[i].IsAlive)
                 {
                     _enemies.RemoveAt(i);
                 }
@@ -171,7 +166,7 @@ public class AsteroidsGame : Game
     {
         Vector2[] verts = new Vector2[edges];
         float rot = 0;
-        for(int i = 0; i < verts.Length; i++)
+        for (int i = 0; i < verts.Length; i++)
         {
             verts[i] = Vector2.Rotate(Vector2.UnitX * (Random.Shared.NextSingle() + 3) * 8, rot);
             rot += MathHelper.TwoPi / edges;
@@ -214,7 +209,7 @@ public class AsteroidsGame : Game
 
     public static void BlowUpEntity(Entity entity)
     {
-        if(entity.TryGet(out Ref<Polygon> polygon) && entity.TryGet(out Ref<Transform> transform))
+        if (entity.TryGet(out Ref<Polygon> polygon) && entity.TryGet(out Ref<Transform> transform))
         {
             World w = entity.World;
 
@@ -239,7 +234,7 @@ public class AsteroidsGame : Game
                     {
                         ref var l = ref e.Get<Line>();
                         l.Thickness *= 1.01f;
-                        l.Opacity *=  1 - f;
+                        l.Opacity *= 1 - f;
                     }));
             }
 

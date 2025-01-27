@@ -1,15 +1,10 @@
-﻿using Frent.Components;
-using Iced.Intel;
-using Microsoft.CodeAnalysis;
+﻿using Apos.Shapes;
+using Frent.Components;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections;
-using System.Transactions;
-using Frent.Core;
-using Apos.Shapes;
 using System.Diagnostics;
-using BenchmarkDotNet.Attributes;
 
 namespace Frent.Sample.Asteroids;
 
@@ -18,7 +13,7 @@ internal struct DecayTimer(int Frames) : IEntityComponent
     [Tick]
     public void Update(Entity entity)
     {
-        if(--Frames < 0)
+        if (--Frames < 0)
             entity.Delete();
     }
 }
@@ -98,7 +93,7 @@ internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2
 
         public bool MoveNext()
         {
-            if(_index == -1)
+            if (_index == -1)
             {
                 _index++;
                 return true;
@@ -202,7 +197,7 @@ internal struct EnemyController(Entity target) : IEntityComponent<Transform, Vel
         arg2 += pointTo * 0.01f;
         arg2 = arg2.DXY * 0.99f;
         _shootTimer++;
-        if(_shootTimer > 120)
+        if (_shootTimer > 120)
         {
             _shootTimer = 0;
             AsteroidsGame.ShootBullet(entity, pointTo, 4);
@@ -247,7 +242,7 @@ internal struct Triangle : IUniformComponent<ShapeBatch, Transform>
     }
 }
 
-internal struct AngularVelocity(float dt)  : IComponent<Transform>
+internal struct AngularVelocity(float dt) : IComponent<Transform>
 {
     //delta theta???
     public float DT = dt;
@@ -278,7 +273,7 @@ internal struct BulletBehavior(Entity entity) : IComponent<CircleCollision>
     [Tick]
     public void Update(ref CircleCollision arg)
     {
-        if(!arg.CollidesWith.IsNull && arg.CollidesWith != Parent && arg.CollidesWith.IsAlive && arg.CollidesWith.Tagged<Shootable>())
+        if (!arg.CollidesWith.IsNull && arg.CollidesWith != Parent && arg.CollidesWith.IsAlive && arg.CollidesWith.Tagged<Shootable>())
         {
             AsteroidsGame.BlowUpEntity(arg.CollidesWith);
             arg.CollidesWith.Delete();

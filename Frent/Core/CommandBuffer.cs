@@ -1,10 +1,6 @@
-using System.Net;
+using Frent.Collections;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Frent.Collections;
-using Frent.Core.Events;
-using Frent.Core.Structures;
-using Frent.Updating.Runners;
 
 namespace Frent.Core;
 
@@ -51,7 +47,7 @@ public class CommandBuffer
         SetIsActive();
         _deleteEntityBuffer.Push(entity.EntityIDOnly);
     }
-    
+
     /// <summary>
     /// Removes a component from when <see cref="PlayBack"/> is called
     /// </summary>
@@ -112,7 +108,7 @@ public class CommandBuffer
     /// <param name="componentType">The type to add the component as</param>
     /// <remarks><paramref name="component"/> must be assignable to <paramref name="Type"/></remarks>
     public void AddComponent(Entity entity, Type componentType, object component) => AddComponent(entity, Component.GetComponentID(componentType), component);
-    
+
     /// <summary>
     /// Adds a component to an entity when <see cref="PlayBack"/> is called
     /// </summary>
@@ -124,7 +120,7 @@ public class CommandBuffer
     public CommandBuffer Entity()
     {
         SetIsActive();
-        if(_lastCreateEntityComponentsBufferIndex >= 0)
+        if (_lastCreateEntityComponentsBufferIndex >= 0)
         {
             throw new InvalidOperationException("An entity is currently being created! Use 'End' to finish an entity creation!");
         }
@@ -159,7 +155,7 @@ public class CommandBuffer
         var e = _world.CreateEntityWithoutEvent();
         _createEntityBuffer.Push(new CreateCommand(
             e.EntityIDOnly,
-            _lastCreateEntityComponentsBufferIndex, 
+            _lastCreateEntityComponentsBufferIndex,
             _createEntityBuffer.Count - _lastCreateEntityComponentsBufferIndex));
         _lastCreateEntityComponentsBufferIndex = -1;
         return e;
@@ -215,7 +211,7 @@ public class CommandBuffer
                 runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location, command.Index);
 
 
-                if(record.Location.HasEvent(EntityFlags.AddComp | EntityFlags.GenericAddComp))
+                if (record.Location.HasEvent(EntityFlags.AddComp | EntityFlags.GenericAddComp))
                 {
                     ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
                     events.Add.NormalEvent.Invoke(concrete, command.ComponentID);
@@ -266,7 +262,7 @@ public class CommandBuffer
 
     private void SetIsActive()
     {
-        if(_isInactive)
+        if (_isInactive)
         {
             _isInactive = false;
             Interlocked.Increment(ref _activeCommandBuffers);

@@ -1,24 +1,19 @@
 ﻿using Microsoft.CodeAnalysis;
-using System.Collections.Generic;
-using System;
-using System.Diagnostics;
-using System.Reflection;
-using System.IO;
-using System.Threading;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
-using System.Collections.Frozen;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Xml.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Frent.Variadic.Generator
 {
     [Generator(LanguageNames.CSharp)]
     public class VariadicGenerator : IIncrementalGenerator
-    {   
+    {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             context.RegisterPostInitializationOutput(
@@ -166,7 +161,7 @@ namespace Frent.Variadic.Generator
             }
         }
 
-        internal struct GenerationModel 
+        internal struct GenerationModel
         {
             public string SourceCode;
             public string FileName;

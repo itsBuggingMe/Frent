@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Frent.Generator;
 internal ref struct StackStack<T>
@@ -16,7 +14,7 @@ internal ref struct StackStack<T>
 
     public void Push(T val)
     {
-        if(_index >= _buffer.Length)
+        if (_index >= _buffer.Length)
         {
             _array = new T[_buffer.Length * 2];
             _buffer.CopyTo(_array);

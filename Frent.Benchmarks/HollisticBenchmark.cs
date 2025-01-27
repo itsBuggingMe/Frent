@@ -38,11 +38,11 @@ internal class HollisticBenchmark
         Func<Entity>[] finalDelegates = new Func<Entity>[componentTypes.Length];
 
         //unqiue entity types
-        for(int i = 0; i < DelegateCount; i++)
+        for (int i = 0; i < DelegateCount; i++)
         {
             int componentCount = (int)(random.NextSingle() * random.NextSingle() * 16);//[0..15]
             Console.WriteLine(componentCount);
-            while(chosenIndidies.Count < componentCount)
+            while (chosenIndidies.Count < componentCount)
                 chosenIndidies.Add(random.Next(componentTypes.Length));
 
             MethodInfo rightArity = method[i];

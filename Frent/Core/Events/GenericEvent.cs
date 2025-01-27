@@ -1,6 +1,4 @@
 ﻿using Frent.Collections;
-using Frent.Updating;
-using Frent.Updating.Runners;
 
 namespace Frent.Core.Events;
 
@@ -52,9 +50,9 @@ public class GenericEvent
     //I don't think its violating "DO NOT be cute when defining operator overloads." since its what event does.
     public static GenericEvent? operator +(GenericEvent? left, IGenericAction<Entity> right)
     {
-        if(right is not null)
+        if (right is not null)
         {
-            if(left is null)
+            if (left is null)
             {
                 left = new();
                 left._first = right;

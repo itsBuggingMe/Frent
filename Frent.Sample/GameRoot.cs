@@ -1,19 +1,8 @@
-﻿using Frent;
-using Frent.Systems;
-using Frent.Buffers;
-using Frent.Components;
-using Frent.Collections;
-using System.Diagnostics;
-using System.Reflection;
-using Frent.Updating.Runners;
-using BenchmarkDotNet.Running;
-using BenchmarkDotNet.Attributes;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+﻿using Frent.Systems;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsTCPIP;
+using System.Reflection;
 
 
 namespace Frent.Sample
@@ -79,9 +68,9 @@ namespace Frent.Sample
             Window.Title = $"FPS: {1000 / gameTime.ElapsedGameTime.TotalMilliseconds} T: {ThreadPool.ThreadCount}";
             DeltaTime = (float)(gameTime.ElapsedGameTime.TotalMilliseconds / 16.666);
 
-            if(Keyboard.GetState().IsKeyDown(Keys.Space))
+            if (Keyboard.GetState().IsKeyDown(Keys.Space))
             {
-                for(int i = 0; i < 100; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     Entity e;
                     entities.Add(e = _world.CreateFromObjects([
@@ -108,7 +97,7 @@ namespace Frent.Sample
 
         private void DeleteRandomEntity()
         {
-            if(entities.Count > 0)
+            if (entities.Count > 0)
             {
                 int index = Random.Shared.Next(entities.Count);
                 entities[index].Delete();

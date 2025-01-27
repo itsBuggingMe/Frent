@@ -8,7 +8,6 @@ using Frent.Systems;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.Tracing;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -95,7 +94,7 @@ public partial class World : IDisposable
 
         if (_nextWorldID == byte.MaxValue)
             throw new Exception("Max world count reached");
-        
+
         GlobalWorldTables.Worlds[ID] = this;
 
         WorldArchetypeTable = new Archetype[GlobalWorldTables.ComponentTagLocationTable.Length];
@@ -249,7 +248,7 @@ public partial class World : IDisposable
 
     internal ref EventRecord TryGetEventData(EntityLocation entityLocation, EntityIDOnly entity, EntityFlags eventType, out bool exists)
     {
-        if(entityLocation.HasEvent(eventType))
+        if (entityLocation.HasEvent(eventType))
         {
             exists = true;
             return ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity);
@@ -274,7 +273,7 @@ public partial class World : IDisposable
 
         if (WorldCachePackedValue == PackedIDVersion)
         {
-            for(int i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 WorldCachePackedValue = DefaultWorldCachePackedValue;
             }
