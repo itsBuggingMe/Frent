@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
+using Frent.Core;
 using Frent.Systems;
 
 namespace Frent.Benchmarks;
@@ -25,19 +26,18 @@ public class MicroBenchmark
         _entity = _world.Create<int, double>(default, default);
     }
 
-    int x;
-    [Benchmark]
-    [BenchmarkCategory(Categories.Has)]
-    public void Opt()
-    {
-
-    }
-
     [Benchmark]
     [BenchmarkCategory(Categories.Has)]
     public void Norm()
     {
-
+        ComponentID id = Component<int>.ID;
+        for(int i = 0; i < 50; i++)
+        {
+            _entity.Has(id);
+            _entity.Has(id);
+            _entity.Has(id);
+            _entity.Has(id);
+        }
     }
 
     /*

@@ -15,9 +15,6 @@ namespace Frent;
     "|    /// <param name=\"comp$\">The entity's component of type <typeparamref name=\"T$\"/></param>\n|")]
 public static partial class EntityExtensions
 {
-    //extension class b/c the generator doesn't work when there are other attributes
-    //and im too lazy to fix it
-
     /// <summary>
     /// Deconstructs the constituent components of an entity as reference(s)
     /// </summary>

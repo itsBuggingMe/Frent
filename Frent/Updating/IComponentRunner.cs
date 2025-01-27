@@ -16,6 +16,7 @@ internal interface IComponentRunner
     internal void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other);
     internal void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other);
     internal void InvokeGenericActionWith(GenericEvent? action, Entity entity, ushort chunkIndex, ushort componentIndex);
+    internal void InvokeGenericActionWith(IGenericAction action, ushort chunkIndex, ushort componentIndex);
     internal TrimmableStack PushComponentToStack(ushort chunkIndex, ushort componentIndex, out int index);
     internal void SetAt(object component, ushort chunkIndex, ushort compIndex);
     internal object GetAt(ushort chunkIndex, ushort compIndex);

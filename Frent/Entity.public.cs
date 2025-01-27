@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using Frent.Core.Events;
 using Frent.Core.Structures;
+using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -82,7 +83,8 @@ partial struct Entity
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
         //3x
-        return ref ((ComponentStorage<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex][entityLocation.ComponentIndex];
+        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(entityLocation.Archetype(world).Components.UnsafeArrayIndex(compIndex));
+        return ref storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).Buffer.UnsafeArrayIndex(entityLocation.ComponentIndex);
     }//2, 0
 
     /// <summary>
@@ -630,6 +632,20 @@ partial struct Entity
         {
             AssertIsAlive(out var world, out var loc);
             return loc.Archetype(world).ArchetypeTagArray;
+        }
+    }
+
+    /// <summary>
+    /// Enumerates all components one by one
+    /// </summary>
+    /// <param name="onEach">The unbound generic function called on each item</param>
+    public void EnumerateComponents(IGenericAction onEach)
+    {
+        AssertIsAlive(out var world, out var loc);
+        IComponentRunner[] runners = loc.Archetype(world).Components;
+        foreach(var runner in runners)
+        {
+            runner.InvokeGenericActionWith(onEach, loc.ChunkIndex, loc.ComponentIndex);
         }
     }
 

@@ -1,7 +1,9 @@
 ﻿using Frent.Core;
 using Frent.Core.Structures;
+using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -89,7 +91,7 @@ public partial struct Entity : IEquatable<Entity>
         return IsAliveCold(out _, out _);
     }
 
-    private bool IsAliveCold([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
+    internal bool IsAliveCold([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
         world = GlobalWorldTables.Worlds.GetValueNoCheck(WorldID);
         if (world?.Version == WorldVersion)
@@ -159,22 +161,27 @@ public partial struct Entity : IEquatable<Entity>
             goto doesntExist;
 
         exists = true;
-        return Ref<T>.Create(((ComponentStorage<T>)entityLocation.Archetype(world).Components[compIndex]).AsSpan()[entityLocation.ChunkIndex].AsSpan(), entityLocation.ComponentIndex);
+        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(
+            entityLocation.Archetype(world).Components.UnsafeArrayIndex(compIndex));
+
+        return Ref<T>.Create(storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).AsSpan(), entityLocation.ComponentIndex);
 
     doesntExist:
         exists = false;
         return default;
     }
 
-    //TODO: opt
-    internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation, Archetype archetype)
+    internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation, IComponentRunner[] archetypeComponents)
     {
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(typeof(TComp));
 
-        return Ref<TComp>.Create(((ComponentStorage<TComp>)archetype.Components.UnsafeArrayIndex(compIndex)).Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).AsSpan(), entityLocation.ComponentIndex);
+        ComponentStorage<TComp> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<TComp>>(
+            archetypeComponents.UnsafeArrayIndex(compIndex));
+
+        return Ref<TComp>.Create(storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).AsSpan(), entityLocation.ComponentIndex);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

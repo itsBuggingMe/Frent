@@ -1,4 +1,5 @@
 ﻿using Frent.Core;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent;
@@ -13,15 +14,17 @@ internal struct EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort 
 
     public static EntityLocation Default { get; } = new EntityLocation(new(ushort.MaxValue), ushort.MaxValue, ushort.MaxValue);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly bool HasEvent(EntityFlags entityFlags)
     {
         var res = (Flags & entityFlags) != EntityFlags.None;
         return res;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Archetype Archetype(World world)
     {
-        return world.WorldArchetypeTable[ArchetypeID.ID];
+        return world.WorldArchetypeTable.UnsafeArrayIndex(ArchetypeID.ID);
     }
 }
 

@@ -15,3 +15,17 @@ public interface IGenericAction<TParam>
     /// <param name="type">The generic parameter</param>
     public void Invoke<T>(TParam param, ref T type);
 }
+
+/// <summary>
+/// An generic action with known parameter
+/// </summary>
+/// <remarks>Since delegates cannot be unbound generics, we use an interface instead</remarks>
+public interface IGenericAction
+{
+    /// <summary>
+    /// Runs the arbitrary generic method that this <see cref="IGenericAction"/> represents
+    /// </summary>
+    /// <typeparam name="T">The unbound generic parameter</typeparam>
+    /// <param name="type">The generic parameter</param>
+    public void Invoke<T>(ref T type);
+}
