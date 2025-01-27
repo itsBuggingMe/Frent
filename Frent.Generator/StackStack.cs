@@ -1,6 +1,7 @@
 ﻿using System;
 
 namespace Frent.Generator;
+
 internal ref struct StackStack<T>
 {
     private Span<T> _buffer;

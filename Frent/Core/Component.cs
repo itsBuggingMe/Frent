@@ -4,6 +4,7 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
@@ -17,20 +18,26 @@ public static class Component<T>
     /// The component ID for <typeparamref name="T"/>
     /// </summary>
     public static ComponentID ID => _id;
+    /// <summary>
+    /// The user defined update order, or zero
+    /// </summary>
+    public static int UpdateOrder => _updateOrder;
 
     private static readonly ComponentID _id;
-
+    private static readonly int _updateOrder;
+    private static readonly IComponentRunnerFactory<T> RunnerInstance;
     internal static readonly TrimmableStack<T> TrimmableStack;
 
     static Component()
     {
         (_id, TrimmableStack) = Component.GetExistingOrSetupNewComponent<T>();
 
-        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out IComponentRunnerFactory? type))
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
         {
-            if (type is IComponentRunnerFactory<T> casted)
+            if (type.Factory is IComponentRunnerFactory<T> casted)
             {
                 RunnerInstance = casted;
+                _updateOrder = type.UpdateOrder;
                 return;
             }
 
@@ -43,8 +50,6 @@ public static class Component<T>
     }
 
     internal static IComponentRunner<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
-
-    private static readonly IComponentRunnerFactory<T> RunnerInstance;
 }
 
 /// <summary>
@@ -62,13 +67,13 @@ public static class Component
 
     internal static IComponentRunner GetComponentRunnerFromType(Type t)
     {
-        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out IComponentRunnerFactory? type))
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var type))
         {
-            return (IComponentRunner)type.Create();
+            return (IComponentRunner)type.Factory.Create();
         }
-        if (NoneComponentRunnerTable.TryGetValue(t, out type))
+        if (NoneComponentRunnerTable.TryGetValue(t, out var t1))
         {
-            return (IComponentRunner)type.Create();
+            return (IComponentRunner)t1.Create();
         }
 
         Throw_ComponentTypeNotInit(t);
@@ -106,7 +111,7 @@ public static class Component
             GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
 
             TrimmableStack<T> stack = new TrimmableStack<T>();
-            ComponentTable.Push(new ComponentData(type, stack));
+            ComponentTable.Push(new ComponentData(type, stack, GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var order) ? order.UpdateOrder : 0));
 
             return (id, stack);
         }
@@ -131,7 +136,7 @@ public static class Component
 
             GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
 
-            ComponentTable.Push(new ComponentData(t, GetTrimmableStack(t)));
+            ComponentTable.Push(new ComponentData(t, GetTrimmableStack(t), GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var order) ? order.UpdateOrder : 0));
 
             return id;
         }
@@ -141,8 +146,8 @@ public static class Component
     {
         if (NoneComponentRunnerTable.TryGetValue(type, out var fac))
             return (TrimmableStack)fac.CreateStack();
-        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out fac))
-            return (TrimmableStack)fac.CreateStack();
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var data))
+            return (TrimmableStack)data.Factory.CreateStack();
         if (type == typeof(void))
             return null!;
         Throw_ComponentTypeNotInit(type);

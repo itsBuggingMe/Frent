@@ -13,6 +13,7 @@ public static class RegistryHelpers
     }
 
     public const string UpdateTypeAttributeName = "Frent.Updating.UpdateTypeAttribute";
+    public const string UpdateOrderInterfaceName = "Frent.Updating.IComponentUpdateOrderAttribute";
     public const string UpdateMethodName = "Update";
     public const string FileName = "ComponentUpdateTypeRegistry.g.cs";
     public const string TargetInterfaceName = "IComponentBase";

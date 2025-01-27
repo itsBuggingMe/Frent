@@ -44,10 +44,16 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                                     {
                                         foreach (var attr in attrList.Attributes)
                                         {
-                                            if (gsc.SemanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor &&
-                                                InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
+                                            if (gsc.SemanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor)
                                             {
-                                                stackAttributes.Push(attrCtor.ContainingType.ToString());
+                                                if(InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
+                                                {
+                                                    stackAttributes.Push(attrCtor.ContainingType.ToString());
+                                                }
+                                                else if(InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName))
+                                                {
+
+                                                }
                                             }
                                         }
                                     }

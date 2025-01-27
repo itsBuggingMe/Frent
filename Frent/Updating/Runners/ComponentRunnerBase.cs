@@ -18,6 +18,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public void SetAt(object component, ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex] = (TComponent)component;
     public object GetAt(ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex]!;
     public void InvokeGenericActionWith(GenericEvent? action, Entity e, ushort chunkIndex, ushort componentIndex) => action?.Invoke(e, ref _chunks[chunkIndex][componentIndex]);
+    public void InvokeGenericActionWith(IGenericAction action, ushort chunkIndex, ushort componentIndex) => action?.Invoke(ref _chunks[chunkIndex][componentIndex]);
     public ComponentID ComponentID => Component<TComponent>.ID;
     public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
     {

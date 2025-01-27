@@ -39,7 +39,7 @@ internal struct Velocity(float dx, float dy) : IComponent<Transform>
     public float DY = dy;
     public readonly Vector2 DXY => new Vector2(DX, DY);
 
-    [Tick]
+    [Tick(1)]
     public void Update(ref Transform arg)
     {
         arg.X += DX;
