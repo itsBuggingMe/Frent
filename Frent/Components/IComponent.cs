@@ -21,8 +21,6 @@ public interface IComponent : IComponentBase
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IComponent<TArg> : IComponentBase
 {
-    /// <summary>
-    /// Updates this component
-    /// </summary>
+    /// <inheritdoc cref="IComponent.Update"/>
     void Update(ref TArg arg);
 }

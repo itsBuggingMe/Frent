@@ -56,12 +56,13 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 - [X]  World Update Filtering
 - [X]  Multithreading
 - [X]  Command buffer?
+- [X]  Events
 
 ## Future
 - [ ]  Comprehensive docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
-- [ ]  Events?
+
 # Contributing
 Wanna help?
 

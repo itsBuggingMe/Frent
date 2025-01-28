@@ -33,7 +33,7 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<Entity
     }
 }
 
-/// <inheritdoc/>
+/// <inheritdoc cref="IComponentRunnerFactory"/>
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform>
 {
@@ -44,6 +44,7 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunne
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform>();
 }
 
+/// <inheritdoc cref="IComponentRunnerFactory"/>
 [Variadic(GetSpanFrom, GetSpanPattern, 15)]
 [Variadic(GenArgFrom, GenArgPattern)]
 [Variadic(GetArgFrom, GetArgPattern)]
@@ -77,8 +78,8 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<
 }
 
 
+/// <inheritdoc cref="IComponentRunnerFactory"/>
 [Variadic(GenArgFrom, GenArgPattern, 15)]
-/// <inheritdoc/>
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {

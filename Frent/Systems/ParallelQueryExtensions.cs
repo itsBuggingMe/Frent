@@ -3,6 +3,9 @@ using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
 
+/// <summary>
+/// Extension methods for querying in parallel
+/// </summary>
 [Variadic("archetype.GetComponentSpan<T>()", "|archetype.GetComponentSpan<T$>(), |")]
 [Variadic("ref arg", "|ref arg$, |")]
 [Variadic("ref T arg", "|ref T$ arg$, |")]

@@ -16,11 +16,8 @@ public static partial class EntityExtensions
     /// <summary>
     /// Deconstructs the constituent components of an entity as reference(s)
     /// </summary>
-    /// <typeparam name="T">The component type to deconstruct</typeparam>
-    /// <param name="e">The entity to deconstruct</param>
-    /// <param name="comp">The reference to the entity's component of type <typeparamref name="T"/></param>
     /// <exception cref="InvalidOperationException">The entity is not alive</exception>
-    /// <exception cref="ComponentNotFoundException">The entity does not have a component of type <typeparamref name="T"/></exception>
+    /// <exception cref="ComponentNotFoundException">The entity does not have all the components specified</exception>
     public static void Deconstruct<T>(ref this Entity e, out Ref<T> comp)
     {
         e.AssertIsAlive(out var world, out var entityLocation);
@@ -33,11 +30,8 @@ public static partial class EntityExtensions
     /// <summary>
     /// Deconstructs the constituent components of an entity
     /// </summary>
-    /// <param name="e">The entity to deconstruct</param>
-    /// <typeparam name="T">The component type to deconstruct</typeparam>
-    /// <param name="comp">The entity's component of type <typeparamref name="T"/></param>
     /// <exception cref="InvalidOperationException">The entity is not alive</exception>
-    /// <exception cref="ComponentNotFoundException">The entity does not have a component of type <typeparamref name="T"/></exception>
+    /// <exception cref="ComponentNotFoundException">The entity does not have all the components specified</exception>
     public static void Deconstruct<T>(ref this Entity e, out T comp)
     {
         e.AssertIsAlive(out var world, out var entityLocation);

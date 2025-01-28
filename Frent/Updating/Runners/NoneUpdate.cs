@@ -8,9 +8,12 @@ internal class NoneUpdate<TComp> : ComponentRunnerBase<NoneUpdate<TComp>, TComp>
     public override void Run(World world, Archetype b) { }
 }
 
+/// <inheritdoc cref="IComponentRunnerFactory"/>
 public class NoneUpdateRunnerFactory<T> : IComponentRunnerFactory, IComponentRunnerFactory<T>
 {
+    /// <inheritdoc/>
     public object Create() => new NoneUpdate<T>();
+    /// <inheritdoc/>
     public object CreateStack() => new TrimmableStack<T>();
     IComponentRunner<T> IComponentRunnerFactory<T>.CreateStronglyTyped() => new NoneUpdate<T>();
 }

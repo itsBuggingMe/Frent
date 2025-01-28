@@ -31,11 +31,13 @@ internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdat
     }
 }
 
-
+/// <inheritdoc cref="IComponentRunnerFactory"/>
 public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IUniformComponent<TUniform>
 {
+    /// <inheritdoc/>
     public object Create() => new UniformUpdate<TComp, TUniform>();
+    /// <inheritdoc/>
     public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new UniformUpdate<TComp, TUniform>();
 }
@@ -70,12 +72,14 @@ internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<Unifor
     }
 }
 
-
+/// <inheritdoc cref="IComponentRunnerFactory"/>
 [Variadic(GenArgFrom, GenArgPattern, 15)]
 public class UniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IUniformComponent<TUniform, TArg>
 {
+    /// <inheritdoc/>
     public object Create() => new UniformUpdate<TComp, TUniform, TArg>();
+    /// <inheritdoc/>
     public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new UniformUpdate<TComp, TUniform, TArg>();
 }
