@@ -378,6 +378,9 @@ partial struct Entity
     #endregion
 
     #region Events
+    /// <summary>
+    /// Raised when the entity is deleted
+    /// </summary>
     public event Action<Entity> OnDelete
     {
         add
@@ -405,6 +408,9 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Raised when a component is added to an entity
+    /// </summary>
     public event Action<Entity, ComponentID> OnComponentAdded
     {
         add
@@ -432,6 +438,9 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Raised when a component is removed from an entity
+    /// </summary>
     public event Action<Entity, ComponentID> OnComponentRemoved
     {
         add
@@ -459,6 +468,9 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Raised when a component is added to an entity, with the generic parameter
+    /// </summary>
     public GenericEvent? OnComponentAddedGeneric
     {
         set
@@ -482,6 +494,9 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Raised when a component is removed to an entity, with the generic parameter
+    /// </summary>
     public GenericEvent? OnComponentRemovedGeneric
     {
         set
@@ -505,6 +520,9 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Raised when the entity is tagged
+    /// </summary>
     public event Action<Entity, TagID> OnTagged
     {
         add
@@ -532,7 +550,9 @@ partial struct Entity
         }
     }
 
-    //TODO: refactor?
+    /// <summary>
+    /// Raised when a tag is detached from the entity
+    /// </summary>
     public event Action<Entity, TagID> OnDetach
     {
         add

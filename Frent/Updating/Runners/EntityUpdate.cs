@@ -4,7 +4,7 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
 using Frent.Variadic.Generator;
-using static Frent.Updating.Variadics;
+using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
@@ -31,7 +31,7 @@ internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TC
         public void Run(Entity entity, ref TComp t) => t.Update(entity);
     }
 }
-
+/// <inheritdoc/>
 public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IEntityComponent
 {
@@ -70,11 +70,14 @@ internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TCom
     }
 }
 
+/// <inheritdoc/>
 [Variadic(GenArgFrom, GenArgPattern, 15)]
 public class EntityUpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IEntityComponent<TArg>
 {
+    /// <inheritdoc/>
     public object Create() => new EntityUpdate<TComp, TArg>();
+    /// <inheritdoc/>
     public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp, TArg>();
 }

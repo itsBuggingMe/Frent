@@ -4,7 +4,7 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
 using Frent.Variadic.Generator;
-using static Frent.Updating.Variadics;
+using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
@@ -33,10 +33,13 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<Entity
     }
 }
 
+/// <inheritdoc/>
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform>
 {
+    /// <inheritdoc/>
     public object Create() => new EntityUniformUpdate<TComp, TUniform>();
+    /// <inheritdoc/>
     public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform>();
 }
@@ -75,10 +78,13 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<
 
 
 [Variadic(GenArgFrom, GenArgPattern, 15)]
+/// <inheritdoc/>
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
+    /// <inheritdoc/>
     public object Create() => new EntityUniformUpdate<TComp, TUniform, TArg>();
+    /// <inheritdoc/>
     public object CreateStack() => new TrimmableStack<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform, TArg>();
 }

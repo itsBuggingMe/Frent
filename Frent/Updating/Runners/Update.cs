@@ -4,7 +4,7 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Systems;
 using Frent.Variadic.Generator;
-using static Frent.Updating.Variadics;
+using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
