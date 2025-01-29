@@ -3,7 +3,6 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -45,7 +44,7 @@ public partial struct Entity : IEquatable<Entity>
     #region Internal Helpers
 
     #region IsAlive
-    [MethodImpl(MethodImplOptions.NoInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
         if (World.WorldCachePackedValue == PackedWorldInfo)

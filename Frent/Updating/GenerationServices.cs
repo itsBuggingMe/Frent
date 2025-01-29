@@ -15,7 +15,7 @@ public static class GenerationServices
     /// <summary>
     /// Used only for source generation
     /// </summary>
-    public static void RegisterType(Type type, IComponentRunnerFactory value, int updateOrder)
+    public static void RegisterType(Type type, IComponentRunnerFactory value, int updateOrder = 0)
     {
         if (UserGeneratedTypeMap.TryGetValue(type, out var val))
         {

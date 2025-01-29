@@ -27,7 +27,7 @@ partial class World
         //manually inlined from World.CreateEntityFromLocation
         //The jit likes to inline the outer create function and not inline
         //the inner functions - benchmarked to improve perf by 10-20%
-        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
+        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
         EntityTable[(uint)id] = new(eloc, version);
         entity = new Entity(ID, Version, version, id);
         EntityCreated?.Invoke(entity);

@@ -3,6 +3,10 @@ using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
 
+/// <summary>
+/// Extensions to run chunks actions over a query.
+/// </summary>
+/// <remarks>Useful for SIMD</remarks>
 [Variadic("archetype.GetComponentSpan<T>()", "|archetype.GetComponentSpan<T$>(), |")]
 [Variadic("Span<T> arg", "|Span<T$> arg$, |")]
 [Variadic(", arg", "|, arg$|")]

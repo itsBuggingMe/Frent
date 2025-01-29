@@ -9,11 +9,11 @@ namespace Frent.Systems;
 public interface IConstantQueryHashProvider
 {
     /// <summary>
-    /// API Consumers should not implement this interface
+    /// API Consumers should not manually implement this interface
     /// </summary>
     public ImmutableArray<Rule> Rules { get; }
     /// <summary>
-    /// API Consumers should not implement this interface
+    /// API Consumers should not manually implement this interface
     /// </summary>
     public int ToHashCode();
 }

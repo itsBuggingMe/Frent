@@ -23,7 +23,7 @@ public ref struct Ref<T>
     /// Calls the wrapped <typeparamref name="T"/>'s ToString() function, or returns null.
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
-    public override string ToString() => Value?.ToString() ?? "null";
+    public override string? ToString() => Value?.ToString();
     internal static Ref<T> Create(Span<T> span, int index) => new Ref<T>(ref span[index]);
 #else
     private Ref(Span<T> comp) => _comp = comp;
@@ -33,7 +33,7 @@ public ref struct Ref<T>
     /// <summary>
     /// The wrapped reference to <typeparamref name="T"/>
     /// </summary>
-    public ref T Value => ref _comp[0];
+    public readonly ref T Value => ref _comp.UnsafeSpanIndex(0);
     /// <summary>
     /// Extracts the wrapped <typeparamref name="T"/> from this <see cref="Ref{T}"/>
     /// /// </summary>
@@ -42,7 +42,7 @@ public ref struct Ref<T>
     /// Calls the wrapped <typeparamref name="T"/>'s ToString() function, or returns null.
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
-    public override string ToString() => Value?.ToString() ?? "null";
+    public override string? ToString() => Value?.ToString();
     internal static Ref<T> Create(Span<T> span, int index) => new Ref<T>(span.Slice(index, 1));
 #endif
 }

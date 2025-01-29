@@ -97,7 +97,7 @@ partial class World
         EntityTable.IndexWithInt(movedDown.EntityID).Location = entityLocation;
         EntityTable.IndexWithInt(entity.EntityID).Location = nextLocation;
 
-        ComponentAdded?.Invoke(entity);
+        ComponentAdded?.Invoke(entity, component);
 
         return destination;
     }
@@ -156,7 +156,7 @@ partial class World
         ref var finalTableLocation = ref EntityTable[(uint)entity.EntityID];
         finalTableLocation.Location = nextLocation;
 
-        ComponentRemoved?.Invoke(entity);
+        ComponentRemoved?.Invoke(entity, component);
         ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp, out bool eventExist);
         if (eventExist)
         {

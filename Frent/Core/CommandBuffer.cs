@@ -106,7 +106,7 @@ public class CommandBuffer
     /// <param name="entity">The entity to add to</param>
     /// <param name="component">The component to add</param>
     /// <param name="componentType">The type to add the component as</param>
-    /// <remarks><paramref name="component"/> must be assignable to <paramref name="Type"/></remarks>
+    /// <remarks><paramref name="component"/> must be assignable to <paramref name="componentType"/></remarks>
     public void AddComponent(Entity entity, Type componentType, object component) => AddComponent(entity, Component.GetComponentID(componentType), component);
 
     /// <summary>
@@ -117,6 +117,11 @@ public class CommandBuffer
     public void AddComponent(Entity entity, object component) => AddComponent(entity, component.GetType(), component);
 
     #region Create
+    /// <summary>
+    /// Begins to create an entity, which will be resolved when <see cref="PlayBack"/> is called
+    /// </summary>
+    /// <returns><see langword="this"/> instance, for method chaining</returns>
+    /// <exception cref="InvalidOperationException">An entity is already being created</exception>
     public CommandBuffer Entity()
     {
         SetIsActive();
@@ -128,6 +133,11 @@ public class CommandBuffer
         return this;
     }
 
+    /// <summary>
+    /// Records <paramref name="component"/> to be part of the entity created when resolved
+    /// </summary>
+    /// <returns><see langword="this"/> instance, for method chaining</returns>
+    /// <exception cref="InvalidOperationException">An entity is not being created</exception>
     public CommandBuffer With<T>(T component)
     {
         AssertCreatingEntity();
@@ -136,19 +146,38 @@ public class CommandBuffer
         return this;
     }
 
+    /// <summary>
+    /// Records <paramref name="component"/> to be part of the entity created when resolved as a component type represented by <paramref name="componentID"/>
+    /// </summary>
+    /// <returns><see langword="this"/> instance, for method chaining</returns>
+    /// <exception cref="InvalidOperationException">An entity is not being created</exception>
     public CommandBuffer WithBoxed(ComponentID componentID, object component)
     {
         AssertCreatingEntity();
         //we don't check IsAssignableTo - reason is perf - InvalidCastException anyways
-        int index = Component.ComponentTable[componentID.ID].Stack.Push(componentID);
+        int index = Component.ComponentTable[componentID.ID].Stack.Push(component);
         _createEntityComponents.Push((componentID, index));
         return this;
     }
 
+    /// <summary>
+    /// Records <paramref name="component"/> to be part of the entity created when resolved
+    /// </summary>
+    /// <returns><see langword="this"/> instance, for method chaining</returns>
+    /// <exception cref="InvalidOperationException">An entity is not being created</exception>
     public CommandBuffer WithBoxed(object component) => WithBoxed(component.GetType(), component);
 
+    /// <summary>
+    /// Records <paramref name="component"/> to be part of the entity created when resolved as a component type of <paramref name="type"/>
+    /// </summary>
+    /// <returns><see langword="this"/> instance, for method chaining</returns>
+    /// <exception cref="InvalidOperationException">An entity is not being created</exception>
     public CommandBuffer WithBoxed(Type type, object component) => WithBoxed(Component.GetComponentID(type), component);
 
+    /// <summary>
+    /// Finishes recording entity creation and returns an entity with zero components. Recorded components will be added on playback.
+    /// </summary>
+    /// <returns>The created entity ID</returns>
     public Entity End()
     {
         //CreateCommand points to a segment of the _createEntityComponents stack

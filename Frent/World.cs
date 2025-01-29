@@ -58,10 +58,22 @@ public partial class World : IDisposable
 
     internal CommandBuffer WorldUpdateCommandBuffer;
 
-    public event Action<Entity> EntityCreated;
-    public event Action<Entity> EntityDeleted;
-    public event Action<Entity> ComponentAdded;
-    public event Action<Entity> ComponentRemoved;
+    /// <summary>
+    /// Invoked whenever an entity is created on this world
+    /// </summary>
+    public event Action<Entity>? EntityCreated;
+    /// <summary>
+    /// Invoked whenever an entity belonging to this world is deleted
+    /// </summary>
+    public event Action<Entity>? EntityDeleted;
+    /// <summary>
+    /// Invoked whenever a component is added to an entity
+    /// </summary>
+    public event Action<Entity, ComponentID>? ComponentAdded;
+    /// <summary>
+    /// Invoked whenever a component is removed from an entity
+    /// </summary>
+    public event Action<Entity, ComponentID>? ComponentRemoved;
 
     internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
 
@@ -139,8 +151,16 @@ public partial class World : IDisposable
         }
     }
 
+    /// <summary>
+    /// Updates all component instances in the world that implement a component interface and have update methods with the <typeparamref name="T"/> attribute
+    /// </summary>
+    /// <typeparam name="T">The type of attribute to filter</typeparam>
     public void Update<T>() where T : UpdateTypeAttribute => Update(typeof(T));
 
+    /// <summary>
+    /// Updates all component instances in the world that implement a component interface and have update methods with an attribute of type <paramref name="attributeType"/>
+    /// </summary>
+    /// <param name="attributeType">The attribute type to filter</param>
     public void Update(Type attributeType)
     {
         EnterDisallowState();
@@ -182,7 +202,6 @@ public partial class World : IDisposable
     /// Creates a custom query from the given set of rules. For an entity to be queried, all rules must apply
     /// </summary>
     /// <param name="rules">The rules governing which entities are queried</param>
-    /// <param name="world">The world to query on</param>
     /// <returns>A query object representing all the entities that satisfy all the rules</returns>
     public Query CustomQuery(params Rule[] rules)
     {
@@ -194,6 +213,10 @@ public partial class World : IDisposable
     }
 
     //we could use static abstract methods IF NOT FOR DOTNET6
+    /// <summary>
+    /// Gets a query specified by <typeparamref name="T"/>
+    /// </summary>
+    /// <returns>The created or cached query</returns>
     public Query Query<T>()
         where T : struct, IConstantQueryHashProvider
     {
