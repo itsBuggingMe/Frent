@@ -90,23 +90,31 @@ partial struct Entity
     /// <summary>
     /// Gets this <see cref="Entity"/>'s component of type <paramref name="type"/>.
     /// </summary>
-    /// <param name="type">The type of component to get</param>
+    /// <param name="id">The ID of the type of component to get</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     /// <returns>The component of type <paramref name="type"/></returns>
-    public object Get(Type type)
+    public object Get(ComponentID id)
     {
         AssertIsAlive(out var world, out var entityLocation);
 
         //2x
-        ComponentID compid = Component.GetComponentID(type);
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, compid);
+        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, id);
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_ComponentNotFoundException(type);
+            FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
         return entityLocation.Archetype(world).Components[compIndex].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
     }
+
+    /// <summary>
+    /// Gets this <see cref="Entity"/>'s component of type <paramref name="type"/>.
+    /// </summary>
+    /// <param name="type">The type of component to get</param>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
+    /// <returns>The component of type <paramref name="type"/></returns>
+    public object Get(Type type) => Get(Component.GetComponentID(type));
     #endregion
 
     #region TryGet

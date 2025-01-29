@@ -117,7 +117,12 @@ public static class Component
         }
     }
 
-    internal static ComponentID GetComponentID(Type t)
+    /// <summary>
+    /// Gets the component ID of a type
+    /// </summary>
+    /// <param name="t">The type to get the component ID of</param>
+    /// <returns>The component ID</returns>
+    public static ComponentID GetComponentID(Type t)
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
