@@ -10,7 +10,7 @@
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8;.net7;.net6</PackageTags>
-    <Version>0.3.2-beta</Version>
+    <Version>0.3.3-beta</Version>
   </PropertyGroup>
 
   <ItemGroup>
