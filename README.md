@@ -24,8 +24,8 @@ Entity entity = world.Create<Position, Velocity>(new(Vector2.Zero), new(Vector2.
 //Call Update to run the update functions of your components
 world.Update();
 
-// Position is <1,1>
-Console.WriteLine(entity.Get<Position>().Value);
+// Position is { Value = <1, 1> }
+Console.WriteLine(entity.Get<Position>());
 
 record struct Position(Vector2 Value);
 record struct Velocity(Vector2 Delta) : IComponent<Position>
