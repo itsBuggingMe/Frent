@@ -115,6 +115,36 @@ partial struct Entity
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     /// <returns>The component of type <paramref name="type"/></returns>
     public object Get(Type type) => Get(Component.GetComponentID(type));
+
+    /// <summary>
+    /// Gets this <see cref="Entity"/>'s component of type <paramref name="type"/>.
+    /// </summary>
+    /// <param name="id">The ID of the type of component to get</param>
+    /// <param name="obj">The component to set</param>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
+    public void Set(ComponentID id, object obj)
+    {
+        AssertIsAlive(out var world, out var entityLocation);
+
+        //2x
+        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, id);
+
+        if (compIndex >= MemoryHelpers.MaxComponentCount)
+            FrentExceptions.Throw_ComponentNotFoundException(id.Type);
+        //3x
+        entityLocation.Archetype(world).Components[compIndex].SetAt(obj, entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+    }
+
+    /// <summary>
+    /// Gets this <see cref="Entity"/>'s component of type <paramref name="type"/>.
+    /// </summary>
+    /// <param name="type">The type of component to get</param>
+    /// <param name="obj">The component to set</param>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
+    /// <returns>The component of type <paramref name="type"/></returns>
+    public void Set(Type type, object obj) => Set(Component.GetComponentID(type), obj);
     #endregion
 
     #region TryGet
