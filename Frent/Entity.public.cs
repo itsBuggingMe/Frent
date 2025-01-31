@@ -212,7 +212,7 @@ partial struct Entity
         if (w.AllowStructualChanges)
         {
             var archetype = w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
-            ((ComponentStorage<T>)to).AsSpan()[location.ChunkIndex][location.ComponentIndex] = component;
+            UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(to).Chunks.UnsafeArrayIndex(location.ChunkIndex).Buffer.UnsafeArrayIndex(location.ComponentIndex) = component;
 
             ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
             if (exists)

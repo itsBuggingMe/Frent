@@ -87,11 +87,8 @@ internal class Samples
         ent.Deconstruct(out Ref<double> d, out Ref<int> i, out Ref<float> f, out Ref<string> str);
         d.Value = 4;
         str.Value = "Hello, World!";
-
-        //You can also deconstruct like this - you just can'y assign the value of the struct
-        //This also won't work with the tuple deconstruction syntax unfortunately due to a bug w/ the C# compiler
-        ent.Deconstruct(out string str1);
-        Console.WriteLine(str1);
+        
+        Console.WriteLine(str);
     }
     #endregion
 }

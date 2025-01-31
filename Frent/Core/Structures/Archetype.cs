@@ -121,7 +121,7 @@ internal partial class Archetype
 
     internal void Update(World world)
     {
-        if (_chunkIndex == 0 && _componentIndex == 0)
+        if ((_chunkIndex | _componentIndex) == 0)
             return;
         foreach (var comprunner in Components)
             comprunner.Run(world, this);
@@ -129,7 +129,8 @@ internal partial class Archetype
 
     internal void Update(World world, ComponentID componentID)
     {
-        if (_chunkIndex == 0 && _componentIndex == 0)
+        //avoid the second branch   
+        if ((_chunkIndex | _componentIndex) == 0)
             return;
 
         int compIndex = GlobalWorldTables.ComponentIndex(ID, componentID);
@@ -137,12 +138,12 @@ internal partial class Archetype
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             return;
 
-        Components[compIndex].Run(world, this);
+        Components.UnsafeArrayIndex(compIndex).Run(world, this);
     }
 
     internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
     {
-        if (_chunkIndex == 0 && _componentIndex == 0)
+        if ((_chunkIndex | _componentIndex) == 0)
             return;
         foreach (var comprunner in Components)
             comprunner.MultithreadedRun(countdown, world, this);

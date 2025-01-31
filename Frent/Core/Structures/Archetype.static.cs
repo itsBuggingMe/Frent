@@ -131,7 +131,7 @@ partial class Archetype
 
         ref var componentTable = ref GlobalWorldTables.ComponentTagLocationTable[id];
         componentTable = new byte[GlobalWorldTables.ComponentTagTableBufferSize];
-        componentTable.AsSpan().Fill(Tag.DefaultNoTag);
+        componentTable.AsSpan().Fill(GlobalWorldTables.DefaultNoTag);
 
         for (int i = 0; i < archetypeTypes.Length; i++)
         {
@@ -140,7 +140,7 @@ partial class Archetype
 
         for (int i = 0; i < archetypeTags.Length; i++)
         {
-            componentTable[archetypeTags[i].ID] |= Tag.HasTagMask;
+            componentTable[archetypeTags[i].ID] |= GlobalWorldTables.HasTagMask;
         }
     }
 

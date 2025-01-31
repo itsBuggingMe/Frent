@@ -11,7 +11,17 @@ internal static class GlobalWorldTables
 
     internal static readonly object BufferChangeLock = new object();
 
-    internal static void ModifyComponentTagTableIfNeeded(int idValue)
+    //each byte contains the data as follows:
+    // 1 bit Tag exists -> Lookup by tag ID
+    // 3 bits - nothing
+    // 4 bits - index of component (1111) -> Lookup by component ID
+
+    public const byte HasTagMask = 0b_1000_0000;
+    public const byte DefaultNoTag = 0b_0111_1111;
+    public const byte IndexBits = 0b_0111_1111;
+    public const int Mod16Mask = 0xF;
+
+    internal static void GrowComponentTagTableIfNeeded(int idValue)
     {
         var table = ComponentTagLocationTable;
         var tableSize = ComponentTagTableBufferSize;
@@ -23,12 +33,12 @@ internal static class GlobalWorldTables
             {
                 ref var componentsForArchetype = ref table[i];
                 Array.Resize(ref componentsForArchetype, ComponentTagTableBufferSize);
-                componentsForArchetype.AsSpan(tableSize).Fill(Tag.DefaultNoTag);
+                componentsForArchetype.AsSpan(tableSize).Fill(DefaultNoTag);
             }
         }
     }
 
-    public static int ComponentIndex(ArchetypeID archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(component.ID) & Tag.IndexBits;
-    public static int ComponentIndex(uint archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype).UnsafeArrayIndex(component.ID) & Tag.IndexBits;
-    public static bool HasTag(ArchetypeID archetype, TagID tag) => (ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(tag.ID) & Tag.HasTagMask) != 0;
+    public static int ComponentIndex(ArchetypeID archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(component.ID) & IndexBits;
+    public static int ComponentIndex(uint archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype).UnsafeArrayIndex(component.ID) & IndexBits;
+    public static bool HasTag(ArchetypeID archetype, TagID tag) => (ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(tag.ID) & HasTagMask) != 0;
 }

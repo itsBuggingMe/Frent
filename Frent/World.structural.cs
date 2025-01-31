@@ -94,8 +94,8 @@ partial class World
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
-        EntityTable.IndexWithInt(movedDown.EntityID).Location = entityLocation;
-        EntityTable.IndexWithInt(entity.EntityID).Location = nextLocation;
+        EntityTable.GetValueNoCheck(movedDown.EntityID).Location = entityLocation;
+        EntityTable.GetValueNoCheck(entity.EntityID).Location = nextLocation;
 
         ComponentAdded?.Invoke(entity, component);
 
@@ -169,19 +169,30 @@ partial class World
     internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
     {
         EntityDeleted?.Invoke(entity);
-        if (entityLocation.HasEvent(EntityFlags.OnDelete))
-        {
-            InvokeEvents(this, entity);
-        }
+
         if (entityLocation.HasEvent(EntityFlags.Events))
         {
+            if (entityLocation.HasEvent(EntityFlags.OnDelete))
+            {
+                InvokeEvents(this, entity);
+            }
             EventLookup.Remove(entity.EntityIDOnly);
         }
+
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
         EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
         EntityTable.GetValueNoCheck(entity.EntityID) = new(EntityLocation.Default, ushort.MaxValue);
-        _recycledEntityIds.Push(new EntityIDOnly(entity.EntityID, (ushort)(entity.EntityVersion + 1)));
+
+        int nextVersion = entity.EntityVersion + 1;
+        if(nextVersion != ushort.MaxValue + 1)
+        {
+            //we only recycle the ID if the version doesn't overflow
+            //even though does mean that an ID has limited usages
+
+            //The reason is to ensure an entity created and deleted is never valid again
+            _recycledEntityIds.Push(new EntityIDOnly(entity.EntityID, (ushort)(nextVersion)));
+        }
 
         //let the jit decide whether or not to inline
         static void InvokeEvents(World world, Entity entity)

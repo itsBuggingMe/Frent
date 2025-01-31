@@ -19,24 +19,31 @@ public class MicroBenchmark
     private Entity _entity;
     private Query _query;
 
+    private Entity[] _entities;
+
     [GlobalSetup]
     public void Setup()
     {
         _world = new World();
         _entity = _world.Create<int, double>(default, default);
+        _entities = new Entity[100_000];
+        for(int i = 0; i < _entities.Length; i++)
+        {
+            _entities[i] = _world.Create(0, 0f, 0.0, "", (0f, 0f));
+        }
     }
 
     [Benchmark]
     [BenchmarkCategory(Categories.Has)]
-    public void Norm()
+    public void Add()
     {
-        ComponentID id = Component<int>.ID;
-        for(int i = 0; i < 50; i++)
+        Int128 id = 0L;
+        foreach(var e in _entities)
         {
-            _entity.Has(id);
-            _entity.Has(id);
-            _entity.Has(id);
-            _entity.Has(id);
+            e.Add(id);
+            e.Remove<Int128>();
+            e.Add(id);
+            e.Remove<Int128>();
         }
     }
 

@@ -108,7 +108,7 @@ public static class Component
             ComponentID id = new ComponentID((ushort)nextIDInt);
             ExistingComponentIDs[type] = id;
 
-            GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
+            GlobalWorldTables.GrowComponentTagTableIfNeeded(id.ID);
 
             TrimmableStack<T> stack = new TrimmableStack<T>();
             ComponentTable.Push(new ComponentData(type, stack, GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var order) ? order.UpdateOrder : 0));
@@ -139,7 +139,7 @@ public static class Component
             ComponentID id = new ComponentID((ushort)nextIDInt);
             ExistingComponentIDs[t] = id;
 
-            GlobalWorldTables.ModifyComponentTagTableIfNeeded(id.ID);
+            GlobalWorldTables.GrowComponentTagTableIfNeeded(id.ID);
 
             ComponentTable.Push(new ComponentData(t, GetTrimmableStack(t), GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var order) ? order.UpdateOrder : 0));
 
