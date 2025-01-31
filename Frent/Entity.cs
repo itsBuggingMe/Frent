@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 namespace Frent;
 
 /// <summary>
-/// Represents an Entity; a collection of components of unqiue type
+/// An Entity reference; refers to a collection of components of unqiue types.
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]

@@ -1,18 +1,18 @@
 ﻿namespace Frent;
 
 /// <summary>
-/// A default uniform provider implementation
+/// The default uniform provider, using a dictionary.
 /// </summary>
 public class DefaultUniformProvider : IUniformProvider
 {
     private Dictionary<Type, object> _uniforms = [];
 
     /// <summary>
-    /// Adds a uniform to this uniform provider
+    /// Adds a uniform to this uniform provider.
     /// </summary>
-    /// <typeparam name="T">The type of uniform to add</typeparam>
-    /// <param name="obj">The object to add as a uniform</param>
-    /// <returns>This instance, for method chaining</returns>
+    /// <typeparam name="T">The type of uniform to add.</typeparam>
+    /// <param name="obj">The object to add as a uniform.</param>
+    /// <returns>This instance, for method chaining.</returns>
     public DefaultUniformProvider Add<T>(T obj)
         where T : notnull
     {
@@ -23,12 +23,12 @@ public class DefaultUniformProvider : IUniformProvider
     }
 
     /// <summary>
-    /// Adds a uniform to this uniform provider
+    /// Adds a uniform to this uniform provider.
     /// </summary>
-    /// <param name="type">The type of uniform to add as</param>
-    /// <param name="object">The object to add as a uniform</param>
-    /// <returns>This instance, for method chaining</returns>
-    /// <exception cref="ArgumentException"><paramref name="object"/> is not assignable to <paramref name="type"/></exception>
+    /// <param name="type">The type of uniform to add as.</param>
+    /// <param name="object">The object to add as a uniform.</param>
+    /// <returns>This instance, for method chaining.</returns>
+    /// <exception cref="ArgumentException"><paramref name="object"/> is not assignable to <paramref name="type"/>.</exception>
     public DefaultUniformProvider Add(Type type, object @object)
     {
         ArgumentNullException.ThrowIfNull(type);
@@ -39,11 +39,11 @@ public class DefaultUniformProvider : IUniformProvider
     }
 
     /// <summary>
-    /// Gets a uniform from this default uniform provider
+    /// Gets a uniform from this default uniform provider.
     /// </summary>
-    /// <typeparam name="T">The type of uniform to get</typeparam>
-    /// <returns>The uniform instance</returns>
-    /// <exception cref="InvalidOperationException">The uniform of the specified type is not found</exception>
+    /// <typeparam name="T">The type of uniform to get.</typeparam>
+    /// <returns>The uniform instance.</returns>
+    /// <exception cref="InvalidOperationException">The uniform of the specified type is not found.</exception>
     public T GetUniform<T>() => _uniforms.TryGetValue(typeof(T), out object? value) ?
         (T)value :
         throw new InvalidOperationException($"Uniform of {typeof(T).Name} not found");

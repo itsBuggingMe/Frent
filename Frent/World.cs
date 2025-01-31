@@ -15,7 +15,7 @@ using System.Runtime.InteropServices;
 namespace Frent;
 
 /// <summary>
-/// Represents a collection of entities that can be updated and queried
+/// A collection of entities that can be updated and queried.
 /// </summary>
 public partial class World : IDisposable
 {
@@ -59,48 +59,53 @@ public partial class World : IDisposable
     internal CommandBuffer WorldUpdateCommandBuffer;
 
     /// <summary>
-    /// Invoked whenever an entity is created on this world
+    /// Invoked whenever an entity is created on this world.
     /// </summary>
     public event Action<Entity>? EntityCreated;
     /// <summary>
-    /// Invoked whenever an entity belonging to this world is deleted
+    /// Invoked whenever an entity belonging to this world is deleted.
     /// </summary>
     public event Action<Entity>? EntityDeleted;
     /// <summary>
-    /// Invoked whenever a component is added to an entity
+    /// Invoked whenever a component is added to an entity.
     /// </summary>
     public event Action<Entity, ComponentID>? ComponentAdded;
     /// <summary>
-    /// Invoked whenever a component is removed from an entity
+    /// Invoked whenever a component is removed from an entity.
     /// </summary>
     public event Action<Entity, ComponentID>? ComponentRemoved;
 
     internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
 
     /// <summary>
-    /// The current uniform provider used when updating components/queries with uniforms
+    /// The current uniform provider used when updating components/queries with uniforms.
     /// </summary>
-    public IUniformProvider UniformProvider { get; set; }
+    public IUniformProvider UniformProvider 
+    { 
+        get => _uniformProvider; 
+        set => _uniformProvider = value ?? NullUniformProvider.Instance; 
+    }
+    private IUniformProvider _uniformProvider;
 
     /// <summary>
-    /// Gets the current number of entities managed by the world
+    /// Gets the current number of entities managed by the world.
     /// </summary>
     public int EntityCount => _nextEntityID - _recycledEntityIds.Count;
 
     /// <summary>
-    /// The current world config
+    /// The current world config.
     /// </summary>
     public Config CurrentConfig { get; set; }
 
     /// <summary>
-    /// Creates a world with zero entities and a uniform provider
+    /// Creates a world with zero entities and a uniform provider.
     /// </summary>
-    /// <param name="uniformProvider">The initial uniform provider to be used</param>
-    /// <param name="config">The inital config to use. If not provided <see cref="Config.Singlethreaded"/> is used.</param>
+    /// <param name="uniformProvider">The initial uniform provider to be used.</param>
+    /// <param name="config">The inital config to use. If not provided, <see cref="Config.Singlethreaded"/> is used.</param>
     public World(IUniformProvider? uniformProvider = null, Config? config = null)
     {
         CurrentConfig = config ?? Config.Singlethreaded;
-        UniformProvider = uniformProvider ?? NullUniformProvider.Instance;
+        _uniformProvider = uniformProvider ?? NullUniformProvider.Instance;
         (ID, Version) = _recycledWorldIDs.TryPop(out var id) ? id : (_nextWorldID++, byte.MaxValue);
         IDAsUInt = ID;
 
@@ -199,10 +204,10 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    /// Creates a custom query from the given set of rules. For an entity to be queried, all rules must apply
+    /// Creates a custom query from the given set of rules. For an entity to be queried, all rules must apply.
     /// </summary>
-    /// <param name="rules">The rules governing which entities are queried</param>
-    /// <returns>A query object representing all the entities that satisfy all the rules</returns>
+    /// <param name="rules">The rules governing which entities are queried.</param>
+    /// <returns>A query object representing all the entities that satisfy all the rules.</returns>
     public Query CustomQuery(params Rule[] rules)
     {
         QueryHash queryHash = QueryHash.New();
@@ -214,9 +219,9 @@ public partial class World : IDisposable
 
     //we could use static abstract methods IF NOT FOR DOTNET6
     /// <summary>
-    /// Gets a query specified by <typeparamref name="T"/>
+    /// Gets a query specified by <typeparamref name="T"/>.
     /// </summary>
-    /// <returns>The created or cached query</returns>
+    /// <returns>The created or cached query.</returns>
     public Query Query<T>()
         where T : struct, IConstantQueryHashProvider
     {
@@ -285,7 +290,7 @@ public partial class World : IDisposable
     internal bool AllowStructualChanges => _allowStructuralChanges == 0;
 
     /// <summary>
-    /// Disposes of the <see cref="World"/>
+    /// Disposes of the <see cref="World"/>.
     /// </summary>
     public void Dispose()
     {
@@ -345,8 +350,9 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    /// Creates an <see cref="Entity"/> with zero components
+    /// Creates an <see cref="Entity"/> with zero components.
     /// </summary>
+    /// <returns>The entity that was created.</returns>
     public Entity Create()
     {
         var entity = CreateEntityWithoutEvent();
@@ -357,6 +363,7 @@ public partial class World : IDisposable
     internal Entity CreateEntityWithoutEvent()
     {
         var archetypeID = Archetype.Default;
+        //TODO: replace this with static field
         Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
         ref var entity = ref archetype.CreateEntityLocation(out var eloc);
 

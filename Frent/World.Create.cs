@@ -13,7 +13,7 @@ namespace Frent;
 partial class World
 {
     /// <summary>
-    /// Creates an <see cref="Entity"/> with the given component
+    /// Creates an <see cref="Entity"/> with the given component(s)
     /// </summary>
     /// <returns>An <see cref="Entity"/> that can be used to acsess the component data</returns>
     public Entity Create<T>(T comp)

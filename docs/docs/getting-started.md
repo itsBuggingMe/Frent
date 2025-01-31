@@ -11,7 +11,7 @@ dotnet add package Frent --version 0.3.3.2-beta
 ```
 
 ## Creating a World
-Start by adding `Frent` and `Frent.Components` (for component interfaces).
+Start by importing `Frent` and `Frent.Components` (for component interfaces).
 ```csharp
 using Frent;
 using Frent.Components;
@@ -31,7 +31,7 @@ graph TD
     Entity --> Health["Health"]
     Entity --> Sprite["Sprite"]
 ```
-Here, the Velocity component might interact with the Position component, and the Controller component might interact with the velocity component when the W key is pressed.
+Here, the `Velocity` component might interact with the `Position` component, and the `PlayerController` component might interact with the `Velocity` component when the W key is pressed.
 
 Here is an example `Position` component - it just needs to specify enough data for a location.
 ```csharp
