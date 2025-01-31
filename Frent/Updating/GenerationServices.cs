@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.Design;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
@@ -15,7 +14,7 @@ public static class GenerationServices
     /// <summary>
     /// Used only for source generation
     /// </summary>
-    public static void RegisterType(Type type, IComponentRunnerFactory value, int updateOrder = 0)
+    public static void RegisterType(Type type, IComponentRunnerFactory value)
     {
         if (UserGeneratedTypeMap.TryGetValue(type, out var val))
         {
@@ -26,7 +25,7 @@ public static class GenerationServices
         }
         else
         {
-            UserGeneratedTypeMap.Add(type, (value, updateOrder));
+            UserGeneratedTypeMap.Add(type, (value, 0));
         }
     }
 

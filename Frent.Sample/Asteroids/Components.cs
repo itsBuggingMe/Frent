@@ -5,11 +5,15 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections;
 using System.Diagnostics;
+using Frent.Sample.Asteroids.Editor;
+using static Frent.Sample.Asteroids.AsteroidsGame;
 
 namespace Frent.Sample.Asteroids;
 
-internal struct DecayTimer(int Frames) : IEntityComponent
+[Editor]
+internal struct DecayTimer(int frames) : IEntityComponent
 {
+    public int Frames = frames;
     [Tick]
     public void Update(Entity entity)
     {
@@ -18,28 +22,31 @@ internal struct DecayTimer(int Frames) : IEntityComponent
     }
 }
 
-internal struct Transform(float x, float y)
+[Editor]
+internal struct Transform(float x, float y) : IComponentBase
 {
-    public float X = x;
-    public float Y = y;
+    public Vector2 XY = new Vector2(x, y);
     public float Rotation = 0;
     public float Scale = 1;
-
-    public readonly Vector2 XY => new(X, Y);
-
+    [EditorExclude]
+    public float X { readonly get => XY.X; set => XY.X = value; }
+    [EditorExclude]
+    public float Y { readonly get => XY.Y; set => XY.Y = value; }
     public static implicit operator (float, float)(Transform pos) => (pos.X, pos.Y);
     public static implicit operator Transform((float X, float Y) pos) => new(pos.X, pos.Y);
     public static implicit operator Vector2(Transform pos) => new(pos.X, pos.Y);
     public static implicit operator Transform(Vector2 pos) => new(pos.X, pos.Y);
 }
 
+[Editor]
 internal struct Velocity(float dx, float dy) : IComponent<Transform>
 {
-    public float DX = dx;
-    public float DY = dy;
-    public readonly Vector2 DXY => new Vector2(DX, DY);
+    public float DX { readonly get => DXY.X; set => DXY.X = value; }
+    public float DY { readonly get => DXY.Y; set => DXY.Y = value; }
 
-    [Tick(1)]
+    public Vector2 DXY = new(dx, dy);
+
+    [Tick]
     public void Update(ref Transform arg)
     {
         arg.X += DX;
@@ -52,10 +59,12 @@ internal struct Velocity(float dx, float dy) : IComponent<Transform>
     public static implicit operator Velocity(Vector2 pos) => new(pos.X, pos.Y);
 }
 
+[Editor]
 internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2) : IEnumerable<(Vector2 A, Vector2 B)>, IUniformComponent<ShapeBatch, Transform>
 {
     public float Thickness = thickness;
     public Vector2 Origin = origin;
+    public Color Color = Color.White;
     public Vector2[] Verticies = verticies;
 
     [Draw]
@@ -70,7 +79,7 @@ internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2
 
         foreach (var (a, b) in this)
         {
-            sb.FillLine(Rotate(a - Origin) + position.XY, Rotate(b - Origin) + position.XY, Thickness, Color.White);
+            sb.FillLine(Rotate(a - Origin) + position.XY, Rotate(b - Origin) + position.XY, Thickness, Color);
         }
 
         Vector2 Rotate(Vector2 value)
@@ -112,6 +121,7 @@ internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2
     }
 }
 
+[Editor]
 internal struct Line : IUniformComponent<ShapeBatch, Transform>
 {
     public float Thickness;
@@ -126,11 +136,11 @@ internal struct Line : IUniformComponent<ShapeBatch, Transform>
     }
 }
 
+[Editor]
 internal struct PlayerController : IEntityUniformComponent<World, Transform, Velocity>
 {
     private int _timeSinceShoot;
     private MouseState _pms;
-    public Entity Camera;
 
     [Tick]
     public void Update(Entity entity, World world, ref Transform transform, ref Velocity vel)
@@ -149,15 +159,15 @@ internal struct PlayerController : IEntityUniformComponent<World, Transform, Vel
 
             world.Create<Transform, Velocity, Triangle, DecayTimer, AngularVelocity, Tween>(
                 transform,//copy the transform of the player
-                pointingDirection * -8 + AsteroidsGame.RandomDirection(),//make the velocity opposite its current direction
+                pointingDirection * -8 + AsteroidsHelper.RandomDirection(),//make the velocity opposite its current direction
                 new(),//triangle
                 new(30),//Delete after 30 frames 
                 new(Random.Shared.NextSingle() - 0.5f),//some random rotational velocity 
                 new Tween(TweenType.Parabolic, 30, (e, f) => //animate the triangle to grow in size, and fade out
                 {
                     ref Triangle t = ref e.Get<Triangle>();
-                    t.Size = f * 6 + 2;
-                    t.Opacity = 1 - f;
+                    e.Get<Transform>().Scale = f * 6 + 2;
+                    t.Color.A = (byte)((1 - f) * 255);
                 }));
         }
 
@@ -166,7 +176,7 @@ internal struct PlayerController : IEntityUniformComponent<World, Transform, Vel
         if (ks.IsKeyDown(Keys.D))
             transform.Rotation += 0.07f;
 
-        var worldMousePos = Vector2.Transform(ms.Position.ToVector2(), Matrix.Invert(Camera.Get<Camera>().View));
+        var worldMousePos = Vector2.Transform(ms.Position.ToVector2(), Matrix.Invert(world.UniformProvider.GetUniform<Camera>().Transform));
         var deltaToMouse = worldMousePos - transform;
         transform.Rotation = MathF.Atan2(deltaToMouse.Y, deltaToMouse.X) + MathHelper.PiOver2;
         int delta = _pms.ScrollWheelValue - ms.ScrollWheelValue;
@@ -175,7 +185,7 @@ internal struct PlayerController : IEntityUniformComponent<World, Transform, Vel
 
         if (_timeSinceShoot > 10 && ks.IsKeyDown(Keys.Space))
         {
-            AsteroidsGame.ShootBullet(entity, pointingDirection, 24);
+            entity.Shoot(pointingDirection, 24);
             _timeSinceShoot = 0;
         }
 
@@ -183,6 +193,7 @@ internal struct PlayerController : IEntityUniformComponent<World, Transform, Vel
     }
 }
 
+[Editor]
 internal struct EnemyController(Entity target) : IEntityComponent<Transform, Velocity>
 {
     public Entity Target = target;
@@ -200,11 +211,12 @@ internal struct EnemyController(Entity target) : IEntityComponent<Transform, Vel
         if (_shootTimer > 120)
         {
             _shootTimer = 0;
-            AsteroidsGame.ShootBullet(entity, pointTo, 4);
+            entity.Shoot(pointTo, 4);
         }
     }
 }
 
+[Editor]
 internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : IComponent<Transform>
 {
     public Entity Follow = toFollow;
@@ -214,34 +226,44 @@ internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : ICompon
     public void Update(ref Transform arg)
     {
         if (Follow.IsAlive)
-            arg -= (arg.XY - Follow.Get<Transform>()) * Smoothing;
+        {
+            var x = (arg.XY - Follow.Get<Transform>()) * Smoothing;
+            arg.XY -= x;
+        }
     }
 }
 
-internal struct Camera : IUniformComponent<Viewport, Transform>
+[Editor]
+internal struct CameraControl : IComponent<Transform>
 {
-    public Matrix View;
-
+    public Vector2 Location;
     [Tick]
-    public void Update(Viewport uniform, ref Transform transform)
+    public void Update(ref Transform transform)
     {
-        int width = uniform.Width;
-        int height = uniform.Height;
-        View = Matrix.CreateTranslation(-transform.X + width / 2, -transform.Y + height / 2, 0);
+        Location = transform.XY;
     }
 }
 
-internal struct Triangle : IUniformComponent<ShapeBatch, Transform>
+[Editor]
+internal struct Triangle() : IUniformComponent<ShapeBatch, Transform>
 {
-    public float Size;
-    public float Opacity;
+    public Color Color = Color.White;
+    public float RotationOffset;
+
+    public float RotationOffsetDegrees 
+    { 
+        get => MathHelper.ToDegrees(RotationOffset);
+        set => RotationOffset = MathHelper.ToRadians(value);
+    }
+
     [Draw]
     public void Update(ShapeBatch sb, ref Transform pos)
     {
-        sb.FillEquilateralTriangle(pos.XY, Size, Color.White * Opacity, rotation: pos.Rotation);
+        sb.FillEquilateralTriangle(pos.XY, pos.Scale, Color * (Color.A / 255f), rotation: pos.Rotation + RotationOffset);
     }
 }
 
+[Editor]
 internal struct AngularVelocity(float dt) : IComponent<Transform>
 {
     //delta theta???
@@ -254,6 +276,7 @@ internal struct AngularVelocity(float dt) : IComponent<Transform>
     }
 }
 
+[Editor]
 internal struct CircleCollision : IComponentBase
 {
     public float Radius;
@@ -266,6 +289,7 @@ internal struct CircleCollision : IComponentBase
     }
 }
 
+[Editor]
 internal struct BulletBehavior(Entity entity) : IComponent<CircleCollision>
 {
     public Entity Parent = entity;
@@ -275,7 +299,7 @@ internal struct BulletBehavior(Entity entity) : IComponent<CircleCollision>
     {
         if (!arg.CollidesWith.IsNull && arg.CollidesWith != Parent && arg.CollidesWith.IsAlive && arg.CollidesWith.Tagged<Shootable>())
         {
-            AsteroidsGame.BlowUpEntity(arg.CollidesWith);
+            arg.CollidesWith.Explode();
             arg.CollidesWith.Delete();
             arg.CollidesWith = default;
         }

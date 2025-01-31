@@ -1,60 +1,136 @@
 ﻿using Apos.Shapes;
 using Frent.Core;
+using Frent.Sample.Asteroids.Editor.UI;
 using Frent.Systems;
+using FrentSandbox;
+using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Frozen;
+using System.Text;
 
 namespace Frent.Sample.Asteroids;
 
-public class AsteroidsGame : Game
+public partial class AsteroidsGame : Game
 {
-    private World _world;
-    private GraphicsDeviceManager _manager;
-    private DefaultUniformProvider _uniformProvider;
-    private ShapeBatch _sb = null!;
-    private Vector2[][] _asteroidPolys;
-    private Vector2[] _enemyPoly;
+    private GraphicsDeviceManager _graphics;
+
+    private RenderTarget2D _rt;
+    private SpriteBatch _spriteBatch;
+    private ShapeBatch _shapeBatch;
+    private SpriteFont _font;
+    private Camera _camera;
+    private Entity _cameraController;
     private Entity _player;
-    private Entity _camera;
-    private List<Entity> _enemies = new();
+    private Texture2D _whitePixel;
 
+    private World _world = new();
+    private DefaultUniformProvider _uniformProvider = new();
+
+    private StringBuilder _sb = new();
+    private ImGuiRenderer _imGuiRenderer;
+
+    internal Texture2D Pixel => _whitePixel;
+    internal SpriteBatch SpriteBatch => _spriteBatch;
+    internal Vector2 DisplaySize => GraphicsDevice.Viewport.Bounds.Size.ToVector2();
+
+    internal Dictionary<string, Entity> AllEntitiesForward { get; } = [];
+    internal Dictionary<Entity, string> AllEntitiesBackwards { get; } = [];
+
+    public static AsteroidsGame Instance { get; private set; } = null!;
+
+    private Vector2[][] _polygons;
+
+    #region Display Settings
+
+    public bool DisplayGrid { get; set; } = true;
+    public bool Paused { get; set; } = false;
+
+    #endregion
+
+#pragma warning disable 8618
     public AsteroidsGame()
+#pragma warning restore 8618
     {
-        _manager = new GraphicsDeviceManager(this);
-        _manager.GraphicsProfile = GraphicsProfile.HiDef;
+        _graphics = new GraphicsDeviceManager(this);
+        _graphics.GraphicsProfile = GraphicsProfile.HiDef;
         Content.RootDirectory = "Content";
-        Window.AllowUserResizing = true;
         IsMouseVisible = true;
+        Window.AllowUserResizing = true;
+        _world.UniformProvider = _uniformProvider;
 
-        _uniformProvider = new();
-        _world = new World(_uniformProvider);
-        _asteroidPolys = Enumerable.Range(0, 16).Select(i => GenerateAsteroid()).ToArray();
-        _enemyPoly = GeneratePolygon(5);
+        Instance = this;
+        _polygons = Enumerable.Range(3, 7).Select(GeneratePolygon).ToArray();
     }
 
     protected override void Initialize()
     {
+        _uniformProvider
+            .Add(_spriteBatch = new SpriteBatch(GraphicsDevice))
+            .Add(_font = Content.Load<SpriteFont>("Font"))
+            .Add(_camera = new Camera(this))
+            .Add(_whitePixel = new Texture2D(GraphicsDevice, 1, 1))
+            .Add(_shapeBatch = new ShapeBatch(GraphicsDevice, Content))
+            .Add(_world)
+            .Add(Content)
+            .Add(this)
+            ;
+        _rt = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+        Window.ClientSizeChanged += Window_ClientSizeChanged;
+
+        _imGuiRenderer = new ImGuiRenderer(this);
+        _imGuiRenderer.RebuildFontAtlas();
+
+        _whitePixel.SetData([Color.White]);
+
+        _world.EntityCreated += static e =>
+        {
+            if(e.Has<CameraControl>())
+            {
+                Instance._cameraController = e;
+            }
+
+            const string EntityNameChars = "0123456789abcdef";
+            Span<char> buff = stackalloc char[16];
+            foreach (ref char c in buff)
+            {
+                c = EntityNameChars[Random.Shared.Next(EntityNameChars.Length)];
+            }
+
+            string name = new string(buff);
+            Instance.AllEntitiesForward.Add(name, e);
+            Instance.AllEntitiesBackwards.Add(e, name);
+        };
+
+        _world.ComponentAdded += static (e, id) =>
+        {
+            if(id == Component<CameraControl>.ID)
+            {
+                Instance._cameraController = e;
+            }
+        };
+
+        _world.EntityDeleted += static e =>
+        {
+            string name = Instance.AllEntitiesBackwards[e];
+            Instance.AllEntitiesForward.Remove(name);
+            Instance.AllEntitiesBackwards.Remove(e);
+
+            if(e.Has<EnemyController>())
+            {
+                Instance._enemyCount--;
+            }
+        };
+
+        CreateNewPlayer();
+
         base.Initialize();
-
-        _uniformProvider.Add(_sb = new ShapeBatch(GraphicsDevice, Content));
-        _uniformProvider.Add(_world);
-        _uniformProvider.Add(GraphicsDevice.Viewport);
-
-        Reset();
     }
 
-    private void Reset()
-    {
-        foreach (var item in _enemies)
-        {
-            if (item.IsAlive)
-            {
-                item.Delete();
-            }
-        }
-        _enemies.Clear();
 
+    private void CreateNewPlayer()
+    {
         _player = _world.Create<Transform, Velocity, Polygon, PlayerController, CircleCollision>((0, 0), default, new Polygon(default,
         [
             Vector2.UnitY * -25,
@@ -63,116 +139,159 @@ public class AsteroidsGame : Game
             new Vector2(-10, 10),
         ]), default, new() { Radius = 25 });
         _player.Tag<Shootable>();
-        _player.OnDelete += _ => Reset();
-
-        _camera = _world.Create<FollowEntity, Transform, Camera>(new(_player, smoothing: 0.08f), _player.Get<Transform>(), _camera.IsAlive && _camera.TryGet(out Ref<Camera> c) ? c.Value : default);
-        _player.Get<PlayerController>().Camera = _camera;
+        _player.OnDelete += static e => Instance.CreateNewPlayer();
     }
 
-    int timeSinceLastAsteroid = 0;
+    private void Window_ClientSizeChanged(object? sender, EventArgs e)
+    {
+        _rt.Dispose();
+        _rt = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+    }
+
+    int _enemyCount;
 
     protected override void Update(GameTime gameTime)
     {
-        if (Keyboard.GetState().IsKeyDown(Keys.Escape))
-            Exit();
-        _uniformProvider.Add(GraphicsDevice.Viewport);
-
-
-        timeSinceLastAsteroid++;
-        if (timeSinceLastAsteroid >= 15 && _player.IsAlive && _enemies.Count < 30)
+        InputHelper.TickUpdate(IsActive);
+        if (InputHelper.RisingEdge(Keys.Q))
+            Paused = !Paused;
+        if (InputHelper.RisingEdge(Keys.E))
+            DisplayGrid = !DisplayGrid;
+        if (!ImGui.GetIO().WantCaptureMouse)
+            _camera.Update();
+        if(!Paused)
+            _world.Update<TickAttribute>();
+        if(_cameraController.TryGet(out Ref<CameraControl> cameraControl))
         {
-            timeSinceLastAsteroid = 0;
-
-            if (Random.Shared.Next() % 2 == 0)
-            {
-                int width = GraphicsDevice.Viewport.Width;
-                int height = GraphicsDevice.Viewport.Height;
-                var playerPos = _player.Get<Transform>();
-                var e = _world.Create<Transform, Velocity, Polygon, CircleCollision>(
-                    RandomDirection() * 2000 + playerPos,
-                    RandomDirection(),
-                    new Polygon(default, _asteroidPolys[Random.Shared.Next(_asteroidPolys.Length)]),
-                    new() { Radius = 16 }
-                    );
-                e.Tag<Asteroid>();
-                e.Tag<Shootable>();
-
-                _enemies.Add(e);
-            }
-            else
-            {
-                int width = GraphicsDevice.Viewport.Width;
-                int height = GraphicsDevice.Viewport.Height;
-                var playerPos = _player.Get<Transform>();
-                var e = _world.Create<Transform, Velocity, Polygon, CircleCollision, EnemyController>(
-                    RandomDirection() * 2000 + playerPos,
-                    default,
-                    new Polygon(default, _enemyPoly),
-                    new() { Radius = 28 },
-                    new(_player)
-                    );
-                e.Tag<Shootable>();
-
-                _enemies.Add(e);
-            }
+            _camera.Position = -cameraControl.Value.Location;
         }
-        else
+
+        if(!Paused && _enemyCount < 20 && Random.Shared.Next(60) == 0)
         {
-            for (int i = _enemies.Count - 1; i >= 0; i--)
-            {
-                if (!_enemies[i].IsAlive)
-                {
-                    _enemies.RemoveAt(i);
-                }
-            }
+            _enemyCount++;
+            int width = GraphicsDevice.Viewport.Width;
+            int height = GraphicsDevice.Viewport.Height;
+            var playerPos = _player.Get<Transform>();
+            var e = _world.Create<Transform, Velocity, Polygon, CircleCollision, EnemyController>(
+                AsteroidsHelper.RandomDirection() * 2000 + playerPos,
+                default,
+                new Polygon(default, _polygons[Random.Shared.Next(_polygons.Length)]),
+                new() { Radius = 28 },
+                new(_player)
+                );
+            e.Tag<Shootable>();
         }
 
         _world.Query<With<CircleCollision, Transform>>()
             .InlineEntityUniform<InlineOuterCollisionQuery, World, CircleCollision, Transform>(default);
-        _world.Update<TickAttribute>();
+
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
+        GraphicsDevice.SetRenderTarget(_rt);
         GraphicsDevice.Clear(Color.Black);
 
-        _sb.Begin(view: _camera.Get<Camera>().View);
-
+        _spriteBatch.Begin();
         DrawGrid();
-        _world.Update<DrawAttribute>();
+        _spriteBatch.End();
 
-        _sb.End();
+        _shapeBatch.Begin(view: _camera.Transform);
+        _spriteBatch.Begin(transformMatrix: _camera.Transform);
+        _world.Update<DrawAttribute>();
+        _spriteBatch.End();
+        _shapeBatch.End();
+
+        _imGuiRenderer.BeforeLayout(gameTime);
+        ImGuiLayout();
+        _imGuiRenderer.AfterLayout();
+
+        GraphicsDevice.SetRenderTarget(null);
+        _spriteBatch.Begin();
+        _spriteBatch.Draw(_rt, Vector2.Zero, Color.White);
+        _spriteBatch.End();
+
         base.Draw(gameTime);
     }
 
+
+
     private void DrawGrid()
     {
-        const int GridInterval = 200;
-        Matrix screenToWorld = Matrix.Invert(_camera.Get<Camera>().View);
-        Vector2 topLeft = Vector2.Transform(default, screenToWorld);
-        Vector2 bottomRight = Vector2.Transform(GraphicsDevice.Viewport.Bounds.Size.ToVector2(), screenToWorld);
+        if (!DisplayGrid)
+            return;
 
-        for (int i = (int)(topLeft.X / GridInterval) * GridInterval - GridInterval; i <= bottomRight.X + GridInterval; i += GridInterval)
+        const int GridIncrements = 500;
+
+        Color lineColor = new Color(64, 64, 64);
+
+        var invertCamera = Matrix.Invert(_camera.Transform);
+
+        Vector2 start = Vector2.Transform(-new Vector2(GridIncrements), invertCamera);
+        Vector2 end = Vector2.Transform(DisplaySize + new Vector2(GridIncrements), invertCamera);
+        Vector2 origin = Vector2.Transform(default, _camera.Transform);
+
+        for (float x = (int)(start.X / GridIncrements) * GridIncrements; x < end.X; x += GridIncrements)
         {
-            for (int j = (int)(topLeft.Y / GridInterval) * GridInterval - GridInterval; j <= bottomRight.Y + GridInterval; j += GridInterval)
+            Vector2 transformedStart = Vector2.Transform(new Vector2(x, start.Y), _camera.Transform);
+            Vector2 transformedEnd = Vector2.Transform(new Vector2(x, end.Y), _camera.Transform);
+
+            _spriteBatch.Draw(
+                _whitePixel,
+                new Rectangle((int)transformedStart.X, 0, 1, (int)DisplaySize.Y),
+                lineColor
+            );
+
+            if (_camera.Scale > 0.15f)
             {
-                _sb.FillCircle(new Vector2(i, j), 2, Color.White);
+                _spriteBatch.DrawString(_font, _sb.Append(x), new Vector2(transformedStart.X, origin.Y), Color.White);
+                _sb.Clear();
+            }
+        }
+
+        for (float y = (int)(start.Y / GridIncrements) * GridIncrements; y < end.Y; y += GridIncrements)
+        {
+            Vector2 transformedStart = Vector2.Transform(new Vector2(start.X, y), _camera.Transform);
+            Vector2 transformedEnd = Vector2.Transform(new Vector2(end.X, y), _camera.Transform);
+
+            _spriteBatch.Draw(
+                _whitePixel,
+                new Rectangle(0, (int)transformedStart.Y, (int)DisplaySize.X, 1),
+                lineColor
+            );
+
+            if (_camera.Scale > 0.15f)
+            {
+                _spriteBatch.DrawString(_font, _sb.Append(y), new Vector2(origin.X, transformedStart.Y), Color.White);
+                _sb.Clear();
             }
         }
     }
 
-    private Vector2[] GenerateAsteroid(int edges = 8)
+
+    internal class Camera(AsteroidsGame game)
     {
-        Vector2[] verts = new Vector2[edges];
-        float rot = 0;
-        for (int i = 0; i < verts.Length; i++)
+        private AsteroidsGame _game = game;
+
+        public Matrix Transform =>
+            Matrix.CreateTranslation(Position.X, Position.Y, 0) *
+            Matrix.CreateScale(Scale, Scale, 1) *
+            Matrix.CreateTranslation(_game.DisplaySize.X * 0.5f, _game.DisplaySize.Y * 0.5f, 0)
+            ;
+
+        public Vector2 Position { get; set; } = Vector2.Zero;
+        public float Scale { get; set; } = 2;
+
+        public void Update()
         {
-            verts[i] = Vector2.Rotate(Vector2.UnitX * (Random.Shared.NextSingle() + 3) * 8, rot);
-            rot += MathHelper.TwoPi / edges;
+            if (InputHelper.Down(MouseButton.Left))
+                Position += (InputHelper.MouseLocation.ToVector2() - InputHelper.PrevMouseState.Position.ToVector2()) / Scale;
+            if (InputHelper.DeltaScroll != 0)
+                Scale *= InputHelper.DeltaScroll < 0 ? 0.9f : 1 / 0.9f;
         }
-        return verts;
     }
+
     private Vector2[] GeneratePolygon(int edges = 8)
     {
         Vector2[] verts = new Vector2[edges];
@@ -183,66 +302,6 @@ public class AsteroidsGame : Game
             rot += MathHelper.TwoPi / edges;
         }
         return verts;
-    }
-
-    public static Vector2 RandomDirection()
-    {
-        return Vector2.Rotate(Vector2.UnitX, RandomSingle(0, MathHelper.TwoPi));
-    }
-
-    private static float RandomSingle(float min, float max)
-    {
-        return float.Lerp(min, max, Random.Shared.NextSingle());
-    }
-
-    public static void ShootBullet(Entity entity, Vector2 direction, float speed)
-    {
-        entity.World.Create<Transform, Velocity, Line, DecayTimer, BulletBehavior, CircleCollision>(
-            entity.Get<Transform>().XY,
-            direction * speed + entity.Get<Velocity>(),
-            new() { A = direction * 7, Thickness = 2, Opacity = 1 },
-            new((int)(120 / (speed / 24f))),
-            new(entity),
-            new() { Radius = 12 }
-            );
-    }
-
-    public static void BlowUpEntity(Entity entity)
-    {
-        if (entity.TryGet(out Ref<Polygon> polygon) && entity.TryGet(out Ref<Transform> transform))
-        {
-            World w = entity.World;
-
-            float scale = transform.Value.Scale;
-            float sine = MathF.Sin(transform.Value.Rotation);
-            float cos = MathF.Cos(transform.Value.Rotation);
-
-            foreach (var (a, b) in polygon.Value)
-            {
-                var a1 = Rotate(a - polygon.Value.Origin) + transform.Value.XY;
-                var b1 = Rotate(b - polygon.Value.Origin) + transform.Value.XY;
-                var lineCenter = (a1 + b1) * 0.5f;
-                var distanceFromPolyCenter = lineCenter - transform.Value.XY;
-
-                w.Create<Line, Transform, Velocity, AngularVelocity, DecayTimer, Tween>(
-                    new() { A = a1 - lineCenter, B = b1 - lineCenter, Thickness = polygon.Value.Thickness, Opacity = 1 },
-                    transform.Value.XY + distanceFromPolyCenter,
-                    (Vector2.Normalize(distanceFromPolyCenter) + RandomDirection()) * 4,
-                    new((Random.Shared.NextSingle() - 0.5f)),
-                    new(30),
-                    new Tween(TweenType.Parabolic, 30, (e, f) =>
-                    {
-                        ref var l = ref e.Get<Line>();
-                        l.Thickness *= 1.01f;
-                        l.Opacity *= 1 - f;
-                    }));
-            }
-
-            Vector2 Rotate(Vector2 value)
-            {
-                return new Vector2(value.X * cos - value.Y * sine, value.X * sine + value.Y * cos) * scale;
-            }
-        }
     }
 }
 

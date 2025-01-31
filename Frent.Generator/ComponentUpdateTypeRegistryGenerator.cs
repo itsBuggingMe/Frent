@@ -35,6 +35,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                             //stack allocate 6 slots
                             var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
+                            int order = 0;
 
                             foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
                             {
@@ -50,10 +51,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                                                 {
                                                     stackAttributes.Push(attrCtor.ContainingType.ToString());
                                                 }
-                                                else if(InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName))
-                                                {
-
-                                                }
+                                                //if(ImplementsInterface(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName) && attrCtor.Parameters.Length > 0)
+                                                //{
+                                                //    if(attrCtor.Parameters[0].ExplicitDefaultValue is int updateorder)
+                                                //    {
+                                                //        order = updateorder;
+                                                //    }
+                                                //}
                                             }
                                         }
                                     }
@@ -62,6 +66,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                             //TODO: avoid alloc?
                             return new ComponentUpdateItemModel(
+                                order,
                                 symbol.ToString(),
                                 symbol.Name,
                                 @interface.Name,
@@ -73,7 +78,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     }
                 }
 
-                return new ComponentUpdateItemModel(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
+                return new ComponentUpdateItemModel(-1, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
             });
 
         IncrementalValuesProvider<(string Name, string Source)> file = models
@@ -115,6 +120,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         foreach (var item in model.GenericArguments)
             sb.Append(", ").Append(item);
 
+        //sb.Append(">(), ").Append(model.UpdateOrder).AppendLine(");");
         sb.AppendLine(">());");
 
         foreach (var attrType in model.Attributes)
@@ -170,11 +176,25 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
         return false;
     }
+
+    private static bool ImplementsInterface(INamedTypeSymbol typeSymbol, string interfaceName)
+    {
+        foreach(var i in typeSymbol.AllInterfaces)
+        {
+            if(i.ToString() == interfaceName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool InterfaceImplementsIComponent(INamedTypeSymbol namedTypeSymbol) =>
         (namedTypeSymbol.Interfaces.Length == 1 &&
         namedTypeSymbol.Interfaces[0].ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName) ||
         namedTypeSymbol.Interfaces.Length == 0 &&
         namedTypeSymbol.ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName;
 
-    internal record struct ComponentUpdateItemModel(string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
+    internal record struct ComponentUpdateItemModel(int UpdateOrder, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
 }

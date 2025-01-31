@@ -181,7 +181,7 @@ partial class World
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
         EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
         EntityTable.GetValueNoCheck(entity.EntityID) = new(EntityLocation.Default, ushort.MaxValue);
-        _recycledEntityIds.Push(entity.EntityIDOnly);
+        _recycledEntityIds.Push(new EntityIDOnly(entity.EntityID, (ushort)(entity.EntityVersion + 1)));
 
         //let the jit decide whether or not to inline
         static void InvokeEvents(World world, Entity entity)
