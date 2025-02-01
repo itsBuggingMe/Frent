@@ -4,6 +4,7 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent;
@@ -179,20 +180,7 @@ partial class World
             EventLookup.Remove(entity.EntityIDOnly);
         }
 
-        //entity is guaranteed to be alive here
-        Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-        EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
-        EntityTable.GetValueNoCheck(entity.EntityID) = new(EntityLocation.Default, ushort.MaxValue);
-
-        int nextVersion = entity.EntityVersion + 1;
-        if(nextVersion != ushort.MaxValue + 1)
-        {
-            //we only recycle the ID if the version doesn't overflow
-            //even though does mean that an ID has limited usages
-
-            //The reason is to ensure an entity created and deleted is never valid again
-            _recycledEntityIds.Push(new EntityIDOnly(entity.EntityID, (ushort)(nextVersion)));
-        }
+        DeleteEntityWithoutEvents(entity, entityLocation);
 
         //let the jit decide whether or not to inline
         static void InvokeEvents(World world, Entity entity)
@@ -201,6 +189,25 @@ partial class World
             {
                 @event.Invoke(entity);
             }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void DeleteEntityWithoutEvents(Entity entity, EntityLocation entityLocation)
+    {
+        //entity is guaranteed to be alive here
+        Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
+        EntityTable.GetValueNoCheck(entity.EntityID) = new(EntityLocation.Default, ushort.MaxValue);
+
+        int nextVersion = entity.EntityVersion + 1;
+        if (nextVersion != ushort.MaxValue + 1)
+        {
+            //we only recycle the ID if the version doesn't overflow
+            //even though does mean that an ID has limited usages
+
+            //The reason is to ensure an entity created and deleted is never valid again
+            _recycledEntityIds.Push(new EntityIDOnly(entity.EntityID, (ushort)(nextVersion)));
         }
     }
 

@@ -24,7 +24,7 @@ public ref struct Ref<T>
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
     public override string? ToString() => Value?.ToString();
-    internal static Ref<T> Create(Span<T> span, int index) => new Ref<T>(ref span[index]);
+    internal static Ref<T> Create(Span<T> span, int index) => new Ref<T>(ref span.UnsafeSpanIndex(index));
 #else
     private Ref(Span<T> comp) => _comp = comp;
 

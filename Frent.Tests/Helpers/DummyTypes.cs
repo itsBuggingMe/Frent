@@ -25,3 +25,6 @@ internal class FilteredBehavior2(Action onUpdate) : IComponent
     [FilterAttribute2]
     public void Update() => onUpdate();
 }
+
+internal class ChildClass : BaseClass;
+internal class BaseClass;

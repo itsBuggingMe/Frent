@@ -170,6 +170,7 @@ public partial struct Entity : IEquatable<Entity>
         return default;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation, IComponentRunner[] archetypeComponents)
     {
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);

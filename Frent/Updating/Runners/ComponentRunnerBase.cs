@@ -15,6 +15,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public void Trim(int index) => _chunks[index].Return();
     public void AllocateNextChunk(int chunkSize, int chunkIndex) => Chunk<TComponent>.NextChunk(ref _chunks, chunkSize, chunkIndex);
     public void ResizeChunk(int chunkSize, int chunkIndex) => Array.Resize(ref _chunks[chunkIndex].Buffer, chunkSize);
+    //Note - no unsafe here
     public void SetAt(object component, ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex] = (TComponent)component;
     public object GetAt(ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex]!;
     public void InvokeGenericActionWith(GenericEvent? action, Entity e, ushort chunkIndex, ushort componentIndex) => action?.Invoke(e, ref _chunks[chunkIndex][componentIndex]);
@@ -22,11 +23,12 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public ComponentID ComponentID => Component<TComponent>.ID;
     public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
     {
-        IComponentRunner<TComponent> componentRunner = (IComponentRunner<TComponent>)otherRunner;
-        ref var left = ref _chunks[me.ChunkIndex][me.ComponentIndex];
-        ref var right = ref componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
+        ComponentStorage<TComponent> componentRunner = UnsafeExtensions.UnsafeCast<ComponentStorage<TComponent>>(otherRunner);
+        ref var left = ref _chunks.UnsafeArrayIndex(me.ChunkIndex).Buffer.UnsafeArrayIndex(me.ComponentIndex);
+        ref var right = ref componentRunner.Chunks.UnsafeArrayIndex(other.ChunkIndex).Buffer.UnsafeArrayIndex(other.ComponentIndex);
         _chunks[me.ChunkIndex][me.ComponentIndex] = componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
     }
+
     public void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other) => _chunks[me.ChunkIndex][me.ComponentIndex] = ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
 
     public void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom)

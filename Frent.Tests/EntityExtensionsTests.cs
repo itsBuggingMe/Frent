@@ -34,6 +34,6 @@ internal class EntityExtensionsTests
 
         var e = world.Create<Class1, Struct1, int, double, string>(new(), new(), 1, 2.0, "3");
 
-        Assert.Throws<InvalidOperationException>(() => e.Deconstruct(out Ref<Class2> _));
+        Assert.Throws<ComponentNotFoundException>(() => e.Deconstruct(out Ref<Class2> _));
     }
 }
