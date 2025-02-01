@@ -18,13 +18,8 @@ public static class Component<T>
     /// The component ID for <typeparamref name="T"/>
     /// </summary>
     public static ComponentID ID => _id;
-    /// <summary>
-    /// The user defined update order, or zero
-    /// </summary>
-    public static int UpdateOrder => _updateOrder;
 
     private static readonly ComponentID _id;
-    private static readonly int _updateOrder;
     private static readonly IComponentRunnerFactory<T> RunnerInstance;
     internal static readonly TrimmableStack<T> TrimmableStack;
 
@@ -37,7 +32,6 @@ public static class Component<T>
             if (type.Factory is IComponentRunnerFactory<T> casted)
             {
                 RunnerInstance = casted;
-                _updateOrder = type.UpdateOrder;
                 return;
             }
 

@@ -74,6 +74,14 @@ public partial class World : IDisposable
     /// Invoked whenever a component is removed from an entity.
     /// </summary>
     public event Action<Entity, ComponentID>? ComponentRemoved;
+    /// <summary>
+    /// Invoked whenever a tag is added to an entity.
+    /// </summary>
+    public event Action<Entity, TagID>? TagTagged;
+    /// <summary>
+    /// Invoked whenever a tag is removed from an entity.
+    /// </summary>
+    public event Action<Entity, TagID>? TagDetached;
 
     internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
 

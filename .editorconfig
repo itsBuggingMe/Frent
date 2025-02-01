@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# NUnit2045: Use Assert.Multiple
+dotnet_diagnostic.NUnit2045.severity = none

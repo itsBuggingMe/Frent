@@ -245,6 +245,8 @@ partial class World
         if (eventExist)
             eventData.Tag.Invoke(entity, tagID);
 
+        TagTagged?.Invoke(entity, tagID);
+
         return true;
     }
 
@@ -288,6 +290,8 @@ partial class World
         ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.Detach, out bool eventExist);
         if (eventExist)
             eventData.Detach.Invoke(entity, tagID);
+
+        TagDetached?.Invoke(entity, tagID);
 
         return true;
     }

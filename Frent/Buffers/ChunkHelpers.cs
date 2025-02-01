@@ -115,7 +115,7 @@ partial class ChunkHelpers
             action.Run(chunkLast1[j]);
         }
 
-        for (int i = 0; i < entities.Length; i++)
+        for (int i = 0; i < curChk; i++)
         {
             chunk.RunChunk(entities[i].AsSpan());
         }
