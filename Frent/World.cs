@@ -278,7 +278,7 @@ public partial class World : IDisposable
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
             //i plan on adding events later, so even more command buffer events could be added during playback
-            while (WorldUpdateCommandBuffer.PlayBack()) ;
+            while (WorldUpdateCommandBuffer.Playback()) ;
         }
     }
 

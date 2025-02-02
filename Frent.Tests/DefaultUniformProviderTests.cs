@@ -26,7 +26,7 @@ internal class DefaultUniformProviderTests
     }
 
     [Test]
-    public void Add_ThrowsNotAssigned()
+    public void Add_ThrowsNotAssignable()
     {
         var uniformProvider = new DefaultUniformProvider();
         Throws<ArgumentException>(() => uniformProvider.Add(typeof(Class1), new Class2()));

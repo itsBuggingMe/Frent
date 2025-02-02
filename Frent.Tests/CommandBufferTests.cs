@@ -20,7 +20,7 @@ internal class CommandBufferTests
 
         That(e.ComponentTypes, Is.Empty);
 
-        commandBuffer.PlayBack();
+        commandBuffer.Playback();
 
         That(e.ComponentTypes, Does.Contain(Component<Struct1>.ID));
         That(e.ComponentTypes, Does.Contain(Component<Struct2>.ID));
@@ -78,7 +78,7 @@ internal class CommandBufferTests
         commandBuffer.AddComponent(e1, new Class1());
         commandBuffer.AddComponent(e2, new Class2());
 
-        commandBuffer.PlayBack();
+        commandBuffer.Playback();
 
         That(e1.ComponentTypes, Does.Contain(Component<Class1>.ID));
         That(e2.ComponentTypes, Does.Contain(Component<Class2>.ID));
@@ -98,7 +98,7 @@ internal class CommandBufferTests
 
         commandBuffer.AddComponent(e1, Component<BaseClass>.ID, new ChildClass());
 
-        commandBuffer.PlayBack();
+        commandBuffer.Playback();
 
         That(e1.ComponentTypes, Does.Contain(Component<BaseClass>.ID));
         That(e1.ComponentTypes, Does.Not.Contain(Component<ChildClass>.ID));
@@ -121,7 +121,7 @@ internal class CommandBufferTests
             commandBuffer.DeleteEntity(item);
         }
 
-        commandBuffer.PlayBack();
+        commandBuffer.Playback();
     }
 
     [Test]
@@ -139,7 +139,7 @@ internal class CommandBufferTests
         commandBuffer.RemoveComponent<Class1>(e1);
         commandBuffer.RemoveComponent<Class2>(e2);
 
-        commandBuffer.PlayBack();
+        commandBuffer.Playback();
 
         That(e1.ComponentTypes, Does.Not.Contain(Component<Class1>.ID));
         That(e2.ComponentTypes, Does.Not.Contain(Component<Class2>.ID));
@@ -157,7 +157,7 @@ internal class CommandBufferTests
 
         commandBuffer.RemoveComponent(e1, Component<BaseClass>.ID);
 
-        commandBuffer.PlayBack();
+        commandBuffer.Playback();
 
         That(e1.ComponentTypes, Does.Not.Contain(Component<BaseClass>.ID));
     }

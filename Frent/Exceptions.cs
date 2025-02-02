@@ -23,6 +23,13 @@ internal class FrentExceptions
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void Throw_ComponentNotFoundException<T>()
+    {
+        throw new ComponentNotFoundException(typeof(T));
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void Throw_ComponentNotFoundException(string message)
     {
         throw new ComponentNotFoundException(message);

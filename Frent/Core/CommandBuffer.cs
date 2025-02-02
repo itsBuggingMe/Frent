@@ -40,7 +40,7 @@ public class CommandBuffer
     }
 
     /// <summary>
-    /// Deletes a component from when <see cref="PlayBack"/> is called.
+    /// Deletes a component from when <see cref="Playback"/> is called.
     /// </summary>
     /// <param name="entity">The entity that will be deleted on playback.</param>
     public void DeleteEntity(Entity entity)
@@ -50,7 +50,7 @@ public class CommandBuffer
     }
 
     /// <summary>
-    /// Removes a component from when <see cref="PlayBack"/> is called.
+    /// Removes a component from when <see cref="Playback"/> is called.
     /// </summary>
     /// <param name="entity">The entity to remove a component from.</param>
     /// <param name="component">The component to remove.</param>
@@ -61,21 +61,21 @@ public class CommandBuffer
     }
 
     /// <summary>
-    /// Removes a component from when <see cref="PlayBack"/> is called.
+    /// Removes a component from when <see cref="Playback"/> is called.
     /// </summary>
     /// <typeparam name="T">The component type to remove.</typeparam>
     /// <param name="entity">The entity to remove a component from.</param>
     public void RemoveComponent<T>(Entity entity) => RemoveComponent(entity, Component<T>.ID);
 
     /// <summary>
-    /// Removes a component from when <see cref="PlayBack"/> is called.
+    /// Removes a component from when <see cref="Playback"/> is called.
     /// </summary>
     /// <param name="entity">The entity to remove a component from.</param>
     /// <param name="type">The type of component to remove.</param>
     public void RemoveComponent(Entity entity, Type type) => RemoveComponent(entity, Component.GetComponentID(type));
 
     /// <summary>
-    /// Adds a component to an entity when <see cref="PlayBack"/> is called.
+    /// Adds a component to an entity when <see cref="Playback"/> is called.
     /// </summary>
     /// <typeparam name="T">The component type to add.</typeparam>
     /// <param name="entity">The entity to add to.</param>
@@ -88,7 +88,7 @@ public class CommandBuffer
     }
 
     /// <summary>
-    /// Adds a component to an entity when <see cref="PlayBack"/> is called.
+    /// Adds a component to an entity when <see cref="Playback"/> is called.
     /// </summary>
     /// <param name="entity">The entity to add to.</param>
     /// <param name="component">The component to add.</param>
@@ -102,7 +102,7 @@ public class CommandBuffer
     }
 
     /// <summary>
-    /// Adds a component to an entity when <see cref="PlayBack"/> is called.
+    /// Adds a component to an entity when <see cref="Playback"/> is called.
     /// </summary>
     /// <param name="entity">The entity to add to.</param>
     /// <param name="component">The component to add.</param>
@@ -111,7 +111,7 @@ public class CommandBuffer
     public void AddComponent(Entity entity, Type componentType, object component) => AddComponent(entity, Component.GetComponentID(componentType), component);
 
     /// <summary>
-    /// Adds a component to an entity when <see cref="PlayBack"/> is called.
+    /// Adds a component to an entity when <see cref="Playback"/> is called.
     /// </summary>
     /// <param name="entity">The entity to add to.</param>
     /// <param name="component">The component to add.</param>
@@ -119,7 +119,7 @@ public class CommandBuffer
 
     #region Create
     /// <summary>
-    /// Begins to create an entity, which will be resolved when <see cref="PlayBack"/> is called.
+    /// Begins to create an entity, which will be resolved when <see cref="Playback"/> is called.
     /// </summary>
     /// <returns><see langword="this"/> instance, for method chaining.</returns>
     /// <exception cref="InvalidOperationException">An entity is already being created.</exception>
@@ -223,7 +223,7 @@ public class CommandBuffer
     /// Plays all the queued commands, applying them to a world.
     /// </summary>
     /// <returns><see langword="true"/> when at least one change was made; <see langword="false"/> when this command buffer is empty and not active.</returns>
-    public bool PlayBack()
+    public bool Playback()
     {
         bool hasItems = _deleteEntityBuffer.Count > 0 | _createEntityBuffer.Count > 0 | _removeComponentBuffer.Count > 0 | _addComponentBuffer.Count > 0;
 

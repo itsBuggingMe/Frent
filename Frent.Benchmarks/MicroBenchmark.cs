@@ -35,15 +35,12 @@ public class MicroBenchmark
 
     [Benchmark]
     [BenchmarkCategory(Categories.Has)]
-    public void Add()
+    public void Decon()
     {
-        Int128 id = 0L;
-        foreach(var e in _entities)
+        var e = _entities[0];
+        for(int i = 0; i < 1000; i++)
         {
-            e.Add(id);
-            e.Remove<Int128>();
-            e.Add(id);
-            e.Remove<Int128>();
+            e.Deconstruct(out Ref<int> @int, out Ref<double> @double, out Ref<int> @int1, out Ref<double> @double1, out Ref<int> @int2);
         }
     }
 

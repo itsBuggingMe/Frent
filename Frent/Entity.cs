@@ -163,7 +163,7 @@ public partial struct Entity : IEquatable<Entity>
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(
             entityLocation.Archetype(world).Components.UnsafeArrayIndex(compIndex));
 
-        return Ref<T>.Create(storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).AsSpan(), entityLocation.ComponentIndex);
+        return new Ref<T>(ref storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).Buffer.UnsafeArrayIndex(entityLocation.ComponentIndex));
 
     doesntExist:
         exists = false;
@@ -181,7 +181,7 @@ public partial struct Entity : IEquatable<Entity>
         ComponentStorage<TComp> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<TComp>>(
             archetypeComponents.UnsafeArrayIndex(compIndex));
 
-        return Ref<TComp>.Create(storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).AsSpan(), entityLocation.ComponentIndex);
+        return new Ref<TComp>(ref storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).Buffer.UnsafeArrayIndex(entityLocation.ComponentIndex));
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

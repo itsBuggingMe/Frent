@@ -1,4 +1,6 @@
-﻿namespace Frent.Core;
+﻿using System.Runtime.InteropServices;
+
+namespace Frent.Core;
 
 /// <summary>
 /// A wrapper ref struct over a reference to a <typeparamref name="T"/>
@@ -7,7 +9,7 @@
 public ref struct Ref<T>
 {
 #if NET7_0_OR_GREATER
-    private Ref(ref T comp) => _comp = ref comp;
+    internal Ref(ref T comp) => _comp = ref comp;
 
     private ref T _comp;
 
@@ -24,9 +26,8 @@ public ref struct Ref<T>
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
     public override string? ToString() => Value?.ToString();
-    internal static Ref<T> Create(Span<T> span, int index) => new Ref<T>(ref span.UnsafeSpanIndex(index));
 #else
-    private Ref(Span<T> comp) => _comp = comp;
+    internal Ref(ref T comp) => _comp = MemoryMarshal.CreateSpan(ref comp, 1);
 
     private Span<T> _comp;
 
@@ -43,6 +44,5 @@ public ref struct Ref<T>
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
     public override string? ToString() => Value?.ToString();
-    internal static Ref<T> Create(Span<T> span, int index) => new Ref<T>(span.Slice(index, 1));
 #endif
 }
