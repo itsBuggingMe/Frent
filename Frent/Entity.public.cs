@@ -3,6 +3,7 @@ using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
+using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -158,18 +159,6 @@ partial struct Entity
     {
         value = TryGetCore<T>(out bool exists)!;
         return exists;
-    }
-
-    /// <summary>
-    /// Attempts to get a component from an <see cref="Entity"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of component.</typeparam>
-    /// <param name="exists"><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</param>
-    /// <returns>Potentially a reference to the component</returns>
-    public ref T? TryGet<T>(out bool exists)
-    {
-        var @ref = TryGetCore<T>(out exists);
-        return ref @ref.Value!;
     }
 
     /// <summary>

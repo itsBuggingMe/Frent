@@ -147,6 +147,7 @@ partial class Archetype
     private static long GetHash(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> andMoreTypes)
     {
         HashCode h1 = new();
+        HashCode h2 = new();
 
         int i;
         for (i = 0; i < types.Length >> 1; i++)
@@ -155,16 +156,17 @@ partial class Archetype
         }
 
 
-        int tagHash = 0;
+        var hash1 = 0U;
+        var hash2 = 0U;
+
         foreach (var item in andMoreTypes)
         {
-            //we do this so its communative
-            tagHash += item.GetHashCode();
+            hash1 ^= item.ID * 98317U;
+            hash2 += item.ID * 53U;
         }
 
-        h1.Add(tagHash);
+        h1.Add(HashCode.Combine(hash1, hash2));
 
-        HashCode h2 = new();
         for (; i < types.Length; i++)
         {
             h2.Add(types[i]);
