@@ -47,12 +47,12 @@ internal partial class Archetype
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref Entity CreateEntityLocation(out EntityLocation entityLocation)
+    internal ref Entity CreateEntityLocation(EntityFlags flags, out EntityLocation entityLocation)
     {
         if (_entities.UnsafeArrayIndex(_chunkIndex).Length == _componentIndex)
             CreateChunks();
 
-        entityLocation = new EntityLocation(ID, _chunkIndex, (ushort)_componentIndex);
+        entityLocation = new EntityLocation(ID, _chunkIndex, (ushort)_componentIndex, flags);
         return ref _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex++];
     }
 

@@ -345,7 +345,7 @@ public partial class World : IDisposable
 
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, [], this);
 
-        ref Entity entity = ref archetype.CreateEntityLocation(out EntityLocation loc);
+        ref Entity entity = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation loc);
         entity = CreateEntityFromLocation(loc);
 
         Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
@@ -374,7 +374,7 @@ public partial class World : IDisposable
         var archetypeID = Archetype.Default;
         //TODO: replace this with static field
         Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
-        ref var entity = ref archetype.CreateEntityLocation(out var eloc);
+        ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
         EntityTable[(uint)id] = new(eloc, version);

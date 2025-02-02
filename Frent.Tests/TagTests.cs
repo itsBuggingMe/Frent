@@ -13,7 +13,7 @@ internal class TagTests
         {
             Tag.GetTagID(typeof(int)),
             Tag.GetTagID(typeof(long)),
-            Tag.GetTagID(typeof(double)),
+            Tag.GetTagID(typeof(double)),   
             Tag.GetTagID(typeof(string)),
         };
 

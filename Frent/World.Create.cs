@@ -19,7 +19,7 @@ partial class World
     public Entity Create<T>(T comp)
     {
         Archetype archetype = Archetype<T>.CreateNewOrGetExistingArchetype(this);
-        ref var entity = ref archetype.CreateEntityLocation(out var eloc);
+        ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         //4x deref per component
         UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index)).Chunks.UnsafeArrayIndex(eloc.ChunkIndex)[eloc.ComponentIndex] = comp;

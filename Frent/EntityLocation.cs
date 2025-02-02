@@ -5,12 +5,28 @@ using System.Runtime.InteropServices;
 namespace Frent;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-internal struct EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort componentIndex)
+internal struct EntityLocation
 {
-    internal ArchetypeID ArchetypeID = archetype;
-    internal ushort ComponentIndex = componentIndex;
-    internal ushort ChunkIndex = chunkIndex;
-    internal EntityFlags Flags = EntityFlags.None;
+    internal ArchetypeID ArchetypeID;
+    internal ushort ComponentIndex;
+    internal ushort ChunkIndex;
+    internal EntityFlags Flags;
+
+    public EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort componentIndex)
+    {
+        ArchetypeID = archetype;
+        ComponentIndex = componentIndex;
+        ChunkIndex = chunkIndex;
+        Flags = EntityFlags.None;
+    }
+
+    public EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort componentIndex, EntityFlags flags)
+    {
+        ArchetypeID = archetype;
+        ComponentIndex = componentIndex;
+        ChunkIndex = chunkIndex;
+        Flags = flags;
+    }
 
     public static EntityLocation Default { get; } = new EntityLocation(new(ushort.MaxValue), ushort.MaxValue, ushort.MaxValue);
 

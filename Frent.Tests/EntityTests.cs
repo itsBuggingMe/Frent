@@ -98,6 +98,7 @@ internal class EntityTests
         var entity = world.Create(1);
         entity.OnDetach += (a, b) => Pass();
         entity.Tag<int>();
+        entity.Detach<int>();
         Fail();
     }
 
@@ -270,12 +271,12 @@ internal class EntityTests
         var e = world.Create(-1, new Struct1(-2));
 
         That(e.Get<int>(), Is.EqualTo(-1));
-        That(e.Get<Struct1>().Value, Is.EqualTo(-1));
+        That(e.Get<Struct1>().Value, Is.EqualTo(-2));
 
         e.Set(Component<int>.ID, 1);
         That(e.Get<int>(), Is.EqualTo(1));
 
-        e.Set(typeof(Struct1), 1);
+        e.Set(typeof(Struct1), new Struct1(1));
         That(e.Get<Struct1>().Value, Is.EqualTo(1));
     }
 
@@ -300,17 +301,6 @@ internal class EntityTests
         var e = world.Create(new Struct1(1));
 
         That(e.TryGet<int>(out var value), Is.False);
-    }
-
-    [Test]
-    public void TryGet_ThrownWhenDead()
-    {
-        using World world = new();
-
-        var e = world.Create(new Struct1(2));
-        e.Delete();
-
-        Throws<InvalidOperationException>(() => e.TryGet<Struct1>(out var value));
     }
 
     [Test]

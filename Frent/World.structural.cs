@@ -37,7 +37,7 @@ partial class World
         var tags = currentArchetype.ArchetypeTagArray;
 
         var destination = Archetype.CreateOrGetExistingArchetype(allComps, tags.AsSpan(), this, null, tags);
-        destination.CreateEntityLocation(out var nextELoc) = entity;
+        destination.CreateEntityLocation(location.Flags, out var nextELoc) = entity;
 
         for (int i = 0; i < currentArchetype.Components.Length; i++)
         {
@@ -84,7 +84,7 @@ partial class World
             destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(out nextLocation) = entity;
+        destination.CreateEntityLocation(entityLocation.Flags, out nextLocation) = entity;
 
         for (int i = 0; i < from.Components.Length; i++)
         {
@@ -125,7 +125,7 @@ partial class World
             destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(out EntityLocation nextLocation) = entity;
+        destination.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation) = entity;
 
         int skipIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, component);
 
@@ -234,7 +234,7 @@ partial class World
             destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(out var nextLocation) = entity;
+        destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation) = entity;
 
         Debug.Assert(from.Components.Length == destination.Components.Length);
         Span<IComponentRunner> fromRunners = from.Components.AsSpan();
@@ -279,7 +279,7 @@ partial class World
             destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(out var nextLocation) = entity;
+        destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation) = entity;
 
         Debug.Assert(from.Components.Length == destination.Components.Length);
         Span<IComponentRunner> fromRunners = from.Components.AsSpan();

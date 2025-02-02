@@ -1,12 +1,11 @@
 ﻿using Frent.Core;
+using Frent.Updating;
 using Frent.Core.Events;
 using Frent.Core.Structures;
-using Frent.Updating;
 using Frent.Updating.Runners;
-using System.Buffers;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Frent;
 
