@@ -167,30 +167,29 @@ partial class World
     }
 
     //Delete
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
     {
         EntityFlags check = entityLocation.Flags | _worldEventFlags;
         if ((check & EntityFlags.AllEvents) != 0)
-        {
-            _entityDeleted.Invoke(entity);
-            if (entityLocation.HasEvent(EntityFlags.OnDelete))
-            {
-                InvokeEvents(this, entity);
-            }
-            EventLookup.Remove(entity.EntityIDOnly);
-        }
-
+            InvokeDeleteEvents(entity, entityLocation);
         DeleteEntityWithoutEvents(entity, entityLocation);
+    }
 
-        //let the jit decide whether or not to inline
-        static void InvokeEvents(World world, Entity entity)
+    //let the jit decide whether or not to inline
+    private void InvokeDeleteEvents(Entity entity, EntityLocation entityLocation)
+    {
+        _entityDeleted.Invoke(entity);
+        if (entityLocation.HasEvent(EntityFlags.OnDelete))
         {
-            foreach (var @event in world.EventLookup[entity.EntityIDOnly].Delete.AsSpan())
+            foreach (var @event in EventLookup[entity.EntityIDOnly].Delete.AsSpan())
             {
                 @event.Invoke(entity);
             }
         }
+        EventLookup.Remove(entity.EntityIDOnly);
     }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DeleteEntityWithoutEvents(Entity entity, EntityLocation entityLocation)

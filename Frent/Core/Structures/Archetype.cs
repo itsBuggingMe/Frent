@@ -4,6 +4,7 @@ using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
@@ -92,31 +93,94 @@ internal partial class Archetype
     }
 
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Entity DeleteEntity(ushort chunk, ushort comp)
     {
         if (unchecked(--_componentIndex == -1))
         {
-            _chunkIndex--;
-            _componentIndex = _entities[_chunkIndex].Length - 1;
-
-            foreach (var comprunner in Components)
-                comprunner.Delete(chunk, comp, _chunkIndex, (ushort)_componentIndex);
-
-            var e = _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
-
-            int index = _chunkIndex + 1;
-            _entities[index].Return();
-            foreach (var comprunner in Components)
-                comprunner.Trim(index);
-
-            return e;
+            return DeleteEntityAndShrink(chunk, comp);
         }
 
+        #region Unroll
+        ref IComponentRunner first = ref MemoryMarshal.GetArrayDataReference(Components);
+        DeleteComponentData args = new(chunk, comp, _chunkIndex, (ushort)_componentIndex);
 
+        switch (Components.Length)
+        {
+            case 1: goto len1;
+            case 2: goto len2;
+            case 3: goto len3;
+            case 4: goto len4;
+            case 5: goto len5;
+            case 6: goto len6;
+            case 7: goto len7;
+            case 8: goto len8;
+            case 9: goto len9;
+            case 10: goto len10;
+            case 11: goto len11;
+            case 12: goto len12;
+            case 13: goto len13;
+            case 14: goto len14;
+            case 15: goto len15;
+            case 16: goto len16;
+            default: goto end;
+        }
+
+    len16:
+        Unsafe.Add(ref first, 15).Delete(args);
+    len15:
+        Unsafe.Add(ref first, 14).Delete(args);
+    len14:
+        Unsafe.Add(ref first, 13).Delete(args);
+    len13:
+        Unsafe.Add(ref first, 12).Delete(args);
+    len12:
+        Unsafe.Add(ref first, 11).Delete(args);
+    len11:
+        Unsafe.Add(ref first, 10).Delete(args);
+    len10:
+        Unsafe.Add(ref first, 9).Delete(args);
+    len9:
+        Unsafe.Add(ref first, 8).Delete(args);
+    len8:
+        Unsafe.Add(ref first, 7).Delete(args);
+    len7:
+        Unsafe.Add(ref first, 6).Delete(args);
+    len6:
+        Unsafe.Add(ref first, 5).Delete(args);
+    len5:
+        Unsafe.Add(ref first, 4).Delete(args);
+    len4:
+        Unsafe.Add(ref first, 3).Delete(args);
+    len3:
+        Unsafe.Add(ref first, 2).Delete(args);
+    len2:
+        Unsafe.Add(ref first, 1).Delete(args);
+    len1:
+        Unsafe.Add(ref first, 0).Delete(args);
+        #endregion
+
+    end:
+
+        return _entities.UnsafeArrayIndex(chunk).Buffer.UnsafeArrayIndex(comp) = _entities.UnsafeArrayIndex(_chunkIndex).Buffer.UnsafeArrayIndex(_componentIndex);
+    }
+
+    private Entity DeleteEntityAndShrink(ushort chunk, ushort comp)
+    {
+        _chunkIndex--;
+        _componentIndex = _entities[_chunkIndex].Length - 1;
+
+        DeleteComponentData arg = new DeleteComponentData(chunk, comp, _chunkIndex, (ushort)_componentIndex);
         foreach (var comprunner in Components)
-            comprunner.Delete(chunk, comp, _chunkIndex, (ushort)_componentIndex);
+            comprunner.Delete(arg);
 
-        return _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
+        var e = _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
+
+        int index = _chunkIndex + 1;
+        _entities[index].Return();
+        foreach (var comprunner in Components)
+            comprunner.Trim(index);
+        return e;
     }
 
     internal void Update(World world)

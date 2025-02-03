@@ -9,7 +9,7 @@ internal interface IComponentRunner
 {
     internal void Run(World world, Archetype b);
     internal void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
-    internal void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);
+    internal void Delete(DeleteComponentData deleteComponentData);
     internal void Trim(int chunkIndex);
     internal void AllocateNextChunk(int size, int chunkIndex);
     internal void ResizeChunk(int size, int chunkIndex);
@@ -27,3 +27,5 @@ internal interface IComponentRunner<T> : IComponentRunner
 {
     internal Span<Chunk<T>> AsSpan();
 }
+
+internal record struct DeleteComponentData(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);

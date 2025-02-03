@@ -31,10 +31,10 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
 
     public void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other) => _chunks[me.ChunkIndex][me.ComponentIndex] = ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
 
-    public void Delete(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom)
+    public void Delete(DeleteComponentData data)
     {
-        ref var from = ref _chunks[chunkFrom][compFrom];
-        _chunks[chunkTo][compTo] = from;
+        ref var from = ref _chunks[data.chunkFrom][data.compFrom];
+        _chunks[data.chunkTo][data.compTo] = from;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
