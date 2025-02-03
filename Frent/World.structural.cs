@@ -169,10 +169,10 @@ partial class World
     //Delete
     internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
     {
-        EntityDeleted?.Invoke(entity);
-
-        if (entityLocation.HasEvent(EntityFlags.Events))
+        EntityFlags check = entityLocation.Flags | _worldEventFlags;
+        if (check & EntityFlags.AllEvents != 0)
         {
+            _entityDeleted.Invoke(entity);
             if (entityLocation.HasEvent(EntityFlags.OnDelete))
             {
                 InvokeEvents(this, entity);
@@ -198,15 +198,12 @@ partial class World
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
         EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
-        EntityTable.GetValueNoCheck(entity.EntityID) = new(EntityLocation.Default, ushort.MaxValue);
+        EntityTable.GetValueNoCheck(entity.EntityID).Version = ushort.MaxValue;
 
         int nextVersion = entity.EntityVersion + 1;
-        if (nextVersion != ushort.MaxValue + 1)
+        if (nextVersion != ushort.MaxValue)
         {
-            //we only recycle the ID if the version doesn't overflow
-            //even though does mean that an ID has limited usages
-
-            //The reason is to ensure an entity created and deleted is never valid again
+            //can't use max value as an ID, as it is used as a default value
             _recycledEntityIds.Push(new EntityIDOnly(entity.EntityID, (ushort)(nextVersion)));
         }
     }

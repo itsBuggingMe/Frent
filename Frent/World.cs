@@ -58,30 +58,120 @@ public partial class World : IDisposable
 
     internal CommandBuffer WorldUpdateCommandBuffer;
 
+    internal Event<Entity> _entityCreated = new Entity<Entity>();
+    internal Event<Entity> _entityDeleted = new Entity<Entity>();
+    internal Event<ComponentID> _componentAdded = new Entity<Entity>();
+    internal Event<ComponentID> _componentRemoved = new Entity<Entity>();
+    internal Event<TagID> _tagged = new Entity<Entity>();
+    internal Event<TagID> _detached = new Entity<Entity>();
+    internal EntityFlags _worldEventFlags; 
+
     /// <summary>
     /// Invoked whenever an entity is created on this world.
     /// </summary>
-    public event Action<Entity>? EntityCreated;
+    public event Action<Entity>? EntityCreated 
+    { 
+        add
+        {
+            _entityCreated.Add(value);
+            _worldEventFlags |= EntityFlags.WorldCreate;
+        } 
+        remove
+        {
+            _entityCreated.Remove(value);
+            if(!_entityCreated.HasListeners)
+                _worldEventFlags &= ~EntityFlags.WorldCreate;
+        }
+    }
     /// <summary>
     /// Invoked whenever an entity belonging to this world is deleted.
     /// </summary>
-    public event Action<Entity>? EntityDeleted;
+    public event Action<Entity>? EntityDeleted
+    { 
+        add
+        {
+            _entityDeleted.Add(value);
+            _worldEventFlags |= EntityFlags.WorldOnDelete;
+        } 
+        remove
+        {
+            _entityDeleted.Remove(value);
+            if(!_entityDeleted.HasListeners)
+                _worldEventFlags &= ~EntityFlags.WorldOnDelete;
+        }
+    }
+
     /// <summary>
     /// Invoked whenever a component is added to an entity.
     /// </summary>
-    public event Action<Entity, ComponentID>? ComponentAdded;
+    public event Action<Entity, ComponentID>? ComponentAdded
+    {
+        add
+        {
+            _componentAdded.Add(value);
+            _worldEventFlags |= EntityFlags.WorldAddComp;
+        } 
+        remove
+        {
+            _componentAdded.Remove(value);
+            if(!_componentAdded.HasListeners)
+                _worldEventFlags &= ~EntityFlags.WorldAddComp;
+        }
+    }
+
     /// <summary>
     /// Invoked whenever a component is removed from an entity.
     /// </summary>
-    public event Action<Entity, ComponentID>? ComponentRemoved;
+    public event Action<Entity, ComponentID>? ComponentRemoved
+    {
+        add
+        {
+            _componentRemoved.Add(value);
+            _worldEventFlags |= EntityFlags.WorldRemoveComp;
+        } 
+        remove
+        {
+            _componentRemoved.Remove(value);
+            if(!_componentRemoved.HasListeners)
+                _worldEventFlags &= ~EntityFlags.WorldRemoveComp;
+        }
+    }
+
     /// <summary>
     /// Invoked whenever a tag is added to an entity.
     /// </summary>
-    public event Action<Entity, TagID>? TagTagged;
+    public event Action<Entity, TagID>? TagTagged
+    {
+        add
+        {
+            _tagged.Add(value);
+            _worldEventFlags |= EntityFlags.WorldTagged;
+        } 
+        remove
+        {
+            _tagged.Remove(value);
+            if(!_tagged.HasListeners)
+                _worldEventFlags &= ~EntityFlags.WorldTagged;
+        }
+    }
+
     /// <summary>
     /// Invoked whenever a tag is removed from an entity.
     /// </summary>
-    public event Action<Entity, TagID>? TagDetached;
+    public event Action<Entity, TagID>? TagDetached
+    {
+        add
+        {
+            _detached.Add(value);
+            _worldEventFlags |= EntityFlags.WorldDetach;
+        } 
+        remove
+        {
+            _detached.Remove(value);
+            if(!_detached.HasListeners)
+                _worldEventFlags &= ~EntityFlags.WorldDetach;
+        }
+    }
 
     internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
 

@@ -62,5 +62,22 @@ internal enum EntityFlags : ushort
 
     Events = Tagged | Detach | AddComp | RemoveComp | GenericAddComp | GenericAddComp | OnDelete,
 
+    WorldCreate = 1 << 7,
+
+    WorldTagged = 1 << 8,
+    WorldDetach = 1 << 9,
+
+    WorldAddComp = 1 << 10,
+    WorldGenericAddComp = 1 << 11,
+
+    WorldRemoveComp = 1 << 12,
+    WorldGenericRemoveComp = 1 << 13,
+
+    WorldOnDelete = 1 << 14,
+
+    WorldEvents = WorldTagged | WorldDetach | WorldAddComp | WorldRemoveComp | WorldGenericAddComp | WorldGenericAddComp | WorldOnDelete,
+
+    AllEvents = Events | WorldEvents,
+
     //NeedsDispose = 1 << 4,
 }
