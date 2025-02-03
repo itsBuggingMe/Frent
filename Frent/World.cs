@@ -58,12 +58,12 @@ public partial class World : IDisposable
 
     internal CommandBuffer WorldUpdateCommandBuffer;
 
-    internal Event<Entity> _entityCreated = new Entity<Entity>();
-    internal Event<Entity> _entityDeleted = new Entity<Entity>();
-    internal Event<ComponentID> _componentAdded = new Entity<Entity>();
-    internal Event<ComponentID> _componentRemoved = new Entity<Entity>();
-    internal Event<TagID> _tagged = new Entity<Entity>();
-    internal Event<TagID> _detached = new Entity<Entity>();
+    internal EntityOnlyEvent _entityCreated = new EntityOnlyEvent();
+    internal EntityOnlyEvent _entityDeleted = new EntityOnlyEvent();
+    internal Event<ComponentID> _componentAdded = new Event<ComponentID>();
+    internal Event<ComponentID> _componentRemoved = new Event<ComponentID>();
+    internal Event<TagID> _tagged = new Event<TagID>();
+    internal Event<TagID> _detached = new Event<TagID>();
     internal EntityFlags _worldEventFlags; 
 
     /// <summary>

@@ -98,7 +98,7 @@ partial class World
         EntityTable.GetValueNoCheck(movedDown.EntityID).Location = entityLocation;
         EntityTable.GetValueNoCheck(entity.EntityID).Location = nextLocation;
 
-        ComponentAdded?.Invoke(entity, component);
+        _componentAdded.Invoke(entity, component);
 
         return destination;
     }
@@ -157,7 +157,7 @@ partial class World
         ref var finalTableLocation = ref EntityTable[(uint)entity.EntityID];
         finalTableLocation.Location = nextLocation;
 
-        ComponentRemoved?.Invoke(entity, component);
+        _componentRemoved.Invoke(entity, component);
         ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp, out bool eventExist);
         if (eventExist)
         {
@@ -249,7 +249,7 @@ partial class World
         if (eventExist)
             eventData.Tag.Invoke(entity, tagID);
 
-        TagTagged?.Invoke(entity, tagID);
+        _tagged.Invoke(entity, tagID);
 
         return true;
     }
@@ -295,7 +295,7 @@ partial class World
         if (eventExist)
             eventData.Detach.Invoke(entity, tagID);
 
-        TagDetached?.Invoke(entity, tagID);
+        _detached.Invoke(entity, tagID);
 
         return true;
     }

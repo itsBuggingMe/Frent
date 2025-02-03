@@ -30,7 +30,8 @@ partial class World
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
         EntityTable[(uint)id] = new(eloc, version);
         entity = new Entity(ID, Version, version, id);
-        EntityCreated?.Invoke(entity);
+        if((_worldEventFlags & EntityFlags.WorldCreate) != 0)
+            _entityCreated.Invoke(entity);
         return entity;
     }
 
