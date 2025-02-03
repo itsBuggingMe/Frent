@@ -170,7 +170,7 @@ partial class World
     internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
     {
         EntityFlags check = entityLocation.Flags | _worldEventFlags;
-        if (check & EntityFlags.AllEvents != 0)
+        if ((check & EntityFlags.AllEvents) != 0)
         {
             _entityDeleted.Invoke(entity);
             if (entityLocation.HasEvent(EntityFlags.OnDelete))

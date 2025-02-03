@@ -69,7 +69,7 @@ public partial class World : IDisposable
     /// <summary>
     /// Invoked whenever an entity is created on this world.
     /// </summary>
-    public event Action<Entity>? EntityCreated 
+    public event Action<Entity> EntityCreated 
     { 
         add
         {
@@ -86,7 +86,7 @@ public partial class World : IDisposable
     /// <summary>
     /// Invoked whenever an entity belonging to this world is deleted.
     /// </summary>
-    public event Action<Entity>? EntityDeleted
+    public event Action<Entity> EntityDeleted
     { 
         add
         {
@@ -104,7 +104,7 @@ public partial class World : IDisposable
     /// <summary>
     /// Invoked whenever a component is added to an entity.
     /// </summary>
-    public event Action<Entity, ComponentID>? ComponentAdded
+    public event Action<Entity, ComponentID> ComponentAdded
     {
         add
         {
@@ -122,7 +122,7 @@ public partial class World : IDisposable
     /// <summary>
     /// Invoked whenever a component is removed from an entity.
     /// </summary>
-    public event Action<Entity, ComponentID>? ComponentRemoved
+    public event Action<Entity, ComponentID> ComponentRemoved
     {
         add
         {
@@ -140,7 +140,7 @@ public partial class World : IDisposable
     /// <summary>
     /// Invoked whenever a tag is added to an entity.
     /// </summary>
-    public event Action<Entity, TagID>? TagTagged
+    public event Action<Entity, TagID> TagTagged
     {
         add
         {
@@ -158,7 +158,7 @@ public partial class World : IDisposable
     /// <summary>
     /// Invoked whenever a tag is removed from an entity.
     /// </summary>
-    public event Action<Entity, TagID>? TagDetached
+    public event Action<Entity, TagID> TagDetached
     {
         add
         {
@@ -444,7 +444,7 @@ public partial class World : IDisposable
             archetypeComponents[i].SetAt(components[i], loc.ChunkIndex, loc.ComponentIndex);
         }
 
-        EntityCreated?.Invoke(entity);
+        _entityCreated.Invoke(entity);
         return entity;
     }
 
@@ -455,7 +455,7 @@ public partial class World : IDisposable
     public Entity Create()
     {
         var entity = CreateEntityWithoutEvent();
-        EntityCreated?.Invoke(entity);
+        _entityCreated.Invoke(entity);
         return entity;
     }
 
@@ -475,7 +475,7 @@ public partial class World : IDisposable
 
     internal void InvokeEntityCreated(Entity entity)
     {
-        EntityCreated?.Invoke(entity);
+        _entityCreated.Invoke(entity);
     }
 
     /// <summary>
