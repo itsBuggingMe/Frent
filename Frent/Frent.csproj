@@ -10,13 +10,14 @@
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8;.net7;.net6</PackageTags>
-    <Version>0.3.3.2-beta</Version>
+    <Version>0.3.3.3-beta</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <!--
     <None Include="$(OutputPath)\Frent.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="'$(Configuration)' == 'Release'" />
     -->
+    
     <ProjectReference Include="..\Frent.Variadic.Generator\Frent.Variadic.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <None Include="..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\LICENSE.md" Pack="true" PackagePath="\" />
