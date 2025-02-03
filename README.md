@@ -2,7 +2,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Frent.svg)](https://www.nuget.org/packages/Frent/) [![NuGet](https://img.shields.io/nuget/dt/Frent.svg)](https://www.nuget.org/packages/Frent/) ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/w/itsBuggingMe/Frent/master) ![GitHub Repo stars](https://img.shields.io/github/stars/ItsBuggingMe/Frent)
 
 
-A high preformance archetyped based **[ECF](https://itsbuggingme.github.io/Frent/docs/ecf.html)/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
+A high preformance, low memory usage, archetyped based **[ECF](https://itsbuggingme.github.io/Frent/docs/ecf.html)/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
 
 *Whaaaat?! Aren't there enough ECS libraries out there!*
 
@@ -35,6 +35,10 @@ record struct Velocity(Vector2 Delta) : IComponent<Position>
 ```
 
 Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs/getting-started.html)!
+
+## Preformance
+
+[Preliminary benchmarks](https://github.com/itsBuggingMe/FrentComparisons) show that Frent is as fast, if not faster in many operations, compared to existing high preformance ECS libraries.
 
 # Features
 ## Implemented
