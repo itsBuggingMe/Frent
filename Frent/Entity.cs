@@ -50,7 +50,7 @@ public partial struct Entity : IEquatable<Entity>
         if (World.WorldCachePackedValue == PackedWorldInfo)
         {
             world = World.QuickWorldCache;
-            var tableItem = world!.EntityTable.GetValueNoCheck(EntityID);
+            var tableItem = world!.EntityTable[EntityID];
             entityLocation = tableItem.Location;
             return tableItem.Version == EntityVersion;
         }
@@ -63,7 +63,7 @@ public partial struct Entity : IEquatable<Entity>
         if (World.WorldCachePackedValue == PackedWorldInfo)
         {
             world = World.QuickWorldCache;
-            return world!.EntityTable.GetValueNoCheck(EntityID).Version == EntityVersion;
+            return world!.EntityTable[EntityID].Version == EntityVersion;
         }
         return IsAliveCold(out world, out _);
     }
@@ -73,7 +73,7 @@ public partial struct Entity : IEquatable<Entity>
     {
         if (World.WorldCachePackedValue == PackedWorldInfo)
         {
-            var tableItem = World.QuickWorldCache!.EntityTable.GetValueNoCheck(EntityID);
+            var tableItem = World.QuickWorldCache!.EntityTable[EntityID];
             entityLocation = tableItem.Location;
             return tableItem.Version == EntityVersion;
         }
@@ -85,7 +85,7 @@ public partial struct Entity : IEquatable<Entity>
     {
         if (World.WorldCachePackedValue == PackedWorldInfo)
         {
-            return World.QuickWorldCache!.EntityTable.GetValueNoCheck(EntityID).Version == EntityVersion;
+            return World.QuickWorldCache!.EntityTable[EntityID].Version == EntityVersion;
         }
         return IsAliveCold(out _, out _);
     }
@@ -95,7 +95,7 @@ public partial struct Entity : IEquatable<Entity>
         world = GlobalWorldTables.Worlds.GetValueNoCheck(WorldID);
         if (world?.Version == WorldVersion)
         {
-            var (loc, ver) = world.EntityTable[(uint)EntityID];
+            var (loc, ver) = world.EntityTable[EntityID];
             if (ver == EntityVersion)
             {
                 //refresh the cache

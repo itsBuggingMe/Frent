@@ -54,6 +54,18 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
         value = _array[--_nextIndex];
     }
 
+    public bool TryPop(out T value)
+    {
+        if(_nextIndex == 0)
+        {
+            Unsafe.SkipInit(out value);
+            return false;
+        }
+
+        value = _array[--_nextIndex];
+        return true;
+    }
+
     public void RemoveAt(int index)
     {
         if((uint)index < (uint)_nextIndex)

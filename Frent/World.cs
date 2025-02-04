@@ -24,21 +24,19 @@ public partial class World : IDisposable
     private static byte _nextWorldID;
     #endregion
 
-    internal static Table<EntityLookup> QuickWorkTable = new Table<EntityLookup>(32);
-
     internal static readonly ushort DefaultWorldCachePackedValue = new Entity(byte.MaxValue, byte.MaxValue, 0, 0).PackedWorldInfo;
 
     //the idea is what work is usually done at one world at a time
     //we can save a lookup and a deref by storing it statically
-    //this saves a few nano seconds and makes the public entity apis 2x as fast
+    //this saves a few nanoseconds and makes the public entity apis 2x as fast
     internal static volatile World? QuickWorldCache;
     internal static volatile ushort WorldCachePackedValue = DefaultWorldCachePackedValue;
 
-    internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
+    internal NativeTable<EntityLookup> EntityTable = new NativeTable<EntityLookup>(32);
     internal Archetype[] WorldArchetypeTable;
     internal Dictionary<ArchetypeEdgeKey, ArchetypeID> ArchetypeGraphEdges = [];
 
-    private FastStack<EntityIDOnly> _recycledEntityIds = FastStack<EntityIDOnly>.Create(8);
+    private NativeStack<EntityIDOnly> _recycledEntityIds = new NativeStack<EntityIDOnly>(8);
     private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
     private int _nextEntityID;
 
@@ -221,7 +219,7 @@ public partial class World : IDisposable
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
     {
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
-        EntityTable[(uint)id] = new(entityLocation, version);
+        EntityTable[id] = new(entityLocation, version);
         return new Entity(ID, Version, version, id);
     }
 
@@ -415,6 +413,9 @@ public partial class World : IDisposable
         _sharedCountdown.Dispose();
 
         _isDisposed = true;
+
+        _recycledEntityIds.Dispose();
+        EntityTable.Dispose();
     }
 
     /// <summary>
@@ -467,7 +468,7 @@ public partial class World : IDisposable
         ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
-        EntityTable[(uint)id] = new(eloc, version);
+        EntityTable[id] = new(eloc, version);
 
         entity = new Entity(ID, Version, version, id);
         return entity;
@@ -489,12 +490,16 @@ public partial class World : IDisposable
     {
         if (componentTypes.Length == 0 || componentTypes.Length > 16)
             throw new ArgumentException("1-16 components per entity only", nameof(componentTypes));
+        if(count < 1)
+            throw new ArgumentOutOfRangeException("count must be positive", nameof(count));
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentTypes, [], this);
         EnsureCapacityCore(archetype, count);
     }
 
     internal void EnsureCapacityCore(Archetype archetype, int count)
     {
+        if(count < 1)
+            throw new ArgumentOutOfRangeException("Count must be positive", nameof(count));
         archetype.EnsureCapacity(count);
         EntityTable.EnsureCapacity(count + EntityCount);
     }

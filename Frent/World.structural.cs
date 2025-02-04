@@ -21,7 +21,7 @@ partial class World
     /// </summary>
     internal void AddComponentRange(Entity entity, ReadOnlySpan<(ComponentID Component, int Index)> comps)
     {
-        EntityLocation location = EntityTable[(uint)entity.EntityID].Location;
+        EntityLocation location = EntityTable[entity.EntityID].Location;
         Archetype currentArchetype = location.Archetype(this);
 
         ReadOnlySpan<ComponentID> existingComponentIDs = currentArchetype.ArchetypeTypeArray.AsSpan();
@@ -57,8 +57,8 @@ partial class World
 
         Entity movedDown = currentArchetype.DeleteEntity(location.ChunkIndex, location.ComponentIndex);
 
-        EntityTable.IndexWithInt(movedDown.EntityID).Location = location;
-        EntityTable.IndexWithInt(entity.EntityID).Location = nextELoc;
+        EntityTable[movedDown.EntityID].Location = location;
+        EntityTable[entity.EntityID].Location = nextELoc;
     }
 
     //Add
@@ -95,8 +95,8 @@ partial class World
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
-        EntityTable.GetValueNoCheck(movedDown.EntityID).Location = entityLocation;
-        EntityTable.GetValueNoCheck(entity.EntityID).Location = nextLocation;
+        EntityTable[movedDown.EntityID].Location = entityLocation;
+        EntityTable[entity.EntityID].Location = nextLocation;
 
         _componentAdded.Invoke(entity, component);
 
@@ -153,8 +153,8 @@ partial class World
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
-        EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        ref var finalTableLocation = ref EntityTable[(uint)entity.EntityID];
+        EntityTable[movedDown.EntityID].Location = entityLocation;
+        ref var finalTableLocation = ref EntityTable[entity.EntityID];
         finalTableLocation.Location = nextLocation;
 
         _componentRemoved.Invoke(entity, component);
@@ -196,14 +196,14 @@ partial class World
     {
         //entity is guaranteed to be alive here
         Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-        EntityTable.GetValueNoCheck(replacedEntity.EntityID) = new(entityLocation, replacedEntity.EntityVersion);
-        EntityTable.GetValueNoCheck(entity.EntityID).Version = ushort.MaxValue;
+        EntityTable[replacedEntity.EntityID] = new(entityLocation, replacedEntity.EntityVersion);
+        EntityTable[entity.EntityID].Version = ushort.MaxValue;
 
         int nextVersion = entity.EntityVersion + 1;
         if (nextVersion != ushort.MaxValue)
         {
             //can't use max value as an ID, as it is used as a default value
-            _recycledEntityIds.Push(new EntityIDOnly(entity.EntityID, (ushort)(nextVersion)));
+            _recycledEntityIds.Push() = new EntityIDOnly(entity.EntityID, (ushort)(nextVersion));
         }
     }
 
@@ -241,8 +241,8 @@ partial class World
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
-        EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        EntityTable[(uint)entity.EntityID].Location = nextLocation;
+        EntityTable[movedDown.EntityID].Location = entityLocation;
+        EntityTable[entity.EntityID].Location = nextLocation;
 
         ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.Tagged, out bool eventExist);
         if (eventExist)
@@ -286,8 +286,8 @@ partial class World
 
         Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
 
-        EntityTable[(uint)movedDown.EntityID].Location = entityLocation;
-        EntityTable[(uint)entity.EntityID].Location = nextLocation;
+        EntityTable[movedDown.EntityID].Location = entityLocation;
+        EntityTable[entity.EntityID].Location = nextLocation;
 
 
         ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.Detach, out bool eventExist);

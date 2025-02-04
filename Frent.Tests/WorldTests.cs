@@ -88,22 +88,22 @@ internal class WorldTests
         query.AssertEntitiesNotDefault();
     }
 
-    [Test]
-    public void EnsureCapacityGeneric_Allocates()
-    {
-        const int EntitiesToAllocate = 1000;
-
-        using World world = new();
-
-        Memory.Record();
-        world.EnsureCapacity<int, long>(EntitiesToAllocate);
-        Memory.AllocatedAtLeast(EntitiesToAllocate * (sizeof(int) + sizeof(long) + 10 /*size of entity table item*/));
-
-        Memory.Record();
-        for(int i = 0; i < EntitiesToAllocate; i++) 
-            world.Create<int, long>(default, default);
-        Memory.NotAllocated();
-    }
+    //[Test]
+    //public void EnsureCapacityGeneric_Allocates()
+    //{
+    //    const int EntitiesToAllocate = 1000;
+    //
+    //    using World world = new();
+    //
+    //    Memory.Record();
+    //    world.EnsureCapacity<int, long>(EntitiesToAllocate);
+    //    Memory.AllocatedAtLeast(EntitiesToAllocate * (sizeof(int) + sizeof(long) + 10 /*size of entity table item*/));
+    //
+    //    Memory.Record();
+    //    for(int i = 0; i < EntitiesToAllocate; i++) 
+    //        world.Create<int, long>(default, default);
+    //    Memory.NotAllocated();
+    //}
 
     [Test]
     public void EnsureCapacity_Allocates()

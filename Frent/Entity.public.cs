@@ -416,7 +416,7 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Delete.Push(value);
-            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.OnDelete;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.OnDelete;
         }
         remove
         {
@@ -428,7 +428,7 @@ partial struct Entity
                 events.Delete.Remove(value);
                 if (!events.Add.NormalEvent.HasListeners)
                 {
-                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.OnDelete;
+                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.OnDelete;
                 }
             }
         }
@@ -446,7 +446,7 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Add.NormalEvent.Add(value);
-            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.AddComp;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.AddComp;
         }
         remove
         {
@@ -458,7 +458,7 @@ partial struct Entity
                 events.Add.NormalEvent.Remove(value);
                 if (!events.Add.NormalEvent.HasListeners)
                 {
-                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.AddComp;
+                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.AddComp;
                 }
             }
         }
@@ -476,7 +476,7 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Remove.NormalEvent.Add(value);
-            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.RemoveComp;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.RemoveComp;
         }
         remove
         {
@@ -488,7 +488,7 @@ partial struct Entity
                 events.Remove.NormalEvent.Remove(value);
                 if (!events.Remove.NormalEvent.HasListeners)
                 {
-                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.RemoveComp;
+                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.RemoveComp;
                 }
             }
         }
@@ -506,7 +506,7 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Add.GenericEvent = value;
-            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.GenericAddComp;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.GenericAddComp;
         }
         get
         {
@@ -532,7 +532,7 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Remove.GenericEvent = value;
-            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.GenericRemoveComp;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.GenericRemoveComp;
         }
         get
         {
@@ -558,7 +558,7 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Tag.Add(value);
-            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.Tagged;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.Tagged;
         }
         remove
         {
@@ -570,7 +570,7 @@ partial struct Entity
                 events.Tag.Remove(value);
                 if (!events.Tag.HasListeners)
                 {
-                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.Tagged;
+                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.Tagged;
                 }
             }
         }
@@ -588,7 +588,7 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Detach.Add(value);
-            world.EntityTable[(uint)EntityID].Location.Flags |= EntityFlags.Detach;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.Detach;
         }
         remove
         {
@@ -600,7 +600,7 @@ partial struct Entity
                 events.Detach.Remove(value);
                 if (!events.Detach.HasListeners)
                 {
-                    world.EntityTable[(uint)EntityID].Location.Flags &= ~EntityFlags.Detach;
+                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.Detach;
                 }
             }
         }
