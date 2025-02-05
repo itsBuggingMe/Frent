@@ -1,4 +1,5 @@
 ﻿using Frent.Buffers;
+using Frent.Core;
 using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
@@ -12,27 +13,18 @@ public static partial class StructQueryExtensions
     public static void Inline<TAction, T>(this Query query, TAction action)
         where TAction : struct, IAction<T>
     {
-        foreach (var archetype in query.AsSpan())
+        foreach (RefTuple<T> tuple in query.Enumerate<T>())
         {
-            ChunkHelpers<T>.EnumerateComponents(
-                archetype.CurrentWriteChunk,
-                archetype.LastChunkComponentCount,
-                action,
-                archetype.GetComponentSpan<T>());
+            action.Run(ref tuple.Item1.Value);
         }
     }
 
     public static void InlineEntity<TAction, T>(this Query query, TAction action)
         where TAction : struct, IEntityAction<T>
     {
-        foreach (var archetype in query.AsSpan())
+        foreach((Entity entity, Ref<T> @ref) in query.EnumerateWithEntities<T>())
         {
-            ChunkHelpers<T>.EnumerateComponentsWithEntity(
-                archetype.CurrentWriteChunk,
-                archetype.LastChunkComponentCount,
-                action,
-                archetype.GetEntitySpan(),
-                archetype.GetComponentSpan<T>());
+            action.Run(entity, ref @ref.Value);
         }
     }
 

@@ -42,6 +42,6 @@ partial class EntityExtensions
         if ((compIndex = archetypeTable[Component<TC>.ID.ID]) >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException<TC>();
 
-        return new Ref<TC>(ref UnsafeExtensions.UnsafeCast<ComponentStorage<TC>>(comps.UnsafeArrayIndex(compIndex)).Chunks.UnsafeArrayIndex(eloc.ChunkIndex).Buffer.UnsafeArrayIndex(eloc.ComponentIndex));
+        return new Ref<TC>(ref UnsafeExtensions.UnsafeCast<ComponentStorage<TC>>(comps.UnsafeArrayIndex(compIndex))[eloc.Index]);
     }
 }

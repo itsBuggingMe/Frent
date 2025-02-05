@@ -71,16 +71,14 @@ internal partial class Archetype
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Entity DeleteEntity(int index)
+    internal EntityIDOnly DeleteEntity(int index)
     {
-        if (unchecked(--_componentIndex == -1))
-        {
-            return DeleteEntityAndShrink(index);
-        }
-
+        _componentIndex--;
+        Debug.Assert(_componentIndex >= 0);
+        //TODO: args
         #region Unroll
         ref IComponentRunner first = ref MemoryMarshal.GetArrayDataReference(Components);
-        DeleteComponentData args = new(index, _chunkIndex, (ushort)_componentIndex);
+        DeleteComponentData args = new(index, _componentIndex);
 
         switch (Components.Length)
         {
@@ -139,30 +137,12 @@ internal partial class Archetype
 
     end:
 
-        return _entities.UnsafeArrayIndex(chunk).Buffer.UnsafeArrayIndex(comp) = _entities.UnsafeArrayIndex(_chunkIndex).Buffer.UnsafeArrayIndex(_componentIndex);
-    }
-
-    private Entity DeleteEntityAndShrink(int index)
-    {
-        _chunkIndex--;
-        _componentIndex = _entities[_chunkIndex].Length - 1;
-
-        DeleteComponentData arg = new DeleteComponentData(index, _chunkIndex, (ushort)_componentIndex);
-        foreach (var comprunner in Components)
-            comprunner.Delete(arg);
-
-        var e = _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
-
-        int index = _chunkIndex + 1;
-        _entities[index].Return();
-        foreach (var comprunner in Components)
-            comprunner.Trim(index);
-        return e;
+        return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_componentIndex);
     }
 
     internal void Update(World world)
     {
-        if ((_chunkIndex | _componentIndex) == 0)
+        if (_componentIndex == 0)
             return;
         foreach (var comprunner in Components)
             comprunner.Run(world, this);
@@ -170,8 +150,7 @@ internal partial class Archetype
 
     internal void Update(World world, ComponentID componentID)
     {
-        //avoid the second branch   
-        if ((_chunkIndex | _componentIndex) == 0)
+        if (_componentIndex == 0)
             return;
 
         int compIndex = GlobalWorldTables.ComponentIndex(ID, componentID);
@@ -184,7 +163,7 @@ internal partial class Archetype
 
     internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
     {
-        if ((_chunkIndex | _componentIndex) == 0)
+        if (_componentIndex == 0)
             return;
         foreach (var comprunner in Components)
             comprunner.MultithreadedRun(countdown, world, this);
@@ -192,13 +171,10 @@ internal partial class Archetype
 
     internal void ReleaseArrays()
     {
-        for (int i = 0; i <= _chunkIndex; i++)
-        {
-            _entities[i].Return();
-            foreach (var comprunner in Components)
-                comprunner.Trim(i);
-        }
+        _entities = [];
+        foreach (var comprunner in Components)
+            comprunner.Trim(0);
     }
 
-    internal Span<Chunk<Entity>> GetEntitySpan() => _entities.AsSpan();
+    internal Span<EntityIDOnly> GetEntitySpan() => _entities.AsSpan();
 }

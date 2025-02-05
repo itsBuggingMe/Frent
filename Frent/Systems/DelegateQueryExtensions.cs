@@ -19,6 +19,10 @@ public static partial class DelegateQueryExtensions
     /// <param name="action">The function to apply to every entity in the <paramref name="query"/></param>
     public static void Run<T>(this Query query, QueryDelegates.Query<T> action)
     {
+        foreach(var item in query.Enumerate<T>())
+        {
+            action(ref item.Value);
+        }
         foreach (var archetype in query.AsSpan())
         {
             ChunkHelpers<T>.EnumerateComponents(

@@ -22,7 +22,7 @@ partial class World
         ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         //4x deref per component
-        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index)).Chunks.UnsafeArrayIndex(eloc.ChunkIndex)[eloc.ComponentIndex] = comp;
+        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index] = comp;
 
         //manually inlined from World.CreateEntityFromLocation
         //The jit likes to inline the outer create function and not inline

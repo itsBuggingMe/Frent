@@ -84,7 +84,7 @@ partial struct Entity
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
         //3x
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(entityLocation.Archetype(world).Components.UnsafeArrayIndex(compIndex));
-        return ref storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).Buffer.UnsafeArrayIndex(entityLocation.ComponentIndex);
+        return ref storage[entityLocation.Index];
     }//2, 0
 
     /// <summary>
@@ -104,7 +104,7 @@ partial struct Entity
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
-        return entityLocation.Archetype(world).Components[compIndex].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        return entityLocation.Archetype(world).Components[compIndex].GetAt(entityLocation.Index);
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ partial struct Entity
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
-        entityLocation.Archetype(world).Components[compIndex].SetAt(obj, entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        entityLocation.Archetype(world).Components[compIndex].SetAt(obj, entityLocation.Index);
     }
 
     /// <summary>
@@ -179,7 +179,7 @@ partial struct Entity
             return false;
         }
 
-        value = entityLocation.Archetype(world).Components[compIndex].GetAt(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        value = entityLocation.Archetype(world).Components[compIndex].GetAt(entityLocation.Index);
         return true;
     }
     #endregion
@@ -200,13 +200,13 @@ partial struct Entity
         if (w.AllowStructualChanges)
         {
             var archetype = w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
-            UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(to).Chunks.UnsafeArrayIndex(location.ChunkIndex).Buffer.UnsafeArrayIndex(location.ComponentIndex) = component;
+            UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(to)[location.Index] = component;
 
             ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
             if (exists)
             {
                 eventRecord.Add.NormalEvent.Invoke(this, Component<T>.ID);
-                to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.ChunkIndex, location.ComponentIndex);
+                to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.Index);
             }
         }
         else
@@ -228,13 +228,13 @@ partial struct Entity
         {
             var archetype = w.AddComponent(this, eloc, componentID, out var to, out var location);
             //we don't check IsAssignableTo. The reason is perf - we get InvalidCastException anyways
-            to.SetAt(component, location.ChunkIndex, location.ComponentIndex);
+            to.SetAt(component, location.Index);
 
             ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
             if (exists)
             {
                 eventRecord.Add.NormalEvent.Invoke(this, componentID);
-                to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.ChunkIndex, location.ComponentIndex);
+                to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.Index);
             }
         }
         else
@@ -691,7 +691,7 @@ partial struct Entity
         IComponentRunner[] runners = loc.Archetype(world).Components;
         foreach(var runner in runners)
         {
-            runner.InvokeGenericActionWith(onEach, loc.ChunkIndex, loc.ComponentIndex);
+            runner.InvokeGenericActionWith(onEach, loc.Index);
         }
     }
 
