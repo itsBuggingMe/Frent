@@ -467,11 +467,10 @@ public partial class World : IDisposable
         Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
         ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
-        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
+        var (id, version) = entity = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
         EntityTable[id] = new(eloc, version);
 
-        entity = new Entity(ID, Version, version, id);
-        return entity;
+        return new Entity(ID, Version, version, id);
     }
 
     internal void InvokeEntityCreated(Entity entity)

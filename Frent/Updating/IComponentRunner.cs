@@ -11,21 +11,20 @@ internal interface IComponentRunner
     internal void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
     internal void Delete(DeleteComponentData deleteComponentData);
     internal void Trim(int chunkIndex);
-    internal void AllocateNextChunk(int size, int chunkIndex);
-    internal void ResizeChunk(int size, int chunkIndex);
+    internal void ResizeBuffer(int size);
     internal void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other);
     internal void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other);
-    internal void InvokeGenericActionWith(GenericEvent? action, Entity entity, ushort chunkIndex, ushort componentIndex);
-    internal void InvokeGenericActionWith(IGenericAction action, ushort chunkIndex, ushort componentIndex);
-    internal TrimmableStack PushComponentToStack(ushort chunkIndex, ushort componentIndex, out int index);
-    internal void SetAt(object component, ushort chunkIndex, ushort compIndex);
-    internal object GetAt(ushort chunkIndex, ushort compIndex);
+    internal void InvokeGenericActionWith(GenericEvent? action, Entity entity, int index);
+    internal void InvokeGenericActionWith(IGenericAction action, int index);
+    internal TrimmableStack PushComponentToStack(int index, out int stackIndex);
+    internal void SetAt(object component, int index);
+    internal object GetAt(int index);
     internal ComponentID ComponentID { get; }
 }
 
 internal interface IComponentRunner<T> : IComponentRunner
 {
-    internal Span<Chunk<T>> AsSpan();
+    internal Span<T> AsSpan();
 }
 
-internal record struct DeleteComponentData(ushort chunkTo, ushort compTo, ushort chunkFrom, ushort compFrom);
+internal record struct DeleteComponentData(int ToIndex, int FromIndex);
