@@ -2,10 +2,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Frent.Core;
 
-[Obsolete("I may or may not use this in the future.")]
 /// <summary>
 /// Specifies the level of memory trimming Frent's internal buffers should do
 /// </summary>
+[Obsolete("I may or may not use this in the future.")]
 public enum MemoryTrimming
 {
     /// <summary>
