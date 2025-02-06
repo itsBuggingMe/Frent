@@ -22,11 +22,6 @@ internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdat
     }
     public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
-    internal struct Action : IAction<TComp>
-    {
-        public TUniform Uniform;
-        public void Run(ref TComp t) => t.Update(Uniform);
-    }
 }
 
 /// <inheritdoc cref="IComponentRunnerFactory"/>

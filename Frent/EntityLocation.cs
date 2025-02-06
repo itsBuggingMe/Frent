@@ -25,7 +25,7 @@ internal struct EntityLocation
         Flags = flags;
     }
 
-    public static EntityLocation Default { get; } = new EntityLocation(new(ushort.MaxValue), ushort.MaxValue, ushort.MaxValue);
+    public static EntityLocation Default { get; } = new EntityLocation(new(ushort.MaxValue), int.MaxValue);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly bool HasEvent(EntityFlags entityFlags)

@@ -438,13 +438,15 @@ public partial class World : IDisposable
 
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, [], this);
 
-        ref Entity entity = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation loc);
-        entity = CreateEntityFromLocation(loc);
+        ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation loc);
+        Entity entity = CreateEntityFromLocation(loc);
+        entityID.ID = entity.EntityID;
+        entityID.Version = entity.EntityVersion;
 
         Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
         for (int i = 0; i < components.Length; i++)
         {
-            archetypeComponents[i].SetAt(components[i], loc.ChunkIndex, loc.ComponentIndex);
+            archetypeComponents[i].SetAt(components[i], loc.Index);
         }
 
         _entityCreated.Invoke(entity);
@@ -522,6 +524,6 @@ public partial class World : IDisposable
     {
         internal EntityLocation Location = Location;
         internal ushort Version = Version;
-        private readonly string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Chunk: {Location.ChunkIndex}, Component: {Location.ComponentIndex}, Version: {Version}";
+        private readonly string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Component: {Location.Index}, Version: {Version}";
     }
 }

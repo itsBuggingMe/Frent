@@ -46,4 +46,5 @@ partial class Query
 {
     public QueryEnumerator<T>.QueryEnumerable Enumerate<T>() => new(this);
     public EntityQueryEnumerator<T>.QueryEnumerable EnumerateWithEntities<T>() => new(this);
+    public ChunkQueryEnumerator<T>.QueryEnumerable EnumerateChunks<T>() => new();
 }

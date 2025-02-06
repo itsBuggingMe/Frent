@@ -25,10 +25,6 @@ internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TC
     
     public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
-    internal struct Action : IEntityAction<TComp>
-    {
-        public void Run(Entity entity, ref TComp t) => t.Update(entity);
-    }
 }
 
 /// <inheritdoc cref="IComponentRunnerFactory"/>
@@ -64,10 +60,6 @@ internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TCom
 
     public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b)
         => throw new NotImplementedException();
-    internal struct Action : IEntityAction<TComp, TArg>
-    {
-        public void Run(Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, ref t1);
-    }
 }
 
 /// <inheritdoc cref="IComponentRunnerFactory"/>

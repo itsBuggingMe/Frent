@@ -20,6 +20,13 @@ internal struct EntityIDOnly(int id, ushort version)
         entity.EntityVersion = Version;
         entity.EntityID = ID;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void Init(Entity entity)
+    {
+        Version = entity.EntityVersion;
+        ID = entity.EntityID;
+    }
 }
 internal record struct DeleteComponent(EntityIDOnly Entity, ComponentID ComponentID);
 internal record struct AddComponent(EntityIDOnly Entity, ComponentID ComponentID, int Index);
