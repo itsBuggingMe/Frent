@@ -45,10 +45,10 @@ internal class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TC
     public override void Run(World world, Archetype b)
     {
         TComp[] comps = _components;
-        Span<TArg> arg1 = b.GetComponentSpan<TArg>()[..comps.Length];
+        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
         for(int i = 0; i < comps.Length; i++)
         {
-            comps[i].Update(ref arg1[i]);
+            comps[i].Update(ref arg[i]);
         }    
     }
 

@@ -24,6 +24,7 @@ public ref struct QueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
         _archetypes = query.AsSpan();
+        _archetypeIndex = -1;
     }
 
     public RefTuple<T> Current => new()

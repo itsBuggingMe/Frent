@@ -22,6 +22,7 @@ public ref struct EntityQueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
         _archetypes = query.AsSpan();
+        _archetypeIndex = -1;
     }
 
     public EntityRefTuple<T> Current => new()
@@ -48,6 +49,7 @@ public ref struct EntityQueryEnumerator<T>
         if((uint)_archetypeIndex < (uint)_archetypes.Length)
         {
             var cur = _archetypes[_archetypeIndex];
+            _entityIds = cur.GetEntitySpan();
             _currentSpan1 = cur.GetComponentSpan<T>();
             return true;
         }

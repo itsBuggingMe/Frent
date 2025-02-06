@@ -36,7 +36,7 @@ public ref struct EntityRefTuple<T>
 [Variadic("Tuple<T>", "Tuple<|T$, |>")]
 [Variadic("    public Span<T> Item1;", "|    public Span<T$> Item$;\n|")]
 [Variadic("out Span<T> @comp1", "|out Span<T$> @comp$, |")]
-[Variadic("        @ref = Item1;", "|        @ref$ = Item$;\n|")]
+[Variadic("        @comp1 = Item1;", "|        @comp$ = Item$;\n|")]
 public ref struct ChunkTuple<T>
 {
     public Span<T> Item1;

@@ -52,14 +52,14 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<
     public override void Run(World world, Archetype b)
     {
         Entity entity = world.DefaultWorldEntity;
-        TComp[] comp = _components;
-        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comp.Length];
+        TComp[] comps = _components;
+        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-        Span<TArg> arg = b.GetComponentSpan<TArg>();
-        for(int i = 0; i < comp.Length; i++)
+        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
+        for(int i = 0; i < comps.Length; i++)
         {
             entities[i].SetEntity(ref entity);
-            comp[i].Update(entity, uniform, ref arg[i]);
+            comps[i].Update(entity, uniform, ref arg[i]);
         }
     }
     public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>

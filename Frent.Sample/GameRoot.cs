@@ -3,7 +3,12 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Reflection;
-
+using Frent.Core;
+using Frent.Sample.Asteroids;
+using System.Runtime.Intrinsics;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 
 namespace Frent.Sample
 {
@@ -23,7 +28,7 @@ namespace Frent.Sample
         public GameRoot(int count)
         {
             _count = count;
-            _world = new World(this, Config.Multithreaded);
+            _world = new World(this, Config.Singlethreaded);
             _manager = new GraphicsDeviceManager(this);
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
@@ -89,8 +94,70 @@ namespace Frent.Sample
                 DeleteRandomEntity();
             }
 
-            _world.Update();
-            _world.Query<With<Velocity, Position, Bounds>>().ParallelUniform<QueryCollison, GameRoot, Velocity, Position, Bounds>(default);
+            Vector256<float> deltaTime = Vector256.Create(1f);
+
+            foreach((Span<Position> positions, Span<Velocity> velocities) in _world
+                .Query<With<Position, Velocity>>()
+                .EnumerateChunks<Position, Velocity>())
+            {
+                //8 floats/vec
+                //2 floats/comp
+                //4 comps/vec
+
+                int len = positions.Length - positions.Length & 3;
+                int vecCount = len >> 2;
+                ref Vector256<float> positionVectors = ref MemoryMarshal.GetReference(MemoryMarshal.Cast<Position, Vector256<float>>(positions));
+                ref Vector256<float> velocityVectors = ref MemoryMarshal.GetReference(MemoryMarshal.Cast<Velocity, Vector256<float>>(velocities));
+
+                for (int i = 0; i < vecCount; i++)
+                {
+                    positionVectors = Fma.MultiplyAdd(velocityVectors, deltaTime, positionVectors);
+                    positionVectors = ref Unsafe.Add(ref positionVectors, 1);
+                    velocityVectors = ref Unsafe.Add(ref velocityVectors, 1);
+                }
+
+                for (int i = len; i < positions.Length; i++)
+                {
+                    positions[i].XY += velocities[i].DXY;
+                }
+            }
+
+            foreach ((Ref<Velocity> vel, Ref<Position> pos, Ref<Bounds> bounds) in _world
+                .Query<With<Velocity, Position, Bounds>>()
+                .Enumerate<Velocity, Position, Bounds>())
+            {
+                Rectangle window = GraphicsDevice.Viewport.Bounds;
+                Vector2 half = bounds.Value.Size * 0.5f;
+                Vector2 topLeft = pos.Value.XY - half;
+                Vector2 bottomRight = pos.Value.XY + half;
+
+                if (topLeft.X <= 0)
+                {
+                    pos.Value.XY.X = half.X + 1;
+                    vel.Value.DXY.X *= -1;
+                }
+
+                if (bottomRight.X >= window.Width)
+                {
+                    pos.Value.XY.X = window.Width - half.X - 1;
+                    vel.Value.DXY.X *= -1;
+                }
+
+                if (topLeft.Y <= 0)
+                {
+                    pos.Value.XY.Y = half.Y + 1;
+                    vel.Value.DXY.Y *= -1;
+                }
+
+                if (bottomRight.Y >= window.Height)
+                {
+                    pos.Value.XY.Y = window.Height - half.Y - 1;
+                    vel.Value.DXY.Y *= -1;
+                }
+            }
+            //_world.Query<With<Velocity, Position, Bounds>>().ParallelUniform<QueryCollison, GameRoot, Velocity, Position, Bounds>(default);
+
+
 
             base.Update(gameTime);
         }
@@ -109,57 +176,18 @@ namespace Frent.Sample
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
             SpriteBatch.Begin();
-            QuerySprites querySprites = new QuerySprites(this);
-            _world.Query<With<SinglePixel, Position, Bounds>>().Inline<QuerySprites, SinglePixel, Position, Bounds>(querySprites);
+            foreach((Ref<SinglePixel> pix, Ref<Position> pos, Ref<Bounds> bounds) in _world
+                .Query<With<SinglePixel, Position, Bounds>>()
+                .Enumerate<SinglePixel, Position, Bounds>())
+            {
+                Vector2 topLeft = pos.Value.XY - bounds.Value.Size * 0.5f;
+                SpriteBatch.Draw(PixelTexture, new Rectangle(topLeft.ToPoint(), bounds.Value.Size.ToPoint()), pix.Value.Color);
+            }
             SpriteBatch.End();
             base.Draw(gameTime);
         }
         public T GetUniform<T>() => (T)(object)this;
     }
 
-    internal struct QuerySprites(GameRoot gameRoot) : IAction<SinglePixel, Position, Bounds>
-    {
-        public void Run(ref SinglePixel singlePixel, ref Position position, ref Bounds bounds)
-        {
-            Vector2 topLeft = position.XY - bounds.Size * 0.5f;
-            gameRoot.SpriteBatch.Draw(gameRoot.PixelTexture, new Rectangle(topLeft.ToPoint(), bounds.Size.ToPoint()), singlePixel.Color);
-        }
-    }
-
     internal struct UserCreated;
-
-    internal struct QueryCollison : IUniformAction<GameRoot, Velocity, Position, Bounds>
-    {
-        public void Run(GameRoot gameRoot, ref Velocity velocity, ref Position position, ref Bounds bounds)
-        {
-            Rectangle window = gameRoot.GraphicsDevice.Viewport.Bounds;
-            Vector2 half = bounds.Size * 0.5f;
-            Vector2 topLeft = position.XY - half;
-            Vector2 bottomRight = position.XY + half;
-
-            if (topLeft.X <= 0)
-            {
-                position.XY.X = half.X + 1;
-                velocity.DXY.X *= -1;
-            }
-
-            if (bottomRight.X >= window.Width)
-            {
-                position.XY.X = window.Width - half.X - 1;
-                velocity.DXY.X *= -1;
-            }
-
-            if (topLeft.Y <= 0)
-            {
-                position.XY.Y = half.Y + 1;
-                velocity.DXY.Y *= -1;
-            }
-
-            if (bottomRight.Y >= window.Height)
-            {
-                position.XY.Y = window.Height - half.Y - 1;
-                velocity.DXY.Y *= -1;
-            }
-        }
-    }
 }

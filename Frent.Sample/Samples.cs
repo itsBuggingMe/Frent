@@ -51,10 +51,10 @@ internal class Samples
         for (int i = 0; i < 5; i++)
             world.Create<int>(i);
 
-        world.Query<With<int>>().Run((ref int x) => Console.Write($"{x++}, "));
-        Console.WriteLine();
-
-        world.Query<With<int>>().InlineUniform<WriteQuery, byte, int>(default);
+        //world.Query<With<int>>().Run((ref int x) => Console.Write($"{x++}, "));
+        //Console.WriteLine();
+        //
+        //world.Query<With<int>>().InlineUniform<WriteQuery, byte, int>(default);
     }
     #endregion
 

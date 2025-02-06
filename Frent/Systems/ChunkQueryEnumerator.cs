@@ -17,6 +17,7 @@ public ref struct ChunkQueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
         _archetypes = query.AsSpan();
+        _archetypeIndex = -1;
     }
 
     public ChunkTuple<T> Current

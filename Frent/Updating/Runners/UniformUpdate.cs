@@ -46,10 +46,10 @@ internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<Unifor
     {
         TComp[] comps = _components;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-        Span<TArg> arg1 = b.GetComponentSpan<TArg>()[..comps.Length];
+        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
         for(int i = 0; i < comps.Length; i++)
         {
-            comps[i].Update(uniform, ref arg1[i]);
+            comps[i].Update(uniform, ref arg[i]);
         }
     }
     public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
