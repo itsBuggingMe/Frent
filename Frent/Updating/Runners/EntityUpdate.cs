@@ -11,21 +11,20 @@ namespace Frent.Updating.Runners;
 internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TComp>
     where TComp : IEntityComponent
 {
-    public override void Run(World world, Archetype b) =>
-        ChunkHelpers<TComp>.EnumerateComponentsWithEntity(
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            default(Action),
-            b.GetEntitySpan(),
-            b.GetComponentSpan<TComp>());
+    public override void Run(World world, Archetype b)
+    {
+        TComp[] comp = _components;
+        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comp.Length];
+        Entity entity = world.DefaultWorldEntity;
+        for(int i = 0; i < comp.Length; i++)
+        {
+            entities[i].SetEntity(ref entity);
+            comp[i].Update(entity);
+        }
+    }
+    
     public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        MultiThreadHelpers<TComp>.EnumerateComponentsWithEntity(
-            countdown,
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            default(Action),
-            b.GetEntitySpan(),
-            b.GetComponentSpan<TComp>());
+        throw new NotImplementedException();
     internal struct Action : IEntityAction<TComp>
     {
         public void Run(Entity entity, ref TComp t) => t.Update(entity);
@@ -50,23 +49,21 @@ public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, ICompon
 internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TComp, TArg>, TComp>
     where TComp : IEntityComponent<TArg>
 {
-    public override void Run(World world, Archetype b) =>
-        ChunkHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            default(Action),
-            b.GetEntitySpan(),
-            b.GetComponentSpan<TComp>(),
-            b.GetComponentSpan<TArg>());
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        MultiThreadHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
-            countdown,
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            default(Action),
-            b.GetEntitySpan(),
-            b.GetComponentSpan<TComp>(),
-            b.GetComponentSpan<TArg>());
+    public override void Run(World world, Archetype b)
+    {
+        TComp[] components = _components;
+        Span<EntityIDOnly> entities = b.GetEntitySpan()[..components.Length];
+        Entity entity = world.DefaultWorldEntity;
+        Span<TArg> arg1 = b.GetComponentSpan<TArg>()[..entities.Length];
+        for(int i = 0; i < components.Length; i++)
+        {
+            entities[i].SetEntity(ref entity);
+            components[i].Update(entity, ref arg1[i]);
+        }
+    }
+
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b)
+        => throw new NotImplementedException();
     internal struct Action : IEntityAction<TComp, TArg>
     {
         public void Run(Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, ref t1);

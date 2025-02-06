@@ -44,6 +44,7 @@ public partial class World : IDisposable
     internal readonly byte ID;
     internal readonly byte Version;
     internal readonly ushort PackedIDVersion;
+    internal readonly Entity DefaultWorldEntity;
     private bool _isDisposed = false;
 
     internal Dictionary<int, Query> QueryCache = [];
@@ -214,6 +215,7 @@ public partial class World : IDisposable
         PackedIDVersion = new Entity(ID, Version, 0, 0).PackedWorldInfo;
 
         WorldUpdateCommandBuffer = new CommandBuffer(this);
+        DefaultWorldEntity = new Entity(ID, Version, default, default);
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)

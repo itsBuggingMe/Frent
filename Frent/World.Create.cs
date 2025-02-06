@@ -4,8 +4,8 @@ using Frent.Variadic.Generator;
 
 namespace Frent;
 
-[Variadic("        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index)).Chunks.UnsafeArrayIndex(eloc.ChunkIndex)[eloc.ComponentIndex] = comp;",
-    "|        UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index)).Chunks.UnsafeArrayIndex(eloc.ChunkIndex)[eloc.ComponentIndex] = comp$;\n|")]
+[Variadic("        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index] = comp;",
+    "|        UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index))[eloc.Index] = comp$;\n|")]
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("y<T>", "y<|T$, |>")]
 [Variadic("T comp", "|T$ comp$, |")]
