@@ -22,7 +22,7 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
         get
         {
 #if DEBUG
-            if(index > _nextIndex || index < 0)
+            if(index >= _nextIndex || index < 0)
                 throw new IndexOutOfRangeException();
 #endif
             return ref _array[index];

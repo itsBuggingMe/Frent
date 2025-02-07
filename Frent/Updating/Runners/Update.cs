@@ -13,7 +13,7 @@ internal class Update<TComp> : ComponentRunnerBase<Update<TComp>, TComp>
 {
     public override void Run(World world, Archetype b)
     {
-        Span<TComp> arr = _components.AsSpan(0, b.EntityCount);
+        Span<TComp> arr = AsSpan(b.EntityCount);
         for(int i = 0; i < arr.Length; i++)
         {
             arr[i].Update();
@@ -44,7 +44,7 @@ internal class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TC
 {
     public override void Run(World world, Archetype b)
     {
-        Span<TComp> comps = _components.AsSpan(0, b.EntityCount);
+        Span<TComp> comps = AsSpan(b.EntityCount);
         Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
         for(int i = 0; i < comps.Length; i++)
         {

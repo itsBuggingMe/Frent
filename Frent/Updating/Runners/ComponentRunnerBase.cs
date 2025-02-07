@@ -60,9 +60,9 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
                 return ref _managed!.UnsafeArrayIndex(index);
             }
 
-            Debug.Assert(index >= 0 && index <_nativeLength);
+            Debug.Assert(index >= 0 && index < _nativeArray.Length);
 
-            return ref _native[index];
+            return ref _nativeArray[index];
         }
     }
 
@@ -95,6 +95,9 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 
     public Span<TComponent> AsSpan() => RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>() ?
         _managed.AsSpan() : _nativeArray.AsSpan();
+
+    public Span<TComponent> AsSpan(int length) => RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>() ?
+        _managed.AsSpan(0, length) : _nativeArray.AsSpanLen(length);
 
     public void Dispose()
     {

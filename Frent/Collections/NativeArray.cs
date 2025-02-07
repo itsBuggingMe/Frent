@@ -21,7 +21,7 @@ internal unsafe struct NativeArray<T> : IDisposable
         get
         {
 #if DEBUG
-            if(index > _nextIndex || index < 0)
+            if(index >= _length || index < 0)
                 throw new IndexOutOfRangeException();
 #endif
             return ref _array[index];
@@ -53,4 +53,9 @@ internal unsafe struct NativeArray<T> : IDisposable
     }
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef<T>(_array), _length);
+    public Span<T> AsSpanLen(int len)
+    {
+        System.Diagnostics.Debug.Assert(len <= _length);
+        return MemoryMarshal.CreateSpan(ref Unsafe.AsRef<T>(_array), len);
+    }
 }
