@@ -182,8 +182,8 @@ public partial class AsteroidsGame : Game
             e.Tag<Shootable>();
         }
 
-        _world.Query<With<CircleCollision, Transform>>()
-            .InlineEntityUniform<InlineOuterCollisionQuery, World, CircleCollision, Transform>(default);
+        //_world.Query<With<CircleCollision, Transform>>()
+        //    .InlineEntityUniform<InlineOuterCollisionQuery, World, CircleCollision, Transform>(default);
 
         base.Update(gameTime);
     }
@@ -310,8 +310,8 @@ internal struct InlineOuterCollisionQuery : IEntityUniformAction<World, CircleCo
 {
     public void Run(Entity entity, World uniform, ref CircleCollision arg1, ref Transform arg2)
     {
-        uniform.Query<With<CircleCollision, Transform>>()
-            .InlineEntity<InlineCollisionQuery, CircleCollision, Transform>(new(entity, arg1, arg2));
+        //uniform.Query<With<CircleCollision, Transform>>()
+        //    .InlineEntity<InlineCollisionQuery, CircleCollision, Transform>(new(entity, arg1, arg2));
     }
 }
 

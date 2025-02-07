@@ -37,7 +37,7 @@ partial class World
         var tags = currentArchetype.ArchetypeTagArray;
 
         var destination = Archetype.CreateOrGetExistingArchetype(allComps, tags.AsSpan(), this, null, tags);
-        destination.CreateEntityLocation(location.Flags, out var nextELoc) = entity;
+        destination.CreateEntityLocation(location.Flags, out var nextELoc).Init(entity);
 
         for (int i = 0; i < currentArchetype.Components.Length; i++)
         {
@@ -55,9 +55,9 @@ partial class World
         }
 
 
-        Entity movedDown = currentArchetype.DeleteEntity(location.ChunkIndex, location.ComponentIndex);
+        EntityIDOnly movedDown = currentArchetype.DeleteEntity(location.Index);
 
-        EntityTable[movedDown.EntityID].Location = location;
+        EntityTable[movedDown.ID].Location = location;
         EntityTable[entity.EntityID].Location = nextELoc;
     }
 
@@ -84,7 +84,7 @@ partial class World
             destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out nextLocation) = entity;
+        destination.CreateEntityLocation(entityLocation.Flags, out nextLocation).Init(entity);
 
         for (int i = 0; i < from.Components.Length; i++)
         {
@@ -93,9 +93,9 @@ partial class World
 
         runner = destination.Components[^1];
 
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        EntityIDOnly movedDown = from.DeleteEntity(entityLocation.Index);
 
-        EntityTable[movedDown.EntityID].Location = entityLocation;
+        EntityTable[movedDown.ID].Location = entityLocation;
         EntityTable[entity.EntityID].Location = nextLocation;
 
         _componentAdded.Invoke(entity, component);
@@ -125,7 +125,7 @@ partial class World
             destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation) = entity;
+        destination.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
 
         int skipIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, component);
 
@@ -144,16 +144,16 @@ partial class World
             {
                 if (entityLocation.HasEvent(EntityFlags.GenericRemoveComp))
                 {
-                    from.Components[i].PushComponentToStack(entityLocation.ChunkIndex, entityLocation.ComponentIndex, out tmpEventComponentIndex);
+                    from.Components[i].PushComponentToStack(entityLocation.Index, out tmpEventComponentIndex);
                 }
                 continue;
             }
             destinationComponents[j++].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
         }
 
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        EntityIDOnly movedDown = from.DeleteEntity(entityLocation.Index);
 
-        EntityTable[movedDown.EntityID].Location = entityLocation;
+        EntityTable[movedDown.ID].Location = entityLocation;
         ref var finalTableLocation = ref EntityTable[entity.EntityID];
         finalTableLocation.Location = nextLocation;
 
@@ -195,8 +195,8 @@ partial class World
     internal void DeleteEntityWithoutEvents(Entity entity, EntityLocation entityLocation)
     {
         //entity is guaranteed to be alive here
-        Entity replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-        EntityTable[replacedEntity.EntityID] = new(entityLocation, replacedEntity.EntityVersion);
+        EntityIDOnly replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.Index);
+        EntityTable[replacedEntity.ID] = new(entityLocation, replacedEntity.Version);
         EntityTable[entity.EntityID].Version = ushort.MaxValue;
 
         int nextVersion = entity.EntityVersion + 1;
@@ -230,7 +230,7 @@ partial class World
             destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation) = entity;
+        destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
 
         Debug.Assert(from.Components.Length == destination.Components.Length);
         Span<IComponentRunner> fromRunners = from.Components.AsSpan();
@@ -239,9 +239,9 @@ partial class World
         for (int i = 0; i < fromRunners.Length; i++)
             toRunners[i].PullComponentFrom(fromRunners[i], nextLocation, entityLocation);
 
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
+        EntityIDOnly movedDown = from.DeleteEntity(entityLocation.Index);
 
-        EntityTable[movedDown.EntityID].Location = entityLocation;
+        EntityTable[movedDown.ID].Location = entityLocation;
         EntityTable[entity.EntityID].Location = nextLocation;
 
         ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.Tagged, out bool eventExist);
@@ -275,7 +275,7 @@ partial class World
             destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation) = entity;
+        destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
 
         Debug.Assert(from.Components.Length == destination.Components.Length);
         Span<IComponentRunner> fromRunners = from.Components.AsSpan();
@@ -284,9 +284,9 @@ partial class World
         for (int i = 0; i < fromRunners.Length; i++)
             toRunners[i].PullComponentFrom(fromRunners[i], nextLocation, entityLocation);
 
-        Entity movedDown = from.DeleteEntity(entityLocation.ChunkIndex, entityLocation.ComponentIndex);
-
-        EntityTable[movedDown.EntityID].Location = entityLocation;
+        EntityIDOnly movedDown = from.DeleteEntity(entityLocation.Index);
+        
+        EntityTable[movedDown.ID].Location = entityLocation;
         EntityTable[entity.EntityID].Location = nextLocation;
 
 

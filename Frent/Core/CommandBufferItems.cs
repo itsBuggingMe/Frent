@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -12,6 +13,19 @@ internal struct EntityIDOnly(int id, ushort version)
     {
         id = ID;
         version = Version;
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void SetEntity(ref Entity entity)
+    {
+        entity.EntityVersion = Version;
+        entity.EntityID = ID;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void Init(Entity entity)
+    {
+        Version = entity.EntityVersion;
+        ID = entity.EntityID;
     }
 }
 internal record struct DeleteComponent(EntityIDOnly Entity, ComponentID ComponentID);

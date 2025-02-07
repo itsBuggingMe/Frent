@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using System.Collections.Immutable;
+using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
 
@@ -38,4 +39,12 @@ public partial class Query
         }
         return true;
     }
+}
+
+[Variadic("<T>","<|T$, |>")]
+partial class Query
+{
+    public QueryEnumerator<T>.QueryEnumerable Enumerate<T>() => new(this);
+    public EntityQueryEnumerator<T>.QueryEnumerable EnumerateWithEntities<T>() => new(this);
+    public ChunkQueryEnumerator<T>.QueryEnumerable EnumerateChunks<T>() => new(this);
 }

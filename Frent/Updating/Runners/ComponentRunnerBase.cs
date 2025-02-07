@@ -2,7 +2,11 @@
 using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
+using System.Diagnostics;
+using System.Net.Security;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Updating.Runners;
 
@@ -11,44 +15,92 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
 {
     public abstract void Run(World world, Archetype b);
     public abstract void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
-    protected Span<Chunk<TComponent>> Span => _chunks.AsSpan();
-    public void Trim(int index) => _chunks[index].Return();
-    public void AllocateNextChunk(int chunkSize, int chunkIndex) => Chunk<TComponent>.NextChunk(ref _chunks, chunkSize, chunkIndex);
-    public void ResizeChunk(int chunkSize, int chunkIndex) => Array.Resize(ref _chunks[chunkIndex].Buffer, chunkSize);
+    //TODO: improve
+    public void Trim(int index) => ResizeBuffer((int)BitOperations.RoundUpToPowerOf2((uint)index));
+    //TODO: pool
+    public void ResizeBuffer(int size) => ResizeBuffer(size);
     //Note - no unsafe here
-    public void SetAt(object component, ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex] = (TComponent)component;
-    public object GetAt(ushort chunkIndex, ushort compIndex) => _chunks[chunkIndex][compIndex]!;
-    public void InvokeGenericActionWith(GenericEvent? action, Entity e, ushort chunkIndex, ushort componentIndex) => action?.Invoke(e, ref _chunks[chunkIndex][componentIndex]);
-    public void InvokeGenericActionWith(IGenericAction action, ushort chunkIndex, ushort componentIndex) => action?.Invoke(ref _chunks[chunkIndex][componentIndex]);
+    public void SetAt(object component, int index) => this[index] = (TComponent)component;
+    public object GetAt(int index) => this[index]!;
+    public void InvokeGenericActionWith(GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref this[index]);
+    public void InvokeGenericActionWith(IGenericAction action, int index) => action?.Invoke(ref this[index]);
     public ComponentID ComponentID => Component<TComponent>.ID;
+
     public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
     {
         ComponentStorage<TComponent> componentRunner = UnsafeExtensions.UnsafeCast<ComponentStorage<TComponent>>(otherRunner);
-        ref var left = ref _chunks.UnsafeArrayIndex(me.ChunkIndex).Buffer.UnsafeArrayIndex(me.ComponentIndex);
-        ref var right = ref componentRunner.Chunks.UnsafeArrayIndex(other.ChunkIndex).Buffer.UnsafeArrayIndex(other.ComponentIndex);
-        _chunks[me.ChunkIndex][me.ComponentIndex] = componentRunner.AsSpan()[other.ChunkIndex][other.ComponentIndex];
+        this[me.Index] = componentRunner[other.Index];
     }
 
-    public void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other) => _chunks[me.ChunkIndex][me.ComponentIndex] = ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
+    public void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other) => this[me.Index] = ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
 
     public void Delete(DeleteComponentData data)
     {
-        ref var from = ref _chunks[data.chunkFrom][data.compFrom];
-        _chunks[data.chunkTo][data.compTo] = from;
+        ref var from = ref this[data.FromIndex];
+        this[data.ToIndex] = from;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
 
-    public TrimmableStack PushComponentToStack(ushort chunkIndex, ushort componentIndex, out int index)
+    public TrimmableStack PushComponentToStack(int componentIndex, out int stackIndex)
     {
-        Component<TComponent>.TrimmableStack.PushStronglyTyped(_chunks[chunkIndex][componentIndex], out index);
+        Component<TComponent>.TrimmableStack.PushStronglyTyped(this[componentIndex], out stackIndex);
         return Component<TComponent>.TrimmableStack;
     }
 }
 
-internal abstract class ComponentStorage<TComponent>
+internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 {
-    internal Chunk<TComponent>[] Chunks => _chunks;
-    protected Chunk<TComponent>[] _chunks = [new Chunk<TComponent>(1)];
-    public Span<Chunk<TComponent>> AsSpan() => _chunks.AsSpan();
+    public ref TComponent this[int index]
+    {
+        get
+        {
+            if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+            {
+                return ref _managed!.UnsafeArrayIndex(index);
+            }
+
+            Debug.Assert(index >= 0 && index < _nativeArray.Length);
+
+            return ref _nativeArray[index];
+        }
+    }
+
+    public ComponentStorage()
+    {
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        {
+            _managed = new TComponent[1];
+        }
+        else
+        {
+            _nativeArray = new(1);
+        }
+    }
+
+    private TComponent[]? _managed;
+    private NativeArray<TComponent> _nativeArray;
+
+    private void Resize(int size)
+    {
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        {
+            Array.Resize(ref _managed, size);
+        }
+        else
+        {
+            _nativeArray.Resize(size);
+        }
+    }
+
+    public Span<TComponent> AsSpan() => RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>() ?
+        _managed.AsSpan() : _nativeArray.AsSpan();
+
+    public Span<TComponent> AsSpan(int length) => RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>() ?
+        _managed.AsSpan(0, length) : _nativeArray.AsSpanLen(length);
+
+    public void Dispose()
+    {
+        _nativeArray.Dispose();
+    }
 }

@@ -11,24 +11,17 @@ namespace Frent.Updating.Runners;
 internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<TComp, TUniform>, TComp>
     where TComp : IUniformComponent<TUniform>
 {
-    public override void Run(World world, Archetype b) =>
-        ChunkHelpers<TComp>.EnumerateComponents(
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
-            b.GetComponentSpan<TComp>());
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        MultiThreadHelpers<TComp>.EnumerateComponents(
-            countdown,
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
-            b.GetComponentSpan<TComp>());
-    internal struct Action : IAction<TComp>
+    public override void Run(World world, Archetype b)
     {
-        public TUniform Uniform;
-        public void Run(ref TComp t) => t.Update(Uniform);
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        Span<TComp> comps = AsSpan(b.EntityCount);
+        for(int i = 0; i < comps.Length; i++)
+        {
+            comps[i].Update(uniform);
+        }
     }
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        throw new NotImplementedException();
 }
 
 /// <inheritdoc cref="IComponentRunnerFactory"/>
@@ -49,27 +42,18 @@ public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFacto
 internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformUpdate<TComp, TUniform, TArg>, TComp>
     where TComp : IUniformComponent<TUniform, TArg>
 {
-    public override void Run(World world, Archetype b) =>
-        ChunkHelpers<TComp, TArg>.EnumerateComponents(
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
-            b.GetComponentSpan<TComp>(),
-            b.GetComponentSpan<TArg>());
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        MultiThreadHelpers<TComp, TArg>.EnumerateComponents(
-            countdown,
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
-            b.GetComponentSpan<TComp>(),
-            b.GetComponentSpan<TArg>());
-
-    internal struct Action : IAction<TComp, TArg>
+    public override void Run(World world, Archetype b)
     {
-        public TUniform Uniform;
-        public void Run(ref TComp c, ref TArg t1) => c.Update(Uniform, ref t1);
+        Span<TComp> comps = AsSpan(b.EntityCount);
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
+        for(int i = 0; i < comps.Length; i++)
+        {
+            comps[i].Update(uniform, ref arg[i]);
+        }
     }
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        throw new NotImplementedException();
 }
 
 /// <inheritdoc cref="IComponentRunnerFactory"/>

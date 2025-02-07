@@ -163,7 +163,7 @@ public partial struct Entity : IEquatable<Entity>
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(
             entityLocation.Archetype(world).Components.UnsafeArrayIndex(compIndex));
 
-        return new Ref<T>(ref storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).Buffer.UnsafeArrayIndex(entityLocation.ComponentIndex));
+        return new Ref<T>(ref storage[entityLocation.Index]);
 
     doesntExist:
         exists = false;
@@ -181,7 +181,7 @@ public partial struct Entity : IEquatable<Entity>
         ComponentStorage<TComp> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<TComp>>(
             archetypeComponents.UnsafeArrayIndex(compIndex));
 
-        return new Ref<TComp>(ref storage.Chunks.UnsafeArrayIndex(entityLocation.ChunkIndex).Buffer.UnsafeArrayIndex(entityLocation.ComponentIndex));
+        return new Ref<TComp>(ref storage[entityLocation.Index]);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -209,7 +209,7 @@ public partial struct Entity : IEquatable<Entity>
                 Archetype archetype = eloc.Archetype(world);
                 for (int i = 0; i < objects.Length; i++)
                 {
-                    objects[i] = archetype.Components[i].GetAt(eloc.ChunkIndex, eloc.ComponentIndex);
+                    objects[i] = archetype.Components[i].GetAt(eloc.Index);
                 }
 
                 return objects;

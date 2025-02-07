@@ -1,6 +1,7 @@
 ﻿using Frent.Buffers;
 using Frent.Core.Structures;
 using Frent.Updating;
+using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -20,22 +21,10 @@ internal partial class Archetype
 
     internal int EntityCount
     {
-        get
-        {
-            int sum = 0;
-            for (int i = 0; i < _chunkIndex; i++)
-            {
-                sum += _entities[i].Length;
-            }
-            return sum + _componentIndex;
-        }
+        get => _componentIndex;
     }
 
-    internal int LastChunkComponentCount => _componentIndex;
-    internal ushort ChunkCount => _chunkIndex;
-    internal ushort CurrentWriteChunk => _chunkIndex;
-
-    internal Span<Chunk<T>> GetComponentSpan<T>()
+    internal Span<T> GetComponentSpan<T>()
     {
         var components = Components;
         int index = GlobalWorldTables.ComponentIndex(ID, Component<T>.ID);
@@ -44,66 +33,52 @@ internal partial class Archetype
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
             return default;
         }
-        return ((IComponentRunner<T>)components[index]).AsSpan();
+        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components[index]).AsSpan();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref Entity CreateEntityLocation(EntityFlags flags, out EntityLocation entityLocation)
+    internal ref EntityIDOnly CreateEntityLocation(EntityFlags flags, out EntityLocation entityLocation)
     {
-        if (_entities.UnsafeArrayIndex(_chunkIndex).Length == _componentIndex)
-            CreateChunks();
+        if (_entities.Length == _componentIndex)
+            Resize();
 
-        entityLocation = new EntityLocation(ID, _chunkIndex, (ushort)_componentIndex, flags);
-        return ref _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex++];
+        entityLocation = new EntityLocation(ID, _componentIndex, flags);
+        return ref _entities.UnsafeArrayIndex(_componentIndex++);
     }
 
-    private void CreateChunks()
+    private void Resize()
     {
-        _chunkSize = Math.Min(MaxChunkSize, _chunkSize << 2);
+        int newLen = checked(_entities.Length * 2);
 
-        if (_chunkSize >= 16)
-        {//try to keep chunk sizes >= 16
-            _chunkIndex++;
-            _componentIndex = 0;
-
-            Chunk<Entity>.NextChunk(ref _entities, _chunkSize, _chunkIndex);
-            foreach (var comprunner in Components)
-                comprunner.AllocateNextChunk(_chunkSize, _chunkIndex);
-        }
-        else
-        {//resize existing array
-            Array.Resize(ref _entities[0].Buffer, _chunkSize);
-            foreach (var comprunner in Components)
-                comprunner.ResizeChunk(_chunkSize, 0);
-        }
+        Array.Resize(ref _entities, newLen);
+        foreach (var comprunner in Components)
+            comprunner.ResizeBuffer(newLen);
     }
 
     public void EnsureCapacity(int count)
     {
-        _chunkSize = Math.Min(MaxChunkSize, MemoryHelpers.RoundUpToNextMultipleOf16(count));
+        int newLen = checked(MemoryHelpers.RoundUpToNextMultipleOf16(count));
 
-        while (count > 0)
+        if(_entities.Length >= newLen)
         {
-            Chunk<Entity>.NextChunk(ref _entities, _chunkSize, _chunkIndex);
-            foreach (var comprunner in Components)
-                comprunner.AllocateNextChunk(_chunkSize, _chunkIndex);
-
-            count -= _chunkSize;
+            return;
         }
+
+        FastStackArrayPool<EntityIDOnly>.ResizeArrayFromPool(ref _entities, newLen);
+        foreach (var comprunner in Components)
+            comprunner.ResizeBuffer(newLen);
     }
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Entity DeleteEntity(ushort chunk, ushort comp)
+    internal EntityIDOnly DeleteEntity(int index)
     {
-        if (unchecked(--_componentIndex == -1))
-        {
-            return DeleteEntityAndShrink(chunk, comp);
-        }
-
+        _componentIndex--;
+        Debug.Assert(_componentIndex >= 0);
+        //TODO: args
         #region Unroll
         ref IComponentRunner first = ref MemoryMarshal.GetArrayDataReference(Components);
-        DeleteComponentData args = new(chunk, comp, _chunkIndex, (ushort)_componentIndex);
+        DeleteComponentData args = new(index, _componentIndex);
 
         switch (Components.Length)
         {
@@ -162,30 +137,12 @@ internal partial class Archetype
 
     end:
 
-        return _entities.UnsafeArrayIndex(chunk).Buffer.UnsafeArrayIndex(comp) = _entities.UnsafeArrayIndex(_chunkIndex).Buffer.UnsafeArrayIndex(_componentIndex);
-    }
-
-    private Entity DeleteEntityAndShrink(ushort chunk, ushort comp)
-    {
-        _chunkIndex--;
-        _componentIndex = _entities[_chunkIndex].Length - 1;
-
-        DeleteComponentData arg = new DeleteComponentData(chunk, comp, _chunkIndex, (ushort)_componentIndex);
-        foreach (var comprunner in Components)
-            comprunner.Delete(arg);
-
-        var e = _entities.UnsafeArrayIndex(chunk)[comp] = _entities.UnsafeArrayIndex(_chunkIndex)[_componentIndex];
-
-        int index = _chunkIndex + 1;
-        _entities[index].Return();
-        foreach (var comprunner in Components)
-            comprunner.Trim(index);
-        return e;
+        return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_componentIndex);
     }
 
     internal void Update(World world)
     {
-        if ((_chunkIndex | _componentIndex) == 0)
+        if (_componentIndex == 0)
             return;
         foreach (var comprunner in Components)
             comprunner.Run(world, this);
@@ -193,8 +150,7 @@ internal partial class Archetype
 
     internal void Update(World world, ComponentID componentID)
     {
-        //avoid the second branch   
-        if ((_chunkIndex | _componentIndex) == 0)
+        if (_componentIndex == 0)
             return;
 
         int compIndex = GlobalWorldTables.ComponentIndex(ID, componentID);
@@ -207,7 +163,7 @@ internal partial class Archetype
 
     internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
     {
-        if ((_chunkIndex | _componentIndex) == 0)
+        if (_componentIndex == 0)
             return;
         foreach (var comprunner in Components)
             comprunner.MultithreadedRun(countdown, world, this);
@@ -215,13 +171,10 @@ internal partial class Archetype
 
     internal void ReleaseArrays()
     {
-        for (int i = 0; i <= _chunkIndex; i++)
-        {
-            _entities[i].Return();
-            foreach (var comprunner in Components)
-                comprunner.Trim(i);
-        }
+        _entities = [];
+        foreach (var comprunner in Components)
+            comprunner.Trim(0);
     }
 
-    internal Span<Chunk<Entity>> GetEntitySpan() => _entities.AsSpan();
+    internal Span<EntityIDOnly> GetEntitySpan() => _entities.AsSpan();
 }

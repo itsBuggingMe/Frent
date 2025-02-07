@@ -8,11 +8,17 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Decon());
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Get());
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
+        var m = new MicroBenchmark();
+        m.Setup();
+        while (true)
+        {
+            m.Get();
+        }
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true

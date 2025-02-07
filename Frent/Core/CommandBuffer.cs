@@ -275,7 +275,7 @@ public class CommandBuffer
                 {
                     ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
                     events.Add.NormalEvent.Invoke(concrete, command.ComponentID);
-                    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.ChunkIndex, location.ComponentIndex);
+                    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
                 }
             }
         }

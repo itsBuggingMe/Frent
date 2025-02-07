@@ -8,27 +8,24 @@ namespace Frent;
 internal struct EntityLocation
 {
     internal ArchetypeID ArchetypeID;
-    internal ushort ComponentIndex;
-    internal ushort ChunkIndex;
+    internal int Index;
     internal EntityFlags Flags;
 
-    public EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort componentIndex)
+    public EntityLocation(ArchetypeID archetype, int index)
     {
         ArchetypeID = archetype;
-        ComponentIndex = componentIndex;
-        ChunkIndex = chunkIndex;
+        Index = index;
         Flags = EntityFlags.None;
     }
 
-    public EntityLocation(ArchetypeID archetype, ushort chunkIndex, ushort componentIndex, EntityFlags flags)
+    public EntityLocation(ArchetypeID archetype, int index, EntityFlags flags)
     {
         ArchetypeID = archetype;
-        ComponentIndex = componentIndex;
-        ChunkIndex = chunkIndex;
+        Index = index;
         Flags = flags;
     }
 
-    public static EntityLocation Default { get; } = new EntityLocation(new(ushort.MaxValue), ushort.MaxValue, ushort.MaxValue);
+    public static EntityLocation Default { get; } = new EntityLocation(new(ushort.MaxValue), int.MaxValue);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly bool HasEvent(EntityFlags entityFlags)

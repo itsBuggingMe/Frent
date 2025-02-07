@@ -4,8 +4,8 @@ using Frent.Variadic.Generator;
 
 namespace Frent;
 
-[Variadic("        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index)).Chunks.UnsafeArrayIndex(eloc.ChunkIndex)[eloc.ComponentIndex] = comp;",
-    "|        UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index)).Chunks.UnsafeArrayIndex(eloc.ChunkIndex)[eloc.ComponentIndex] = comp$;\n|")]
+[Variadic("        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index] = comp;",
+    "|        UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index))[eloc.Index] = comp$;\n|")]
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("y<T>", "y<|T$, |>")]
 [Variadic("T comp", "|T$ comp$, |")]
@@ -22,16 +22,16 @@ partial class World
         ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         //4x deref per component
-        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index)).Chunks.UnsafeArrayIndex(eloc.ChunkIndex)[eloc.ComponentIndex] = comp;
+        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index] = comp;
 
         //manually inlined from World.CreateEntityFromLocation
         //The jit likes to inline the outer create function and not inline
         //the inner functions - benchmarked to improve perf by 10-20%
-        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
+        var (id, version) = entity = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
         EntityTable[id] = new(eloc, version);
-        entity = new Entity(ID, Version, version, id);
-        _entityCreated.Invoke(entity);
-        return entity;
+        Entity concreteEntity = new Entity(ID, Version, version, id);
+        _entityCreated.Invoke(concreteEntity);
+        return concreteEntity;
     }
 
     //might remove this due to code size

@@ -44,6 +44,7 @@ public partial class World : IDisposable
     internal readonly byte ID;
     internal readonly byte Version;
     internal readonly ushort PackedIDVersion;
+    internal readonly Entity DefaultWorldEntity;
     private bool _isDisposed = false;
 
     internal Dictionary<int, Query> QueryCache = [];
@@ -214,6 +215,7 @@ public partial class World : IDisposable
         PackedIDVersion = new Entity(ID, Version, 0, 0).PackedWorldInfo;
 
         WorldUpdateCommandBuffer = new CommandBuffer(this);
+        DefaultWorldEntity = new Entity(ID, Version, default, default);
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
@@ -436,13 +438,15 @@ public partial class World : IDisposable
 
         Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, [], this);
 
-        ref Entity entity = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation loc);
-        entity = CreateEntityFromLocation(loc);
+        ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation loc);
+        Entity entity = CreateEntityFromLocation(loc);
+        entityID.ID = entity.EntityID;
+        entityID.Version = entity.EntityVersion;
 
         Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
         for (int i = 0; i < components.Length; i++)
         {
-            archetypeComponents[i].SetAt(components[i], loc.ChunkIndex, loc.ComponentIndex);
+            archetypeComponents[i].SetAt(components[i], loc.Index);
         }
 
         _entityCreated.Invoke(entity);
@@ -467,11 +471,10 @@ public partial class World : IDisposable
         Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
         ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
-        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
+        var (id, version) = entity = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
         EntityTable[id] = new(eloc, version);
 
-        entity = new Entity(ID, Version, version, id);
-        return entity;
+        return new Entity(ID, Version, version, id);
     }
 
     internal void InvokeEntityCreated(Entity entity)
@@ -521,6 +524,6 @@ public partial class World : IDisposable
     {
         internal EntityLocation Location = Location;
         internal ushort Version = Version;
-        private readonly string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Chunk: {Location.ChunkIndex}, Component: {Location.ComponentIndex}, Version: {Version}";
+        private readonly string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Component: {Location.Index}, Version: {Version}";
     }
 }

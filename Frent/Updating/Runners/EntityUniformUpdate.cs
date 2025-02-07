@@ -1,4 +1,6 @@
-﻿using Frent.Buffers;
+﻿using System.Collections.Specialized;
+using System.Runtime.InteropServices;
+using Frent.Buffers;
 using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
@@ -11,26 +13,21 @@ namespace Frent.Updating.Runners;
 internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform>, TComp>
     where TComp : IEntityUniformComponent<TUniform>
 {
-    public override void Run(World world, Archetype b) =>
-        ChunkHelpers<TComp>.EnumerateComponentsWithEntity(
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
-            b.GetEntitySpan(),
-            b.GetComponentSpan<TComp>());
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        MultiThreadHelpers<TComp>.EnumerateComponentsWithEntity(
-            countdown,
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
-            b.GetEntitySpan(),
-            b.GetComponentSpan<TComp>());
-    internal record struct Action : IEntityAction<TComp>
+    public override void Run(World world, Archetype b)
     {
-        public TUniform Uniform;
-        public void Run(Entity entity, ref TComp t1) => t1.Update(entity, Uniform);
+        Span<TComp> comps = AsSpan(b.EntityCount);
+        Entity entity = world.DefaultWorldEntity;
+        Span<EntityIDOnly> entityIds = b.GetEntitySpan()[..comps.Length];
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+
+        for(int i = 0; i < comps.Length; i++)
+        {
+            entityIds[i].SetEntity(ref entity);
+            comps[i].Update(entity, uniform);
+        }
     }
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        throw new NotImplementedException();
 }
 
 /// <inheritdoc cref="IComponentRunnerFactory"/>
@@ -52,29 +49,21 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunne
 internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform, TArg>, TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
-    public override void Run(World world, Archetype b) =>
-        ChunkHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
-            b.GetEntitySpan(),
-            b.GetComponentSpan<TComp>(),
-            b.GetComponentSpan<TArg>());
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        MultiThreadHelpers<TComp, TArg>.EnumerateComponentsWithEntity(
-            countdown,
-            b.CurrentWriteChunk,
-            b.LastChunkComponentCount,
-            new Action { Uniform = world.UniformProvider.GetUniform<TUniform>() },
-            b.GetEntitySpan(),
-            b.GetComponentSpan<TComp>(),
-            b.GetComponentSpan<TArg>());
-
-    internal record struct Action : IEntityAction<TComp, TArg>
+    public override void Run(World world, Archetype b)
     {
-        public TUniform Uniform;
-        public void Run(Entity entity, ref TComp c, ref TArg t1) => c.Update(entity, Uniform, ref t1);
+        Entity entity = world.DefaultWorldEntity;
+        Span<TComp> comps = AsSpan(b.EntityCount);
+        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
+        for(int i = 0; i < comps.Length; i++)
+        {
+            entities[i].SetEntity(ref entity);
+            comps[i].Update(entity, uniform, ref arg[i]);
+        }
     }
+    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        throw new NotImplementedException();
 }
 
 
