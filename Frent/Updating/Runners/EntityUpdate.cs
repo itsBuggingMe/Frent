@@ -13,13 +13,13 @@ internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TC
 {
     public override void Run(World world, Archetype b)
     {
-        TComp[] comp = _components;
-        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comp.Length];
+        Span<TComp> comps = _components.AsSpan(0, b.EntityCount);
+        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
         Entity entity = world.DefaultWorldEntity;
-        for(int i = 0; i < comp.Length; i++)
+        for(int i = 0; i < comps.Length; i++)
         {
             entities[i].SetEntity(ref entity);
-            comp[i].Update(entity);
+            comps[i].Update(entity);
         }
     }
     
@@ -47,7 +47,7 @@ internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TCom
 {
     public override void Run(World world, Archetype b)
     {
-        TComp[] comps = _components;
+        Span<TComp> comps = _components.AsSpan(0, b.EntityCount);
         Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
         Entity entity = world.DefaultWorldEntity;
         Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];

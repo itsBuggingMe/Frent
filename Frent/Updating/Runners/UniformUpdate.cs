@@ -14,7 +14,7 @@ internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdat
     public override void Run(World world, Archetype b)
     {
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-        TComp[] comps = _components;
+        Span<TComp> comps = _components.AsSpan(0, b.EntityCount);
         for(int i = 0; i < comps.Length; i++)
         {
             comps[i].Update(uniform);
@@ -44,7 +44,7 @@ internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<Unifor
 {
     public override void Run(World world, Archetype b)
     {
-        TComp[] comps = _components;
+        Span<TComp> comps = _components.AsSpan(0, b.EntityCount);
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
         Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
         for(int i = 0; i < comps.Length; i++)
