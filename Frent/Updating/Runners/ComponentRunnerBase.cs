@@ -2,8 +2,11 @@
 using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
+using System.Diagnostics;
+using System.Net.Security;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Updating.Runners;
 
@@ -13,9 +16,9 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public abstract void Run(World world, Archetype b);
     public abstract void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
     //TODO: improve
-    public void Trim(int index) => Array.Resize(ref _components, (int)BitOperations.RoundUpToPowerOf2((uint)index));
+    public void Trim(int index) => ResizeBuffer((int)BitOperations.RoundUpToPowerOf2((uint)index));
     //TODO: pool
-    public void ResizeBuffer(int size) => Array.Resize(ref _components, size);
+    public void ResizeBuffer(int size) => ResizeBuffer(size);
     //Note - no unsafe here
     public void SetAt(object component, int index) => this[index] = (TComponent)component;
     public object GetAt(int index) => this[index]!;
@@ -46,13 +49,55 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     }
 }
 
-internal abstract class ComponentStorage<TComponent>
+internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 {
     public ref TComponent this[int index]
     {
-        get => ref _components.UnsafeArrayIndex(index);
+        get
+        {
+            if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+            {
+                return ref _managed!.UnsafeArrayIndex(index);
+            }
+
+            Debug.Assert(index >= 0 && index <_nativeLength);
+
+            return ref _native[index];
+        }
     }
-    internal TComponent[] Components => _components;
-    protected TComponent[] _components = new TComponent[1];
-    public Span<TComponent> AsSpan() => _components.AsSpan();
+
+    public ComponentStorage()
+    {
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        {
+            _managed = new TComponent[1];
+        }
+        else
+        {
+            _nativeArray = new(1);
+        }
+    }
+
+    private TComponent[]? _managed;
+    private NativeArray<TComponent> _nativeArray;
+
+    private void Resize(int size)
+    {
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        {
+            Array.Resize(ref _managed, size);
+        }
+        else
+        {
+            _nativeArray.Resize(size);
+        }
+    }
+
+    public Span<TComponent> AsSpan() => RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>() ?
+        _managed.AsSpan() : _nativeArray.AsSpan();
+
+    public void Dispose()
+    {
+        _nativeArray.Dispose();
+    }
 }

@@ -72,9 +72,9 @@ partial struct Entity
     /// <returns>A reference to the component in memory.</returns>
     public ref T Get<T>()
     {
-        //Total: 7x dereference
+        //Total: 6x lookup
 
-        //2x
+        //1x
         AssertIsAlive(out var world, out var entityLocation);
 
         //2x

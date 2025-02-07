@@ -44,6 +44,17 @@ public class MicroBenchmark
         }
     }
 
+    [Benchmark]
+    [BenchmarkCategory(Categories.Has)]
+    public void Get()
+    {
+        var e = _entities[0];
+        for (int i = 0; i < 1000; i++)
+        {
+            e.Get<int>();
+        }
+    }
+
     /*
     #region Create
     [Benchmark]
