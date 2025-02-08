@@ -41,7 +41,7 @@ partial class World
 
         for (int i = 0; i < currentArchetype.Components.Length; i++)
         {
-            destination.Components[i].PullComponentFrom(currentArchetype.Components[i], nextELoc, location);
+            destination.Components[i].PullComponentFromAndDelete(currentArchetype.Components[i], nextELoc.Index, location.Index);
         }
 
         j = 0;
@@ -50,12 +50,12 @@ partial class World
             var componentLocation = comps[j++];
             currentArchetype.Components[i].PullComponentFrom(
                 Component.ComponentTable[componentLocation.Component.ID].Stack,
-                nextELoc,
+                nextELoc.Index,
                 componentLocation.Index);
         }
 
 
-        EntityIDOnly movedDown = currentArchetype.DeleteEntity(location.Index);
+        EntityIDOnly movedDown = currentArchetype.DeleteEntityFromStorage(location.Index);
 
         EntityTable[movedDown.ID].Location = location;
         EntityTable[entity.EntityID].Location = nextELoc;
@@ -64,36 +64,33 @@ partial class World
     //Add
     //Note: this fucntion doesn't actually do the last step of setting the component in the new archetype
     //the caller's job is to set the component
+    [SkipLocalsInit]
     internal Archetype AddComponent(Entity entity, EntityLocation entityLocation, ComponentID component, out IComponentRunner runner, out EntityLocation nextLocation)
     {
         Archetype from = entityLocation.Archetype(this);
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
-            ArchetypeEdgeKey.Component(component, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag),
-            out bool exist);
+        Archetype? destination = _compAddLookup.TryGetValue(component.ID, entityLocation.ArchetypeID);
 
-        Archetype destination;
-
-        if (!exist)
+        if(destination is null)
         {
             destination = Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, component, out var res), from.ArchetypeTagArray.AsSpan(), this, res, from.ArchetypeTagArray);
-            edge = destination.ID;
-        }
-        else
-        {
-            destination = WorldArchetypeTable[edge.ID];
+            _compAddLookup.SetArchetype(component.ID, entityLocation.ArchetypeID, destination);
         }
 
         destination.CreateEntityLocation(entityLocation.Flags, out nextLocation).Init(entity);
 
-        for (int i = 0; i < from.Components.Length; i++)
+        IComponentRunner[] fromRunners = from.Components;
+        IComponentRunner[] toRunners = destination.Components;
+
+        int i = 0;
+        for (; i < fromRunners.Length; i++)
         {
-            destination.Components[i].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
+            toRunners.UnsafeArrayIndex(i).PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
         }
 
-        runner = destination.Components[^1];
+        runner = toRunners.UnsafeArrayIndex(i);
 
-        EntityIDOnly movedDown = from.DeleteEntity(entityLocation.Index);
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
 
         EntityTable[movedDown.ID].Location = entityLocation;
         EntityTable[entity.EntityID].Location = nextLocation;
@@ -104,28 +101,20 @@ partial class World
     }
 
     //Remove
+    [SkipLocalsInit]
     internal void RemoveComponent(Entity entity, EntityLocation entityLocation, ComponentID component)
     {
         Archetype from = entityLocation.Archetype(this);
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
-            ArchetypeEdgeKey.Component(component, entityLocation.ArchetypeID, ArchetypeEdgeType.RemoveTag),
-            out bool exist);
+        Archetype? destination = _compAddLookup.TryGetValue(component.ID, entityLocation.ArchetypeID);
 
-
-        Archetype destination;
-
-        if (!exist)
+        if(destination is null)
         {
             destination = Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, component, out var arr), from.ArchetypeTagArray.AsSpan(), this, arr, from.ArchetypeTagArray);
-            edge = destination.ID;
-        }
-        else
-        {
-            destination = WorldArchetypeTable[edge.ID];
+            _compAddLookup.SetArchetype(component.ID, entityLocation.ArchetypeID, destination);
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
+        destination!.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
 
         int skipIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, component);
 
@@ -144,14 +133,14 @@ partial class World
             {
                 if (entityLocation.HasEvent(EntityFlags.GenericRemoveComp))
                 {
-                    from.Components[i].PushComponentToStack(entityLocation.Index, out tmpEventComponentIndex);
+                    from.Components.UnsafeArrayIndex(i).PushComponentToStack(entityLocation.Index, out tmpEventComponentIndex);
                 }
                 continue;
             }
-            destinationComponents[j++].PullComponentFrom(from.Components[i], nextLocation, entityLocation);
+            destinationComponents.UnsafeArrayIndex(j++).PullComponentFromAndDelete(from.Components.UnsafeArrayIndex(i), nextLocation.Index, entityLocation.Index);
         }
 
-        EntityIDOnly movedDown = from.DeleteEntity(entityLocation.Index);
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
 
         EntityTable[movedDown.ID].Location = entityLocation;
         ref var finalTableLocation = ref EntityTable[entity.EntityID];
@@ -215,19 +204,13 @@ partial class World
 
         Archetype from = entityLocation.Archetype(this);
 
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
+        ref var destination = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
             ArchetypeEdgeKey.Tag(tagID, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag),
             out bool exist);
 
-        Archetype destination;
         if (!exist)
         {
             destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Concat(from.ArchetypeTagArray, tagID, out var res), this, from.ArchetypeTypeArray, res);
-            edge = destination.ID;
-        }
-        else
-        {
-            destination = WorldArchetypeTable[edge.ID];
         }
 
         destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
@@ -237,9 +220,9 @@ partial class World
         Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
 
         for (int i = 0; i < fromRunners.Length; i++)
-            toRunners[i].PullComponentFrom(fromRunners[i], nextLocation, entityLocation);
+            toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
 
-        EntityIDOnly movedDown = from.DeleteEntity(entityLocation.Index);
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
 
         EntityTable[movedDown.ID].Location = entityLocation;
         EntityTable[entity.EntityID].Location = nextLocation;
@@ -260,31 +243,25 @@ partial class World
             return false;
 
         Archetype from = entityLocation.Archetype(this);
-        ref var edge = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
+        ref var destination = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
             ArchetypeEdgeKey.Tag(tagID, from.ID, ArchetypeEdgeType.RemoveTag),
             out bool exist);
 
-        Archetype destination;
         if (!exist)
         {
             destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tagID, out var arr), this, from.ArchetypeTypeArray, arr);
-            edge = destination.ID;
-        }
-        else
-        {
-            destination = WorldArchetypeTable[edge.ID];
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
+        destination!.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
 
         Debug.Assert(from.Components.Length == destination.Components.Length);
         Span<IComponentRunner> fromRunners = from.Components.AsSpan();
         Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
 
         for (int i = 0; i < fromRunners.Length; i++)
-            toRunners[i].PullComponentFrom(fromRunners[i], nextLocation, entityLocation);
+            toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
 
-        EntityIDOnly movedDown = from.DeleteEntity(entityLocation.Index);
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
         
         EntityTable[movedDown.ID].Location = entityLocation;
         EntityTable[entity.EntityID].Location = nextLocation;

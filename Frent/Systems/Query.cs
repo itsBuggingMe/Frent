@@ -48,3 +48,8 @@ partial class Query
     public EntityQueryEnumerator<T>.QueryEnumerable EnumerateWithEntities<T>() => new(this);
     public ChunkQueryEnumerator<T>.QueryEnumerable EnumerateChunks<T>() => new(this);
 }
+
+partial class Query
+{
+    public EntityQueryEnumerator.QueryEnumerable EnumerateWithEntities() => new(this);
+}

@@ -20,7 +20,7 @@ internal unsafe struct NativeTable<T> : IDisposable where T : struct
     {
         get
         {
-#if DEBUG
+#if DEBUG   
             if(index < 0)
                 throw new ArgumentOutOfRangeException();
 #endif
@@ -28,6 +28,11 @@ internal unsafe struct NativeTable<T> : IDisposable where T : struct
                 return ref ResizeFor(index);
             return ref _array[index];
         }
+    }
+
+    public ref T UnsafeIndexNoResize(int index)
+    {
+        return ref _array[index];
     }
 
     public NativeTable(int initalCapacity)

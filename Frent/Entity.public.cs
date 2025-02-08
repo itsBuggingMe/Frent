@@ -6,6 +6,7 @@ using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Frent;
 
@@ -70,20 +71,22 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
     /// <returns>A reference to the component in memory.</returns>
+    [SkipLocalsInit]
     public ref T Get<T>()
     {
-        //Total: 6x lookup
+        //Total: 5x lookup
 
         //1x
         AssertIsAlive(out var world, out var entityLocation);
 
-        //2x
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
+        //2x?
+        Archetype archetype = entityLocation.Archetype(world);
+        int compIndex = archetype.ComponentTagTable[Component<T>.IntID];
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
-        //3x
-        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(entityLocation.Archetype(world).Components.UnsafeArrayIndex(compIndex));
+        //2x
+        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
         return ref storage[entityLocation.Index];
     }//2, 0
 
@@ -194,6 +197,7 @@ partial struct Entity
     /// <param name="component">The component instance to add</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentAlreadyExistsException"><see cref="Entity"/> already has a component of type <typeparamref name="T"/></exception>
+    [SkipLocalsInit]
     public void Add<T>(T component)
     {
         AssertIsAlive(out var w, out var eloc);

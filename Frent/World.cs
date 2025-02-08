@@ -34,7 +34,7 @@ public partial class World : IDisposable
 
     internal NativeTable<EntityLookup> EntityTable = new NativeTable<EntityLookup>(32);
     internal Archetype[] WorldArchetypeTable;
-    internal Dictionary<ArchetypeEdgeKey, ArchetypeID> ArchetypeGraphEdges = [];
+    internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
 
     private NativeStack<EntityIDOnly> _recycledEntityIds = new NativeStack<EntityIDOnly>(8);
     private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
@@ -61,9 +61,14 @@ public partial class World : IDisposable
     internal EntityOnlyEvent _entityDeleted = new EntityOnlyEvent();
     internal Event<ComponentID> _componentAdded = new Event<ComponentID>();
     internal Event<ComponentID> _componentRemoved = new Event<ComponentID>();
-    internal Event<TagID> _tagged = new Event<TagID>();
-    internal Event<TagID> _detached = new Event<TagID>();
+    internal TagEvent _tagged = new TagEvent();
+    internal TagEvent _detached = new TagEvent();
     internal EntityFlags _worldEventFlags; 
+
+    internal FastLookup _compAddLookup = new();
+    internal FastLookup _compRemoveLookup = new();
+    internal FastLookup _tagAddLookup = new();
+    internal FastLookup _tagRemoveLookup = new();
 
     /// <summary>
     /// Invoked whenever an entity is created on this world.

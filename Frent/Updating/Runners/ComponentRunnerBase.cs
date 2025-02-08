@@ -16,9 +16,9 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public abstract void Run(World world, Archetype b);
     public abstract void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
     //TODO: improve
-    public void Trim(int index) => ResizeBuffer((int)BitOperations.RoundUpToPowerOf2((uint)index));
+    public void Trim(int index) => Resize((int)BitOperations.RoundUpToPowerOf2((uint)index));
     //TODO: pool
-    public void ResizeBuffer(int size) => ResizeBuffer(size);
+    public void ResizeBuffer(int size) => Resize(size);
     //Note - no unsafe here
     public void SetAt(object component, int index) => this[index] = (TComponent)component;
     public object GetAt(int index) => this[index]!;
@@ -26,18 +26,31 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public void InvokeGenericActionWith(IGenericAction action, int index) => action?.Invoke(ref this[index]);
     public ComponentID ComponentID => Component<TComponent>.ID;
 
-    public void PullComponentFrom(IComponentRunner otherRunner, EntityLocation me, EntityLocation other)
+    public void PullComponentFromAndDelete(IComponentRunner otherRunner, int me, int other)
     {
         ComponentStorage<TComponent> componentRunner = UnsafeExtensions.UnsafeCast<ComponentStorage<TComponent>>(otherRunner);
-        this[me.Index] = componentRunner[other.Index];
+        ref var item = ref componentRunner[other];
+        this[me] = item;
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        {
+            item = default;
+        }
     }
 
-    public void PullComponentFrom(TrimmableStack storage, EntityLocation me, int other) => this[me.Index] = ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
+    public void PullComponentFrom(TrimmableStack storage, int me, int other)
+    {
+        ref var item = ref ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
+        this[me] = item;
+
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+            item = default;
+    }
 
     public void Delete(DeleteComponentData data)
     {
         ref var from = ref this[data.FromIndex];
         this[data.ToIndex] = from;
+
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
@@ -81,7 +94,7 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
     private TComponent[]? _managed;
     private NativeArray<TComponent> _nativeArray;
 
-    private void Resize(int size)
+    protected void Resize(int size)
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
         {

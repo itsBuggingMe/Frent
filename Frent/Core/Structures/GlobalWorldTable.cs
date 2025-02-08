@@ -25,6 +25,8 @@ internal static class GlobalWorldTables
     {
         var table = ComponentTagLocationTable;
         var tableSize = ComponentTagTableBufferSize;
+        var worlds = Worlds.AsSpan();
+
         //when adding a component, we only care about changing the length
         if (tableSize == idValue)
         {
@@ -34,11 +36,19 @@ internal static class GlobalWorldTables
                 ref var componentsForArchetype = ref table[i];
                 Array.Resize(ref componentsForArchetype, ComponentTagTableBufferSize);
                 componentsForArchetype.AsSpan(tableSize).Fill(DefaultNoTag);
+
+                //update world archetypes
+                foreach(var world in worlds)
+                {
+                    if(world is not null && world.WorldArchetypeTable[i] is Archetype archetype)
+                    {
+                        archetype.ComponentTagTable = componentsForArchetype;
+                    }
+                }
             }
         }
     }
 
     public static int ComponentIndex(ArchetypeID archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(component.ID) & IndexBits;
-    public static int ComponentIndex(uint archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype).UnsafeArrayIndex(component.ID) & IndexBits;
     public static bool HasTag(ArchetypeID archetype, TagID tag) => (ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(tag.ID) & HasTagMask) != 0;
 }

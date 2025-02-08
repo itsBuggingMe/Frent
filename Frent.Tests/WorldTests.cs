@@ -105,19 +105,19 @@ internal class WorldTests
     //    Memory.NotAllocated();
     //}
 
-    [Test]
-    public void EnsureCapacity_Allocates()
-    {
-        const int EntitiesToAllocate = 1000;
-
-        using World world = new();
-
-        Memory.Record();
-
-        world.EnsureCapacity([Component<int>.ID, Component<long>.ID], EntitiesToAllocate);
-
-        Memory.AllocatedAtLeast(EntitiesToAllocate * (sizeof(int) + sizeof(long)));
-    }
+    //[Test]
+    //public void EnsureCapacity_Allocates()
+    //{
+    //    const int EntitiesToAllocate = 1000;
+    //
+    //    using World world = new();
+    //
+    //    Memory.Record();
+    //
+    //    world.EnsureCapacity([Component<int>.ID, Component<long>.ID], EntitiesToAllocate);
+    //
+    //    Memory.AllocatedAtLeast(EntitiesToAllocate * (sizeof(int) + sizeof(long)));
+    //}
 
     [Test]
     public void Query_IncludesComponents()

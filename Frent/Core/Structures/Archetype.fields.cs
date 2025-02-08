@@ -1,4 +1,5 @@
-﻿using Frent.Updating;
+﻿using Frent.Core.Structures;
+using Frent.Updating;
 
 namespace Frent.Core;
 
@@ -12,6 +13,11 @@ partial class Archetype(ArchetypeID archetypeID, IComponentRunner[] components)
     //this is so we dont need to lookup
     //the world table every time
     private EntityIDOnly[] _entities = new EntityIDOnly[1];
+
+    //information for tag existence & component index per id
+    //updated by static methods
+    //saves a lookup on hot paths
+    internal byte[] ComponentTagTable = GlobalWorldTables.ComponentTagLocationTable[archetypeID.ID];
     //2
     private ArchetypeID _archetypeID = archetypeID;
     //4

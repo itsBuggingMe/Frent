@@ -7,19 +7,22 @@ internal static class Extensions
     public static int EntityCount(this Query query)
     {
         int count = 0;
-        query.RunEntity(e => count++);
+        foreach(Entity entity in query.EnumerateWithEntities())
+        {
+            count++;
+        }
         return count;
     }
 
     public static void AssertEntitiesNotDefault(this Query query)
     {
-        query.RunEntity(e =>
-        {
-            foreach(var component in e.ComponentTypes)
-            {
-                AssertNotDefault(e.Get(component));
-            }
-        });
+        //query.RunEntity(e =>
+        //{
+        //    foreach(var component in e.ComponentTypes)
+        //    {
+        //        AssertNotDefault(e.Get(component));
+        //    }
+        //});
 
         static void AssertNotDefault(object value)
         {

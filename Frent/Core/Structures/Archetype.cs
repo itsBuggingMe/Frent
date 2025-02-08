@@ -36,13 +36,14 @@ internal partial class Archetype
         return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components[index]).AsSpan();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EntityIDOnly CreateEntityLocation(EntityFlags flags, out EntityLocation entityLocation)
     {
-        if (_entities.Length == _componentIndex)
+        int elen = _entities.Length;
+        int comlen = _componentIndex;
+        if (elen == comlen)
             Resize();
 
-        entityLocation = new EntityLocation(ID, _componentIndex, flags);
+        entityLocation = new EntityLocation(ID, comlen, flags);
         return ref _entities.UnsafeArrayIndex(_componentIndex++);
     }
 
@@ -69,16 +70,25 @@ internal partial class Archetype
             comprunner.ResizeBuffer(newLen);
     }
 
+    /// <summary>
+    /// This method doesn't modify component storages
+    /// </summary>
+    internal EntityIDOnly DeleteEntityFromStorage(int index)
+    {
+        _componentIndex--;
+        Debug.Assert(_componentIndex >= 0);
+        return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_componentIndex);
+    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal EntityIDOnly DeleteEntity(int index)
     {
         _componentIndex--;
         Debug.Assert(_componentIndex >= 0);
         //TODO: args
         #region Unroll
-        ref IComponentRunner first = ref MemoryMarshal.GetArrayDataReference(Components);
         DeleteComponentData args = new(index, _componentIndex);
+
+        ref IComponentRunner first = ref MemoryMarshal.GetArrayDataReference(Components);
 
         switch (Components.Length)
         {
@@ -176,5 +186,5 @@ internal partial class Archetype
             comprunner.Trim(0);
     }
 
-    internal Span<EntityIDOnly> GetEntitySpan() => _entities.AsSpan();
+    internal Span<EntityIDOnly> GetEntitySpan() => _entities.AsSpan(0, _componentIndex);
 }

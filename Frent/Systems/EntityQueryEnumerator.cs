@@ -62,3 +62,51 @@ public ref struct EntityQueryEnumerator<T>
         public EntityQueryEnumerator<T> GetEnumerator() => new EntityQueryEnumerator<T>(query);
     }
 }
+
+public ref struct EntityQueryEnumerator
+{
+    private int _archetypeIndex;
+    private int _componentIndex;
+    private World _world;
+    private Span<Archetype> _archetypes;
+    private Span<EntityIDOnly> _entityIds;
+    private EntityQueryEnumerator(Query query)
+    {
+        _world = query.World;
+        _world.EnterDisallowState();
+        _archetypes = query.AsSpan();
+        _archetypeIndex = -1;
+    }
+
+    public Entity Current => _entityIds[_componentIndex].ToEntity(_world);
+
+    public void Dispose()
+    {
+        _world.ExitDisallowState();
+    }
+
+    public bool MoveNext()
+    {
+        if (++_componentIndex < _entityIds.Length)
+        {
+            return true;
+        }
+
+        _componentIndex = 0;
+        _archetypeIndex++;
+
+        if ((uint)_archetypeIndex < (uint)_archetypes.Length)
+        {
+            var cur = _archetypes[_archetypeIndex];
+            _entityIds = cur.GetEntitySpan();
+            return true;
+        }
+
+        return false;
+    }
+
+    public struct QueryEnumerable(Query query)
+    {
+        public EntityQueryEnumerator GetEnumerator() => new EntityQueryEnumerator(query);
+    }
+}

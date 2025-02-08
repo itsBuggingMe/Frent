@@ -268,7 +268,7 @@ public class CommandBuffer
                 var archetype = _world.AddComponent(concrete, record.Location, command.ComponentID,
                     out var runner,
                     out var location);
-                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location, command.Index);
+                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location.Index, command.Index);
 
 
                 if (record.Location.HasEvent(EntityFlags.AddComp | EntityFlags.GenericAddComp))
