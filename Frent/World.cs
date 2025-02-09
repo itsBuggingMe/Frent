@@ -57,18 +57,18 @@ public partial class World : IDisposable
 
     internal CommandBuffer WorldUpdateCommandBuffer;
 
-    internal EntityOnlyEvent _entityCreated = new EntityOnlyEvent();
-    internal EntityOnlyEvent _entityDeleted = new EntityOnlyEvent();
-    internal Event<ComponentID> _componentAdded = new Event<ComponentID>();
-    internal Event<ComponentID> _componentRemoved = new Event<ComponentID>();
-    internal TagEvent _tagged = new TagEvent();
-    internal TagEvent _detached = new TagEvent();
-    internal EntityFlags _worldEventFlags; 
+    internal EntityOnlyEvent EntityCreatedEvent = new EntityOnlyEvent();
+    internal EntityOnlyEvent EntityDeletedEvent = new EntityOnlyEvent();
+    internal Event<ComponentID> ComponentAddedEvent = new Event<ComponentID>();
+    internal Event<ComponentID> ComponentRemovedEvent = new Event<ComponentID>();
+    internal TagEvent Tagged = new TagEvent();
+    internal TagEvent Detached = new TagEvent();
 
-    internal FastLookup _compAddLookup = new();
-    internal FastLookup _compRemoveLookup = new();
-    internal FastLookup _tagAddLookup = new();
-    internal FastLookup _tagRemoveLookup = new();
+    internal EntityFlags WorldEventFlags; 
+    internal FastLookup CompAddLookup = new();
+    internal FastLookup CompRemoveLookup = new();
+    internal FastLookup TagAddLookup = new();
+    internal FastLookup TagRemoveLookup = new();
 
     /// <summary>
     /// Invoked whenever an entity is created on this world.
@@ -77,14 +77,14 @@ public partial class World : IDisposable
     { 
         add
         {
-            _entityCreated.Add(value);
-            _worldEventFlags |= EntityFlags.WorldCreate;
+            EntityCreatedEvent.Add(value);
+            WorldEventFlags |= EntityFlags.WorldCreate;
         } 
         remove
         {
-            _entityCreated.Remove(value);
-            if(!_entityCreated.HasListeners)
-                _worldEventFlags &= ~EntityFlags.WorldCreate;
+            EntityCreatedEvent.Remove(value);
+            if(!EntityCreatedEvent.HasListeners)
+                WorldEventFlags &= ~EntityFlags.WorldCreate;
         }
     }
     /// <summary>
@@ -94,14 +94,14 @@ public partial class World : IDisposable
     { 
         add
         {
-            _entityDeleted.Add(value);
-            _worldEventFlags |= EntityFlags.WorldOnDelete;
+            EntityDeletedEvent.Add(value);
+            WorldEventFlags |= EntityFlags.WorldOnDelete;
         } 
         remove
         {
-            _entityDeleted.Remove(value);
-            if(!_entityDeleted.HasListeners)
-                _worldEventFlags &= ~EntityFlags.WorldOnDelete;
+            EntityDeletedEvent.Remove(value);
+            if(!EntityDeletedEvent.HasListeners)
+                WorldEventFlags &= ~EntityFlags.WorldOnDelete;
         }
     }
 
@@ -112,14 +112,14 @@ public partial class World : IDisposable
     {
         add
         {
-            _componentAdded.Add(value);
-            _worldEventFlags |= EntityFlags.WorldAddComp;
+            ComponentAddedEvent.Add(value);
+            WorldEventFlags |= EntityFlags.WorldAddComp;
         } 
         remove
         {
-            _componentAdded.Remove(value);
-            if(!_componentAdded.HasListeners)
-                _worldEventFlags &= ~EntityFlags.WorldAddComp;
+            ComponentAddedEvent.Remove(value);
+            if(!ComponentAddedEvent.HasListeners)
+                WorldEventFlags &= ~EntityFlags.WorldAddComp;
         }
     }
 
@@ -130,14 +130,14 @@ public partial class World : IDisposable
     {
         add
         {
-            _componentRemoved.Add(value);
-            _worldEventFlags |= EntityFlags.WorldRemoveComp;
+            ComponentRemovedEvent.Add(value);
+            WorldEventFlags |= EntityFlags.WorldRemoveComp;
         } 
         remove
         {
-            _componentRemoved.Remove(value);
-            if(!_componentRemoved.HasListeners)
-                _worldEventFlags &= ~EntityFlags.WorldRemoveComp;
+            ComponentRemovedEvent.Remove(value);
+            if(!ComponentRemovedEvent.HasListeners)
+                WorldEventFlags &= ~EntityFlags.WorldRemoveComp;
         }
     }
 
@@ -148,14 +148,14 @@ public partial class World : IDisposable
     {
         add
         {
-            _tagged.Add(value);
-            _worldEventFlags |= EntityFlags.WorldTagged;
+            Tagged.Add(value);
+            WorldEventFlags |= EntityFlags.WorldTagged;
         } 
         remove
         {
-            _tagged.Remove(value);
-            if(!_tagged.HasListeners)
-                _worldEventFlags &= ~EntityFlags.WorldTagged;
+            Tagged.Remove(value);
+            if(!Tagged.HasListeners)
+                WorldEventFlags &= ~EntityFlags.WorldTagged;
         }
     }
 
@@ -166,14 +166,14 @@ public partial class World : IDisposable
     {
         add
         {
-            _detached.Add(value);
-            _worldEventFlags |= EntityFlags.WorldDetach;
+            Detached.Add(value);
+            WorldEventFlags |= EntityFlags.WorldDetach;
         } 
         remove
         {
-            _detached.Remove(value);
-            if(!_detached.HasListeners)
-                _worldEventFlags &= ~EntityFlags.WorldDetach;
+            Detached.Remove(value);
+            if(!Detached.HasListeners)
+                WorldEventFlags &= ~EntityFlags.WorldDetach;
         }
     }
 
@@ -454,7 +454,7 @@ public partial class World : IDisposable
             archetypeComponents[i].SetAt(components[i], loc.Index);
         }
 
-        _entityCreated.Invoke(entity);
+        EntityCreatedEvent.Invoke(entity);
         return entity;
     }
 
@@ -465,7 +465,7 @@ public partial class World : IDisposable
     public Entity Create()
     {
         var entity = CreateEntityWithoutEvent();
-        _entityCreated.Invoke(entity);
+        EntityCreatedEvent.Invoke(entity);
         return entity;
     }
 
@@ -484,7 +484,7 @@ public partial class World : IDisposable
 
     internal void InvokeEntityCreated(Entity entity)
     {
-        _entityCreated.Invoke(entity);
+        EntityCreatedEvent.Invoke(entity);
     }
 
     /// <summary>

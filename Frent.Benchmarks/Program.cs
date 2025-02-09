@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Frent.Systems;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -13,12 +14,6 @@ public class Program
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
-        var m = new MicroBenchmark();
-        m.Setup();
-        while (true)
-        {
-            m.Get();
-        }
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true
@@ -26,9 +21,19 @@ public class Program
             false
 #endif
             )
+        {
             JitTest(disasmCall);
+        }
         else
+        {
+            JitTest(disasmCall);
+            CancellationTokenSource source = new CancellationTokenSource();
+            Task.Run(() => ProfileTest(disasmCall, source.Token));
+            Console.WriteLine("Press enter for benchmark");
+            Console.ReadLine();
+            source.Cancel();
             BenchmarkRunner.Run<T>();
+        }
     }
 
     private static void JitTest<T>(Action<T> call)
@@ -45,6 +50,20 @@ public class Program
             for (int j = 0; j < 32; j++)
                 call(t);
             Thread.Sleep(100);
+        }
+    }
+
+    private static void ProfileTest<T>(Action<T> call, CancellationToken ct)
+    {
+        T t = Activator.CreateInstance<T>();
+        t.GetType()
+            .GetMethods()
+            .FirstOrDefault(m => m.GetCustomAttribute<GlobalSetupAttribute>() is not null)
+            ?.Invoke(t, []);
+
+        while(!ct.IsCancellationRequested)
+        {
+            call(t);
         }
     }
     #endregion

@@ -94,14 +94,17 @@ internal struct EntityOnlyEvent()
     public readonly void Invoke(Entity entity)
     {
         if (_first is not null)
+            Execute(entity);
+    }
+
+    private readonly void Execute(Entity entity)
+    {
+        _first!.Invoke(entity);
+        if (_second is not null)
         {
-            _first.Invoke(entity);
-            if(_second is not null)
-            {
-                _second.Invoke(entity);
-                foreach (var item in _invokationList.AsSpan())
-                    item.Invoke(entity);
-            }
+            _second.Invoke(entity);
+            foreach (var item in _invokationList.AsSpan())
+                item.Invoke(entity);
         }
     }
 }

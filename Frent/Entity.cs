@@ -125,49 +125,6 @@ public partial struct Entity : IEquatable<Entity>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void AssertIsAliveDum(out World world, out World.EntityLookup entityLocation)
-    {
-        if (InternalIsAliveDum(out world!, out entityLocation))
-            return;
-        Throw_EntityIsDead();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool InternalIsAliveDum([NotNullWhen(true)] out World? world, out World.EntityLookup entityLocation)
-    {
-        if (World.WorldCachePackedValue == PackedWorldInfo)
-        {
-            world = World.QuickWorldCache;
-            entityLocation = world!.EntityTable.UnsafeIndexNoResize(EntityID);
-            return entityLocation.Version == EntityVersion;
-        }
-        return IsAliveColdDum(out world, out entityLocation);
-    }
-
-    internal bool IsAliveColdDum([NotNullWhen(true)] out World? world, out World.EntityLookup entityLocation)
-    {
-        world = GlobalWorldTables.Worlds.GetValueNoCheck(WorldID);
-        if (world?.Version == WorldVersion)
-        {
-            World.EntityLookup e = world.EntityTable[EntityID];
-            if (e.Version == EntityVersion)
-            {
-                //refresh the cache
-                World.WorldCachePackedValue = PackedWorldInfo;
-                World.QuickWorldCache = world;
-
-                entityLocation = e;
-                return true;
-            }
-
-        }
-
-        entityLocation = default;
-        world = null;
-        return false;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void AssertIsAlive(out World world)
     {
         if (InternalIsAlive(out world!))

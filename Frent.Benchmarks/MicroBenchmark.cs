@@ -13,6 +13,7 @@ public class MicroBenchmark
         public const string Create = "Create";
         public const string Has = "Has";
         public const string Get = "Get";
+        public const string Add = "Add";
     }
 
     private World _world;
@@ -34,24 +35,13 @@ public class MicroBenchmark
     }
 
     [Benchmark]
-    [BenchmarkCategory(Categories.Has)]
-    public void Decon()
-    {
-        var e = _entities[0];
-        for(int i = 0; i < 1000; i++)
-        {
-            e.Deconstruct(out Ref<int> @int, out Ref<double> @double, out Ref<int> @int1, out Ref<double> @double1, out Ref<int> @int2);
-        }
-    }
-
-    [Benchmark]
-    [BenchmarkCategory(Categories.Has)]
+    [BenchmarkCategory(Categories.Add)]
     public void Get()
     {
-        var e = _entities[0];
-        for (int i = 0; i < 1000; i++)
+        foreach(var entity in _entities)
         {
-            e.Get<int>();
+            entity.Remove<int>();
+            entity.Add(0);
         }
     }
 

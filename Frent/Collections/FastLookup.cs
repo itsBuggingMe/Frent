@@ -10,8 +10,14 @@ internal struct FastLookup()
 {
     private LookupData _data;
     private int index;
-    private Archetype[] _archetypes = new Archetype[8];
-    private Dictionary<uint, Archetype> _fallbackLookup = [];
+    internal Archetype[] Archetypes = new Archetype[8];
+    internal Dictionary<uint, Archetype> FallbackLookup = [];
+
+    public uint GetKey(ushort id, ArchetypeID archetypeID)
+    {
+        uint key = ((uint)id << 16) | archetypeID.ID;
+        return key;
+    }
 
     public Archetype? TryGetValue(ushort id, ArchetypeID archetypeID)
     {
@@ -19,10 +25,10 @@ internal struct FastLookup()
         int index = LookupIndex(key);
         if(index != 32)
         {
-            return _archetypes.UnsafeArrayIndex(index);
+            return Archetypes.UnsafeArrayIndex(index);
         }
 
-        if(_fallbackLookup.TryGetValue(key, out Archetype? value))
+        if(FallbackLookup.TryGetValue(key, out Archetype? value))
         {
             return value;
         }
@@ -34,10 +40,10 @@ internal struct FastLookup()
     {
         uint key = ((uint)id << 16) | from.ID;
         
-        _fallbackLookup[key] = to;
+        FallbackLookup[key] = to;
 
         LookupData.Index(ref _data, index) = key;
-        _archetypes[index] = to;
+        Archetypes[index] = to;
 
         index = (index + 1) & 7;
     }

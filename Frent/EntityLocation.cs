@@ -13,8 +13,8 @@ internal struct EntityLocation
 
     public EntityLocation(ArchetypeID archetype, int index)
     {
-        ArchetypeID = archetype;
         Index = index;
+        ArchetypeID = archetype;
         Flags = EntityFlags.None;
     }
 

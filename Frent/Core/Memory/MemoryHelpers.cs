@@ -31,6 +31,30 @@ internal static class MemoryHelpers
             builder.Add(span[i]);
         return builder.MoveToImmutable();
     }
+
+    public static ReadOnlySpan<T> Concat<T>(ImmutableArray<T> types, T type, out ImmutableArray<T> result)
+        where T : ITypeID
+    {
+        if (types.IndexOf(type) != -1)
+            FrentExceptions.Throw_InvalidOperationException($"This entity already has a component of type {type.Type.Name}");
+
+        var builder = ImmutableArray.CreateBuilder<T>(types.Length + 1);
+        builder.AddRange(types);
+        builder.Add(type);
+
+        result = builder.MoveToImmutable();
+        return result.AsSpan();
+    }
+
+    public static ReadOnlySpan<T> Remove<T>(ImmutableArray<T> types, T type, out ImmutableArray<T> result)
+        where T : ITypeID
+    {
+        int index = types.IndexOf(type);
+        if (index == -1)
+            FrentExceptions.Throw_ComponentNotFoundException(type.Type);
+        result = types.RemoveAt(index);
+        return result.AsSpan();
+    }
 }
 
 internal static class MemoryHelpers<T>

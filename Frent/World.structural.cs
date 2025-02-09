@@ -65,16 +65,20 @@ partial class World
     //Note: this fucntion doesn't actually do the last step of setting the component in the new archetype
     //the caller's job is to set the component
     [SkipLocalsInit]
-    internal Archetype AddComponent(Entity entity, EntityLocation entityLocation, ComponentID component, out IComponentRunner runner, out EntityLocation nextLocation)
+    internal IComponentRunner AddComponent(Entity entity, EntityLocation entityLocation, ComponentID component, out EntityLocation nextLocation)
     {
         Archetype from = entityLocation.Archetype(this);
 
-        Archetype? destination = _compAddLookup.TryGetValue(component.ID, entityLocation.ArchetypeID);
-
-        if(destination is null)
+        Archetype? destination;
+        uint key = CompAddLookup.GetKey(component.ID, entityLocation.ArchetypeID);
+        int index = CompAddLookup.LookupIndex(key);
+        if(index != 32)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(Concat(from.ArchetypeTypeArray, component, out var res), from.ArchetypeTagArray.AsSpan(), this, res, from.ArchetypeTagArray);
-            _compAddLookup.SetArchetype(component.ID, entityLocation.ArchetypeID, destination);
+            destination = CompAddLookup.Archetypes.UnsafeArrayIndex(index);
+        }
+        else if(!CompAddLookup.FallbackLookup.TryGetValue(key, out destination))
+        {
+            destination = from.FindArchetypeAdjacentAdd(this, component);
         }
 
         destination.CreateEntityLocation(entityLocation.Flags, out nextLocation).Init(entity);
@@ -88,16 +92,12 @@ partial class World
             toRunners.UnsafeArrayIndex(i).PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
         }
 
-        runner = toRunners.UnsafeArrayIndex(i);
-
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
 
-        EntityTable[movedDown.ID].Location = entityLocation;
-        EntityTable[entity.EntityID].Location = nextLocation;
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
+        EntityTable.UnsafeIndexNoResize(entity.EntityID).Location = nextLocation;
 
-        _componentAdded.Invoke(entity, component);
-
-        return destination;
+        return toRunners.UnsafeArrayIndex(i);
     }
 
     //Remove
@@ -106,20 +106,21 @@ partial class World
     {
         Archetype from = entityLocation.Archetype(this);
 
-        Archetype? destination = _compAddLookup.TryGetValue(component.ID, entityLocation.ArchetypeID);
-
-        if(destination is null)
+        Archetype? destination;
+        uint key = CompRemoveLookup.GetKey(component.ID, entityLocation.ArchetypeID);
+        int index = CompRemoveLookup.LookupIndex(key);
+        if (index != 32)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(Remove(from.ArchetypeTypeArray, component, out var arr), from.ArchetypeTagArray.AsSpan(), this, arr, from.ArchetypeTagArray);
-            _compAddLookup.SetArchetype(component.ID, entityLocation.ArchetypeID, destination);
+            destination = CompRemoveLookup.Archetypes.UnsafeArrayIndex(index);
+        }
+        else if (!CompRemoveLookup.FallbackLookup.TryGetValue(key, out destination))
+        {
+            destination = from.FindArchetypeAdjacentRemove(this, component);
         }
 
-        destination!.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
+        destination.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
 
-        int skipIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, component);
-
-        if (skipIndex >= MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_ComponentNotFoundException($"This entity doesn't have a component of type {component.Type.Name} to remove!");
+        int skipIndex = from.ComponentTagTable.UnsafeArrayIndex(component.ID);
 
         int j = 0;
 
@@ -142,14 +143,14 @@ partial class World
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
 
-        EntityTable[movedDown.ID].Location = entityLocation;
-        ref var finalTableLocation = ref EntityTable[entity.EntityID];
-        finalTableLocation.Location = nextLocation;
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
+        EntityTable.UnsafeIndexNoResize(entity.EntityID).Location = nextLocation;
 
-        _componentRemoved.Invoke(entity, component);
-        ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp, out bool eventExist);
-        if (eventExist)
+        entityLocation.Flags |= WorldEventFlags;
+        if(entityLocation.HasEvent(EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp | EntityFlags.WorldRemoveComp))
         {
+            ComponentRemovedEvent.Invoke(entity, component);
+            ref var eventData = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
             eventData.Remove.NormalEvent.Invoke(entity, component);
             tmpEventComponentStorage?.InvokeEventWith(eventData.Remove.GenericEvent, entity, tmpEventComponentIndex);
         }
@@ -159,7 +160,7 @@ partial class World
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
     {
-        EntityFlags check = entityLocation.Flags | _worldEventFlags;
+        EntityFlags check = entityLocation.Flags | WorldEventFlags;
         if ((check & EntityFlags.AllEvents) != 0)
             InvokeDeleteEvents(entity, entityLocation);
         DeleteEntityWithoutEvents(entity, entityLocation);
@@ -168,7 +169,7 @@ partial class World
     //let the jit decide whether or not to inline
     private void InvokeDeleteEvents(Entity entity, EntityLocation entityLocation)
     {
-        _entityDeleted.Invoke(entity);
+        EntityDeletedEvent.Invoke(entity);
         if (entityLocation.HasEvent(EntityFlags.OnDelete))
         {
             foreach (var @event in EventLookup[entity.EntityIDOnly].Delete.AsSpan())
@@ -210,10 +211,10 @@ partial class World
 
         if (!exist)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Concat(from.ArchetypeTagArray, tagID, out var res), this, from.ArchetypeTypeArray, res);
+            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), MemoryHelpers.Concat(from.ArchetypeTagArray, tagID, out var res), this, from.ArchetypeTypeArray, res);
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
+        destination!.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
 
         Debug.Assert(from.Components.Length == destination.Components.Length);
         Span<IComponentRunner> fromRunners = from.Components.AsSpan();
@@ -231,7 +232,7 @@ partial class World
         if (eventExist)
             eventData.Tag.Invoke(entity, tagID);
 
-        _tagged.Invoke(entity, tagID);
+        Tagged.Invoke(entity, tagID);
 
         return true;
     }
@@ -249,7 +250,7 @@ partial class World
 
         if (!exist)
         {
-            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), Remove(from.ArchetypeTagArray, tagID, out var arr), this, from.ArchetypeTypeArray, arr);
+            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), MemoryHelpers.Remove(from.ArchetypeTagArray, tagID, out var arr), this, from.ArchetypeTypeArray, arr);
         }
 
         destination!.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
@@ -271,32 +272,8 @@ partial class World
         if (eventExist)
             eventData.Detach.Invoke(entity, tagID);
 
-        _detached.Invoke(entity, tagID);
+        Detached.Invoke(entity, tagID);
 
         return true;
-    }
-
-    private static ReadOnlySpan<T> Concat<T>(ImmutableArray<T> types, T type, out ImmutableArray<T> result)
-        where T : ITypeID
-    {
-        if (types.IndexOf(type) != -1)
-            FrentExceptions.Throw_InvalidOperationException($"This entity already has a component of type {type.Type.Name}");
-
-        var builder = ImmutableArray.CreateBuilder<T>(types.Length + 1);
-        builder.AddRange(types);
-        builder.Add(type);
-
-        result = builder.MoveToImmutable();
-        return result.AsSpan();
-    }
-
-    private static ReadOnlySpan<T> Remove<T>(ImmutableArray<T> types, T type, out ImmutableArray<T> result)
-        where T : ITypeID
-    {
-        int index = types.IndexOf(type);
-        if (index == -1)
-            FrentExceptions.Throw_ComponentNotFoundException(type.Type);
-        result = types.RemoveAt(index);
-        return result.AsSpan();
     }
 }

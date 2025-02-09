@@ -203,15 +203,18 @@ partial struct Entity
         AssertIsAlive(out var w, out var eloc);
         if (w.AllowStructualChanges)
         {
-            var archetype = w.AddComponent(this, eloc, Component<T>.ID, out var to, out var location);
+            var to = w.AddComponent(this, eloc, Component<T>.ID, out var location);
             UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(to)[location.Index] = component;
 
-            ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
-            if (exists)
+            location.Flags |= w.WorldEventFlags;
+            if(location.HasEvent(EntityFlags.AddComp | EntityFlags.GenericAddComp | EntityFlags.WorldAddComp))
             {
+                w.ComponentAddedEvent.Invoke(this, Component<T>.ID);
+                ref EventRecord eventRecord = ref CollectionsMarshal.GetValueRefOrNullRef(w.EventLookup, EntityIDOnly);
                 eventRecord.Add.NormalEvent.Invoke(this, Component<T>.ID);
                 to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.Index);
             }
+
         }
         else
         {
@@ -230,10 +233,11 @@ partial struct Entity
         AssertIsAlive(out var w, out var eloc);
         if (w.AllowStructualChanges)
         {
-            var archetype = w.AddComponent(this, eloc, componentID, out var to, out var location);
+            var to = w.AddComponent(this, eloc, componentID, out var location);
             //we don't check IsAssignableTo. The reason is perf - we get InvalidCastException anyways
             to.SetAt(component, location.Index);
 
+            w.ComponentAddedEvent.Invoke(this, componentID);
             ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
             if (exists)
             {

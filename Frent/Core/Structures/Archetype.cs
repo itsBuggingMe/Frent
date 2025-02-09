@@ -3,6 +3,7 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -68,6 +69,20 @@ internal partial class Archetype
         FastStackArrayPool<EntityIDOnly>.ResizeArrayFromPool(ref _entities, newLen);
         foreach (var comprunner in Components)
             comprunner.ResizeBuffer(newLen);
+    }
+
+    public Archetype FindArchetypeAdjacentRemove(World world, ComponentID component)
+    {
+        var destination = CreateOrGetExistingArchetype(MemoryHelpers.Remove(ArchetypeTypeArray, component, out var arr), ArchetypeTagArray.AsSpan(), world, arr, ArchetypeTagArray);
+        world.CompRemoveLookup.SetArchetype(component.ID, ID, destination);
+        return destination;
+    }
+
+    public Archetype FindArchetypeAdjacentAdd(World world, ComponentID component)
+    {
+        var destination = CreateOrGetExistingArchetype(MemoryHelpers.Concat(ArchetypeTypeArray, component, out var res), ArchetypeTagArray.AsSpan(), world, res, ArchetypeTagArray);
+        world.CompAddLookup.SetArchetype(component.ID, ID, destination);
+        return destination;
     }
 
     /// <summary>
