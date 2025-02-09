@@ -36,7 +36,7 @@ public class MicroBenchmark
 
     [Benchmark]
     [BenchmarkCategory(Categories.Add)]
-    public void Get()
+    public void AddRemove()
     {
         foreach(var entity in _entities)
         {

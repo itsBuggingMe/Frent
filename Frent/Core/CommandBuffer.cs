@@ -265,7 +265,7 @@ public class CommandBuffer
             if (record.Version == command.Entity.Version)
             {
                 Entity concrete = command.Entity.ToEntity(_world);
-                var runner = _world.AddComponent(concrete, record.Location, command.ComponentID,
+                var runner = _world.AddComponent(command.Entity, record.Location, command.ComponentID,
                     out var location);
                 runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location.Index, command.Index);
 

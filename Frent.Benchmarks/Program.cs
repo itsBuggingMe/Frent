@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Frent.Systems;
+using Frent.Core;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -9,7 +10,7 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Get());
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.AddRemove());
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)

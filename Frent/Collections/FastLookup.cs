@@ -38,7 +38,7 @@ internal struct FastLookup()
 
     public void SetArchetype(ushort id, ArchetypeID from, Archetype to)
     {
-        uint key = ((uint)id << 16) | from.ID;
+        uint key = GetKey(id, from);
         
         FallbackLookup[key] = to;
 

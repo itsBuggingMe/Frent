@@ -203,7 +203,7 @@ partial struct Entity
         AssertIsAlive(out var w, out var eloc);
         if (w.AllowStructualChanges)
         {
-            var to = w.AddComponent(this, eloc, Component<T>.ID, out var location);
+            var to = w.AddComponent(EntityIDOnly, eloc, Component<T>.ID, out var location);
             UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(to)[location.Index] = component;
 
             location.Flags |= w.WorldEventFlags;
@@ -233,7 +233,7 @@ partial struct Entity
         AssertIsAlive(out var w, out var eloc);
         if (w.AllowStructualChanges)
         {
-            var to = w.AddComponent(this, eloc, componentID, out var location);
+            var to = w.AddComponent(EntityIDOnly, eloc, componentID, out var location);
             //we don't check IsAssignableTo. The reason is perf - we get InvalidCastException anyways
             to.SetAt(component, location.Index);
 
@@ -298,6 +298,24 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     public void Remove(Type type) => Remove(Component.GetComponentID(type));
+
+    public void Remove(ReadOnlySpan<ComponentID> components)
+    {
+        AssertIsAlive(out var w, out var eloc);
+        if (components.Length == 0)
+            return;
+        if (w.AllowStructualChanges)
+        {
+            w.RemoveComponents(this, eloc, components);
+        }
+        else
+        {
+            foreach(var compnoent in components)
+            {//TODO: make better impl
+                w.WorldUpdateCommandBuffer.RemoveComponent(this, compnoent);
+            }
+        }
+    }
     #endregion
 
     #region Tag

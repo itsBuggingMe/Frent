@@ -65,7 +65,7 @@ partial class World
     //Note: this fucntion doesn't actually do the last step of setting the component in the new archetype
     //the caller's job is to set the component
     [SkipLocalsInit]
-    internal IComponentRunner AddComponent(Entity entity, EntityLocation entityLocation, ComponentID component, out EntityLocation nextLocation)
+    internal IComponentRunner AddComponent(EntityIDOnly entity, EntityLocation entityLocation, ComponentID component, out EntityLocation nextLocation)
     {
         Archetype from = entityLocation.Archetype(this);
 
@@ -83,19 +83,19 @@ partial class World
 
         destination.CreateEntityLocation(entityLocation.Flags, out nextLocation).Init(entity);
 
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
+
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
+        EntityTable.UnsafeIndexNoResize(entity.ID).Location = nextLocation;
+
         IComponentRunner[] fromRunners = from.Components;
         IComponentRunner[] toRunners = destination.Components;
 
         int i = 0;
         for (; i < fromRunners.Length; i++)
         {
-            toRunners.UnsafeArrayIndex(i).PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
+            toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
         }
-
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
-
-        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
-        EntityTable.UnsafeIndexNoResize(entity.EntityID).Location = nextLocation;
 
         return toRunners.UnsafeArrayIndex(i);
     }
@@ -122,23 +122,30 @@ partial class World
 
         int skipIndex = from.ComponentTagTable.UnsafeArrayIndex(component.ID);
 
-        int j = 0;
-
         TrimmableStack? tmpEventComponentStorage = null;
         int tmpEventComponentIndex = -1;
 
-        var destinationComponents = destination.Components;
-        for (int i = 0; i < from.Components.Length; i++)
+        ref IComponentRunner destRef = ref MemoryMarshal.GetArrayDataReference(destination.Components);
+        ref IComponentRunner fromRef = ref MemoryMarshal.GetArrayDataReference(from.Components);
+
+        int i = 0;
+        for(; i < skipIndex; i++)
         {
-            if (i == skipIndex)
-            {
-                if (entityLocation.HasEvent(EntityFlags.GenericRemoveComp))
-                {
-                    from.Components.UnsafeArrayIndex(i).PushComponentToStack(entityLocation.Index, out tmpEventComponentIndex);
-                }
-                continue;
-            }
-            destinationComponents.UnsafeArrayIndex(j++).PullComponentFromAndDelete(from.Components.UnsafeArrayIndex(i), nextLocation.Index, entityLocation.Index);
+            destRef.PullComponentFromAndDelete(fromRef, nextLocation.Index, entityLocation.Index);
+            destRef = ref Unsafe.Add(ref destRef, 1);
+            fromRef = ref Unsafe.Add(ref fromRef, 1);
+        }
+
+        if (entityLocation.HasEvent(EntityFlags.GenericRemoveComp))
+        {
+            fromRef.PushComponentToStack(entityLocation.Index, out tmpEventComponentIndex);
+        }
+
+        for (i++, fromRef = ref Unsafe.Add(ref fromRef, 1); i < from.Components.Length; i++)
+        {
+            destRef.PullComponentFromAndDelete(fromRef, nextLocation.Index, entityLocation.Index);
+            destRef = ref Unsafe.Add(ref destRef, 1);
+            fromRef = ref Unsafe.Add(ref fromRef, 1);
         }
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
@@ -153,6 +160,80 @@ partial class World
             ref var eventData = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
             eventData.Remove.NormalEvent.Invoke(entity, component);
             tmpEventComponentStorage?.InvokeEventWith(eventData.Remove.GenericEvent, entity, tmpEventComponentIndex);
+        }
+    }
+
+    //components cannot be empty
+    [SkipLocalsInit]
+    internal void RemoveComponents(Entity entity, EntityLocation entityLocation, ReadOnlySpan<ComponentID> components)
+    {
+        Debug.Assert(components.Length != 0);
+        Archetype from = entityLocation.Archetype(this);
+
+        Archetype destination = from;
+        foreach(var component in components)
+        {
+            uint key = CompRemoveLookup.GetKey(component.ID, destination.ID);
+            int index = CompRemoveLookup.LookupIndex(key);
+            if (index != 32)
+            {
+                destination = CompRemoveLookup.Archetypes.UnsafeArrayIndex(index);
+            }
+            else if(CompRemoveLookup.FallbackLookup.TryGetValue(key, out Archetype? newDestination))
+            {
+                destination = newDestination;
+            }
+            else
+            {
+                destination = destination.FindArchetypeAdjacentRemove(this, component);
+            }
+        }
+
+        destination!.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
+
+        Span<int> skipIndicies = (stackalloc int[16])[..components.Length];
+        Span<int> stackIndicies = (stackalloc int[16])[..components.Length];
+        Span<TrimmableStack> stacks = [null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!];
+        int skipIndexIndex = 0;
+
+        for(int i1 = 0; i1 < skipIndicies.Length; i1++)
+        {
+            skipIndicies[i1] = from.ComponentTagTable[components[i1].ID];
+        }
+        skipIndicies.Sort();
+
+        int j = 0;
+        for(int i = 0; i < from.Components.Length; i++)
+        {
+            if(i == skipIndicies[skipIndexIndex])
+            {
+                if(entityLocation.HasEvent(EntityFlags.GenericAddComp))
+                {
+                    stacks[skipIndexIndex] = from.Components[i].PushComponentToStack(entityLocation.Index, out int stackIndex);
+                    stackIndicies[skipIndexIndex] = stackIndex;
+                }
+                skipIndexIndex++;
+                continue;
+            }
+
+            destination.Components[j++].PullComponentFromAndDelete(from.Components[i], nextLocation.Index, entityLocation.Index);
+        }
+
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
+
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
+        EntityTable.UnsafeIndexNoResize(entity.EntityID).Location = nextLocation;
+
+        entityLocation.Flags |= WorldEventFlags;
+        if (entityLocation.HasEvent(EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp | EntityFlags.WorldRemoveComp))
+        {
+            for(int i = 0; i < components.Length; i++)
+            {
+                ComponentRemovedEvent.Invoke(entity, components[i]);
+                ref var eventData = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
+                eventData.Remove.NormalEvent.Invoke(entity, components[i]);
+                stacks[i]?.InvokeEventWith(eventData.Remove.GenericEvent, entity, stackIndicies[i]);
+            }
         }
     }
 
