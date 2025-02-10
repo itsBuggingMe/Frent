@@ -18,7 +18,6 @@ public static class Component<T>
     /// The component ID for <typeparamref name="T"/>
     /// </summary>
     public static ComponentID ID => _id;
-    internal static readonly int IntID;
 
     private static readonly ComponentID _id;
     private static readonly IComponentRunnerFactory<T> RunnerInstance;
@@ -27,7 +26,6 @@ public static class Component<T>
     static Component()
     {
         (_id, TrimmableStack) = Component.GetExistingOrSetupNewComponent<T>();
-        IntID = _id.ID;
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
         {

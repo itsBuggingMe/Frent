@@ -6,6 +6,8 @@ namespace Frent.Core;
 internal static class UnsafeExtensions
 {
 #if !DEBUG
+    public static ref T UnsafeArrayIndex<T>(this T[] arr, nint index) =>
+        ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(arr), index);
     public static ref T UnsafeArrayIndex<T>(this T[] arr, int index) =>
         ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(arr), index);
     public static ref T UnsafeArrayIndex<T>(this T[] arr, ushort index) =>
@@ -23,6 +25,8 @@ internal static class UnsafeExtensions
     public static Span<T> UnsafeSliceFromStart<T>(this Span<T> span, int length) =>
         MemoryMarshal.CreateSpan(ref MemoryMarshal.GetReference(span), length);
 #else
+    public static ref T UnsafeArrayIndex<T>(this T[] arr, nint index) =>
+        ref arr[index];
     public static ref T UnsafeArrayIndex<T>(this T[] arr, int index) =>
         ref arr[index];
     public static ref T UnsafeArrayIndex<T>(this T[] arr, ushort index) =>

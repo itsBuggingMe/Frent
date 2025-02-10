@@ -26,22 +26,32 @@ public class MicroBenchmark
     public void Setup()
     {
         _world = new World();
-        _entity = _world.Create<int, double>(default, default);
-        _entities = new Entity[100_000];
+        _entity = _world.Create<int, double, float>(default, default, default);
+        _entities = new Entity[100];
         for(int i = 0; i < _entities.Length; i++)
         {
-            _entities[i] = _world.Create(0, 0f, 0.0, "", (0f, 0f));
+            _entities[i] = _world.Create(0, 0.0, 1f);
         }
     }
 
     [Benchmark]
-    [BenchmarkCategory(Categories.Add)]
-    public void AddRemove()
+    [BenchmarkCategory(Categories.Get)]
+    public void Get()
     {
-        foreach(var entity in _entities)
+        foreach (var entity in _entities)
         {
-            entity.Remove<int>();
-            entity.Add(0);
+            entity.Get<float>();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory(Categories.Get)]
+    public void GetNew()
+    {
+        World world = _world;
+        foreach (var entity in _entities)
+        {
+            world.Get<float>(entity) = 0;
         }
     }
 

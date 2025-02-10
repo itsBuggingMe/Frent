@@ -29,8 +29,8 @@ public partial class World : IDisposable
     //the idea is what work is usually done at one world at a time
     //we can save a lookup and a deref by storing it statically
     //this saves a few nanoseconds and makes the public entity apis 2x as fast
-    internal static volatile World? QuickWorldCache;
-    internal static volatile ushort WorldCachePackedValue = DefaultWorldCachePackedValue;
+    internal static World? QuickWorldCache;
+    internal static ushort WorldCachePackedValue = DefaultWorldCachePackedValue;
 
     internal NativeTable<EntityLookup> EntityTable = new NativeTable<EntityLookup>(32);
     internal Archetype[] WorldArchetypeTable;

@@ -71,7 +71,12 @@ partial class Archetype
     }
 
     //initalize default(ArchetypeID) to point to empty archetype
-    static Archetype() => GetArchetypeID([], []);
+    //initalize archetypeID 1 for hardware trap
+    static Archetype()
+    {
+        GetArchetypeID([], []);
+        //GetArchetypeID([default], []);
+    }
 
     internal static ArchetypeID GetArchetypeID(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, ImmutableArray<ComponentID>? typesArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
@@ -87,7 +92,7 @@ partial class Archetype
             }
             else
             {
-                int nextIDInt = Interlocked.Increment(ref NextArchetypeID);
+                int nextIDInt = ++NextArchetypeID;
                 if (nextIDInt == ushort.MaxValue)
                     throw new InvalidOperationException($"Exceeded maximum unique archetype count of 65535");
                 finalID = new ArchetypeID((ushort)nextIDInt);

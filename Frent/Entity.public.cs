@@ -74,17 +74,19 @@ partial struct Entity
     [SkipLocalsInit]
     public ref T Get<T>()
     {
-        //Total: 5x lookup
+        //Total: 4x lookup
 
         //1x
         AssertIsAlive(out var world, out var entityLocation);
 
-        //2x?
+        //1x
+        //other lookup is optimized into indirect pointer addressing
         Archetype archetype = entityLocation.Archetype(world);
-        int compIndex = archetype.ComponentTagTable[Component<T>.IntID];
+
+        int compIndex = archetype.ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
+            return ref FrentExceptions.Throw_ComponentNotFoundExceptionRef<T>();
         //2x
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
         return ref storage[entityLocation.Index];
@@ -638,22 +640,17 @@ partial struct Entity
     /// Deletes this entity
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    [SkipLocalsInit]
     public void Delete()
     {
-        if (InternalIsAlive(out World? world, out EntityLocation entityLocation))
+        AssertIsAlive(out World world, out EntityLocation entityLocation);
+        if (world.AllowStructualChanges)
         {
-            if (world.AllowStructualChanges)
-            {
-                world.DeleteEntity(this, entityLocation);
-            }
-            else
-            {
-                world.WorldUpdateCommandBuffer.DeleteEntity(this);
-            }
+            world.DeleteEntity(this, entityLocation);
         }
         else
         {
-            FrentExceptions.Throw_InvalidOperationException(EntityIsDeadMessage);
+            world.WorldUpdateCommandBuffer.DeleteEntity(this);
         }
     }
 
