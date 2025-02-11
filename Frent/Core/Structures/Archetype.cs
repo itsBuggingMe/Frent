@@ -44,7 +44,7 @@ internal partial class Archetype
         if (elen == comlen)
             Resize();
 
-        entityLocation = new EntityLocation(ID, comlen, flags);
+        entityLocation = new EntityLocation(this, comlen, flags);
         return ref _entities.UnsafeArrayIndex(_componentIndex++);
     }
 
@@ -70,8 +70,11 @@ internal partial class Archetype
         }
 
         FastStackArrayPool<EntityIDOnly>.ResizeArrayFromPool(ref _entities, newLen);
-        foreach (var comprunner in Components)
-            comprunner.ResizeBuffer(newLen);
+        var runners = Components;
+        for(int i = 1; i < runners.Length; i++)
+        {
+            runners[i].ResizeBuffer(newLen);
+        }    
     }
 
     public Archetype FindArchetypeAdjacentRemove(World world, ComponentID component)
@@ -200,8 +203,9 @@ internal partial class Archetype
     internal void ReleaseArrays()
     {
         _entities = [];
-        foreach (var comprunner in Components)
-            comprunner.Trim(0);
+        var comprunners = Components;
+        for(int i = 1; i < comprunners.Length; i++)
+            comprunners[i].Trim(0);
     }
 
     internal Span<EntityIDOnly> GetEntitySpan() => _entities.AsSpan(0, _componentIndex);

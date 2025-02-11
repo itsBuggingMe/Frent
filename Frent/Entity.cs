@@ -92,7 +92,7 @@ public partial struct Entity : IEquatable<Entity>
 
     internal bool IsAliveCold([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
-        world = GlobalWorldTables.Worlds.GetValueNoCheck(WorldID);
+        world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         if (world?.Version == WorldVersion)
         {
             var (loc, ver) = world.EntityTable[EntityID];
@@ -161,7 +161,7 @@ public partial struct Entity : IEquatable<Entity>
 
         exists = true;
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(
-            entityLocation.Archetype(world).Components.UnsafeArrayIndex(compIndex));
+            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex));
 
         return new Ref<T>(ref storage[entityLocation.Index]);
 
@@ -206,7 +206,7 @@ public partial struct Entity : IEquatable<Entity>
                     return Array.Empty<object>();
 
                 object[] objects = new object[ComponentTypes.Length];
-                Archetype archetype = eloc.Archetype(world);
+                Archetype archetype = eloc.Archetype;
                 for (int i = 0; i < objects.Length; i++)
                 {
                     objects[i] = archetype.Components[i].GetAt(eloc.Index);
@@ -224,9 +224,17 @@ public partial struct Entity : IEquatable<Entity>
         internal ushort PackedWorldInfo;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private struct EntityHighLow
+    {
+        internal int EntityID;
+        internal int EntityLow;
+    }
+
     internal ushort PackedWorldInfo => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).PackedWorldInfo;
     internal EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).EntityIDOnly;
     internal long PackedValue => Unsafe.As<Entity, long>(ref this);
+    internal int EntityLow => Unsafe.As<Entity, EntityHighLow>(ref this).EntityLow;
     #endregion
 
     #region IEquatable

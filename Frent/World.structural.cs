@@ -22,7 +22,7 @@ partial class World
     internal void AddComponentRange(Entity entity, ReadOnlySpan<(ComponentID Component, int Index)> comps)
     {
         EntityLocation location = EntityTable[entity.EntityID].Location;
-        Archetype currentArchetype = location.Archetype(this);
+        Archetype currentArchetype = location.Archetype;
 
         ReadOnlySpan<ComponentID> existingComponentIDs = currentArchetype.ArchetypeTypeArray.AsSpan();
         int newCompCount = comps.Length + existingComponentIDs.Length;
@@ -67,7 +67,7 @@ partial class World
     [SkipLocalsInit]
     internal IComponentRunner AddComponent(EntityIDOnly entity, EntityLocation entityLocation, ComponentID component, out EntityLocation nextLocation)
     {
-        Archetype from = entityLocation.Archetype(this);
+        Archetype from = entityLocation.Archetype;
 
         Archetype? destination;
         uint key = CompAddLookup.GetKey(component.ID, entityLocation.ArchetypeID);
@@ -104,7 +104,7 @@ partial class World
     [SkipLocalsInit]
     internal void RemoveComponent(Entity entity, EntityLocation entityLocation, ComponentID component)
     {
-        Archetype from = entityLocation.Archetype(this);
+        Archetype from = entityLocation.Archetype;
 
         Archetype? destination;
         uint key = CompRemoveLookup.GetKey(component.ID, entityLocation.ArchetypeID);
@@ -168,7 +168,7 @@ partial class World
     internal void RemoveComponents(Entity entity, EntityLocation entityLocation, ReadOnlySpan<ComponentID> components)
     {
         Debug.Assert(components.Length != 0);
-        Archetype from = entityLocation.Archetype(this);
+        Archetype from = entityLocation.Archetype;
 
         Archetype destination = from;
         foreach(var component in components)
@@ -266,11 +266,10 @@ partial class World
     internal void DeleteEntityWithoutEvents(Entity entity, EntityLocation entityLocation)
     {
         //entity is guaranteed to be alive here
-        EntityIDOnly replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.Index);
+        EntityIDOnly replacedEntity = entityLocation.Archetype.DeleteEntity(entityLocation.Index);
         EntityTable[replacedEntity.ID] = new(entityLocation, replacedEntity.Version);
         ref EntityLookup lookup = ref EntityTable[entity.EntityID];
         lookup.Version = ushort.MaxValue;
-        lookup.Location.ArchetypeID = Archetype.Null;
 
         int nextVersion = entity.EntityVersion + 1;
         if (nextVersion != ushort.MaxValue)
@@ -286,7 +285,7 @@ partial class World
         if (GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID))
             return false;
 
-        Archetype from = entityLocation.Archetype(this);
+        Archetype from = entityLocation.Archetype;
 
         ref var destination = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
             ArchetypeEdgeKey.Tag(tagID, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag),
@@ -326,7 +325,7 @@ partial class World
         if (!GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID))
             return false;
 
-        Archetype from = entityLocation.Archetype(this);
+        Archetype from = entityLocation.Archetype;
         ref var destination = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
             ArchetypeEdgeKey.Tag(tagID, from.ID, ArchetypeEdgeType.RemoveTag),
             out bool exist);

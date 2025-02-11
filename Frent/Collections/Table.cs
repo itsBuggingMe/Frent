@@ -14,34 +14,25 @@ internal struct Table<T>(int size)
 
     private T[] _buffer = new T[size];
 
-    public ref T this[uint index]
+    public ref T this[int index]
     {
         get
         {
             var buffer = _buffer;
-            if (index < buffer.Length)
+            if ((uint)index < (uint)buffer.Length)
                 return ref buffer.UnsafeArrayIndex(index);
             return ref ResizeGet(index);
         }
     }
-
-    public ref T IndexWithInt(int index)
-    {
-        var buffer = _buffer;
-        if (index < buffer.Length)
-            return ref buffer.UnsafeArrayIndex(index);
-        return ref ResizeGet((uint)index);
-    }
-
-
+    
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private ref T ResizeGet(uint index)
+    private ref T ResizeGet(int index)
     {
-        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, (int)BitOperations.RoundUpToPowerOf2(index + 1));
+        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, (int)BitOperations.RoundUpToPowerOf2((uint)(index + 1)));
         return ref _buffer.UnsafeArrayIndex(index);
     }
 
-    public ref T GetValueNoCheck(int index)
+    public ref T UnsafeIndexNoResize(int index)
     {
         return ref _buffer.UnsafeArrayIndex(index);
     }

@@ -81,7 +81,7 @@ partial struct Entity
 
         //1x
         //other lookup is optimized into indirect pointer addressing
-        Archetype archetype = entityLocation.Archetype(world);
+        Archetype archetype = entityLocation.Archetype;
 
         int compIndex = archetype.ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
 
@@ -109,7 +109,7 @@ partial struct Entity
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
-        return entityLocation.Archetype(world).Components[compIndex].GetAt(entityLocation.Index);
+        return entityLocation.Archetype.Components[compIndex].GetAt(entityLocation.Index);
     }
 
     /// <summary>
@@ -133,12 +133,12 @@ partial struct Entity
         AssertIsAlive(out var world, out var entityLocation);
 
         //2x
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, id);
+        int compIndex = entityLocation.Archetype.ComponentTagTable[id.ID];
 
         if (compIndex >= MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
-        entityLocation.Archetype(world).Components[compIndex].SetAt(obj, entityLocation.Index);
+        entityLocation.Archetype.Components[compIndex].SetAt(obj, entityLocation.Index);
     }
 
     /// <summary>
@@ -184,7 +184,7 @@ partial struct Entity
             return false;
         }
 
-        value = entityLocation.Archetype(world).Components[compIndex].GetAt(entityLocation.Index);
+        value = entityLocation.Archetype.Components[compIndex].GetAt(entityLocation.Index);
         return true;
     }
     #endregion
@@ -687,7 +687,7 @@ partial struct Entity
         get
         {
             AssertIsAlive(out var world, out var loc);
-            return loc.Archetype(world).ArchetypeTypeArray;
+            return loc.Archetype.ArchetypeTypeArray;
         }
     }
 
@@ -700,7 +700,7 @@ partial struct Entity
         get
         {
             AssertIsAlive(out var world, out var loc);
-            return loc.Archetype(world).ArchetypeTagArray;
+            return loc.Archetype.ArchetypeTagArray;
         }
     }
 
@@ -711,7 +711,7 @@ partial struct Entity
     public void EnumerateComponents(IGenericAction onEach)
     {
         AssertIsAlive(out var world, out var loc);
-        IComponentRunner[] runners = loc.Archetype(world).Components;
+        IComponentRunner[] runners = loc.Archetype.Components;
         foreach(var runner in runners)
         {
             runner.InvokeGenericActionWith(onEach, loc.Index);

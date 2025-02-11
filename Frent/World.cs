@@ -32,7 +32,7 @@ public partial class World : IDisposable
     internal static World? QuickWorldCache;
     internal static ushort WorldCachePackedValue = DefaultWorldCachePackedValue;
 
-    internal NativeTable<EntityLookup> EntityTable = new NativeTable<EntityLookup>(32);
+    internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
     internal Archetype[] WorldArchetypeTable;
     internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
 
@@ -422,7 +422,7 @@ public partial class World : IDisposable
         _isDisposed = true;
 
         _recycledEntityIds.Dispose();
-        EntityTable.Dispose();
+        //EntityTable.Dispose();
     }
 
     /// <summary>

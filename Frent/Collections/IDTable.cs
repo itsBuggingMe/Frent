@@ -13,6 +13,6 @@ internal class IDTable<T>
 
     public ref T Create(out int id)
     {
-        return ref _buffer.IndexWithInt(id = _index++);
+        return ref _buffer[id = _index++];
     }
 }

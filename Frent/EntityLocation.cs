@@ -7,37 +7,32 @@ namespace Frent;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 internal struct EntityLocation
 {
-    internal ArchetypeID ArchetypeID;
+    internal ArchetypeID ArchetypeID => Archetype.ID;
+    internal Archetype Archetype;
     internal int Index;
     internal EntityFlags Flags;
 
-    public EntityLocation(ArchetypeID archetype, int index)
+    public EntityLocation(Archetype archetype, int index)
     {
+        Archetype = archetype;
         Index = index;
-        ArchetypeID = archetype;
         Flags = EntityFlags.None;
     }
 
-    public EntityLocation(ArchetypeID archetype, int index, EntityFlags flags)
+    public EntityLocation(Archetype archetype, int index, EntityFlags flags)
     {
-        ArchetypeID = archetype;
+        Archetype = archetype;
         Index = index;
         Flags = flags;
     }
 
-    public static EntityLocation Default { get; } = new EntityLocation(new(ushort.MaxValue), int.MaxValue);
+    public static EntityLocation Default { get; } = new EntityLocation(null!, int.MaxValue);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly bool HasEvent(EntityFlags entityFlags)
     {
         var res = (Flags & entityFlags) != EntityFlags.None;
         return res;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Archetype Archetype(World world)
-    {
-        return world.WorldArchetypeTable.UnsafeArrayIndex(ArchetypeID.ID);
     }
 }
 

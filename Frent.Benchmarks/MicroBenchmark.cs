@@ -23,7 +23,7 @@ public class MicroBenchmark
 
     private Entity[] _entities;
 
-    [Params(10, 100, 1000, 10_000, 100_000)]
+    //[Params(10, 100, 1000, 10_000, 100_000)]
     public int Count { get; set; } = 100;
 
     [GlobalSetup]
@@ -40,47 +40,69 @@ public class MicroBenchmark
 
     [Benchmark]
     [BenchmarkCategory(Categories.Get)]
-    public void GetOnly()
+    public void GetUnsafe()
     {
         World world = _world;
         foreach (var entity in _entities)
         {
-            _ = world.Get<float>(entity);
+            _ = world.GetUnsafe<float>(entity);
         }
     }
 
     [Benchmark]
     [BenchmarkCategory(Categories.Get)]
-    public void GetRead()
+    public void GetSafeAnd()
     {
         World world = _world;
-        float x = 0;
         foreach (var entity in _entities)
         {
-            x += world.Get<float>(entity);
+            _ = world.GetSafeAnd<float>(entity);
         }
     }
 
     [Benchmark]
     [BenchmarkCategory(Categories.Get)]
-    public void GetWrite()
+    public void GetSafeIf()
     {
         World world = _world;
         foreach (var entity in _entities)
         {
-            world.Get<float>(entity) = 0;
+            _ = world.GetSafeIfRem<float>(entity);
         }
     }
 
-    /*
+    [Benchmark]
+    [BenchmarkCategory(Categories.Get)]
+    public void GetSafeIfRem()
+    {
+        World world = _world;
+        foreach (var entity in _entities)
+        {
+            _ = world.GetSafeIfRem<float>(entity);
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory(Categories.Get)]
+    public void GetSafeOr()
+    {
+        World world = _world;
+        foreach (var entity in _entities)
+        {
+            _ = world.GetSafeOr<float>(entity);
+        }
+    }
+
+/*
+    
     #region Create
     [Benchmark]
     [BenchmarkCategory(Categories.Create)]
     public void Create1()
     {
         using World w = new();
-        w.EnsureCapacity<int>(100_000);
-        for (int i = 0; i < 100_000; i++)
+        w.EnsureCapacity<int>(100);
+        for (int i = 0; i < 100; i++)
             w.Create<int>(default);
     }
 
@@ -89,8 +111,8 @@ public class MicroBenchmark
     public void Create2()
     {
         using World w = new();
-        w.EnsureCapacity<int>(100_000);
-        for (int i = 0; i < 100_000; i++)
+        w.EnsureCapacity<int>(100);
+        for (int i = 0; i < 100; i++)
             w.Create<int, int>(default, default);
     }
 
@@ -99,12 +121,12 @@ public class MicroBenchmark
     public void Create3()
     {
         using World w = new();
-        w.EnsureCapacity<int>(100_000);
-        for (int i = 0; i < 100_000; i++)
+        w.EnsureCapacity<int>(100);
+        for (int i = 0; i < 100; i++)
             w.Create<int, int, int>(default, default, default);
     }
-    #endregion
-
+    #endregion*/
+    /*
     [Benchmark]
     [BenchmarkCategory(Categories.Has)]
     public void Has()

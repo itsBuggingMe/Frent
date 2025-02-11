@@ -26,7 +26,7 @@ public static partial class EntityExtensions
     {
         e.AssertIsAlive(out var world, out var eloc);
 
-        Archetype archetype = eloc.Archetype(world);
+        Archetype archetype = eloc.Archetype;
 
         IComponentRunner[] comps = archetype.Components;
         byte[] archetypeTable = archetype.ComponentTagTable;

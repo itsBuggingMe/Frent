@@ -10,7 +10,7 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.GetRead());
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.GetHashCode());
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
