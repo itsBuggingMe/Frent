@@ -469,12 +469,11 @@ public partial class World : IDisposable
         return entity;
     }
 
+    internal Archetype? _emptyArchetype;
     internal Entity CreateEntityWithoutEvent()
     {
-        var archetypeID = Archetype.Default;
-        //TODO: replace this with static field
-        Archetype archetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
-        ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
+        _emptyArchetype ??= Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
+        ref var entity = ref _emptyArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         var (id, version) = entity = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
         EntityTable[id] = new(eloc, version);

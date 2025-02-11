@@ -268,7 +268,9 @@ partial class World
         //entity is guaranteed to be alive here
         EntityIDOnly replacedEntity = entityLocation.Archetype(this).DeleteEntity(entityLocation.Index);
         EntityTable[replacedEntity.ID] = new(entityLocation, replacedEntity.Version);
-        EntityTable[entity.EntityID].Version = ushort.MaxValue;
+        ref EntityLookup lookup = ref EntityTable[entity.EntityID];
+        lookup.Version = ushort.MaxValue;
+        lookup.Location.ArchetypeID = Archetype.Null;
 
         int nextVersion = entity.EntityVersion + 1;
         if (nextVersion != ushort.MaxValue)

@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
 
@@ -14,7 +15,7 @@ internal static class MemoryHelpers
 
     public static int RoundUpToNextMultipleOf16(int value) => (value + 15) & ~15;
     public static int RoundDownToNextMultipleOf16(int value) => value & ~15;
-
+    public static byte BoolToByte(bool b) => Unsafe.As<bool, byte>(ref b);
     public static ImmutableArray<T> ReadOnlySpanToImmutableArray<T>(ReadOnlySpan<T> span)
     {
         var builder = ImmutableArray.CreateBuilder<T>(span.Length);

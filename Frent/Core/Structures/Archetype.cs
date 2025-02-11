@@ -53,13 +53,16 @@ internal partial class Archetype
         int newLen = checked(_entities.Length * 2);
 
         Array.Resize(ref _entities, newLen);
-        foreach (var comprunner in Components)
-            comprunner.ResizeBuffer(newLen);
+        var runners = Components;
+        for(int i = 1; i < runners.Length; i++)
+        {
+            runners[i].ResizeBuffer(newLen);
+        }
     }
 
     public void EnsureCapacity(int count)
     {
-        int newLen = checked(MemoryHelpers.RoundUpToNextMultipleOf16(count));
+        int newLen = MemoryHelpers.RoundUpToNextMultipleOf16(count);
 
         if(_entities.Length >= newLen)
         {

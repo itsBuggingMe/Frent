@@ -11,7 +11,7 @@ namespace Frent.Core;
 [Variadic("Archetype<T>", "Archetype<|T$, |>")]
 [Variadic("typeof(T)", "|typeof(T$), |")]
 [Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
-[Variadic("[Component<T>.CreateInstance()]", "[|Component<T$>.CreateInstance(), |]")]
+[Variadic("[null!, Component<T>.CreateInstance()]", "[null!, |Component<T$>.CreateInstance(), |]")]
 internal static class Archetype<T>
 {
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
@@ -32,7 +32,7 @@ internal static class Archetype<T>
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void CreateArchetype(out Archetype archetype, World world)
         {
-            IComponentRunner[] runners = [Component<T>.CreateInstance()];
+            IComponentRunner[] runners = [null!, Component<T>.CreateInstance()];
             archetype = new Archetype(ID, runners);
             world.ArchetypeAdded(archetype.ID);
         }
@@ -46,7 +46,7 @@ internal static class Archetype<T>
 
 partial class Archetype
 {
-    internal static readonly ArchetypeID Default = default(ArchetypeID);
+    internal static readonly ArchetypeID Null;
     internal static FastStack<ArchetypeData> ArchetypeTable = FastStack<ArchetypeData>.Create(16);
     internal static int NextArchetypeID = -1;
 
@@ -60,9 +60,9 @@ partial class Archetype
         if (archetype is not null)
             return archetype;
 
-        IComponentRunner[] componentRunners = new IComponentRunner[types.Length];
-        for (int i = 0; i < types.Length; i++)
-            componentRunners[i] = Component.GetComponentRunnerFromType(types[i].Type);
+        IComponentRunner[] componentRunners = new IComponentRunner[types.Length + 1];
+        for (int i = 1; i < types.Length; i++)
+            componentRunners[i] = Component.GetComponentRunnerFromType(types[i - 1].Type);
 
         archetype = new Archetype(id, componentRunners);
         world.ArchetypeAdded(archetype.ID);
@@ -70,12 +70,10 @@ partial class Archetype
         return archetype;
     }
 
-    //initalize default(ArchetypeID) to point to empty archetype
-    //initalize archetypeID 1 for hardware trap
+    //initalize archetypeID 0 for hardware trap
     static Archetype()
     {
-        GetArchetypeID([], []);
-        //GetArchetypeID([default], []);
+        Null = GetArchetypeID([Component.GetComponentID(typeof(void))], [Tag.GetTagID(typeof(Disable))]);
     }
 
     internal static ArchetypeID GetArchetypeID(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, ImmutableArray<ComponentID>? typesArray = null, ImmutableArray<TagID>? tagTypesArray = null)
@@ -140,7 +138,8 @@ partial class Archetype
 
         for (int i = 0; i < archetypeTypes.Length; i++)
         {
-            componentTable[archetypeTypes[i].ID] = (byte)i;
+            //add 1 so zero is null always
+            componentTable[archetypeTypes[i].ID] = (byte)(i + 1);
         }
 
         for (int i = 0; i < archetypeTags.Length; i++)

@@ -8,20 +8,20 @@ partial class World
 {
     public ref T Get<T>(Entity entity)
     {
-        if (entity.PackedWorldInfo != PackedIDVersion)
-            FrentExceptions.Throw_InvalidOperationException("Entity does not belong to this world");
+        //world valid x, entity valid x, has component
 
-        ref EntityLookup entityLookup = ref EntityTable.UnsafeIndexNoResize(entity.EntityID);
-        if (entityLookup.Version != entity.EntityVersion)
-            FrentExceptions.Throw_InvalidOperationException(Entity.EntityIsDeadMessage);
+        EntityLookup location = EntityTable.UnsafeIndexNoResize(entity.EntityID);
+        
+        int worldValid = MemoryHelpers.BoolToByte(entity.PackedWorldInfo == PackedIDVersion) 
+            * MemoryHelpers.BoolToByte(entity.EntityVersion == location.Version);
 
-        Archetype archetype = entityLookup.Location.Archetype(this);
-        int componentID = archetype.ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
+        //world + entity valid hardware trap
+        Archetype archetype = WorldArchetypeTable.UnsafeArrayIndex(location.Location.ArchetypeID.ID * worldValid);
+        
+        int compIndex = archetype.ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
 
-        if (componentID >= MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_ComponentNotFoundException<T>();
-
-        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(componentID));
-        return ref storage[entityLookup.Location.Index];
+        //Components[0] null; trap
+        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
+        return ref storage[location.Location.Index];
     }
 }

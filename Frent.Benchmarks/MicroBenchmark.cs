@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Frent.Core;
+using Frent;
 using Frent.Systems;
 
 namespace Frent.Benchmarks;
@@ -22,12 +23,15 @@ public class MicroBenchmark
 
     private Entity[] _entities;
 
+    [Params(10, 100, 1000, 10_000, 100_000)]
+    public int Count { get; set; } = 100;
+
     [GlobalSetup]
     public void Setup()
     {
         _world = new World();
         _entity = _world.Create<int, double, float>(default, default, default);
-        _entities = new Entity[100];
+        _entities = new Entity[Count];
         for(int i = 0; i < _entities.Length; i++)
         {
             _entities[i] = _world.Create(0, 0.0, 1f);
@@ -36,17 +40,30 @@ public class MicroBenchmark
 
     [Benchmark]
     [BenchmarkCategory(Categories.Get)]
-    public void Get()
+    public void GetOnly()
     {
+        World world = _world;
         foreach (var entity in _entities)
         {
-            entity.Get<float>();
+            _ = world.Get<float>(entity);
         }
     }
 
     [Benchmark]
     [BenchmarkCategory(Categories.Get)]
-    public void GetNew()
+    public void GetRead()
+    {
+        World world = _world;
+        float x = 0;
+        foreach (var entity in _entities)
+        {
+            x += world.Get<float>(entity);
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory(Categories.Get)]
+    public void GetWrite()
     {
         World world = _world;
         foreach (var entity in _entities)
