@@ -11,18 +11,15 @@ internal class WorldTests
     //MethodName_IntendedBehavior
 
     [Test]
-    public void Ctor_RecyclesID()
+    public void Ctor_NewID()
     {
         using World world1 = new();
 
-        byte id;
+        ushort id;
         using (World world2 = new())
         {
             That(id = world2.ID, Is.Not.EqualTo(world1.ID));
         }
-
-        World world3 = new();
-        That(id, Is.EqualTo(world3.ID));
     }
 
     [Test]

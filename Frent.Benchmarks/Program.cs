@@ -10,7 +10,7 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.GetHashCode());
+    static void Main(string[] args) => BenchmarkRunner.Run<MicroBenchmark>();
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
@@ -27,13 +27,13 @@ public class Program
         }
         else
         {
+            BenchmarkRunner.Run<T>();
             JitTest(disasmCall);
             CancellationTokenSource source = new CancellationTokenSource();
             Task.Run(() => ProfileTest(disasmCall, source.Token));
             Console.WriteLine("Press enter for benchmark");
             Console.ReadLine();
             source.Cancel();
-            BenchmarkRunner.Run<T>();
         }
     }
 

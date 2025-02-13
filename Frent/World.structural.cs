@@ -39,13 +39,13 @@ partial class World
         var destination = Archetype.CreateOrGetExistingArchetype(allComps, tags.AsSpan(), this, null, tags);
         destination.CreateEntityLocation(location.Flags, out var nextELoc).Init(entity);
 
-        for (int i = 0; i < currentArchetype.Components.Length; i++)
+        for (int i = 1; i < currentArchetype.Components.Length; i++)
         {
             destination.Components[i].PullComponentFromAndDelete(currentArchetype.Components[i], nextELoc.Index, location.Index);
         }
 
         j = 0;
-        for (int i = existingComponentIDs.Length; i < currentArchetype.Components.Length; i++)
+        for (int i = existingComponentIDs.Length; i < currentArchetype.Components.Length - 1; i++)
         {
             var componentLocation = comps[j++];
             currentArchetype.Components[i].PullComponentFrom(
@@ -91,7 +91,7 @@ partial class World
         IComponentRunner[] fromRunners = from.Components;
         IComponentRunner[] toRunners = destination.Components;
 
-        int i = 0;
+        int i = 1;
         for (; i < fromRunners.Length; i++)
         {
             toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
@@ -127,9 +127,12 @@ partial class World
 
         ref IComponentRunner destRef = ref MemoryMarshal.GetArrayDataReference(destination.Components);
         ref IComponentRunner fromRef = ref MemoryMarshal.GetArrayDataReference(from.Components);
+        destRef = ref Unsafe.Add(ref destRef, 1);
+        fromRef = ref Unsafe.Add(ref fromRef, 1);
 
-        int i = 0;
-        for(; i < skipIndex; i++)
+        int i = 1;
+
+        for (; i < skipIndex; i++)
         {
             destRef.PullComponentFromAndDelete(fromRef, nextLocation.Index, entityLocation.Index);
             destRef = ref Unsafe.Add(ref destRef, 1);
@@ -239,12 +242,12 @@ partial class World
 
     //Delete
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void DeleteEntity(Entity entity, EntityLocation entityLocation)
+    internal void DeleteEntity(Entity entity, ref EntityLookup entityLocation)
     {
-        EntityFlags check = entityLocation.Flags | WorldEventFlags;
+        EntityFlags check = entityLocation.Location.Flags | WorldEventFlags;
         if ((check & EntityFlags.AllEvents) != 0)
-            InvokeDeleteEvents(entity, entityLocation);
-        DeleteEntityWithoutEvents(entity, entityLocation);
+            InvokeDeleteEvents(entity, entityLocation.Location);
+        DeleteEntityWithoutEvents(entity, ref entityLocation);
     }
 
     //let the jit decide whether or not to inline
@@ -261,21 +264,26 @@ partial class World
         EventLookup.Remove(entity.EntityIDOnly);
     }
 
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void DeleteEntityWithoutEvents(Entity entity, EntityLocation entityLocation)
+    internal void DeleteEntityWithoutEvents(Entity entity, ref EntityLookup currentLookup)
     {
         //entity is guaranteed to be alive here
-        EntityIDOnly replacedEntity = entityLocation.Archetype.DeleteEntity(entityLocation.Index);
-        EntityTable[replacedEntity.ID] = new(entityLocation, replacedEntity.Version);
-        ref EntityLookup lookup = ref EntityTable[entity.EntityID];
-        lookup.Version = ushort.MaxValue;
+        EntityIDOnly replacedEntity = currentLookup.Location.Archetype.DeleteEntity(currentLookup.Location.Index);
 
-        int nextVersion = entity.EntityVersion + 1;
-        if (nextVersion != ushort.MaxValue)
+        Debug.Assert(replacedEntity.ID < EntityTable._buffer.Length);
+        Debug.Assert(entity.EntityID < EntityTable._buffer.Length);
+
+        ref var replaced = ref EntityTable.UnsafeIndexNoResize(replacedEntity.ID);
+        replaced.Location = currentLookup.Location;
+        replaced.Version = replacedEntity.Version;
+        currentLookup.Version = ushort.MaxValue;
+
+        if (entity.EntityVersion != ushort.MaxValue - 1)
         {
             //can't use max value as an ID, as it is used as a default value
-            _recycledEntityIds.Push() = new EntityIDOnly(entity.EntityID, (ushort)(nextVersion));
+            ref var id = ref _recycledEntityIds.Push();
+            id = entity.EntityIDOnly;
+            id.Version++;
         }
     }
 
@@ -302,7 +310,7 @@ partial class World
         Span<IComponentRunner> fromRunners = from.Components.AsSpan();
         Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
 
-        for (int i = 0; i < fromRunners.Length; i++)
+        for (int i = 1; i < fromRunners.Length; i++)
             toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
@@ -341,7 +349,7 @@ partial class World
         Span<IComponentRunner> fromRunners = from.Components.AsSpan();
         Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
 
-        for (int i = 0; i < fromRunners.Length; i++)
+        for (int i = 1; i < fromRunners.Length; i++)
             toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);

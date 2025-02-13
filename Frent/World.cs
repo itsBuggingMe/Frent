@@ -20,17 +20,8 @@ namespace Frent;
 public partial class World : IDisposable
 {
     #region Static Version Management
-    private static FastStack<(byte ID, byte Version)> _recycledWorldIDs = FastStack<(byte ID, byte Version)>.Create(16);
-    private static byte _nextWorldID;
+    private static ushort _nextWorldID = 1;
     #endregion
-
-    internal static readonly ushort DefaultWorldCachePackedValue = new Entity(byte.MaxValue, byte.MaxValue, 0, 0).PackedWorldInfo;
-
-    //the idea is what work is usually done at one world at a time
-    //we can save a lookup and a deref by storing it statically
-    //this saves a few nanoseconds and makes the public entity apis 2x as fast
-    internal static World? QuickWorldCache;
-    internal static ushort WorldCachePackedValue = DefaultWorldCachePackedValue;
 
     internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
     internal Archetype[] WorldArchetypeTable;
@@ -40,10 +31,7 @@ public partial class World : IDisposable
     private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
     private int _nextEntityID;
 
-    internal readonly uint IDAsUInt;
-    internal readonly byte ID;
-    internal readonly byte Version;
-    internal readonly ushort PackedIDVersion;
+    internal readonly ushort ID;
     internal readonly Entity DefaultWorldEntity;
     private bool _isDisposed = false;
 
@@ -208,26 +196,21 @@ public partial class World : IDisposable
     {
         CurrentConfig = config ?? Config.Singlethreaded;
         _uniformProvider = uniformProvider ?? NullUniformProvider.Instance;
-        (ID, Version) = _recycledWorldIDs.TryPop(out var id) ? id : (_nextWorldID++, byte.MaxValue);
-        IDAsUInt = ID;
-
-        if (_nextWorldID == byte.MaxValue)
-            throw new Exception("Max world count reached");
+        ID = _nextWorldID++;
 
         GlobalWorldTables.Worlds[ID] = this;
 
         WorldArchetypeTable = new Archetype[GlobalWorldTables.ComponentTagLocationTable.Length];
-        PackedIDVersion = new Entity(ID, Version, 0, 0).PackedWorldInfo;
 
         WorldUpdateCommandBuffer = new CommandBuffer(this);
-        DefaultWorldEntity = new Entity(ID, Version, default, default);
+        DefaultWorldEntity = new Entity(ID, default, default);
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
     {
         var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
         EntityTable[id] = new(entityLocation, version);
-        return new Entity(ID, Version, version, id);
+        return new Entity(ID, version, id);
     }
 
     /// <summary>
@@ -403,16 +386,6 @@ public partial class World : IDisposable
 
         GlobalWorldTables.Worlds[ID] = null!;
 
-        if (WorldCachePackedValue == PackedIDVersion)
-        {
-            for (int i = 0; i < 10; i++)
-            {
-                WorldCachePackedValue = DefaultWorldCachePackedValue;
-            }
-            QuickWorldCache = null!;
-        }
-
-        _recycledWorldIDs.Push((ID, unchecked((byte)(Version - 1))));
         foreach (ref var item in WorldArchetypeTable.AsSpan())
             if (item is not null)
                 item.ReleaseArrays();
@@ -449,9 +422,9 @@ public partial class World : IDisposable
         entityID.Version = entity.EntityVersion;
 
         Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
-        for (int i = 0; i < components.Length; i++)
+        for (int i = 1; i < archetypeComponents.Length; i++)
         {
-            archetypeComponents[i].SetAt(components[i], loc.Index);
+            archetypeComponents[i].SetAt(components[i - 1], loc.Index);
         }
 
         EntityCreatedEvent.Invoke(entity);
@@ -478,7 +451,7 @@ public partial class World : IDisposable
         var (id, version) = entity = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
         EntityTable[id] = new(eloc, version);
 
-        return new Entity(ID, Version, version, id);
+        return new Entity(ID, version, id);
     }
 
     internal void InvokeEntityCreated(Entity entity)

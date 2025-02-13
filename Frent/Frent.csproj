@@ -15,6 +15,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="EntityExtensions.deconstruct.cs~RF990b090.TMP" />
+    <None Remove="mgo0iqaf.cl4~" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!--
     <None Include="$(OutputPath)\Frent.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="'$(Configuration)' == 'Release'" />
     -->

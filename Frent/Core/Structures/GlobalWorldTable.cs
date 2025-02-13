@@ -17,7 +17,7 @@ internal static class GlobalWorldTables
     // 4 bits - index of component (1111) -> Lookup by component ID
 
     public const byte HasTagMask = 0b_1000_0000;
-    public const byte DefaultNoTag = 0b_0111_1111;
+    public const byte DefaultNoTag = 0b_0000_0000;
     public const byte IndexBits = 0b_0111_1111;
     public const int Mod16Mask = 0xF;
 

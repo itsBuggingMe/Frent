@@ -25,10 +25,9 @@ public partial struct Entity : IEquatable<Entity>
     /// <remarks><see cref="Entity"/> generally shouldn't manually constructed</remarks>
     public Entity() { }
 
-    internal Entity(byte worldID, byte worldVersion, ushort version, int entityID)
+    internal Entity(ushort worldID, ushort version, int entityID)
     {
         WorldID = worldID;
-        WorldVersion = worldVersion;
         EntityVersion = version;
         EntityID = entityID;
     }
@@ -37,117 +36,33 @@ public partial struct Entity : IEquatable<Entity>
     //DO NOT CHANGE STRUCT LAYOUT
     internal int EntityID;
     internal ushort EntityVersion;
-    internal byte WorldVersion;
-    internal byte WorldID;
+    internal ushort WorldID;
     #endregion
 
     #region Internal Helpers
 
     #region IsAlive
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
-    {
-        if (World.WorldCachePackedValue == PackedWorldInfo)
-        {
-            world = World.QuickWorldCache;
-            var tableItem = world!.EntityTable.UnsafeIndexNoResize(EntityID);
-            entityLocation = tableItem.Location;
-            return tableItem.Version == EntityVersion;
-        }
-        return IsAliveCold(out world, out entityLocation);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool InternalIsAlive([NotNullWhen(true)] out World? world)
-    {
-        if (World.WorldCachePackedValue == PackedWorldInfo)
-        {
-            world = World.QuickWorldCache;
-            return world!.EntityTable[EntityID].Version == EntityVersion;
-        }
-        return IsAliveCold(out world, out _);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool InternalIsAlive(out EntityLocation entityLocation)
-    {
-        if (World.WorldCachePackedValue == PackedWorldInfo)
-        {
-            var tableItem = World.QuickWorldCache!.EntityTable[EntityID];
-            entityLocation = tableItem.Location;
-            return tableItem.Version == EntityVersion;
-        }
-        return IsAliveCold(out _, out entityLocation);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool InternalIsAlive()
-    {
-        if (World.WorldCachePackedValue == PackedWorldInfo)
-        {
-            return World.QuickWorldCache!.EntityTable[EntityID].Version == EntityVersion;
-        }
-        return IsAliveCold(out _, out _);
-    }
-
-    internal bool IsAliveCold([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
+    internal bool InternalIsAlive([NotNullWhen(true)] out World world, out EntityLocation entityLocation)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
-        if (world?.Version == WorldVersion)
+        if (world is null)
         {
-            var (loc, ver) = world.EntityTable[EntityID];
-            if (ver == EntityVersion)
-            {
-                //refresh the cache
-                World.WorldCachePackedValue = PackedWorldInfo;
-                World.QuickWorldCache = world;
-
-                entityLocation = loc;
-                return true;
-            }
-
+            Unsafe.SkipInit(out entityLocation);
+            return false;
         }
+        ref World.EntityLookup lookup = ref world.EntityTable.UnsafeIndexNoResize(EntityID);
+        entityLocation = lookup.Location;
+        return lookup.Version == EntityVersion;
+    }
 
-        entityLocation = default;
-        world = null;
-        return false;
+    internal void AssertIsAlive(out World world, out EntityLocation entityLocation)
+    {
+        world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
+        //hardware trap
+        entityLocation = world.EntityTable.UnsafeIndexNoResize(EntityID).Location;
     }
 
     #endregion IsAlive
-
-    #region AssertIsAlive
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void AssertIsAlive(out World world, out EntityLocation entityLocation)
-    {
-        if (InternalIsAlive(out world!, out entityLocation))
-            return;
-        Throw_EntityIsDead();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void AssertIsAlive(out World world)
-    {
-        if (InternalIsAlive(out world!))
-            return;
-        Throw_EntityIsDead();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void AssertIsAlive(out EntityLocation entityLocation)
-    {
-        if (InternalIsAlive(out entityLocation))
-            return;
-        Throw_EntityIsDead();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void AssertIsAlive()
-    {
-        if (InternalIsAlive())
-            return;
-        Throw_EntityIsDead();
-    }
-    #endregion AssertIsAlive
 
     private Ref<T> TryGetCore<T>(out bool exists)
     {
@@ -156,7 +71,7 @@ public partial struct Entity : IEquatable<Entity>
 
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
 
-        if (compIndex >= MemoryHelpers.MaxComponentCount)
+        if (compIndex == 0)
             goto doesntExist;
 
         exists = true;
@@ -175,7 +90,7 @@ public partial struct Entity : IEquatable<Entity>
     {
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);
 
-        if (compIndex >= MemoryHelpers.MaxComponentCount)
+        if (compIndex == 0)
             FrentExceptions.Throw_ComponentNotFoundException(typeof(TComp));
 
         ComponentStorage<TComp> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<TComp>>(
@@ -188,7 +103,7 @@ public partial struct Entity : IEquatable<Entity>
     private void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
-    internal string DebuggerDisplayString => IsNull ? "Null" : InternalIsAlive() ? $"World: {WorldID}, World Version: {WorldVersion}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
+    internal string DebuggerDisplayString => IsNull ? "Null" : InternalIsAlive(out _, out _) ? $"World: {WorldID}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
     internal const string EntityIsDeadMessage = "Entity is Dead";
     internal const string DoesNotHaveTagMessage = "This Entity does not have this tag";
 

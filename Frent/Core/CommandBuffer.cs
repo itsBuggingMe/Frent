@@ -203,10 +203,10 @@ public class CommandBuffer
         while(_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
             var item = createCommand.Entity;
-            var record = _world.EntityTable[item.ID];
+            ref var record = ref _world.EntityTable[item.ID];
             if (record.Version == item.Version)
             {
-                _world.DeleteEntityWithoutEvents(item.ToEntity(_world), record.Location);
+                _world.DeleteEntityWithoutEvents(item.ToEntity(_world), ref record);
             }
         }
 
@@ -241,10 +241,10 @@ public class CommandBuffer
         while (_deleteEntityBuffer.TryPop(out var item))
         {
             //double check that its alive
-            var record = _world.EntityTable[item.ID];
+            ref var record = ref _world.EntityTable[item.ID];
             if (record.Version == item.Version)
             {
-                _world.DeleteEntity(item.ToEntity(_world), record.Location);
+                _world.DeleteEntity(item.ToEntity(_world), ref record);
             }
         }
 

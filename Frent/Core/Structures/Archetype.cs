@@ -17,34 +17,26 @@ internal partial class Archetype
     internal ArchetypeID ID => _archetypeID;
     internal ImmutableArray<ComponentID> ArchetypeTypeArray => _archetypeID.Types;
     internal ImmutableArray<TagID> ArchetypeTagArray => _archetypeID.Tags;
-
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
-
-    internal int EntityCount
-    {
-        get => _componentIndex;
-    }
-
+    internal int EntityCount => _componentIndex;
     internal Span<T> GetComponentSpan<T>()
     {
         var components = Components;
-        int index = GlobalWorldTables.ComponentIndex(ID, Component<T>.ID);
-        if (index > components.Length)
+        int index = ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID);
+        if (index == 0)
         {
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
             return default;
         }
-        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components[index]).AsSpan();
+        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpan(_componentIndex);
     }
 
     internal ref EntityIDOnly CreateEntityLocation(EntityFlags flags, out EntityLocation entityLocation)
     {
-        int elen = _entities.Length;
-        int comlen = _componentIndex;
-        if (elen == comlen)
+        if (_entities.Length == _componentIndex)
             Resize();
 
-        entityLocation = new EntityLocation(this, comlen, flags);
+        entityLocation = new EntityLocation(this, _componentIndex, flags);
         return ref _entities.UnsafeArrayIndex(_componentIndex++);
     }
 
@@ -113,7 +105,6 @@ internal partial class Archetype
 
         switch (Components.Length)
         {
-            case 1: goto len1;
             case 2: goto len2;
             case 3: goto len3;
             case 4: goto len4;
@@ -129,9 +120,12 @@ internal partial class Archetype
             case 14: goto len14;
             case 15: goto len15;
             case 16: goto len16;
+            case 17: goto len17;
             default: goto end;
         }
 
+    len17:
+        Unsafe.Add(ref first, 16).Delete(args);
     len16:
         Unsafe.Add(ref first, 15).Delete(args);
     len15:
@@ -162,8 +156,6 @@ internal partial class Archetype
         Unsafe.Add(ref first, 2).Delete(args);
     len2:
         Unsafe.Add(ref first, 1).Delete(args);
-    len1:
-        Unsafe.Add(ref first, 0).Delete(args);
         #endregion
 
     end:
@@ -175,8 +167,9 @@ internal partial class Archetype
     {
         if (_componentIndex == 0)
             return;
-        foreach (var comprunner in Components)
-            comprunner.Run(world, this);
+        var comprunners = Components;
+        for(int i = 1; i < comprunners.Length; i++)
+            comprunners[i].Run(world, this);
     }
 
     internal void Update(World world, ComponentID componentID)
@@ -184,9 +177,9 @@ internal partial class Archetype
         if (_componentIndex == 0)
             return;
 
-        int compIndex = GlobalWorldTables.ComponentIndex(ID, componentID);
+        int compIndex = ComponentTagTable.UnsafeArrayIndex(componentID.ID);
 
-        if (compIndex >= MemoryHelpers.MaxComponentCount)
+        if (compIndex == 0)
             return;
 
         Components.UnsafeArrayIndex(compIndex).Run(world, this);
@@ -208,5 +201,9 @@ internal partial class Archetype
             comprunners[i].Trim(0);
     }
 
-    internal Span<EntityIDOnly> GetEntitySpan() => _entities.AsSpan(0, _componentIndex);
+    internal Span<EntityIDOnly> GetEntitySpan()
+    {
+        Debug.Assert(_componentIndex <= _entities.Length);
+        return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_entities), _componentIndex);
+    }
 }

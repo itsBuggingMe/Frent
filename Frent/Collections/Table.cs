@@ -12,7 +12,7 @@ internal struct Table<T>(int size)
         _buffer = []
     };
 
-    private T[] _buffer = new T[size];
+    internal T[] _buffer = new T[size];
 
     public ref T this[int index]
     {

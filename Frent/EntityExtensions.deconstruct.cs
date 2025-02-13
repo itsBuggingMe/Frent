@@ -13,8 +13,8 @@ namespace Frent;
 /// </summary>
 [Variadic("Deconstruct<T>", "Deconstruct<|T$, |>", 8)]
 [Variadic("out Ref<T> comp", "|out Ref<T$> comp$, |", 8)]
-[Variadic("        comp = GetComp<T>(archetypeTable, comps, eloc);",
-    "|        comp$ = GetComp<T$>(archetypeTable, comps, eloc);|", 8)]
+[Variadic("        comp = GetComp<T>(archetypeTable, comps, eloc.Index);",
+    "|        comp$ = GetComp<T$>(archetypeTable, comps, eloc.Index);|", 8)]
 public static partial class EntityExtensions
 {
     /// <summary>
@@ -22,28 +22,24 @@ public static partial class EntityExtensions
     /// </summary>
     /// <exception cref="InvalidOperationException">The entity is not alive.</exception>
     /// <exception cref="ComponentNotFoundException">The entity does not have all the components specified.</exception>
-    public static void Deconstruct<T>(ref this Entity e, out Ref<T> comp)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Deconstruct<T>(this Entity e, out Ref<T> comp)
     {
-        e.AssertIsAlive(out var world, out var eloc);
+        e.AssertIsAlive(out _, out EntityLocation eloc);
 
-        Archetype archetype = eloc.Archetype;
+        IComponentRunner[] comps = eloc.Archetype.Components;
+        byte[] archetypeTable = eloc.Archetype.ComponentTagTable;
 
-        IComponentRunner[] comps = archetype.Components;
-        byte[] archetypeTable = archetype.ComponentTagTable;
-
-        comp = GetComp<T>(archetypeTable, comps, eloc);
+        comp = GetComp<T>(archetypeTable, comps, eloc.Index);
     }
 }
 
 partial class EntityExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Ref<TC> GetComp<TC>(byte[] archetypeTable, IComponentRunner[] comps, EntityLocation eloc)
+    private static Ref<TC> GetComp<TC>(byte[] archetypeTable, IComponentRunner[] comps, int index)
     {
-        int compIndex;
-        if ((compIndex = archetypeTable[Component<TC>.ID.ID]) >= MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_ComponentNotFoundException<TC>();
-
-        return new Ref<TC>(ref UnsafeExtensions.UnsafeCast<ComponentStorage<TC>>(comps.UnsafeArrayIndex(compIndex))[eloc.Index]);
+        int compIndex = archetypeTable.UnsafeArrayIndex(Component<TC>.ID.ID);
+        return new Ref<TC>(ref UnsafeExtensions.UnsafeCast<ComponentStorage<TC>>(comps.UnsafeArrayIndex(compIndex))[index]);
     }
 }

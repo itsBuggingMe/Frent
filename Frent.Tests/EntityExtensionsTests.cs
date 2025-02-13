@@ -28,12 +28,12 @@ internal class EntityExtensionsTests
     }
 
     [Test]
-    public void Deconstruct_ThrowsNoComponent()
+    public void Deconstruct_NullRefException()
     {
         using World world = new();
 
         var e = world.Create<Class1, Struct1, int, double, string>(new(), new(), 1, 2.0, "3");
 
-        Throws<ComponentNotFoundException>(() => e.Deconstruct(out Ref<Class2> _));
+        Throws<NullReferenceException>(() => e.Deconstruct(out Ref<Class2> _));
     }
 }

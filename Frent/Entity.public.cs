@@ -22,8 +22,8 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool Has(ComponentID componentID)
     {
-        AssertIsAlive(out EntityLocation entityLocation);
-        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
+        AssertIsAlive(out _, out EntityLocation entityLocation);
+        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) != 0;
     }
 
     /// <summary>
@@ -46,8 +46,8 @@ partial struct Entity
     /// <param name="componentID">The component ID of the component type to check.</param>
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool TryHas(ComponentID componentID) =>
-        InternalIsAlive(out EntityLocation entityLocation) &&
-        GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) < MemoryHelpers.MaxComponentCount;
+        InternalIsAlive(out _, out EntityLocation entityLocation) &&
+        GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) != 0;
 
     /// <summary>
     /// Checks of this <see cref="Entity"/> has a component specified by <typeparamref name="T"/> without throwing when dead.
@@ -85,7 +85,7 @@ partial struct Entity
 
         int compIndex = archetype.ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
 
-        if (compIndex >= MemoryHelpers.MaxComponentCount)
+        if (compIndex == 0)
             return ref FrentExceptions.Throw_ComponentNotFoundExceptionRef<T>();
         //2x
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
@@ -106,7 +106,7 @@ partial struct Entity
         //2x
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, id);
 
-        if (compIndex >= MemoryHelpers.MaxComponentCount)
+        if (compIndex == 0)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
         return entityLocation.Archetype.Components[compIndex].GetAt(entityLocation.Index);
@@ -135,7 +135,7 @@ partial struct Entity
         //2x
         int compIndex = entityLocation.Archetype.ComponentTagTable[id.ID];
 
-        if (compIndex >= MemoryHelpers.MaxComponentCount)
+        if (compIndex == 0)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
         entityLocation.Archetype.Components[compIndex].SetAt(obj, entityLocation.Index);
@@ -178,7 +178,7 @@ partial struct Entity
         ComponentID componentId = Component.GetComponentID(type);
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentId);
 
-        if (compIndex >= MemoryHelpers.MaxComponentCount)
+        if (compIndex == 0)
         {
             value = null;
             return false;
@@ -333,7 +333,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
     public bool Tagged(TagID tagID)
     {
-        AssertIsAlive(out EntityLocation entityLocation);
+        AssertIsAlive(out _, out EntityLocation entityLocation);
         return GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID);
     }
 
@@ -639,14 +639,19 @@ partial struct Entity
     /// <summary>
     /// Deletes this entity
     /// </summary>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     [SkipLocalsInit]
     public void Delete()
     {
-        AssertIsAlive(out World world, out EntityLocation entityLocation);
+        var world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
+        //hardware trap
+        ref var lookup = ref world.EntityTable.UnsafeIndexNoResize(EntityID);
+
+        if (lookup.Version != EntityVersion)
+            return;
+
         if (world.AllowStructualChanges)
         {
-            world.DeleteEntity(this, entityLocation);
+            world.DeleteEntity(this, ref lookup);
         }
         else
         {
@@ -658,7 +663,7 @@ partial struct Entity
     /// Checks to see if this <see cref="Entity"/> is still alive
     /// </summary>
     /// <returns><see langword="true"/> if this entity is still alive (not deleted), otherwise <see langword="false"/></returns>
-    public bool IsAlive => InternalIsAlive();
+    public bool IsAlive => InternalIsAlive(out _, out _);
 
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> instance is the null entity: <see langword="default"/>(<see cref="Entity"/>)
@@ -671,11 +676,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public World World
     {
-        get
-        {
-            AssertIsAlive(out var world, out _);
-            return world;
-        }
+        get => GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID) ?? throw new InvalidOperationException();
     }
 
     /// <summary>
@@ -712,9 +713,9 @@ partial struct Entity
     {
         AssertIsAlive(out var world, out var loc);
         IComponentRunner[] runners = loc.Archetype.Components;
-        foreach(var runner in runners)
+        for(int i = 1; i < runners.Length; i++)
         {
-            runner.InvokeGenericActionWith(onEach, loc.Index);
+            runners[i].InvokeGenericActionWith(onEach, loc.Index);
         }
     }
 

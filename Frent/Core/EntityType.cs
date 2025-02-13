@@ -28,7 +28,7 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// </summary>
     /// <param name="componentID">The ID of the component type to check if this <see cref="EntityType"/> has</param>
     /// <returns><see langword="true"/> if this Entity type has a component of the specified component ID, <see langword="false"/> otherwise</returns>
-    public bool HasComponent(ComponentID componentID) => GlobalWorldTables.ComponentIndex(this, componentID) < MemoryHelpers.MaxComponentCount;
+    public bool HasComponent(ComponentID componentID) => GlobalWorldTables.ComponentIndex(this, componentID) != 0;
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> has a tag represented by a <see cref="TagID"/>

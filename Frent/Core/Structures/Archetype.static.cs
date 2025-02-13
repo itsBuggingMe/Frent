@@ -61,7 +61,7 @@ partial class Archetype
             return archetype;
 
         IComponentRunner[] componentRunners = new IComponentRunner[types.Length + 1];
-        for (int i = 1; i < types.Length; i++)
+        for (int i = 1; i < componentRunners.Length; i++)
             componentRunners[i] = Component.GetComponentRunnerFromType(types[i - 1].Type);
 
         archetype = new Archetype(id, componentRunners);

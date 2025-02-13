@@ -21,7 +21,7 @@ partial class World
         Archetype archetype = Archetype<T>.CreateNewOrGetExistingArchetype(this);
         ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
-        //4x deref per component
+        //1x deref per component
         UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index] = comp;
 
         //manually inlined from World.CreateEntityFromLocation
@@ -29,7 +29,7 @@ partial class World
         //the inner functions - benchmarked to improve perf by 10-20%
         var (id, version) = entity = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
         EntityTable[id] = new(eloc, version);
-        Entity concreteEntity = new Entity(ID, Version, version, id);
+        Entity concreteEntity = new Entity(ID, version, id);
         EntityCreatedEvent.Invoke(concreteEntity);
         return concreteEntity;
     }
