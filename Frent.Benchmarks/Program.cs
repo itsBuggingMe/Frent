@@ -10,7 +10,7 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => BenchmarkRunner.Run<MicroBenchmark>();
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.AddRem());
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
@@ -27,13 +27,8 @@ public class Program
         }
         else
         {
-            BenchmarkRunner.Run<T>();
+            ProfileTest(disasmCall);
             JitTest(disasmCall);
-            CancellationTokenSource source = new CancellationTokenSource();
-            Task.Run(() => ProfileTest(disasmCall, source.Token));
-            Console.WriteLine("Press enter for benchmark");
-            Console.ReadLine();
-            source.Cancel();
         }
     }
 
@@ -54,7 +49,7 @@ public class Program
         }
     }
 
-    private static void ProfileTest<T>(Action<T> call, CancellationToken ct)
+    private static void ProfileTest<T>(Action<T> call)
     {
         T t = Activator.CreateInstance<T>();
         t.GetType()
@@ -62,7 +57,7 @@ public class Program
             .FirstOrDefault(m => m.GetCustomAttribute<GlobalSetupAttribute>() is not null)
             ?.Invoke(t, []);
 
-        while(!ct.IsCancellationRequested)
+        while(true)
         {
             call(t);
         }

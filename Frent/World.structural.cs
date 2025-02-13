@@ -2,7 +2,6 @@
 using Frent.Core;
 using Frent.Core.Structures;
 using Frent.Updating;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -100,33 +99,39 @@ partial class World
         return toRunners.UnsafeArrayIndex(i);
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Consume<T>(T i)
+    {
+
+    }
+
     //Remove
-    [SkipLocalsInit]
     internal void RemoveComponent(Entity entity, EntityLocation entityLocation, ComponentID component)
     {
-        Archetype from = entityLocation.Archetype;
-
         Archetype? destination;
         uint key = CompRemoveLookup.GetKey(component.ID, entityLocation.ArchetypeID);
         int index = CompRemoveLookup.LookupIndex(key);
+
         if (index != 32)
         {
             destination = CompRemoveLookup.Archetypes.UnsafeArrayIndex(index);
         }
-        else if (!CompRemoveLookup.FallbackLookup.TryGetValue(key, out destination))
+        else
         {
-            destination = from.FindArchetypeAdjacentRemove(this, component);
+            destination = GetArchetypeRemoveNoCache(key, entityLocation.Archetype, component);
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
+        ref EntityIDOnly archetypeEntity = ref destination.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation);
+        archetypeEntity.Init(entity);
 
-        int skipIndex = from.ComponentTagTable.UnsafeArrayIndex(component.ID);
+
+        int skipIndex = entityLocation.Archetype.ComponentTagTable.UnsafeArrayIndex(component.ID);
 
         TrimmableStack? tmpEventComponentStorage = null;
         int tmpEventComponentIndex = -1;
 
         ref IComponentRunner destRef = ref MemoryMarshal.GetArrayDataReference(destination.Components);
-        ref IComponentRunner fromRef = ref MemoryMarshal.GetArrayDataReference(from.Components);
+        ref IComponentRunner fromRef = ref MemoryMarshal.GetArrayDataReference(entityLocation.Archetype.Components);
         destRef = ref Unsafe.Add(ref destRef, 1);
         fromRef = ref Unsafe.Add(ref fromRef, 1);
 
@@ -144,14 +149,14 @@ partial class World
             fromRef.PushComponentToStack(entityLocation.Index, out tmpEventComponentIndex);
         }
 
-        for (i++, fromRef = ref Unsafe.Add(ref fromRef, 1); i < from.Components.Length; i++)
+        for (i++, fromRef = ref Unsafe.Add(ref fromRef, 1); i < entityLocation.Archetype.Components.Length; i++)
         {
             destRef.PullComponentFromAndDelete(fromRef, nextLocation.Index, entityLocation.Index);
             destRef = ref Unsafe.Add(ref destRef, 1);
             fromRef = ref Unsafe.Add(ref fromRef, 1);
         }
 
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
+        EntityIDOnly movedDown = entityLocation.Archetype.DeleteEntityFromStorage(entityLocation.Index);
 
         EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
         EntityTable.UnsafeIndexNoResize(entity.EntityID).Location = nextLocation;
@@ -164,6 +169,16 @@ partial class World
             eventData.Remove.NormalEvent.Invoke(entity, component);
             tmpEventComponentStorage?.InvokeEventWith(eventData.Remove.GenericEvent, entity, tmpEventComponentIndex);
         }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private Archetype GetArchetypeRemoveNoCache(uint key, Archetype archetype, ComponentID component)
+    {
+        if (!CompRemoveLookup.FallbackLookup.TryGetValue(key, out Archetype? destination))
+        {
+            destination = archetype.FindArchetypeAdjacentRemove(this, component);
+        }
+        return destination;
     }
 
     //components cannot be empty

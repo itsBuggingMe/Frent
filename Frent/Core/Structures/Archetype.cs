@@ -31,12 +31,16 @@ internal partial class Archetype
         return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpan(_componentIndex);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EntityIDOnly CreateEntityLocation(EntityFlags flags, out EntityLocation entityLocation)
     {
         if (_entities.Length == _componentIndex)
             Resize();
 
-        entityLocation = new EntityLocation(this, _componentIndex, flags);
+        entityLocation.Archetype = this;
+        entityLocation.Index = _componentIndex;
+        entityLocation.Flags = flags;
+
         return ref _entities.UnsafeArrayIndex(_componentIndex++);
     }
 

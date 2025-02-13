@@ -30,36 +30,23 @@ public class MicroBenchmark
     public void Setup()
     {
         _world = new World();
-    }
-
-    #region Create
-    [Benchmark]
-    [BenchmarkCategory(Categories.Create)]
-    public void Create1()
-    {
-        using World w = new();
-        for (int i = 0; i < Count; i++)
-            w.Create<int>(default);
+        _entities = new Entity[Count];
+        foreach (ref var e in _entities.AsSpan())
+        {
+            e = _world.Create(0, 0.0, 0f);
+        }
     }
 
     [Benchmark]
-    [BenchmarkCategory(Categories.Create)]
-    public void Create2()
+    public void AddRem()
     {
-        using World w = new();
-        for (int i = 0; i < Count; i++)
-            w.Create<int, int>(default, default);
+        foreach(var e in _entities)
+        {
+            e.Remove<int>();
+            e.Add(0);
+        }
     }
 
-    [Benchmark]
-    [BenchmarkCategory(Categories.Create)]
-    public void Create3()
-    {
-        using World w = new();
-        for (int i = 0; i < Count; i++)
-            w.Create<int, int, int>(default, default, default);
-    }
-    #endregion
     /*
     [Benchmark]
     [BenchmarkCategory(Categories.Has)]
