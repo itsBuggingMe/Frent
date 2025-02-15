@@ -83,11 +83,10 @@ partial struct Entity
         //other lookup is optimized into indirect pointer addressing
         Archetype archetype = entityLocation.Archetype;
 
-        int compIndex = archetype.ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
+        int compIndex = archetype.GetComponentIndex<T>();
 
-        if (compIndex == 0)
-            return ref FrentExceptions.Throw_ComponentNotFoundExceptionRef<T>();
         //2x
+        //hardware trap
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
         return ref storage[entityLocation.Index];
     }//2, 0
@@ -133,7 +132,7 @@ partial struct Entity
         AssertIsAlive(out var world, out var entityLocation);
 
         //2x
-        int compIndex = entityLocation.Archetype.ComponentTagTable[id.ID];
+        int compIndex = entityLocation.Archetype.GetComponentIndex(id);
 
         if (compIndex == 0)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);

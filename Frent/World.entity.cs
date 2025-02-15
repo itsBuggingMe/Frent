@@ -15,7 +15,7 @@ partial class World
         //world + entity valid hardware trap
         Archetype archetype = location.Location.Archetype;
         
-        int compIndex = archetype.ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
+        int compIndex = archetype.GetComponentIndex<T>();
 
         //Components[0] null; trap
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));

@@ -6,6 +6,12 @@ internal class Program
 {
     static void Main(string[] args)
     {
+        World world = new World();
+        for(int i = 0; i < 1000; i++)
+        {
+            world.Create<PlayerController>(default);
+        }
+        return;
         MethodInfo[] methods = typeof(Samples).GetMethods().Where(m => m.GetCustomAttribute<SampleAttribute>() is not null).ToArray();
         Console.WriteLine($"Pick a sample: 0-{methods.Length + 1}");
         Console.WriteLine("[0] Asteroids");

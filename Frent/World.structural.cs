@@ -40,7 +40,7 @@ partial class World
 
         for (int i = 1; i < currentArchetype.Components.Length; i++)
         {
-            destination.Components[i].PullComponentFromAndDelete(currentArchetype.Components[i], nextELoc.Index, location.Index);
+            destination.Components[i].PullComponentFromAndClear(currentArchetype.Components[i], nextELoc.Index, location.Index);
         }
 
         j = 0;
@@ -93,7 +93,7 @@ partial class World
         int i = 1;
         for (; i < fromRunners.Length; i++)
         {
-            toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
+            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, entityLocation.Index);
         }
 
         return toRunners.UnsafeArrayIndex(i);
@@ -125,7 +125,7 @@ partial class World
         archetypeEntity.Init(entity);
 
 
-        int skipIndex = entityLocation.Archetype.ComponentTagTable.UnsafeArrayIndex(component.ID);
+        int skipIndex = entityLocation.Archetype.GetComponentIndex(component);
 
         TrimmableStack? tmpEventComponentStorage = null;
         int tmpEventComponentIndex = -1;
@@ -139,7 +139,7 @@ partial class World
 
         for (; i < skipIndex; i++)
         {
-            destRef.PullComponentFromAndDelete(fromRef, nextLocation.Index, entityLocation.Index);
+            destRef.PullComponentFromAndClear(fromRef, nextLocation.Index, entityLocation.Index);
             destRef = ref Unsafe.Add(ref destRef, 1);
             fromRef = ref Unsafe.Add(ref fromRef, 1);
         }
@@ -151,7 +151,7 @@ partial class World
 
         for (i++, fromRef = ref Unsafe.Add(ref fromRef, 1); i < entityLocation.Archetype.Components.Length; i++)
         {
-            destRef.PullComponentFromAndDelete(fromRef, nextLocation.Index, entityLocation.Index);
+            destRef.PullComponentFromAndClear(fromRef, nextLocation.Index, entityLocation.Index);
             destRef = ref Unsafe.Add(ref destRef, 1);
             fromRef = ref Unsafe.Add(ref fromRef, 1);
         }
@@ -216,7 +216,7 @@ partial class World
 
         for(int i1 = 0; i1 < skipIndicies.Length; i1++)
         {
-            skipIndicies[i1] = from.ComponentTagTable[components[i1].ID];
+            skipIndicies[i1] = from.GetComponentIndex(components[i1]);
         }
         skipIndicies.Sort();
 
@@ -234,7 +234,7 @@ partial class World
                 continue;
             }
 
-            destination.Components[j++].PullComponentFromAndDelete(from.Components[i], nextLocation.Index, entityLocation.Index);
+            destination.Components[j++].PullComponentFromAndClear(from.Components[i], nextLocation.Index, entityLocation.Index);
         }
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
@@ -326,7 +326,7 @@ partial class World
         Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
 
         for (int i = 1; i < fromRunners.Length; i++)
-            toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
+            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, entityLocation.Index);
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
 
@@ -365,7 +365,7 @@ partial class World
         Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
 
         for (int i = 1; i < fromRunners.Length; i++)
-            toRunners[i].PullComponentFromAndDelete(fromRunners[i], nextLocation.Index, entityLocation.Index);
+            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, entityLocation.Index);
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
         

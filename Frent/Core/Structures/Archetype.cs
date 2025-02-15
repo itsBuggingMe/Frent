@@ -22,7 +22,7 @@ internal partial class Archetype
     internal Span<T> GetComponentSpan<T>()
     {
         var components = Components;
-        int index = ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID);
+        int index = GetComponentIndex<T>();
         if (index == 0)
         {
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
@@ -181,7 +181,7 @@ internal partial class Archetype
         if (_componentIndex == 0)
             return;
 
-        int compIndex = ComponentTagTable.UnsafeArrayIndex(componentID.ID);
+        int compIndex = GetComponentIndex(componentID);
 
         if (compIndex == 0)
             return;
@@ -203,6 +203,16 @@ internal partial class Archetype
         var comprunners = Components;
         for(int i = 1; i < comprunners.Length; i++)
             comprunners[i].Trim(0);
+    }
+
+    internal int GetComponentIndex<T>()
+    {
+        return ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
+    }
+
+    internal int GetComponentIndex(ComponentID component)
+    {
+        return ComponentTagTable.UnsafeArrayIndex(component.ID) & GlobalWorldTables.IndexBits;
     }
 
     internal Span<EntityIDOnly> GetEntitySpan()

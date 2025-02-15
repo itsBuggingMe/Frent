@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Frent.Components;
+using Frent.Core;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
@@ -10,6 +12,16 @@ public static class GenerationServices
 {
     internal static readonly Dictionary<Type, (IComponentRunnerFactory Factory, int UpdateOrder)> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, HashSet<Type>> TypeAttributeCache = new();
+    internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
+
+    /// <summary>
+    /// Used only for source generation
+    /// </summary>
+    public static void RegisterInit<T>()
+        where T : IInitable
+    {
+        TypeIniters[typeof(T)] = (Component<T>.CallInit)(static (Entity e, ref T c) => c.Init(e));
+    }
 
     /// <summary>
     /// Used only for source generation

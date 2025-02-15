@@ -1,5 +1,6 @@
 ﻿using Frent.Buffers;
 using Frent.Collections;
+using Frent.Components;
 using Frent.Core;
 using Frent.Core.Events;
 using System.Diagnostics;
@@ -26,7 +27,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public void InvokeGenericActionWith(IGenericAction action, int index) => action?.Invoke(ref this[index]);
     public ComponentID ComponentID => Component<TComponent>.ID;
 
-    public void PullComponentFromAndDelete(IComponentRunner otherRunner, int me, int other)
+    public void PullComponentFromAndClear(IComponentRunner otherRunner, int me, int other)
     {
         ComponentStorage<TComponent> componentRunner = UnsafeExtensions.UnsafeCast<ComponentStorage<TComponent>>(otherRunner);
         ref var item = ref componentRunner[other];
@@ -51,6 +52,11 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
         ref var from = ref this[data.FromIndex];
         this[data.ToIndex] = from;
 
+        if (Component<TComponent>.IsDestroyable)
+        {
+            ((IDestroyable)from!)?.Destroy();
+        }
+
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
     }
@@ -64,6 +70,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
 
 internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 {
+
     public ref TComponent this[int index]
     {
         get

@@ -137,13 +137,16 @@ internal struct Line : IUniformComponent<ShapeBatch, Transform>
 }
 
 [Editor]
-internal struct PlayerController : IEntityUniformComponent<World, Transform, Velocity>
+internal struct PlayerController : IUniformComponent<World, Transform, Velocity>, IInitable
 {
     private int _timeSinceShoot;
     private MouseState _pms;
+    private Entity _self;
+
+    public void Init(Entity self) => _self = self;
 
     [Tick]
-    public void Update(Entity entity, World world, ref Transform transform, ref Velocity vel)
+    public void Update(World world, ref Transform transform, ref Velocity vel)
     {
         _timeSinceShoot++;
         vel = vel.DXY * 0.95f;
@@ -185,7 +188,7 @@ internal struct PlayerController : IEntityUniformComponent<World, Transform, Vel
 
         if (_timeSinceShoot > 10 && ks.IsKeyDown(Keys.Space))
         {
-            entity.Shoot(pointingDirection, 24);
+            _self.Shoot(pointingDirection, 24);
             _timeSinceShoot = 0;
         }
 

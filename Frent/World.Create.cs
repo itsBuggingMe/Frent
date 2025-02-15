@@ -1,14 +1,17 @@
-﻿using Frent.Core;
+﻿using Frent.Components;
+using Frent.Core;
 using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 
 namespace Frent;
 
-[Variadic("        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index] = comp;",
-    "|        UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index))[eloc.Index] = comp$;\n|")]
+[Variadic("        ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index]; ref1 = comp;",
+    "|        ref T$ ref$ = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index))[eloc.Index]; ref$ = comp$;\n|")]
+[Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
+    "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("y<T>", "y<|T$, |>")]
-[Variadic("T comp", "|T$ comp$, |")]
+[Variadic("in T comp", "|in T$ comp$, |")]
 //it just so happens Archetype and Create both end with "e"
 partial class World
 {
@@ -16,13 +19,13 @@ partial class World
     /// Creates an <see cref="Entity"/> with the given component(s)
     /// </summary>
     /// <returns>An <see cref="Entity"/> that can be used to acsess the component data</returns>
-    public Entity Create<T>(T comp)
+    public Entity Create<T>(in T comp)
     {
         Archetype archetype = Archetype<T>.CreateNewOrGetExistingArchetype(this);
         ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         //1x deref per component
-        UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index] = comp;
+        ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index]; ref1 = comp;
 
         //manually inlined from World.CreateEntityFromLocation
         //The jit likes to inline the outer create function and not inline
@@ -31,6 +34,9 @@ partial class World
         EntityTable[id] = new(eloc, version);
         Entity concreteEntity = new Entity(ID, version, id);
         EntityCreatedEvent.Invoke(concreteEntity);
+
+        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
+
         return concreteEntity;
     }
 

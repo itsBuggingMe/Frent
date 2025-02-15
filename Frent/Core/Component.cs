@@ -22,10 +22,19 @@ public static class Component<T>
     private static readonly ComponentID _id;
     private static readonly IComponentRunnerFactory<T> RunnerInstance;
     internal static readonly TrimmableStack<T> TrimmableStack;
+    internal static readonly CallInit? Initer;
+
+    internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(T).IsAssignableTo(typeof(IDestroyable));
+
+    /// <summary>
+    /// Used only in source generation
+    /// </summary>
+    public delegate void CallInit(Entity entity, ref T component);
 
     static Component()
     {
-        (_id, TrimmableStack) = Component.GetExistingOrSetupNewComponent<T>();
+        (_id, TrimmableStack, object o) = Component.GetExistingOrSetupNewComponent<T>();
+        Initer = (CallInit)o;
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
         {
@@ -84,14 +93,14 @@ public static class Component
             NoneComponentRunnerTable[typeof(T)] = new NoneUpdateRunnerFactory<T>();
     }
 
-    internal static (ComponentID ComponentID, TrimmableStack<T> Stack) GetExistingOrSetupNewComponent<T>()
+    internal static (ComponentID ComponentID, TrimmableStack<T> Stack, object? Initer) GetExistingOrSetupNewComponent<T>()
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
             var type = typeof(T);
             if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
             {
-                return (value, (TrimmableStack<T>)ComponentTable[value.ID].Stack);
+                return (value, (TrimmableStack<T>)ComponentTable[value.ID].Stack, ComponentTable[value.ID].Initer);
             }
 
             int nextIDInt = ++NextComponentID;
@@ -107,7 +116,7 @@ public static class Component
             TrimmableStack<T> stack = new TrimmableStack<T>();
             ComponentTable.Push(new ComponentData(type, stack, GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var order) ? order.UpdateOrder : 0));
 
-            return (id, stack);
+            return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.CallInit)v : null);
         }
     }
 
