@@ -2,4 +2,4 @@
 
 namespace Frent.Core;
 
-internal record struct ComponentData(Type Type, TrimmableStack Stack, object Initer);
+internal record struct ComponentData(Type Type, TrimmableStack Stack, Delegate? Initer);

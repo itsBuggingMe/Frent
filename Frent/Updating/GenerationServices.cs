@@ -1,5 +1,6 @@
 ﻿using Frent.Components;
 using Frent.Core;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -20,7 +21,7 @@ public static class GenerationServices
     public static void RegisterInit<T>()
         where T : IInitable
     {
-        TypeIniters[typeof(T)] = (Component<T>.CallInit)(static (Entity e, ref T c) => c.Init(e));
+        TypeIniters[typeof(T)] = (Component<T>.CallInit)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.Init(e));
     }
 
     /// <summary>

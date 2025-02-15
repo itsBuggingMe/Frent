@@ -35,7 +35,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                             //stack allocate 6 slots
                             var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
-                            int order = 0;
+                            bool initable = ImplementsInterface(symbol, RegistryHelpers.FullyQualifiedInitableInterfaceName);
 
                             foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
                             {
@@ -51,6 +51,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                                                 {
                                                     stackAttributes.Push(attrCtor.ContainingType.ToString());
                                                 }
+
                                                 //if(ImplementsInterface(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName) && attrCtor.Parameters.Length > 0)
                                                 //{
                                                 //    if(attrCtor.Parameters[0].ExplicitDefaultValue is int updateorder)
@@ -66,7 +67,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                             //TODO: avoid alloc?
                             return new ComponentUpdateItemModel(
-                                order,
+                                initable,
                                 symbol.ToString(),
                                 symbol.Name,
                                 @interface.Name,
@@ -78,7 +79,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     }
                 }
 
-                return new ComponentUpdateItemModel(-1, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
+                return new ComponentUpdateItemModel(false, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
             });
 
         IncrementalValuesProvider<(string Name, string Source)> file = models
@@ -131,6 +132,14 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append("), typeof(")
                 .AppendNamespace(model.SubNamespace).Append(model.Type)
                 .AppendLine("));");
+        }
+
+        if(model.Initable)
+        {
+            sb.Append("        GenerationServices.RegisterInit<")
+                .AppendNamespace(model.SubNamespace)
+                .Append(model.Type)
+                .AppendLine(">();");
         }
 
         //end method ^& class
@@ -196,5 +205,5 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         namedTypeSymbol.Interfaces.Length == 0 &&
         namedTypeSymbol.ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName;
 
-    internal record struct ComponentUpdateItemModel(int UpdateOrder, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
+    internal record struct ComponentUpdateItemModel(bool Initable, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
 }

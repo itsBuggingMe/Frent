@@ -18,4 +18,5 @@ public static class RegistryHelpers
     public const string FileName = "ComponentUpdateTypeRegistry.g.cs";
     public const string TargetInterfaceName = "IComponentBase";
     public const string FullyQualifiedTargetInterfaceName = "Frent.Components.IComponentBase";
+    public const string FullyQualifiedInitableInterfaceName = "Frent.Components.IInitable";
 }

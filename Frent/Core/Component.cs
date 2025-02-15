@@ -114,7 +114,7 @@ public static class Component
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.ID);
 
             TrimmableStack<T> stack = new TrimmableStack<T>();
-            ComponentTable.Push(new ComponentData(type, stack, GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var order) ? order.UpdateOrder : 0));
+            ComponentTable.Push(new ComponentData(type, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? (Component<T>.CallInit)v1 : null));
 
             return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.CallInit)v : null);
         }
@@ -144,7 +144,7 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.ID);
 
-            ComponentTable.Push(new ComponentData(t, GetTrimmableStack(t), GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var order) ? order.UpdateOrder : 0));
+            ComponentTable.Push(new ComponentData(t, GetTrimmableStack(t), GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null));
 
             return id;
         }

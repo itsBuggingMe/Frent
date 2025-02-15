@@ -7,6 +7,10 @@ using System.Collections;
 using System.Diagnostics;
 using Frent.Sample.Asteroids.Editor;
 using static Frent.Sample.Asteroids.AsteroidsGame;
+using System.Runtime.CompilerServices;
+using System.Collections.Immutable;
+using Frent.Core;
+using System.Runtime.InteropServices;
 
 namespace Frent.Sample.Asteroids;
 

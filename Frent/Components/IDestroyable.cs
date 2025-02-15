@@ -1,6 +1,6 @@
 ﻿namespace Frent.Components;
 
-internal interface IDestroyable
+public interface IDestroyable
 {
     void Destroy();
 }
