@@ -22,8 +22,8 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool Has(ComponentID componentID)
     {
-        AssertIsAlive(out _, out EntityLocation entityLocation);
-        return GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) != 0;
+        ref EntityLookup entityLocation = ref AssertIsAlive(out _);
+        return entityLocation.Location.Archetype.GetComponentIndex(componentID) != 0;
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool TryHas(ComponentID componentID) =>
         InternalIsAlive(out _, out EntityLocation entityLocation) &&
-        GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentID) != 0;
+        entityLocation.Archetype.GetComponentIndex(componentID) != 0;
 
     /// <summary>
     /// Checks of this <see cref="Entity"/> has a component specified by <typeparamref name="T"/> without throwing when dead.
@@ -77,18 +77,18 @@ partial struct Entity
         //Total: 4x lookup
 
         //1x
-        AssertIsAlive(out var world, out var entityLocation);
+        ref var lookup = ref AssertIsAlive(out var world);
 
         //1x
         //other lookup is optimized into indirect pointer addressing
-        Archetype archetype = entityLocation.Archetype;
+        Archetype archetype = lookup.Location.Archetype;
 
         int compIndex = archetype.GetComponentIndex<T>();
 
         //2x
         //hardware trap
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
-        return ref storage[entityLocation.Index];
+        return ref storage[lookup.Location.Index];
     }//2, 0
 
     /// <summary>
@@ -100,15 +100,11 @@ partial struct Entity
     /// <returns>The component of type <paramref name="type"/></returns>
     public object Get(ComponentID id)
     {
-        AssertIsAlive(out var world, out var entityLocation);
+        ref var lookup = ref AssertIsAlive(out var world);
 
-        //2x
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, id);
+        int compIndex = lookup.Location.Archetype.GetComponentIndex(id);
 
-        if (compIndex == 0)
-            FrentExceptions.Throw_ComponentNotFoundException(id.Type);
-        //3x
-        return entityLocation.Archetype.Components[compIndex].GetAt(entityLocation.Index);
+        return lookup.Location.Archetype.Components[compIndex].GetAt(lookup.Location.Index);
     }
 
     /// <summary>
@@ -121,7 +117,7 @@ partial struct Entity
     public object Get(Type type) => Get(Component.GetComponentID(type));
 
     /// <summary>
-    /// Gets this <see cref="Entity"/>'s component of type <paramref name="type"/>.
+    /// Gets this <see cref="Entity"/>'s component of type <paramref name="id"/>.
     /// </summary>
     /// <param name="id">The ID of the type of component to get</param>
     /// <param name="obj">The component to set</param>
@@ -129,15 +125,15 @@ partial struct Entity
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     public void Set(ComponentID id, object obj)
     {
-        AssertIsAlive(out var world, out var entityLocation);
+        ref var lookup = ref AssertIsAlive(out _);
 
         //2x
-        int compIndex = entityLocation.Archetype.GetComponentIndex(id);
+        int compIndex = lookup.Location.Archetype.GetComponentIndex(id);
 
         if (compIndex == 0)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
-        entityLocation.Archetype.Components[compIndex].SetAt(obj, entityLocation.Index);
+        lookup.Location.Archetype.Components[compIndex].SetAt(obj, lookup.Location.Index);
     }
 
     /// <summary>
@@ -172,10 +168,10 @@ partial struct Entity
     /// <returns><see langword="true"/> if this entity has a component of type <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
     public bool TryGet(Type type, [NotNullWhen(true)] out object? value)
     {
-        AssertIsAlive(out var world, out var entityLocation);
+        ref var lookup = ref AssertIsAlive(out _);
 
         ComponentID componentId = Component.GetComponentID(type);
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, componentId);
+        int compIndex = GlobalWorldTables.ComponentIndex(lookup.Location.ArchetypeID, componentId);
 
         if (compIndex == 0)
         {
@@ -183,7 +179,7 @@ partial struct Entity
             return false;
         }
 
-        value = entityLocation.Archetype.Components[compIndex].GetAt(entityLocation.Index);
+        value = lookup.Location.Archetype.Components[compIndex].GetAt(lookup.Location.Index);
         return true;
     }
     #endregion
@@ -201,10 +197,11 @@ partial struct Entity
     [SkipLocalsInit]
     public void Add<T>(T component)
     {
-        AssertIsAlive(out var w, out var eloc);
+        ref var lookup = ref AssertIsAlive(out var w);
+        EntityLocation eloc = lookup.Location;
         if (w.AllowStructualChanges)
         {
-            var to = w.AddComponent(EntityIDOnly, eloc, Component<T>.ID, out var location);
+            var to = w.AddComponent(EntityIDOnly, ref lookup, Component<T>.ID, out var location);
             UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(to)[location.Index] = component;
 
             location.Flags |= w.WorldEventFlags;
@@ -215,7 +212,6 @@ partial struct Entity
                 eventRecord.Add.NormalEvent.Invoke(this, Component<T>.ID);
                 to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.Index);
             }
-
         }
         else
         {
@@ -231,10 +227,11 @@ partial struct Entity
     /// <remarks><paramref name="component"/> must be assignable to the type represented by <paramref name="componentID"/></remarks>
     public void Add(ComponentID componentID, object component)
     {
-        AssertIsAlive(out var w, out var eloc);
+        ref var lookup = ref AssertIsAlive(out var w);
+        var eloc = lookup.Location;
         if (w.AllowStructualChanges)
         {
-            var to = w.AddComponent(EntityIDOnly, eloc, componentID, out var location);
+            var to = w.AddComponent(EntityIDOnly, ref lookup, componentID, out var location);
             //we don't check IsAssignableTo. The reason is perf - we get InvalidCastException anyways
             to.SetAt(component, location.Index);
 
@@ -273,10 +270,10 @@ partial struct Entity
     /// <param name="componentID">The <see cref="ComponentID"/> of the component to be removed</param>
     public void Remove(ComponentID componentID)
     {
-        AssertIsAlive(out var w, out var eloc);
+        ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            w.RemoveComponent(this, eloc, componentID);
+            w.RemoveComponent(this, ref lookup, componentID);
         }
         else
         {
@@ -302,7 +299,8 @@ partial struct Entity
 
     public void Remove(ReadOnlySpan<ComponentID> components)
     {
-        AssertIsAlive(out var w, out var eloc);
+        ref var lookup = ref AssertIsAlive(out var w);
+        var eloc = lookup.Location;
         if (components.Length == 0)
             return;
         if (w.AllowStructualChanges)
@@ -332,8 +330,8 @@ partial struct Entity
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
     public bool Tagged(TagID tagID)
     {
-        AssertIsAlive(out _, out EntityLocation entityLocation);
-        return GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID);
+        ref var lookup = ref AssertIsAlive(out var w);
+        return lookup.Location.Archetype.HasTag(tagID);
     }
 
     /// <summary>
@@ -364,8 +362,8 @@ partial struct Entity
     /// <typeparam name="T">The type to use as the tag.</typeparam>
     public bool Tag<T>()
     {
-        AssertIsAlive(out var w, out var eloc);
-        return w.Tag(this, eloc, Core.Tag<T>.ID);
+        ref var lookup = ref AssertIsAlive(out var w);
+        return w.Tag(this, lookup.Location, Core.Tag<T>.ID);
     }
 
     /// <summary>
@@ -375,8 +373,8 @@ partial struct Entity
     /// <param name="type">The type to use as a tag</param>
     public bool Tag(Type type)
     {
-        AssertIsAlive(out var w, out var eloc);
-        return w.Tag(this, eloc, Core.Tag.GetTagID(type));
+        ref var lookup = ref AssertIsAlive(out var w);
+        return w.Tag(this, lookup.Location, Core.Tag.GetTagID(type));
     }
 
     /// <summary>
@@ -387,8 +385,8 @@ partial struct Entity
     /// <param name="tagID">The tagID to use as the tag</param>
     public bool Tag(TagID tagID)
     {
-        AssertIsAlive(out var w, out var eloc);
-        return w.Tag(this, eloc, tagID);
+        ref var lookup = ref AssertIsAlive(out var w);
+        return w.Tag(this, lookup.Location, tagID);
     }
     #endregion
 
@@ -401,8 +399,8 @@ partial struct Entity
     /// <typeparam name="T">The type of tag to remove.</typeparam>
     public bool Detach<T>()
     {
-        AssertIsAlive(out var w, out var eloc);
-        return w.Detach(this, eloc, Core.Tag<T>.ID);
+        ref var lookup = ref AssertIsAlive(out var w);
+        return w.Tag(this, lookup.Location, Core.Tag<T>.ID);
     }
 
     /// <summary>
@@ -413,8 +411,8 @@ partial struct Entity
     /// <param name="type">The type of tag to remove.</param>
     public bool Detach(Type type)
     {
-        AssertIsAlive(out var w, out var eloc);
-        return w.Detach(this, eloc, Core.Tag.GetTagID(type));
+        ref var lookup = ref AssertIsAlive(out var w);
+        return w.Tag(this, lookup.Location, Core.Tag.GetTagID(type));
     }
 
     /// <summary>
@@ -425,8 +423,8 @@ partial struct Entity
     /// <param name="tagID">The type of tag to remove.</param>
     public bool Detach(TagID tagID)
     {
-        AssertIsAlive(out var w, out var eloc);
-        return w.Detach(this, eloc, tagID);
+        ref var lookup = ref AssertIsAlive(out var w);
+        return w.Tag(this, lookup.Location, tagID);
     }
     #endregion
 
@@ -686,8 +684,8 @@ partial struct Entity
     {
         get
         {
-            AssertIsAlive(out var world, out var loc);
-            return loc.Archetype.ArchetypeTypeArray;
+            ref var lookup = ref AssertIsAlive(out _);
+            return lookup.Location.Archetype.ArchetypeTypeArray;
         }
     }
 
@@ -699,8 +697,8 @@ partial struct Entity
     {
         get
         {
-            AssertIsAlive(out var world, out var loc);
-            return loc.Archetype.ArchetypeTagArray;
+            ref var lookup = ref AssertIsAlive(out _);
+            return lookup.Location.Archetype.ArchetypeTagArray;
         }
     }
 
@@ -710,11 +708,11 @@ partial struct Entity
     /// <param name="onEach">The unbound generic function called on each item</param>
     public void EnumerateComponents(IGenericAction onEach)
     {
-        AssertIsAlive(out var world, out var loc);
-        IComponentRunner[] runners = loc.Archetype.Components;
+        ref var lookup = ref AssertIsAlive(out var _);
+        IComponentRunner[] runners = lookup.Location.Archetype.Components;
         for(int i = 1; i < runners.Length; i++)
         {
-            runners[i].InvokeGenericActionWith(onEach, loc.Index);
+            runners[i].InvokeGenericActionWith(onEach, lookup.Location.Index);
         }
     }
 

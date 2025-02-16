@@ -68,6 +68,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     }
 }
 
+#if MANAGED_COMPONENTS
 internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 {
 
@@ -77,7 +78,41 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+            return ref _managed!.UnsafeArrayIndex(index);
+        }
+    }
+
+    public ComponentStorage()
+    {
+        _managed = new TComponent[1];
+    }
+
+    private TComponent[]? _managed;
+
+    protected void Resize(int size)
+    {
+        Array.Resize(ref _managed, size);
+    }
+
+    public Span<TComponent> AsSpan() => _managed;
+
+    public Span<TComponent> AsSpan(int length) => _managed;
+
+    public void Dispose()
+    {
+        
+    }
+}
+#else
+internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
+{
+
+    public ref TComponent this[int index]
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             {
                 return ref _managed!.UnsafeArrayIndex(index);
             }
@@ -88,7 +123,7 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 
     public ComponentStorage()
     {
-        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
         {
             _managed = new TComponent[1];
         }
@@ -124,3 +159,4 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
         _nativeArray.Dispose();
     }
 }
+#endif

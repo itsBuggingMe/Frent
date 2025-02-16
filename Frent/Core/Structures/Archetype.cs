@@ -7,13 +7,13 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Frent.World;
 
 namespace Frent.Core;
 
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 internal partial class Archetype
 {
-    internal static int MaxChunkSize => MemoryHelpers.MaxArchetypeChunkSize;
     internal ArchetypeID ID => _archetypeID;
     internal ImmutableArray<ComponentID> ArchetypeTypeArray => _archetypeID.Types;
     internal ImmutableArray<TagID> ArchetypeTagArray => _archetypeID.Tags;
@@ -44,6 +44,32 @@ internal partial class Archetype
         return ref _entities.UnsafeArrayIndex(_componentIndex++);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal Span<EntityIDOnly> CreateEntityLocations(int count, World world)
+    {
+        int newLen = _componentIndex + count;
+        EnsureCapacity(newLen);
+
+        Span<EntityIDOnly> entitySpan = _entities.AsSpan(_componentIndex, count);
+
+        ref var recycled = ref world.RecycledEntityIds;
+        for(int i = 0; i < entitySpan.Length; i++)
+        {
+            ref EntityIDOnly archetypeEntity = ref entitySpan[i];
+
+            archetypeEntity = recycled.CanPop() ? recycled.PopUnsafe() : new EntityIDOnly(world.NextEntityID++, 0);
+
+            ref EntityLookup lookup = ref world.EntityTable.UnsafeIndexNoResize(archetypeEntity.ID);
+
+            lookup.Version = archetypeEntity.Version;
+            lookup.Location.Archetype = this;
+            lookup.Location.Index = _componentIndex++;
+            lookup.Location.Flags = EntityFlags.None;
+        }
+
+        return entitySpan;
+    }
+
     private void Resize()
     {
         int newLen = checked(_entities.Length * 2);
@@ -58,32 +84,30 @@ internal partial class Archetype
 
     public void EnsureCapacity(int count)
     {
-        int newLen = MemoryHelpers.RoundUpToNextMultipleOf16(count);
-
-        if(_entities.Length >= newLen)
+        if(_entities.Length >= count)
         {
             return;
         }
 
-        FastStackArrayPool<EntityIDOnly>.ResizeArrayFromPool(ref _entities, newLen);
+        FastStackArrayPool<EntityIDOnly>.ResizeArrayFromPool(ref _entities, count);
         var runners = Components;
         for(int i = 1; i < runners.Length; i++)
         {
-            runners[i].ResizeBuffer(newLen);
-        }    
+            runners[i].ResizeBuffer(count);
+        }
     }
 
     public Archetype FindArchetypeAdjacentRemove(World world, ComponentID component)
     {
         var destination = CreateOrGetExistingArchetype(MemoryHelpers.Remove(ArchetypeTypeArray, component, out var arr), ArchetypeTagArray.AsSpan(), world, arr, ArchetypeTagArray);
-        world.CompRemoveLookup.SetArchetype(component.ID, ID, destination);
+        world.CompRemoveLookup.SetArchetype(component.Index, ID, destination);
         return destination;
     }
 
     public Archetype FindArchetypeAdjacentAdd(World world, ComponentID component)
     {
         var destination = CreateOrGetExistingArchetype(MemoryHelpers.Concat(ArchetypeTypeArray, component, out var res), ArchetypeTagArray.AsSpan(), world, res, ArchetypeTagArray);
-        world.CompAddLookup.SetArchetype(component.ID, ID, destination);
+        world.CompAddLookup.SetArchetype(component.Index, ID, destination);
         return destination;
     }
 
@@ -94,7 +118,7 @@ internal partial class Archetype
     {
         _componentIndex--;
         Debug.Assert(_componentIndex >= 0);
-        return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_componentIndex);
+        return _entities[index] = _entities[_componentIndex];
     }
 
     internal EntityIDOnly DeleteEntity(int index)
@@ -117,33 +141,17 @@ internal partial class Archetype
             case 7: goto len7;
             case 8: goto len8;
             case 9: goto len9;
-            case 10: goto len10;
-            case 11: goto len11;
-            case 12: goto len12;
-            case 13: goto len13;
-            case 14: goto len14;
-            case 15: goto len15;
-            case 16: goto len16;
-            case 17: goto len17;
-            default: goto end;
+            default: goto @long;
         }
 
-    len17:
-        Unsafe.Add(ref first, 16).Delete(args);
-    len16:
-        Unsafe.Add(ref first, 15).Delete(args);
-    len15:
-        Unsafe.Add(ref first, 14).Delete(args);
-    len14:
-        Unsafe.Add(ref first, 13).Delete(args);
-    len13:
-        Unsafe.Add(ref first, 12).Delete(args);
-    len12:
-        Unsafe.Add(ref first, 11).Delete(args);
-    len11:
-        Unsafe.Add(ref first, 10).Delete(args);
-    len10:
-        Unsafe.Add(ref first, 9).Delete(args);
+    @long:
+        var comps = Components;
+        for(int i = 9; i < comps.Length; i++)
+        {
+            comps[i].Delete(args);
+        }
+
+        //TODO: figure out the distribution of component counts
     len9:
         Unsafe.Add(ref first, 8).Delete(args);
     len8:
@@ -161,9 +169,7 @@ internal partial class Archetype
     len2:
         Unsafe.Add(ref first, 1).Delete(args);
         #endregion
-
-    end:
-
+        
         return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_componentIndex);
     }
 
@@ -207,12 +213,22 @@ internal partial class Archetype
 
     internal int GetComponentIndex<T>()
     {
-        return ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.ID) & GlobalWorldTables.IndexBits;
+        return ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.Index) & GlobalWorldTables.IndexBits;
     }
 
     internal int GetComponentIndex(ComponentID component)
     {
-        return ComponentTagTable.UnsafeArrayIndex(component.ID) & GlobalWorldTables.IndexBits;
+        return ComponentTagTable.UnsafeArrayIndex(component.Index) & GlobalWorldTables.IndexBits;
+    }
+
+    internal bool HasTag<T>()
+    {
+        return (ComponentTagTable.UnsafeArrayIndex(Tag<T>.ID.Index) << 7) != 0;
+    }
+
+    internal bool HasTag(TagID tagID)
+    {
+        return (ComponentTagTable.UnsafeArrayIndex(tagID.Index) << 7) != 0;
     }
 
     internal Span<EntityIDOnly> GetEntitySpan()

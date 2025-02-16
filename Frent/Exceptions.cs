@@ -55,6 +55,14 @@ internal class FrentExceptions
     {
         throw new ComponentAlreadyExistsException(message);
     }
+
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void Throw_ArgumentOutOfRangeException(string message)
+    {
+        throw new ArgumentOutOfRangeException(message);
+    }
 }
 
 internal class ComponentAlreadyExistsException : Exception

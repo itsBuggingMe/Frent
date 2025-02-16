@@ -54,6 +54,10 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
         value = _array[--_nextIndex];
     }
 
+    public bool CanPop() => _nextIndex != 0;
+
+    public T PopUnsafe() => _array[--_nextIndex];
+
     public bool TryPop(out T value)
     {
         if(_nextIndex == 0)

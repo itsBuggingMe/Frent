@@ -52,7 +52,6 @@ partial class Archetype
 
     private static readonly Dictionary<long, ArchetypeData> ExistingArchetypes = [];
 
-    //TODO: make this use component Ids instead
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
         ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
@@ -70,7 +69,6 @@ partial class Archetype
         return archetype;
     }
 
-    //initalize archetypeID 0 for hardware trap
     static Archetype()
     {
         Null = GetArchetypeID([Component.GetComponentID(typeof(void))], [Tag.GetTagID(typeof(Disable))]);
@@ -78,6 +76,8 @@ partial class Archetype
 
     internal static ArchetypeID GetArchetypeID(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, ImmutableArray<ComponentID>? typesArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
+        if (types.Length > MemoryHelpers.MaxComponentCount)
+            throw new InvalidOperationException("Entities can have a max of 127 components!");
         lock (GlobalWorldTables.BufferChangeLock)
         {
             ref ArchetypeData slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);
@@ -98,18 +98,13 @@ partial class Archetype
                 var arr = typesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(types);
                 var tagArr = tagTypesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(tagTypes);
 
-                slot = CreateArchetypeData(finalID, arr, tagArr);
+                slot = new ArchetypeData(finalID, arr, tagArr);
                 ArchetypeTable.Push(slot);
                 ModifyComponentLocationTable(arr, tagArr, finalID.ID);
             }
 
             return finalID;
         }
-    }
-
-    public static ArchetypeData CreateArchetypeData(ArchetypeID id, ImmutableArray<ComponentID> componentTypes, ImmutableArray<TagID> tagTypes)
-    {
-        return new ArchetypeData(id, componentTypes, tagTypes);
     }
 
     private static void ModifyComponentLocationTable(ImmutableArray<ComponentID> archetypeTypes, ImmutableArray<TagID> archetypeTags, int id)
@@ -139,12 +134,12 @@ partial class Archetype
         for (int i = 0; i < archetypeTypes.Length; i++)
         {
             //add 1 so zero is null always
-            componentTable[archetypeTypes[i].ID] = (byte)(i + 1);
+            componentTable[archetypeTypes[i].Index] = (byte)(i + 1);
         }
 
         for (int i = 0; i < archetypeTags.Length; i++)
         {
-            componentTable[archetypeTags[i].ID] |= GlobalWorldTables.HasTagMask;
+            componentTable[archetypeTags[i].Index] |= GlobalWorldTables.HasTagMask;
         }
     }
 
@@ -165,8 +160,8 @@ partial class Archetype
 
         foreach (var item in andMoreTypes)
         {
-            hash1 ^= item.ID * 98317U;
-            hash2 += item.ID * 53U;
+            hash1 ^= item.Index * 98317U;
+            hash2 += item.Index * 53U;
         }
 
         h1.Add(HashCode.Combine(hash1, hash2));

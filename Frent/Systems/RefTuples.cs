@@ -39,6 +39,7 @@ public ref struct EntityRefTuple<T>
 [Variadic("        @comp1 = Item1;", "|        @comp$ = Item$;\n|")]
 public ref struct ChunkTuple<T>
 {
+    public EntityEnumerator.EntityEnumerable Entities;
     public Span<T> Item1;
     public void Deconstruct(out Span<T> @comp1)
     {

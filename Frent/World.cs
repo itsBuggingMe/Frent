@@ -27,9 +27,9 @@ public partial class World : IDisposable
     internal Archetype[] WorldArchetypeTable;
     internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
 
-    private NativeStack<EntityIDOnly> _recycledEntityIds = new NativeStack<EntityIDOnly>(8);
+    internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(8);
     private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
-    private int _nextEntityID;
+    internal int NextEntityID;
 
     internal readonly ushort ID;
     internal readonly Entity DefaultWorldEntity;
@@ -180,7 +180,7 @@ public partial class World : IDisposable
     /// <summary>
     /// Gets the current number of entities managed by the world.
     /// </summary>
-    public int EntityCount => _nextEntityID - _recycledEntityIds.Count;
+    public int EntityCount => NextEntityID - RecycledEntityIds.Count;
 
     /// <summary>
     /// The current world config.
@@ -208,7 +208,7 @@ public partial class World : IDisposable
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
     {
-        var (id, version) = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, (ushort)0);
+        var (id, version) = RecycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(NextEntityID++, (ushort)0);
         EntityTable[id] = new(entityLocation, version);
         return new Entity(ID, version, id);
     }
@@ -394,7 +394,7 @@ public partial class World : IDisposable
 
         _isDisposed = true;
 
-        _recycledEntityIds.Dispose();
+        RecycledEntityIds.Dispose();
         //EntityTable.Dispose();
     }
 
@@ -403,12 +403,10 @@ public partial class World : IDisposable
     /// </summary>
     /// <param name="components">The components to use</param>
     /// <returns>The created entity</returns>
-    /// <exception cref="ArgumentException">Thrown when the length of <paramref name="components"/> is > 16.</exception>
     public Entity CreateFromObjects(ReadOnlySpan<object> components)
     {
-        if (components.Length < 0 || components.Length > 16)
-            throw new ArgumentException("0-16 components per entity only", nameof(components));
-
+        if (components.Length > MemoryHelpers.MaxComponentCount)
+            throw new ArgumentException("Max 127 components on an entity", nameof(components));
         Span<ComponentID> types = stackalloc ComponentID[components.Length];
 
         for (int i = 0; i < components.Length; i++)
@@ -448,7 +446,7 @@ public partial class World : IDisposable
         _emptyArchetype ??= Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
         ref var entity = ref _emptyArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
-        var (id, version) = entity = _recycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(_nextEntityID++, 0);
+        var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new EntityIDOnly(NextEntityID++, 0);
         EntityTable[id] = new(eloc, version);
 
         return new Entity(ID, version, id);
@@ -460,19 +458,17 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    /// Allocates memory sufficient to store <paramref name="componentTypes"/> entities of a type
+    /// Allocates memory sufficient to store <paramref name="count"/> entities of a type
     /// </summary>
-    /// <param name="componentTypes">The types of the entity to allocate for</param>
+    /// <param name="entityType">The types of the entity to allocate for</param>
     /// <param name="count">Number of entity spaces to allocate</param>
     /// <remarks>Use this method when creating a large number of entities</remarks>
-    /// <exception cref="ArgumentException">Thrown when the length of <paramref name="componentTypes"/> is > 16.</exception>
-    public void EnsureCapacity(ReadOnlySpan<ComponentID> componentTypes, int count)
+    public void EnsureCapacity(ArchetypeID entityType, int count)
     {
-        if (componentTypes.Length == 0 || componentTypes.Length > 16)
-            throw new ArgumentException("1-16 components per entity only", nameof(componentTypes));
-        if(count < 1)
-            throw new ArgumentOutOfRangeException("count must be positive", nameof(count));
-        Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentTypes, [], this);
+        var types = entityType.Types;
+        if (count < 1)
+            return;
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype(entityType.Types.AsSpan(), entityType.Tags.AsSpan(), this, entityType.Types, entityType.Tags);
         EnsureCapacityCore(archetype, count);
     }
 
@@ -494,13 +490,5 @@ public partial class World : IDisposable
             FrentExceptions.Throw_InvalidOperationException("Initialize the world with an IUniformProvider in order to use uniforms");
             return default!;
         }
-    }
-
-    [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
-    internal record struct EntityLookup(EntityLocation Location, ushort Version)
-    {
-        internal EntityLocation Location = Location;
-        internal ushort Version = Version;
-        private readonly string DebuggerDisplayString => $"Archetype {Location.ArchetypeID}, Component: {Location.Index}, Version: {Version}";
     }
 }

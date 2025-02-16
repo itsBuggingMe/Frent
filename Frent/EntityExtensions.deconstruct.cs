@@ -25,7 +25,7 @@ public static partial class EntityExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Deconstruct<T>(this Entity e, out Ref<T> comp)
     {
-        e.AssertIsAlive(out _, out EntityLocation eloc);
+        EntityLocation eloc = e.AssertIsAlive(out _).Location;
 
         IComponentRunner[] comps = eloc.Archetype.Components;
         byte[] archetypeTable = eloc.Archetype.ComponentTagTable;
@@ -39,7 +39,7 @@ partial class EntityExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Ref<TC> GetComp<TC>(byte[] archetypeTable, IComponentRunner[] comps, int index)
     {
-        int compIndex = archetypeTable.UnsafeArrayIndex(Component<TC>.ID.ID) & GlobalWorldTables.IndexBits;
+        int compIndex = archetypeTable.UnsafeArrayIndex(Component<TC>.ID.Index) & GlobalWorldTables.IndexBits;
         return new Ref<TC>(ref UnsafeExtensions.UnsafeCast<ComponentStorage<TC>>(comps.UnsafeArrayIndex(compIndex))[index]);
     }
 }

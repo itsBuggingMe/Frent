@@ -39,6 +39,7 @@ public class Program
         }
         else
         {
+            BenchmarkRunner.Run<T>();
             ProfileTest(disasmCall);
             JitTest(disasmCall);
         }

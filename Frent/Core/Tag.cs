@@ -44,7 +44,7 @@ internal class Tag
             ExistingTagIDs[type] = newID;
             TagTable.Push(type);
 
-            GlobalWorldTables.GrowComponentTagTableIfNeeded(newID.ID);
+            GlobalWorldTables.GrowComponentTagTableIfNeeded(newID.Index);
 
             return newID;
         }

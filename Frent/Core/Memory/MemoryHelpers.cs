@@ -8,8 +8,7 @@ namespace Frent.Core;
 
 internal static class MemoryHelpers
 {
-    public const int MaxComponentCount = 16;
-    public static int MaxArchetypeChunkSize = 16384 * 4;
+    public const int MaxComponentCount = 127;
 
     public static uint RoundDownToPowerOfTwo(uint value) => BitOperations.RoundUpToPowerOf2((value >> 1) + 1);
 

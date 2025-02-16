@@ -25,7 +25,7 @@ partial class World
 
         ReadOnlySpan<ComponentID> existingComponentIDs = currentArchetype.ArchetypeTypeArray.AsSpan();
         int newCompCount = comps.Length + existingComponentIDs.Length;
-        if ((uint)newCompCount > 16)
+        if (newCompCount > MemoryHelpers.MaxComponentCount)
             FrentExceptions.Throw_InvalidOperationException("Too many components");
 
         Span<ComponentID> allComps = stackalloc ComponentID[newCompCount];
@@ -48,7 +48,7 @@ partial class World
         {
             var componentLocation = comps[j++];
             currentArchetype.Components[i].PullComponentFrom(
-                Component.ComponentTable[componentLocation.Component.ID].Stack,
+                Component.ComponentTable[componentLocation.Component.Index].Stack,
                 nextELoc.Index,
                 componentLocation.Index);
         }
@@ -64,12 +64,12 @@ partial class World
     //Note: this fucntion doesn't actually do the last step of setting the component in the new archetype
     //the caller's job is to set the component
     [SkipLocalsInit]
-    internal IComponentRunner AddComponent(EntityIDOnly entity, EntityLocation entityLocation, ComponentID component, out EntityLocation nextLocation)
+    internal IComponentRunner AddComponent(EntityIDOnly entity, ref EntityLookup currentLookup, ComponentID component, out EntityLocation nextLocation)
     {
-        Archetype from = entityLocation.Archetype;
+        Archetype from = currentLookup.Location.Archetype;
 
         Archetype? destination;
-        uint key = CompAddLookup.GetKey(component.ID, entityLocation.ArchetypeID);
+        uint key = CompAddLookup.GetKey(component.Index, currentLookup.Location.ArchetypeID);
         int index = CompAddLookup.LookupIndex(key);
         if(index != 32)
         {
@@ -80,12 +80,9 @@ partial class World
             destination = from.FindArchetypeAdjacentAdd(this, component);
         }
 
-        destination.CreateEntityLocation(entityLocation.Flags, out nextLocation).Init(entity);
+        destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
 
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
-
-        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
-        EntityTable.UnsafeIndexNoResize(entity.ID).Location = nextLocation;
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index);
 
         IComponentRunner[] fromRunners = from.Components;
         IComponentRunner[] toRunners = destination.Components;
@@ -93,8 +90,11 @@ partial class World
         int i = 1;
         for (; i < fromRunners.Length; i++)
         {
-            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, entityLocation.Index);
+            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index);
         }
+
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
+        currentLookup.Location = nextLocation;
 
         return toRunners.UnsafeArrayIndex(i);
     }
@@ -106,10 +106,10 @@ partial class World
     }
 
     //Remove
-    internal void RemoveComponent(Entity entity, EntityLocation entityLocation, ComponentID component)
+    internal void RemoveComponent(Entity entity, ref EntityLookup currentLookup, ComponentID component)
     {
         Archetype? destination;
-        uint key = CompRemoveLookup.GetKey(component.ID, entityLocation.ArchetypeID);
+        uint key = CompRemoveLookup.GetKey(component.Index, currentLookup.Location.ArchetypeID);
         int index = CompRemoveLookup.LookupIndex(key);
 
         if (index != 32)
@@ -118,20 +118,20 @@ partial class World
         }
         else
         {
-            destination = GetArchetypeRemoveNoCache(key, entityLocation.Archetype, component);
+            destination = GetArchetypeRemoveNoCache(key, currentLookup.Location.Archetype, component);
         }
 
-        ref EntityIDOnly archetypeEntity = ref destination.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation);
+        ref EntityIDOnly archetypeEntity = ref destination.CreateEntityLocation(currentLookup.Location.Flags, out EntityLocation nextLocation);
         archetypeEntity.Init(entity);
 
 
-        int skipIndex = entityLocation.Archetype.GetComponentIndex(component);
+        int skipIndex = currentLookup.Location.Archetype.GetComponentIndex(component);
 
         TrimmableStack? tmpEventComponentStorage = null;
         int tmpEventComponentIndex = -1;
 
         ref IComponentRunner destRef = ref MemoryMarshal.GetArrayDataReference(destination.Components);
-        ref IComponentRunner fromRef = ref MemoryMarshal.GetArrayDataReference(entityLocation.Archetype.Components);
+        ref IComponentRunner fromRef = ref MemoryMarshal.GetArrayDataReference(currentLookup.Location.Archetype.Components);
         destRef = ref Unsafe.Add(ref destRef, 1);
         fromRef = ref Unsafe.Add(ref fromRef, 1);
 
@@ -139,30 +139,30 @@ partial class World
 
         for (; i < skipIndex; i++)
         {
-            destRef.PullComponentFromAndClear(fromRef, nextLocation.Index, entityLocation.Index);
+            destRef.PullComponentFromAndClear(fromRef, nextLocation.Index, currentLookup.Location.Index);
             destRef = ref Unsafe.Add(ref destRef, 1);
             fromRef = ref Unsafe.Add(ref fromRef, 1);
         }
 
-        if (entityLocation.HasEvent(EntityFlags.GenericRemoveComp))
+        if (currentLookup.Location.HasEvent(EntityFlags.GenericRemoveComp))
         {
-            fromRef.PushComponentToStack(entityLocation.Index, out tmpEventComponentIndex);
+            fromRef.PushComponentToStack(currentLookup.Location.Index, out tmpEventComponentIndex);
         }
 
-        for (i++, fromRef = ref Unsafe.Add(ref fromRef, 1); i < entityLocation.Archetype.Components.Length; i++)
+        for (i++, fromRef = ref Unsafe.Add(ref fromRef, 1); i < currentLookup.Location.Archetype.Components.Length; i++)
         {
-            destRef.PullComponentFromAndClear(fromRef, nextLocation.Index, entityLocation.Index);
+            destRef.PullComponentFromAndClear(fromRef, nextLocation.Index, currentLookup.Location.Index);
             destRef = ref Unsafe.Add(ref destRef, 1);
             fromRef = ref Unsafe.Add(ref fromRef, 1);
         }
 
-        EntityIDOnly movedDown = entityLocation.Archetype.DeleteEntityFromStorage(entityLocation.Index);
+        EntityIDOnly movedDown = currentLookup.Location.Archetype.DeleteEntityFromStorage(currentLookup.Location.Index);
 
-        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
-        EntityTable.UnsafeIndexNoResize(entity.EntityID).Location = nextLocation;
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
+        currentLookup.Location = nextLocation;
 
-        entityLocation.Flags |= WorldEventFlags;
-        if(entityLocation.HasEvent(EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp | EntityFlags.WorldRemoveComp))
+        currentLookup.Location.Flags |= WorldEventFlags;
+        if(currentLookup.Location.HasEvent(EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp | EntityFlags.WorldRemoveComp))
         {
             ComponentRemovedEvent.Invoke(entity, component);
             ref var eventData = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
@@ -191,7 +191,7 @@ partial class World
         Archetype destination = from;
         foreach(var component in components)
         {
-            uint key = CompRemoveLookup.GetKey(component.ID, destination.ID);
+            uint key = CompRemoveLookup.GetKey(component.Index, destination.ID);
             int index = CompRemoveLookup.LookupIndex(key);
             if (index != 32)
             {
@@ -209,8 +209,8 @@ partial class World
 
         destination!.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
 
-        Span<int> skipIndicies = (stackalloc int[16])[..components.Length];
-        Span<int> stackIndicies = (stackalloc int[16])[..components.Length];
+        Span<int> skipIndicies = stackalloc int[components.Length];
+        Span<int> stackIndicies = stackalloc int[components.Length];
         Span<TrimmableStack> stacks = [null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!];
         int skipIndexIndex = 0;
 
@@ -296,7 +296,7 @@ partial class World
         if (entity.EntityVersion != ushort.MaxValue - 1)
         {
             //can't use max value as an ID, as it is used as a default value
-            ref var id = ref _recycledEntityIds.Push();
+            ref var id = ref RecycledEntityIds.Push();
             id = entity.EntityIDOnly;
             id.Version++;
         }

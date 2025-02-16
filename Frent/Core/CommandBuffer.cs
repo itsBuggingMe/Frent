@@ -97,7 +97,7 @@ public class CommandBuffer
     public void AddComponent(Entity entity, ComponentID componentID, object component)
     {
         SetIsActive();
-        int index = Component.ComponentTable[componentID.ID].Stack.Push(component);
+        int index = Component.ComponentTable[componentID.Index].Stack.Push(component);
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, componentID, index));
     }
 
@@ -156,7 +156,7 @@ public class CommandBuffer
     {
         AssertCreatingEntity();
         //we don't check IsAssignableTo - reason is perf - InvalidCastException anyways
-        int index = Component.ComponentTable[componentID.ID].Stack.Push(component);
+        int index = Component.ComponentTable[componentID.Index].Stack.Push(component);
         _createEntityComponents.Push((componentID, index));
         return this;
     }
@@ -254,7 +254,7 @@ public class CommandBuffer
             var record = _world.EntityTable[id];
             if (record.Version == item.Entity.Version)
             {
-                _world.RemoveComponent(item.Entity.ToEntity(_world), record.Location, item.ComponentID);
+                _world.RemoveComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
             }
         }
 
@@ -265,9 +265,9 @@ public class CommandBuffer
             if (record.Version == command.Entity.Version)
             {
                 Entity concrete = command.Entity.ToEntity(_world);
-                var runner = _world.AddComponent(command.Entity, record.Location, command.ComponentID,
+                var runner = _world.AddComponent(command.Entity, ref record, command.ComponentID,
                     out var location);
-                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.ID].Stack, location.Index, command.Index);
+                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.Index].Stack, location.Index, command.Index);
 
 
                 if (record.Location.HasEvent(EntityFlags.AddComp | EntityFlags.GenericAddComp))

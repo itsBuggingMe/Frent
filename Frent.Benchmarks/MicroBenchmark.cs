@@ -23,27 +23,29 @@ public class MicroBenchmark
 
     private Entity[] _entities;
 
-    [Params(10, 100, 1000, 10_000, 100_000)]
+    //[Params(10, 100, 1000, 10_000, 100_000)]
     public int Count { get; set; } = 100;
 
     [GlobalSetup]
     public void Setup()
     {
         _world = new World();
-        _entities = new Entity[Count];
-        foreach (ref var e in _entities.AsSpan())
+        _entity = _world.Create<int, double>(default, default);
+        _entities = new Entity[100_000];
+        for (int i = 0; i < _entities.Length; i++)
         {
-            e = _world.Create(0, 0.0, 0f);
+            _entities[i] = _world.Create(0, 0f, 0.0, "", (0f, 0f));
         }
     }
 
     [Benchmark]
+    [BenchmarkCategory(Categories.Add)]
     public void AddRem()
     {
-        foreach(var e in _entities)
+        foreach (var entity in _entities)
         {
-            e.Remove<int>();
-            e.Add(0);
+            entity.Remove<int>();
+            entity.Add(0);
         }
     }
 

@@ -50,16 +50,19 @@ public partial struct Entity : IEquatable<Entity>
             Unsafe.SkipInit(out entityLocation);
             return false;
         }
-        ref World.EntityLookup lookup = ref world.EntityTable.UnsafeIndexNoResize(EntityID);
+        ref EntityLookup lookup = ref world.EntityTable.UnsafeIndexNoResize(EntityID);
         entityLocation = lookup.Location;
         return lookup.Version == EntityVersion;
     }
 
-    internal void AssertIsAlive(out World world, out EntityLocation entityLocation)
+    internal ref EntityLookup AssertIsAlive(out World world)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         //hardware trap
-        entityLocation = world.EntityTable.UnsafeIndexNoResize(EntityID).Location;
+        ref var lookup =  ref world.EntityTable.UnsafeIndexNoResize(EntityID);
+        if (lookup.Version != EntityVersion)
+            Throw_EntityIsDead();
+        return ref lookup;
     }
 
     #endregion IsAlive
