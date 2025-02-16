@@ -18,6 +18,7 @@ internal unsafe struct NativeArray<T> : IDisposable
 
     public ref T this[int index]
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
 #if DEBUG

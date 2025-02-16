@@ -5,6 +5,7 @@ using Frent.Core;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Benchmarks;
 
@@ -15,6 +16,17 @@ public class Program
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
+        World[] worlds = Enumerable.Range(0, ushort.MaxValue - 1).Select(w => new World()).ToArray();
+
+        foreach(var world in worlds)
+        {
+            for(int i = 0; i < 100; i++)
+            {
+                world.Create<int>(default);
+            }
+        }
+        Debugger.Break();
+        return;
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true

@@ -40,7 +40,7 @@ internal static class Archetype<T>
 
     internal static class OfComponent<C>
     {
-        public static int Index = GlobalWorldTables.ComponentIndex(ID, Component<C>.ID);
+         public static readonly int Index = GlobalWorldTables.ComponentIndex(ID, Component<C>.ID);
     }
 }
 

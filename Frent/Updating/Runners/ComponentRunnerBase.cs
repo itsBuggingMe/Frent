@@ -73,14 +73,14 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 
     public ref TComponent this[int index]
     {
+        //this was not being inlined!!!
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             {
                 return ref _managed!.UnsafeArrayIndex(index);
             }
-
-            Debug.Assert(index >= 0 && index < _nativeArray.Length);
 
             return ref _nativeArray[index];
         }
