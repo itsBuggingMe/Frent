@@ -3,8 +3,8 @@ using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
 
-[Variadic("                Item1 = cur.GetComponentSpan<T>(),", 
-    "|                Item$ = cur.GetComponentSpan<T$>(),\n|")]
+[Variadic("                Span = cur.GetComponentSpan<T>(),",
+    "|                Span$ = cur.GetComponentSpan<T$>(),\n|")]
 [Variadic("<T>", "<|T$, |>")]
 public ref struct ChunkQueryEnumerator<T>
 {
@@ -27,7 +27,7 @@ public ref struct ChunkQueryEnumerator<T>
             Archetype cur = _archetypes[_archetypeIndex];
             return new()
             {
-                Item1 = cur.GetComponentSpan<T>(),
+                Span = cur.GetComponentSpan<T>(),
             };
         }
     }

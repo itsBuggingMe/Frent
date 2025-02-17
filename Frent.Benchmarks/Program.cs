@@ -11,12 +11,12 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Decon());
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.CreateMany());
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
-        JitTest(disasmCall);
+        ProfileTest(disasmCall);
         return;
         ProfileTest(disasmCall);
 

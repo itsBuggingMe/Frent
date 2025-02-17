@@ -13,7 +13,7 @@ namespace Frent;
     "|        ref T$ ref$ = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index))[eloc.Index]; ref$ = comp$;\n|")]
 [Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
     "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
-[Variadic("            Item1 = archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Item$ = archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
+[Variadic("            Span = archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("y<T>", "y<|T$, |>")]
 [Variadic("in T comp", "|in T$ comp$, |")]
@@ -47,6 +47,11 @@ partial class World
         return concreteEntity;
     }
 
+    /// <summary>
+    /// Creates a large amount of entities quickly
+    /// </summary>
+    /// <param name="count">The number of entities to create</param>
+    /// <returns>The entities created and their component spans</returns>
     public ChunkTuple<T> CreateMany<T>(int count)
     {
         if (count < 0)
@@ -68,13 +73,8 @@ partial class World
         var chunks = new ChunkTuple<T>()
         {
             Entities = new EntityEnumerator.EntityEnumerable(this, entities),
-            Item1 = archetype.GetComponentSpan<T>()[initalEntityCount..],
+            Span = archetype.GetComponentSpan<T>()[initalEntityCount..],
         };
-
-        if(Archetype<T>.NeedsInit)
-        {
-            
-        }
 
         return chunks;
     }

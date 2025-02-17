@@ -50,7 +50,6 @@ internal partial class Archetype
         return ref _entities.UnsafeArrayIndex(_componentIndex++);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Span<EntityIDOnly> CreateEntityLocations(int count, World world)
     {
         int newLen = _componentIndex + count;
@@ -58,6 +57,7 @@ internal partial class Archetype
 
         Span<EntityIDOnly> entitySpan = _entities.AsSpan(_componentIndex, count);
 
+        int componentIndex = _componentIndex;
         ref var recycled = ref world.RecycledEntityIds;
         for(int i = 0; i < entitySpan.Length; i++)
         {
@@ -69,9 +69,11 @@ internal partial class Archetype
 
             lookup.Version = archetypeEntity.Version;
             lookup.Location.Archetype = this;
-            lookup.Location.Index = _componentIndex++;
+            lookup.Location.Index = componentIndex++;
             lookup.Location.Flags = EntityFlags.None;
         }
+
+        _componentIndex = componentIndex;
 
         return entitySpan;
     }

@@ -70,7 +70,7 @@ namespace Frent.Sample
         protected override void Update(GameTime gameTime)
         {
             MouseState = Mouse.GetState();
-            Window.Title = $"FPS: {1000 / gameTime.ElapsedGameTime.TotalMilliseconds} T: {ThreadPool.ThreadCount}";
+            Window.Title = $"FPS: {1000 / gameTime.ElapsedGameTime.TotalMilliseconds} T: {ThreadPool.ThreadCount} Entities: {entities.Count}";
             DeltaTime = (float)(gameTime.ElapsedGameTime.TotalMilliseconds / 16.666);
 
             if (Keyboard.GetState().IsKeyDown(Keys.Space))
@@ -94,10 +94,12 @@ namespace Frent.Sample
                 DeleteRandomEntity();
             }
 
+            _world.Update();
+
             Vector256<float> deltaTime = Vector256.Create(1f);
 
             foreach((Span<Position> positions, Span<Velocity> velocities) in _world
-                .Query<With<Position, Velocity>>()
+                .Query<With<Position>, With<Velocity>>()
                 .EnumerateChunks<Position, Velocity>())
             {
                 //8 floats/vec
@@ -123,7 +125,7 @@ namespace Frent.Sample
             }
 
             foreach ((Ref<Velocity> vel, Ref<Position> pos, Ref<Bounds> bounds) in _world
-                .Query<With<Velocity, Position, Bounds>>()
+                .Query<With<Velocity>, With<Position>, With<Bounds>>()
                 .Enumerate<Velocity, Position, Bounds>())
             {
                 Rectangle window = GraphicsDevice.Viewport.Bounds;
@@ -177,7 +179,7 @@ namespace Frent.Sample
             GraphicsDevice.Clear(Color.CornflowerBlue);
             SpriteBatch.Begin();
             foreach((Ref<SinglePixel> pix, Ref<Position> pos, Ref<Bounds> bounds) in _world
-                .Query<With<SinglePixel, Position, Bounds>>()
+                .Query<With<SinglePixel>, With<Position>, With<Bounds>>()
                 .Enumerate<SinglePixel, Position, Bounds>())
             {
                 Vector2 topLeft = pos.Value.XY - bounds.Value.Size * 0.5f;

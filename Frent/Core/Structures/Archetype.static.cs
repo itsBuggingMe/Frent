@@ -12,10 +12,10 @@ namespace Frent.Core;
 [Variadic("typeof(T)", "|typeof(T$), |")]
 [Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
 [Variadic("[null!, Component<T>.CreateInstance()]", "[null!, |Component<T$>.CreateInstance(), |]")]
+[Variadic("&& Component<T>.Initer is not null", "|&& Component<T$>.Initer is not null\n|")]
 internal static class Archetype<T>
 {
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
-    public static readonly bool NeedsInit;
 
     //ArchetypeTypes init first, then ID
     public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeComponentIDs.AsSpan(), [], ArchetypeComponentIDs, ImmutableArray<TagID>.Empty);

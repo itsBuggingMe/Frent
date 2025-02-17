@@ -46,6 +46,18 @@ public class MicroBenchmark
         _entity.Deconstruct<int, double, long, float, Half>(out _, out _, out _, out _, out _);
     }
 
+    [Benchmark]
+    public void CreateMany()
+    {
+        using World world = new World();
+        var chunks = world.CreateMany<int>(100_000);
+
+        foreach(ref var item in chunks.Span)
+        {
+            item = new();
+        }
+    }
+
     /*
     [Benchmark]
     [BenchmarkCategory(Categories.Add)]

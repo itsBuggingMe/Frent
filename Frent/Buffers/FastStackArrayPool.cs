@@ -12,8 +12,7 @@ internal class FastStackArrayPool<T> : ArrayPool<T>
     internal static void ResizeArrayFromPool(ref T[] arr, int len)
     {
         var finalArr = Instance.Rent(len);
-
-        arr.CopyTo(finalArr, 0);
+        arr.AsSpan().CopyTo(finalArr);
         Instance.Return(arr);
         arr = finalArr;
     }
@@ -55,8 +54,8 @@ internal class FastStackArrayPool<T> : ArrayPool<T>
     {
         //easier to deal w/ all logic here
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            Array.Clear(array);
-        int bucketIndex = BitOperations.Log2((uint)array.Length) - 4;
+            array.AsSpan().Clear();
+        int bucketIndex = BitOperations.Log2((uint)array.Length) - 5;
         if ((uint)bucketIndex < (uint)Buckets.Length)
             Buckets[bucketIndex] = array;
     }
