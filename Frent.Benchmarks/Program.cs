@@ -16,10 +16,6 @@ public class Program
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
-        ProfileTest(disasmCall);
-        return;
-        ProfileTest(disasmCall);
-
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true

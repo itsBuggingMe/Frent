@@ -181,7 +181,7 @@ internal partial class Archetype
         
     end:
         
-        return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_componentIndex);
+        return _entities.UnsafeArrayIndex(args.ToIndex) = _entities.UnsafeArrayIndex(args.FromIndex);
     }
 
     internal void Update(World world)

@@ -6,8 +6,8 @@ namespace Frent.Systems;
 [Variadic("    private Span<T> _currentSpan1;", "|    private Span<T$> _currentSpan$;\n|")]
 [Variadic("        Item1 = new Ref<T>(ref _currentSpan1[_componentIndex]),", 
     "|        Item$ = new Ref<T$>(ref _currentSpan$[_componentIndex]),\n|")]
-[Variadic("            _currentSpan1 = cur.GetComponentSpan<T>();", 
-    "|            _currentSpan$ = cur.GetComponentSpan<T$>();\n|")]
+[Variadic("                _currentSpan1 = cur.GetComponentSpan<T>();", 
+    "|                _currentSpan$ = cur.GetComponentSpan<T$>();\n|")]
 [Variadic("<T>", "<|T$, |>")]
 public ref struct EntityQueryEnumerator<T>
 {
@@ -42,19 +42,25 @@ public ref struct EntityQueryEnumerator<T>
         {
             return true;
         }
-        
-        _componentIndex = 0;
-        _archetypeIndex++;
 
-        if((uint)_archetypeIndex < (uint)_archetypes.Length)
+        do
         {
-            var cur = _archetypes[_archetypeIndex];
-            _entityIds = cur.GetEntitySpan();
-            _currentSpan1 = cur.GetComponentSpan<T>();
-            return true;
-        }
+            _componentIndex = 0;
+            _archetypeIndex++;
 
-        return false;
+            if ((uint)_archetypeIndex < (uint)_archetypes.Length)
+            {
+                var cur = _archetypes[_archetypeIndex];
+                _entityIds = cur.GetEntitySpan();
+                _currentSpan1 = cur.GetComponentSpan<T>();
+            }
+            else
+            {
+                return false;
+            }
+        } while (!(_componentIndex < _currentSpan1.Length));
+
+        return true;
     }
 
     public struct QueryEnumerable(Query query)

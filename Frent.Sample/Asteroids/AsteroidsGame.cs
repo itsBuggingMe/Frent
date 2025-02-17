@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Frozen;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Frent.Sample.Asteroids;
@@ -139,7 +140,6 @@ public partial class AsteroidsGame : Game
             new Vector2(-10, 10),
         ]), default, new() { Radius = 25 });
         _player.Tag<Shootable>();
-        _player.OnDelete += static e => Instance.CreateNewPlayer();
     }
 
     private void Window_ClientSizeChanged(object? sender, EventArgs e)
@@ -182,8 +182,22 @@ public partial class AsteroidsGame : Game
             e.Tag<Shootable>();
         }
 
-        //_world.Query<With<CircleCollision, Transform>>()
-        //    .InlineEntityUniform<InlineOuterCollisionQuery, World, CircleCollision, Transform>(default);
+        Query collidables = _world.Query<With<CircleCollision>, With<Transform>>();
+        foreach((Entity entity1, Ref<CircleCollision> collision1, Ref<Transform> trans1) in collidables.EnumerateWithEntities<CircleCollision, Transform>())
+        {
+            foreach ((Entity entity2, Ref<CircleCollision> collision2, Ref<Transform> trans2) in collidables.EnumerateWithEntities<CircleCollision, Transform>())
+            {
+                if(entity1 != entity2)
+                {
+                    if(CircleCollision.Intersects(
+                        trans1.Value, collision2.Value,
+                        trans2.Value, collision2.Value))
+                    {
+                        collision2.Value.CollidesWith = entity1;
+                    }
+                }
+            }
+        }
 
         base.Update(gameTime);
     }
