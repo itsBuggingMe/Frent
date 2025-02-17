@@ -15,7 +15,7 @@ public interface IUniformComponent<TUniform> : IComponentBase
 /// <summary>
 /// Indicates a component should be updated with a uniform of type <typeparamref name="TUniform"/> and the specified components
 /// </summary>
-[Variadic(TArgFrom, TArgPattern, 15)]
+[Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IUniformComponent<TUniform, TArg> : IComponentBase
 {

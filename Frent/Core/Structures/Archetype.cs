@@ -26,9 +26,15 @@ internal partial class Archetype
         if (index == 0)
         {
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
-            return default;
         }
         return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpan(_componentIndex);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ref T GetComponentDataReference<T>()
+    {
+        int index = GetComponentIndex<T>();
+        return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,6 +139,7 @@ internal partial class Archetype
 
         switch (Components.Length)
         {
+            case 1: goto end;
             case 2: goto len2;
             case 3: goto len3;
             case 4: goto len4;
@@ -169,6 +176,8 @@ internal partial class Archetype
     len2:
         Unsafe.Add(ref first, 1).Delete(args);
         #endregion
+        
+    end:
         
         return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_componentIndex);
     }
@@ -211,21 +220,25 @@ internal partial class Archetype
             comprunners[i].Trim(0);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetComponentIndex<T>()
     {
         return ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.Index) & GlobalWorldTables.IndexBits;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetComponentIndex(ComponentID component)
     {
         return ComponentTagTable.UnsafeArrayIndex(component.Index) & GlobalWorldTables.IndexBits;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool HasTag<T>()
     {
         return (ComponentTagTable.UnsafeArrayIndex(Tag<T>.ID.Index) << 7) != 0;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool HasTag(TagID tagID)
     {
         return (ComponentTagTable.UnsafeArrayIndex(tagID.Index) << 7) != 0;

@@ -14,6 +14,6 @@ public class NoneUpdateRunnerFactory<T> : IComponentRunnerFactory, IComponentRun
     /// <inheritdoc/>
     public object Create() => new NoneUpdate<T>();
     /// <inheritdoc/>
-    public object CreateStack() => new TrimmableStack<T>();
+    public object CreateStack() => new IDTable<T>();
     IComponentRunner<T> IComponentRunnerFactory<T>.CreateStronglyTyped() => new NoneUpdate<T>();
 }

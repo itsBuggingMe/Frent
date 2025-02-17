@@ -34,11 +34,11 @@ public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, ICompon
     /// <inheritdoc/>
     public object Create() => new EntityUpdate<TComp>();
     /// <inheritdoc/>
-    public object CreateStack() => new TrimmableStack<TComp>();
+    public object CreateStack() => new IDTable<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp>();
 }
 
-[Variadic(GetSpanFrom, GetSpanPattern, 15)]
+[Variadic(GetSpanFrom, GetSpanPattern)]
 [Variadic(GenArgFrom, GenArgPattern)]
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
@@ -63,13 +63,13 @@ internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TCom
 }
 
 /// <inheritdoc cref="IComponentRunnerFactory"/>
-[Variadic(GenArgFrom, GenArgPattern, 15)]
+[Variadic(GenArgFrom, GenArgPattern)]
 public class EntityUpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IEntityComponent<TArg>
 {
     /// <inheritdoc/>
     public object Create() => new EntityUpdate<TComp, TArg>();
     /// <inheritdoc/>
-    public object CreateStack() => new TrimmableStack<TComp>();
+    public object CreateStack() => new IDTable<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp, TArg>();
 }

@@ -17,7 +17,7 @@ public interface IComponent : IComponentBase
 /// <summary>
 /// Indicates a component should be updated with the specified components
 /// </summary>
-[Variadic(TArgFrom, TArgPattern, 15)]
+[Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IComponent<TArg> : IComponentBase
 {

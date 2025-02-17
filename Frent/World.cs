@@ -23,11 +23,11 @@ public partial class World : IDisposable
     private static ushort _nextWorldID = 1;
     #endregion
 
-    internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(32);
+    internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(256);
     internal Archetype[] WorldArchetypeTable;
     internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
 
-    internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(8);
+    internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
     private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
     internal int NextEntityID;
 
@@ -301,23 +301,7 @@ public partial class World : IDisposable
             queryHash.AddRule(rule);
 
         return CollectionsMarshal.GetValueRefOrAddDefault(QueryCache, queryHash.ToHashCodeIncludeDisable(), out _) ??= CreateQueryFromSpan([.. rules]);
-    }
-
-    //we could use static abstract methods IF NOT FOR DOTNET6
-    /// <summary>
-    /// Gets a query specified by <typeparamref name="T"/>.
-    /// </summary>
-    /// <returns>The created or cached query.</returns>
-    public Query Query<T>()
-        where T : struct, IConstantQueryHashProvider
-    {
-        ref Query? cachedValue = ref CollectionsMarshal.GetValueRefOrAddDefault(QueryCache, default(T).GetHashCode(), out bool exists);
-        if (!exists)
-        {
-            cachedValue = CreateQuery(default(T).Rules);
-        }
-        return cachedValue!;
-    }
+    } 
 
     internal void ArchetypeAdded(ArchetypeID archetype)
     {

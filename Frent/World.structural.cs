@@ -18,7 +18,7 @@ partial class World
     /// <summary>
     /// Note - This function DOES NOT invoke events, as it is also used for command buffer entity creation
     /// </summary>
-    internal void AddComponentRange(Entity entity, ReadOnlySpan<(ComponentID Component, int Index)> comps)
+    internal void AddComponentRange(Entity entity, ReadOnlySpan<ComponentHandle> comps)
     {
         EntityLocation location = EntityTable[entity.EntityID].Location;
         Archetype currentArchetype = location.Archetype;
@@ -32,7 +32,7 @@ partial class World
         existingComponentIDs.CopyTo(allComps);
         int j = 0;
         for (int i = existingComponentIDs.Length; i < comps.Length; i++)
-            allComps[i] = comps[j++].Component;
+            allComps[i] = comps[j++].ComponentID;
         var tags = currentArchetype.ArchetypeTagArray;
 
         var destination = Archetype.CreateOrGetExistingArchetype(allComps, tags.AsSpan(), this, null, tags);
@@ -48,7 +48,7 @@ partial class World
         {
             var componentLocation = comps[j++];
             currentArchetype.Components[i].PullComponentFrom(
-                Component.ComponentTable[componentLocation.Component.Index].Stack,
+                Component.ComponentTable[componentLocation.ComponentID.Index].Storage,
                 nextELoc.Index,
                 componentLocation.Index);
         }
@@ -99,12 +99,6 @@ partial class World
         return toRunners.UnsafeArrayIndex(i);
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void Consume<T>(T i)
-    {
-
-    }
-
     //Remove
     internal void RemoveComponent(Entity entity, ref EntityLookup currentLookup, ComponentID component)
     {
@@ -127,7 +121,7 @@ partial class World
 
         int skipIndex = currentLookup.Location.Archetype.GetComponentIndex(component);
 
-        TrimmableStack? tmpEventComponentStorage = null;
+        IDTable? tmpEventComponentStorage = null;
         int tmpEventComponentIndex = -1;
 
         ref IComponentRunner destRef = ref MemoryMarshal.GetArrayDataReference(destination.Components);
@@ -144,9 +138,9 @@ partial class World
             fromRef = ref Unsafe.Add(ref fromRef, 1);
         }
 
-        if (currentLookup.Location.HasEvent(EntityFlags.GenericRemoveComp))
+        if (currentLookup.Location.HasEvent(EntityFlags.RemoveComp))
         {
-            fromRef.PushComponentToStack(currentLookup.Location.Index, out tmpEventComponentIndex);
+            tmpEventComponentStorage = fromRef.PushComponentToStack(currentLookup.Location.Index, out tmpEventComponentIndex);
         }
 
         for (i++, fromRef = ref Unsafe.Add(ref fromRef, 1); i < currentLookup.Location.Archetype.Components.Length; i++)
@@ -162,12 +156,12 @@ partial class World
         currentLookup.Location = nextLocation;
 
         currentLookup.Location.Flags |= WorldEventFlags;
-        if(currentLookup.Location.HasEvent(EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp | EntityFlags.WorldRemoveComp))
+        if(currentLookup.Location.HasEvent(EntityFlags.RemoveComp | EntityFlags.WorldRemoveComp))
         {
             ComponentRemovedEvent.Invoke(entity, component);
             ref var eventData = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
             eventData.Remove.NormalEvent.Invoke(entity, component);
-            tmpEventComponentStorage?.InvokeEventWith(eventData.Remove.GenericEvent, entity, tmpEventComponentIndex);
+            tmpEventComponentStorage?.InvokeEventWithAndConsume(eventData.Remove.GenericEvent, entity, tmpEventComponentIndex);
         }
     }
 
@@ -211,7 +205,7 @@ partial class World
 
         Span<int> skipIndicies = stackalloc int[components.Length];
         Span<int> stackIndicies = stackalloc int[components.Length];
-        Span<TrimmableStack> stacks = [null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!];
+        Span<IDTable> stacks = [null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!];
         int skipIndexIndex = 0;
 
         for(int i1 = 0; i1 < skipIndicies.Length; i1++)
@@ -225,7 +219,7 @@ partial class World
         {
             if(i == skipIndicies[skipIndexIndex])
             {
-                if(entityLocation.HasEvent(EntityFlags.GenericAddComp))
+                if(entityLocation.HasEvent(EntityFlags.AddComp))
                 {
                     stacks[skipIndexIndex] = from.Components[i].PushComponentToStack(entityLocation.Index, out int stackIndex);
                     stackIndicies[skipIndexIndex] = stackIndex;
@@ -243,14 +237,14 @@ partial class World
         EntityTable.UnsafeIndexNoResize(entity.EntityID).Location = nextLocation;
 
         entityLocation.Flags |= WorldEventFlags;
-        if (entityLocation.HasEvent(EntityFlags.RemoveComp | EntityFlags.GenericRemoveComp | EntityFlags.WorldRemoveComp))
+        if (entityLocation.HasEvent(EntityFlags.RemoveComp | EntityFlags.WorldRemoveComp))
         {
             for(int i = 0; i < components.Length; i++)
             {
                 ComponentRemovedEvent.Invoke(entity, components[i]);
                 ref var eventData = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
                 eventData.Remove.NormalEvent.Invoke(entity, components[i]);
-                stacks[i]?.InvokeEventWith(eventData.Remove.GenericEvent, entity, stackIndicies[i]);
+                stacks[i]?.InvokeEventWithAndConsume(eventData.Remove.GenericEvent, entity, stackIndicies[i]);
             }
         }
     }
@@ -305,7 +299,7 @@ partial class World
     //Tag
     internal bool Tag(Entity entity, EntityLocation entityLocation, TagID tagID)
     {
-        if (GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID))
+        if (entityLocation.Archetype.HasTag(tagID))
             return false;
 
         Archetype from = entityLocation.Archetype;

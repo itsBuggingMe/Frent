@@ -7,10 +7,13 @@ namespace Frent;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 internal struct EntityLocation
 {
-    internal ArchetypeID ArchetypeID => Archetype.ID;
     internal Archetype Archetype;
     internal int Index;
     internal EntityFlags Flags;
+
+
+    internal ArchetypeID ArchetypeID => Archetype.ID;
+
 
     public EntityLocation(Archetype archetype, int index)
     {
@@ -45,31 +48,30 @@ internal enum EntityFlags : ushort
     Detach = 1 << 1,
 
     AddComp = 1 << 2,
-    GenericAddComp = 1 << 3,
+    RemoveComp = 1 << 3,
 
-    RemoveComp = 1 << 4,
-    GenericRemoveComp = 1 << 5,
+    OnDelete = 1 << 4,
 
-    OnDelete = 1 << 6,
+    Events = Tagged | Detach | AddComp | RemoveComp | OnDelete,
 
-    Events = Tagged | Detach | AddComp | RemoveComp | GenericAddComp | GenericAddComp | OnDelete,
+    WorldCreate = 1 << 5,
 
-    WorldCreate = 1 << 7,
+    WorldTagged = 1 << 6,
+    WorldDetach = 1 << 7,
 
-    WorldTagged = 1 << 8,
-    WorldDetach = 1 << 9,
+    WorldAddComp = 1 << 8,
+    WorldRemoveComp = 1 << 9,
 
-    WorldAddComp = 1 << 10,
-    WorldGenericAddComp = 1 << 11,
+    WorldOnDelete = 1 << 10,
 
-    WorldRemoveComp = 1 << 12,
-    WorldGenericRemoveComp = 1 << 13,
+    WorldEvents = WorldTagged | WorldDetach | WorldAddComp | WorldRemoveComp | WorldOnDelete,
 
-    WorldOnDelete = 1 << 14,
-
-    WorldEvents = WorldTagged | WorldDetach | WorldAddComp | WorldRemoveComp | WorldGenericAddComp | WorldGenericAddComp | WorldOnDelete,
 
     AllEvents = Events | WorldEvents,
 
-    //NeedsDispose = 1 << 4,
+    HasWorldCommandBufferRemove = 1 << 11,
+
+    HasWorldCommandBufferAdd = 1 << 11,
+
+    HasWorldCommandBufferDelete = 1 << 12,
 }

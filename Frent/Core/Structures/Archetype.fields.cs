@@ -7,7 +7,7 @@ namespace Frent.Core;
 partial class Archetype(ArchetypeID archetypeID, IComponentRunner[] components)
 {
     //8
-    internal IComponentRunner[] Components = components;
+    internal readonly IComponentRunner[] Components = components;
     //8
     //we include version
     //this is so we dont need to lookup
@@ -19,7 +19,7 @@ partial class Archetype(ArchetypeID archetypeID, IComponentRunner[] components)
     //saves a lookup on hot paths
     internal byte[] ComponentTagTable = GlobalWorldTables.ComponentTagLocationTable[archetypeID.ID];
     //2
-    private ArchetypeID _archetypeID = archetypeID;
+    private readonly ArchetypeID _archetypeID = archetypeID;
     //4
     /// <summary>
     /// The next component index

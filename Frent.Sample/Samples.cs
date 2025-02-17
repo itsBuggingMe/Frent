@@ -110,11 +110,6 @@ record struct Vel(float DX) : IUniformComponent<float, Pos>
     }
 }
 
-struct WriteQuery : IUniformAction<byte, int>
-{
-    public void Run(byte uniform, ref int x) => Console.Write($"{x + uniform}, ");
-}
-
 struct ConsoleText(ConsoleColor Color) : IComponent<string>
 {
     public void Update(ref string str)

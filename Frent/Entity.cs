@@ -13,7 +13,7 @@ namespace Frent;
 /// <summary>
 /// An Entity reference; refers to a collection of components of unqiue types.
 /// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential, Pack = 2)]
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 [DebuggerTypeProxy(typeof(EntityDebugView))]
 public partial struct Entity : IEquatable<Entity>
@@ -37,6 +37,34 @@ public partial struct Entity : IEquatable<Entity>
     internal int EntityID;
     internal ushort EntityVersion;
     internal ushort WorldID;
+    #endregion
+
+    #region Props
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private struct EntityWorldInfoAccess
+    {
+        internal EntityIDOnly EntityIDOnly;
+        internal ushort WorldID;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private struct EntityHighLow
+    {
+        internal int EntityID;
+        internal int EntityLow;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private struct EntityData
+    {
+        internal int EntityID;
+        internal ushort EntityVersion;
+        internal ushort WorldID;
+    }
+
+    internal EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).EntityIDOnly;
+    internal long PackedValue => Unsafe.As<Entity, long>(ref this);
+    internal int EntityLow => Unsafe.As<Entity, EntityHighLow>(ref this).EntityLow;
     #endregion
 
     #region Internal Helpers
@@ -134,25 +162,6 @@ public partial struct Entity : IEquatable<Entity>
             }
         }
     }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    private struct EntityWorldInfoAccess
-    {
-        internal EntityIDOnly EntityIDOnly;
-        internal ushort PackedWorldInfo;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    private struct EntityHighLow
-    {
-        internal int EntityID;
-        internal int EntityLow;
-    }
-
-    internal ushort PackedWorldInfo => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).PackedWorldInfo;
-    internal EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).EntityIDOnly;
-    internal long PackedValue => Unsafe.As<Entity, long>(ref this);
-    internal int EntityLow => Unsafe.As<Entity, EntityHighLow>(ref this).EntityLow;
     #endregion
 
     #region IEquatable

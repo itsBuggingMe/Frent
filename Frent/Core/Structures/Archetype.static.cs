@@ -15,6 +15,7 @@ namespace Frent.Core;
 internal static class Archetype<T>
 {
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
+    public static readonly bool NeedsInit;
 
     //ArchetypeTypes init first, then ID
     public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeComponentIDs.AsSpan(), [], ArchetypeComponentIDs, ImmutableArray<TagID>.Empty);

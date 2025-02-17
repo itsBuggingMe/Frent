@@ -38,9 +38,9 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
         }
     }
 
-    public void PullComponentFrom(TrimmableStack storage, int me, int other)
+    public void PullComponentFrom(IDTable storage, int me, int other)
     {
-        ref var item = ref ((TrimmableStack<TComponent>)storage).StrongBuffer[other];
+        ref var item = ref ((IDTable<TComponent>)storage).Buffer[other];
         this[me] = item;
 
         if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
@@ -61,24 +61,22 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
             from = default;
     }
 
-    public TrimmableStack PushComponentToStack(int componentIndex, out int stackIndex)
+    public IDTable PushComponentToStack(int componentIndex, out int stackIndex)
     {
-        Component<TComponent>.TrimmableStack.PushStronglyTyped(this[componentIndex], out stackIndex);
-        return Component<TComponent>.TrimmableStack;
+        Component<TComponent>.GeneralComponentStorage.Create(out stackIndex) = this[componentIndex];
+        return Component<TComponent>.GeneralComponentStorage;
     }
 }
 
-#if MANAGED_COMPONENTS
+#if MANAGED_COMPONENTS || TRUE
 internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 {
-
     public ref TComponent this[int index]
     {
-        //this was not being inlined!!!
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            return ref _managed!.UnsafeArrayIndex(index);
+            return ref _managed.UnsafeArrayIndex(index);
         }
     }
 
@@ -87,7 +85,7 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
         _managed = new TComponent[1];
     }
 
-    private TComponent[]? _managed;
+    private TComponent[] _managed;
 
     protected void Resize(int size)
     {
@@ -96,7 +94,9 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 
     public Span<TComponent> AsSpan() => _managed;
 
-    public Span<TComponent> AsSpan(int length) => _managed;
+    public Span<TComponent> AsSpan(int length) => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_managed), length);
+
+    public ref TComponent GetComponentStorageDataReference() => ref MemoryMarshal.GetArrayDataReference(_managed);
 
     public void Dispose()
     {
@@ -121,6 +121,7 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ComponentStorage()
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
@@ -136,6 +137,7 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
     private TComponent[]? _managed;
     private NativeArray<TComponent> _nativeArray;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void Resize(int size)
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
@@ -148,9 +150,11 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<TComponent> AsSpan() => RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>() ?
         _managed.AsSpan() : _nativeArray.AsSpan();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<TComponent> AsSpan(int length) => RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>() ?
         _managed.AsSpan(0, length) : _nativeArray.AsSpanLen(length);
 

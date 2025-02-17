@@ -9,15 +9,11 @@ namespace Frent.Core;
 /// </summary>
 public class CommandBuffer
 {
-    private static int _activeCommandBuffers;
-
-    internal static Action? ClearTempComponentStorage;
-
     internal FastStack<EntityIDOnly> _deleteEntityBuffer = FastStack<EntityIDOnly>.Create(4);
     internal FastStack<AddComponent> _addComponentBuffer = FastStack<AddComponent>.Create(4);
     internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(4);
     internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(4);
-    internal FastStack<(ComponentID, int index)> _createEntityComponents = FastStack<(ComponentID, int index)>.Create(4);
+    internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(4);
 
     internal World _world;
     //-1 indicates normal state
@@ -80,10 +76,10 @@ public class CommandBuffer
     /// <typeparam name="T">The component type to add.</typeparam>
     /// <param name="entity">The entity to add to.</param>
     /// <param name="component">The component to add.</param>
-    public void AddComponent<T>(Entity entity, T component)
+    public void AddComponent<T>(Entity entity, in T component)
     {
         SetIsActive();
-        Component<T>.TrimmableStack.PushStronglyTyped(in component, out int index);
+        Component<T>.GeneralComponentStorage.Create(out int index) = component;
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, Component<T>.ID, index));
     }
 
@@ -97,7 +93,7 @@ public class CommandBuffer
     public void AddComponent(Entity entity, ComponentID componentID, object component)
     {
         SetIsActive();
-        int index = Component.ComponentTable[componentID.Index].Stack.Push(component);
+        int index = Component.ComponentTable[componentID.Index].Storage.CreateBoxed(component);
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, componentID, index));
     }
 
@@ -142,8 +138,7 @@ public class CommandBuffer
     public CommandBuffer With<T>(T component)
     {
         AssertCreatingEntity();
-        Component<T>.TrimmableStack.PushStronglyTyped(component, out int index);
-        _createEntityComponents.Push((Component<T>.ID, index));
+        _createEntityComponents.Push(Component<T>.StoreComponent(in component));
         return this;
     }
 
@@ -156,8 +151,8 @@ public class CommandBuffer
     {
         AssertCreatingEntity();
         //we don't check IsAssignableTo - reason is perf - InvalidCastException anyways
-        int index = Component.ComponentTable[componentID.Index].Stack.Push(component);
-        _createEntityComponents.Push((componentID, index));
+        int index = Component.ComponentTable[componentID.Index].Storage.CreateBoxed(component);
+        _createEntityComponents.Push(new ComponentHandle(index, componentID));
         return this;
     }
 
@@ -212,11 +207,6 @@ public class CommandBuffer
 
         _removeComponentBuffer.Clear();
         _deleteEntityBuffer.Clear();
-
-        if (Interlocked.Decrement(ref _activeCommandBuffers) == 0)
-        {
-            ClearTempComponentStorage?.Invoke();
-        }
     }
 
     /// <summary>
@@ -251,7 +241,7 @@ public class CommandBuffer
         while (_removeComponentBuffer.TryPop(out var item))
         {
             var id = item.Entity.ID;
-            var record = _world.EntityTable[id];
+            ref var record = ref _world.EntityTable[id];
             if (record.Version == item.Entity.Version)
             {
                 _world.RemoveComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
@@ -261,27 +251,22 @@ public class CommandBuffer
         while (_addComponentBuffer.TryPop(out var command))
         {
             var id = command.Entity.ID;
-            var record = _world.EntityTable[id];
+            ref var record = ref _world.EntityTable[id];
             if (record.Version == command.Entity.Version)
             {
                 Entity concrete = command.Entity.ToEntity(_world);
                 var runner = _world.AddComponent(command.Entity, ref record, command.ComponentID,
                     out var location);
-                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.Index].Stack, location.Index, command.Index);
+                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.Index].Storage, location.Index, command.Index);
 
 
-                if (record.Location.HasEvent(EntityFlags.AddComp | EntityFlags.GenericAddComp))
+                if (record.Location.HasEvent(EntityFlags.AddComp))
                 {
                     ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
                     events.Add.NormalEvent.Invoke(concrete, command.ComponentID);
                     runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
                 }
             }
-        }
-
-        if (Interlocked.Decrement(ref _activeCommandBuffers) == 0)
-        {
-            ClearTempComponentStorage?.Invoke();
         }
 
         _isInactive = true;
@@ -302,10 +287,6 @@ public class CommandBuffer
 
     private void SetIsActive()
     {
-        if (_isInactive)
-        {
-            _isInactive = false;
-            Interlocked.Increment(ref _activeCommandBuffers);
-        }
+        _isInactive = false;
     }
 }

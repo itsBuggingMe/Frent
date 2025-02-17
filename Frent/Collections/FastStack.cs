@@ -4,6 +4,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Collections;
 
@@ -90,7 +91,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
     /// <summary>
     /// DO NOT ALTER WHILE SPAN IS IN USE
     /// </summary>
-    public readonly Span<T> AsSpan() => _buffer.AsSpan(0, _nextIndex);
+    public readonly Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_buffer), _nextIndex);
 
     public void Clear()
     {

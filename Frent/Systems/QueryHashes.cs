@@ -5,74 +5,56 @@ using System.Collections.Immutable;
 namespace Frent.Systems;
 
 /// <summary>
-/// Defines a set of rules that filter a query.
+/// Specifies a query should have a component of <see paramref="T"/>
 /// </summary>
-[Variadic("        Rule.HasComponent(Component<T>.ID),", "|        Rule.HasComponent(Component<T$>.ID),\n|")]
-[Variadic("            Rule.NotComponent(Component<N>.ID),", "|            Rule.NotComponent(Component<N$>.ID),\n|")]
-[Variadic("<T>", "<|T$, |>")]
-[Variadic("<N>", "<|N$, |>")]
-public readonly struct With<T> : IConstantQueryHashProvider
+public struct With<T> : IRuleProvider
 {
-    private static readonly ImmutableArray<Rule> _rules = MemoryHelpers.ReadOnlySpanToImmutableArray(
-    [
-        Rule.HasComponent(Component<T>.ID),
-    ]);
-
-    private static readonly int _hashCache = QueryHash.New(_rules).ToHashCodeExcludeDisable();
     /// <summary>
-    /// The set of rules that this filters.
+    /// The rule.
     /// </summary>
-    public ImmutableArray<Rule> Rules => _rules;
-    /// <inheritdoc/>
-    public int ToHashCode() => _hashCache;
+    public Rule Rule => Rule.HasComponent(Component<T>.ID);
+}
 
+/// <summary>
+/// Specifies a query should have a tag of <see paramref="T"/>
+/// </summary>
+public struct Tagged<T> : IRuleProvider
+{
     /// <summary>
-    /// Defines a set of rules that filter a query.
+    /// The rule.
     /// </summary>
-    public readonly struct ButNot<N> : IConstantQueryHashProvider
-    {
-        private static readonly ImmutableArray<Rule> _rulesNot = MemoryHelpers.ConcatImmutable(_rules,
-        [
-            Rule.NotComponent(Component<N>.ID),
-        ]);
+    public Rule Rule => Rule.HasTag(Tag<T>.ID);
+}
 
-        private static readonly int _hashCache = QueryHash.New(_rulesNot).ToHashCodeExcludeDisable();
-        /// <summary>
-        /// The set of rules that this filters.
-        /// </summary>
-        public ImmutableArray<Rule> Rules => _rulesNot;
-
-        /// <inheritdoc/>
-        public int ToHashCode() => _hashCache;
-
-        /// <summary>
-        /// Includes entities with the <see cref="Disable"/> tag
-        /// </summary>
-        public readonly struct IncludeDisabled : IConstantQueryHashProvider
-        {
-            private static readonly int _hashCache = QueryHash.New(_rulesNot).ToHashCodeIncludeDisable();
-            /// <summary>
-            /// The set of rules that this filters.
-            /// </summary>
-            public ImmutableArray<Rule> Rules => _rulesNot;
-            /// <inheritdoc/>
-            public int ToHashCode() => _hashCache;
-        }
-    }
-
+/// <summary>
+/// Specifies a query should not have a component of <see paramref="T"/>
+/// </summary>
+public struct Not<T> : IRuleProvider
+{
     /// <summary>
-    /// Includes entities with the <see cref="Disable"/> tag
+    /// The rule.
     /// </summary>
-    public readonly struct IncludeDisabled : IConstantQueryHashProvider
-    {
-        private static readonly int _hashCache = QueryHash.New(_rules).ToHashCodeIncludeDisable();
-        /// <summary>
-        /// The set of rules that this filters.
-        /// </summary>
-        public ImmutableArray<Rule> Rules => _rules;
-        /// <summary>
-        /// The set of rules that this filters.
-        /// </summary>
-        public int ToHashCode() => _hashCache;
-    }
+    public Rule Rule => Rule.NotComponent(Component<T>.ID);
+}
+
+/// <summary>
+/// Specifies a query should not have a tag of <see paramref="T"/>
+/// </summary>
+public struct Untagged<T> : IRuleProvider
+{
+    /// <summary>
+    /// The rule.
+    /// </summary>
+    public Rule Rule => Rule.NotTag(Tag<T>.ID);
+}
+
+/// <summary>
+/// Specifies a query should include all entities
+/// </summary>
+public struct IncludeDisabled : IRuleProvider
+{
+    /// <summary>
+    /// The rule.
+    /// </summary>
+    public Rule Rule => Rule.HasTag(Tag<Disable>.ID);
 }

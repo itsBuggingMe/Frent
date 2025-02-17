@@ -31,11 +31,11 @@ public class UpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRun
     /// <inheritdoc/>
     public object Create() => new Update<TComp>();
     /// <inheritdoc/>
-    public object CreateStack() => new TrimmableStack<TComp>();
+    public object CreateStack() => new IDTable<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new Update<TComp>();
 }
 
-[Variadic(GetSpanFrom, GetSpanPattern, 15)]
+[Variadic(GetSpanFrom, GetSpanPattern)]
 [Variadic(GenArgFrom, GenArgPattern)]
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
@@ -57,13 +57,13 @@ internal class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TC
 }
 
 /// <inheritdoc cref="IComponentRunnerFactory"/>
-[Variadic(GenArgFrom, GenArgPattern, 15)]
+[Variadic(GenArgFrom, GenArgPattern)]
 public class UpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
     where TComp : IComponent<TArg>
 {
     /// <inheritdoc/>
     public object Create() => new Update<TComp, TArg>();
     /// <inheritdoc/>
-    public object CreateStack() => new TrimmableStack<TComp>();
+    public object CreateStack() => new IDTable<TComp>();
     IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new Update<TComp, TArg>();
 }

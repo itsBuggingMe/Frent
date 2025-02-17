@@ -205,7 +205,7 @@ partial struct Entity
             UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(to)[location.Index] = component;
 
             location.Flags |= w.WorldEventFlags;
-            if(location.HasEvent(EntityFlags.AddComp | EntityFlags.GenericAddComp | EntityFlags.WorldAddComp))
+            if(location.HasEvent(EntityFlags.AddComp | EntityFlags.WorldAddComp))
             {
                 w.ComponentAddedEvent.Invoke(this, Component<T>.ID);
                 ref EventRecord eventRecord = ref CollectionsMarshal.GetValueRefOrNullRef(w.EventLookup, EntityIDOnly);
@@ -236,7 +236,7 @@ partial struct Entity
             to.SetAt(component, location.Index);
 
             w.ComponentAddedEvent.Invoke(this, componentID);
-            ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp | EntityFlags.GenericAddComp, out bool exists);
+            ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp, out bool exists);
             if (exists)
             {
                 eventRecord.Add.NormalEvent.Invoke(this, componentID);
@@ -400,7 +400,7 @@ partial struct Entity
     public bool Detach<T>()
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        return w.Tag(this, lookup.Location, Core.Tag<T>.ID);
+        return w.Detach(this, lookup.Location, Core.Tag<T>.ID);
     }
 
     /// <summary>
@@ -412,7 +412,7 @@ partial struct Entity
     public bool Detach(Type type)
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        return w.Tag(this, lookup.Location, Core.Tag.GetTagID(type));
+        return w.Detach(this, lookup.Location, Core.Tag.GetTagID(type));
     }
 
     /// <summary>
@@ -424,7 +424,7 @@ partial struct Entity
     public bool Detach(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        return w.Tag(this, lookup.Location, tagID);
+        return w.Detach(this, lookup.Location, tagID);
     }
     #endregion
 
@@ -531,14 +531,14 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Add.GenericEvent = value;
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.GenericAddComp;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.AddComp;
         }
         get
         {
             if (!InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return null;
 
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.GenericAddComp, out bool exists);
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.AddComp, out bool exists);
             if (exists)
                 return events.Add.GenericEvent;
             return null;
@@ -557,14 +557,14 @@ partial struct Entity
             ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
             EventRecord.Initalize(exists, ref events);
             events.Remove.GenericEvent = value;
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.GenericRemoveComp;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.RemoveComp;
         }
         get
         {
             if (!InternalIsAlive(out var world, out EntityLocation entityLocation))
                 return null;
 
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.GenericRemoveComp, out bool exists);
+            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.RemoveComp, out bool exists);
             if (exists)
                 return events.Remove.GenericEvent;
             return null;
@@ -702,6 +702,15 @@ partial struct Entity
         }
     }
 
+    public EntityType Type
+    {
+        get
+        {
+            ref var lookup = ref AssertIsAlive(out _);
+            return lookup.Location.Archetype.ID;
+        }
+    }
+
     /// <summary>
     /// Enumerates all components one by one
     /// </summary>
@@ -720,6 +729,11 @@ partial struct Entity
     /// The null entity
     /// </summary>
     public static Entity Null => default;
+
+    public static EntityType EntityTypeOf(ReadOnlySpan<ComponentID> components, ReadOnlySpan<TagID> tags)
+    {
+        return Archetype.GetArchetypeID(components, tags);
+    }
     #endregion
 
     #endregion

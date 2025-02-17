@@ -304,26 +304,3 @@ public partial class AsteroidsGame : Game
         return verts;
     }
 }
-
-
-internal struct InlineOuterCollisionQuery : IEntityUniformAction<World, CircleCollision, Transform>
-{
-    public void Run(Entity entity, World uniform, ref CircleCollision arg1, ref Transform arg2)
-    {
-        //uniform.Query<With<CircleCollision, Transform>>()
-        //    .InlineEntity<InlineCollisionQuery, CircleCollision, Transform>(new(entity, arg1, arg2));
-    }
-}
-
-internal struct InlineCollisionQuery(Entity original, CircleCollision originalCollison, Vector2 location) : IEntityAction<CircleCollision, Transform>
-{
-    public void Run(Entity entity, ref CircleCollision arg, ref Transform pos)
-    {
-        if (original == entity)
-            return;
-        if (CircleCollision.Intersects(location, originalCollison, pos, arg))
-        {
-            arg.CollidesWith = original;
-        }
-    }
-}

@@ -15,7 +15,7 @@ public interface IEntityComponent : IComponentBase
 /// <summary>
 /// Indicates a component should be updated with itself as an argument and the specified components
 /// </summary>
-[Variadic(TArgFrom, TArgPattern, 15)]
+[Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IEntityComponent<TArg> : IComponentBase
 {

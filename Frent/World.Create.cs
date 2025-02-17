@@ -4,6 +4,7 @@ using Frent.Core;
 using Frent.Systems;
 using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
+using System.ComponentModel.Design;
 using System.Runtime.CompilerServices;
 
 namespace Frent;
@@ -15,7 +16,7 @@ namespace Frent;
 [Variadic("            Item1 = archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Item$ = archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("y<T>", "y<|T$, |>")]
-[Variadic("T comp", "|T$ comp$, |")]
+[Variadic("in T comp", "|in T$ comp$, |")]
 //it just so happens Archetype and Create both end with "e"
 partial class World
 {
@@ -24,7 +25,7 @@ partial class World
     /// </summary>
     /// <returns>An <see cref="Entity"/> that can be used to acsess the component data</returns>
     [SkipLocalsInit]
-    public Entity Create<T>(T comp)
+    public Entity Create<T>(in T comp)
     {
         Archetype archetype = Archetype<T>.CreateNewOrGetExistingArchetype(this);
         ref var entity = ref archetype.CreateEntityLocation(EntityFlags.None, out var eloc);
@@ -36,12 +37,12 @@ partial class World
         //manually inlined from World.CreateEntityFromLocation
         //The jit likes to inline the outer create function and not inline
         //the inner functions - benchmarked to improve perf by 10-20%
-        var (id, version) = entity = RecycledEntityIds.TryPop(out var v ) ? v : new(NextEntityID++, 0);
+        var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new(NextEntityID++, 0);
         EntityTable[id] = new(eloc, version);
         Entity concreteEntity = new Entity(ID, version, id);
         EntityCreatedEvent.Invoke(concreteEntity);
 
-        //Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
+        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
 
         return concreteEntity;
     }
@@ -64,10 +65,17 @@ partial class World
                 EntityCreatedEvent.Invoke(entity.ToEntity(this));
         }
 
-        return new ChunkTuple<T>()
+        var chunks = new ChunkTuple<T>()
         {
             Entities = new EntityEnumerator.EntityEnumerable(this, entities),
             Item1 = archetype.GetComponentSpan<T>()[initalEntityCount..],
         };
+
+        if(Archetype<T>.NeedsInit)
+        {
+            
+        }
+
+        return chunks;
     }
 }

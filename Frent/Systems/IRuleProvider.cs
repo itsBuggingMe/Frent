@@ -6,14 +6,10 @@ namespace Frent.Systems;
 /// <summary>
 /// API Consumers should not implement this interface. Use existing implementations.
 /// </summary>
-public interface IConstantQueryHashProvider
+public interface IRuleProvider
 {
     /// <summary>
     /// API Consumers should not manually implement this interface
     /// </summary>
-    public ImmutableArray<Rule> Rules { get; }
-    /// <summary>
-    /// API Consumers should not manually implement this interface
-    /// </summary>
-    public int ToHashCode();
+    public Rule Rule { get; }
 }

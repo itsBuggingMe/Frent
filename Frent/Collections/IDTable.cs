@@ -1,18 +1,83 @@
-﻿namespace Frent.Collections;
+﻿using Frent.Core;
+using Frent.Core.Events;
+using System.Runtime.CompilerServices;
+using System.Security.AccessControl;
 
-internal class IDTable<T>
+namespace Frent.Collections;
+internal abstract class IDTable
 {
-    public ref T this[int index]
+    protected Array _buffer;
+    protected NativeStack<int> _recycled;
+    protected int _nextIndex;
+
+    public IDTable(Array empty)
     {
-        get => ref _buffer.AsSpan()[index];
+        _buffer = empty;
     }
 
-    private FastStack<int> _recycled = FastStack<int>.Create(2);
-    private Table<T> _buffer = new Table<T>(4);
-    private int _index;
-
-    public ref T Create(out int id)
+    public int CreateBoxed(object toStore)
     {
-        return ref _buffer[id = _index++];
+        int index;
+        if (_recycled.CanPop())
+        {
+            index = _recycled.PopUnsafe();
+        }
+        else
+        {
+            index = _nextIndex++;
+            if(index == _buffer.Length)
+                Double();
+        }
+
+        SetValue(toStore, index);
+
+        return index;
     }
+
+    public object GetValueBoxed(int index) => GetValue(index);
+
+    public object TakeBoxed(int index)
+    {
+        _recycled.Push() = index;
+        return GetValue(index);
+    }
+
+    public abstract void InvokeEventWithAndConsume(GenericEvent? genericEvent, Entity entity, int index);
+    protected abstract void SetValue(object value, int index);
+    protected abstract object GetValue(int index);
+    protected abstract void Double();
+}
+
+internal class IDTable<T> : IDTable
+{
+    public IDTable() : base(Array.Empty<T>()) { }
+    public ref T[] Buffer => ref Unsafe.As<Array, T[]>(ref _buffer);
+
+    public ref T Create(out int index)
+    {
+        if (_nextIndex == Buffer.Length)
+        {
+            Double();
+        }
+        return ref Buffer.UnsafeArrayIndex(index = _nextIndex++);
+    }
+
+    public override void InvokeEventWithAndConsume(GenericEvent? genericEvent, Entity entity, int index)
+    {
+        genericEvent?.Invoke(entity, ref Buffer[index]);
+        _recycled.Push() = index;
+    }
+
+    public ref T Take(int index)
+    {
+        return ref Buffer[index];
+    }
+
+    protected override void Double()
+    {
+        Array.Resize(ref Buffer, Math.Max(Buffer.Length << 1, 1));
+    }
+
+    protected override object GetValue(int index) => Buffer[index]!;
+    protected override void SetValue(object value, int index) => Buffer[index] = (T)value;
 }

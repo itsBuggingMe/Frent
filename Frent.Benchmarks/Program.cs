@@ -11,22 +11,15 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.AddRem());
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Decon());
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
-        World[] worlds = Enumerable.Range(0, ushort.MaxValue - 1).Select(w => new World()).ToArray();
-
-        foreach(var world in worlds)
-        {
-            for(int i = 0; i < 100; i++)
-            {
-                world.Create<int>(default);
-            }
-        }
-        Debugger.Break();
+        JitTest(disasmCall);
         return;
+        ProfileTest(disasmCall);
+
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true
@@ -40,7 +33,6 @@ public class Program
         else
         {
             BenchmarkRunner.Run<T>();
-            ProfileTest(disasmCall);
             JitTest(disasmCall);
         }
     }

@@ -58,7 +58,6 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 - [x]  Non-Generic Entity Creation
 - [X]  Entity Tags
 - [X]  World Update Filtering
-- [X]  Multithreading
 - [X]  Command buffer
 - [X]  Events
 
@@ -66,6 +65,7 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 - [ ]  Comprehensive docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
+- [ ]  Multithreading
 
 # Contributing
 Wanna help?
