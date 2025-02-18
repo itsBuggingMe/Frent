@@ -16,8 +16,8 @@
 
   <ItemGroup>
     <!--
-    -->
     <None Include="$(OutputPath)\Frent.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="'$(Configuration)' == 'Release'" />
+    -->
     
     <ProjectReference Include="..\Frent.Variadic.Generator\Frent.Variadic.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <None Include="..\README.md" Pack="true" PackagePath="\" />

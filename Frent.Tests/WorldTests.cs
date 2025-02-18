@@ -127,7 +127,7 @@ internal class WorldTests
 
         world.Create(1, new Class2(), new Struct2());
 
-        var query = world.Query<With<int, Class1, Struct1>>();
+        var query = world.Query<With<int>, With<Class1>, With<Struct1>>();
 
         query.AssertEntitiesNotDefault();
 
