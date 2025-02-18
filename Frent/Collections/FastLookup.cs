@@ -1,27 +1,70 @@
 ﻿using Frent.Core;
+using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using System.Security.AccessControl;
 
 namespace Frent.Collections;
 
 internal struct FastLookup()
 {
     private LookupData _data;
-    private int index;
+    private LookupIDs _ids;
     internal Archetype[] Archetypes = new Archetype[8];
     internal Dictionary<uint, Archetype> FallbackLookup = [];
+    private int index;
+
+    public Archetype FindAdjacentArchetype(ComponentID component, Archetype archetype, Archetype.ArchetypeStructualAction type, World world)
+    {
+        uint key = GetKey(component.RawIndex, archetype.ID);
+        int index = LookupIndex(key);
+        if (index != 32)
+        {
+            return Archetypes.UnsafeArrayIndex(index);
+        }
+        else if (FallbackLookup.TryGetValue(key, out var destination))
+        {
+            return destination;
+        }
+        return GetArchetypeSlow(world, type, archetype.ID, component);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ArchetypeID FindAdjacentArchetypeID(ComponentID component, ArchetypeID archetype, Archetype.ArchetypeStructualAction type, World world)
+    {
+        uint key = GetKey(component.RawIndex, archetype);
+        int index = LookupIndex(key);
+        if (index != 32)
+        {
+            return LookupIDs.Index(ref _ids, index);
+        }
+        else if (FallbackLookup.TryGetValue(key, out var destination))
+        {
+            //warm/cool depending on number of times they add/remove
+            return destination.ID;
+        }
+        //cold path
+        return GetArchetypeSlow(world, type, archetype, component).ID;
+    }
+
+    private Archetype GetArchetypeSlow(World world, Archetype.ArchetypeStructualAction transform, ArchetypeID from, ComponentID componentID)
+    {
+        var result = from.Archetype(world).FindArchetypeAdjacent(world, componentID, transform);
+        SetArchetype(componentID.RawIndex, from, result);
+        return result;
+    }
 
     public uint GetKey(ushort id, ArchetypeID archetypeID)
     {
-        uint key = ((uint)id << 16) | archetypeID.ID;
+        uint key = archetypeID.RawIndex | ((uint)id << 16);
         return key;
     }
 
     public Archetype? TryGetValue(ushort id, ArchetypeID archetypeID)
     {
-        uint key = ((uint)id << 16) | archetypeID.ID;
+        uint key = archetypeID.RawIndex | ((uint)id << 16);
         int index = LookupIndex(key);
         if(index != 32)
         {
@@ -43,20 +86,19 @@ internal struct FastLookup()
         FallbackLookup[key] = to;
 
         LookupData.Index(ref _data, index) = key;
+        LookupIDs.Index(ref _ids, index) = to.ID;
         Archetypes[index] = to;
 
         index = (index + 1) & 7;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public int LookupIndex(uint key)
     {
 #if NET7_0_OR_GREATER
-        if (Vector256.IsHardwareAccelerated)
-        {
-            Vector256<uint> bits = Vector256.Equals(Vector256.Create(key), Vector256.LoadUnsafe(ref _data.l0));
-            int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());
-            return index;
-        }
+        Vector256<uint> bits = Vector256.Equals(Vector256.Create(key), Vector256.LoadUnsafe(ref _data.l0));
+        int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());
+        return index;
         //else if (Vector128.IsHardwareAccelerated)
         //{
         //    Vector128<uint> lower = Vector128.Equals(Vector128.Create(key), Vector128.LoadUnsafe(ref l0));
@@ -73,7 +115,7 @@ internal struct FastLookup()
         return bclIndex == -1 ? 32 : bclIndex;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 2)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     private struct LookupData
     {
         public static ref uint Index(ref LookupData data, int index)
@@ -94,5 +136,28 @@ internal struct FastLookup()
         internal uint l5;
         internal uint l6;
         internal uint l7;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 2)]
+    private struct LookupIDs
+    {
+        public static ref ArchetypeID Index(ref LookupIDs data, int index)
+        {
+#if DEBUG
+            if(index< 0 || index >= 8)
+                throw new IndexOutOfRangeException();
+#endif
+
+            return ref Unsafe.Add(ref data._id0, index);
+        }
+
+        internal ArchetypeID _id0;
+        internal ArchetypeID _id1;
+        internal ArchetypeID _id2;
+        internal ArchetypeID _id3;
+        internal ArchetypeID _id4;
+        internal ArchetypeID _id5;
+        internal ArchetypeID _id6;
+        internal ArchetypeID _id7;
     }
 }

@@ -261,6 +261,20 @@ partial struct Entity
     /// <param name="type">The type to add the component as. Note that a component of type DerivedClass and BaseClass are different component types.</param>
     /// <param name="component">The component to add</param>
     public void Add(Type type, object component) => Add(Component.GetComponentID(type), component);
+
+    public void AddMany(ReadOnlySpan<ComponentHandle> components)
+    {
+        ref var lookup = ref AssertIsAlive(out var w);
+        var eloc = lookup.Location;
+        if (w.AllowStructualChanges)
+        {
+            w.AddComponentRange(this, components);
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
+    }
     #endregion
 
     #region Remove
@@ -297,7 +311,7 @@ partial struct Entity
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     public void Remove(Type type) => Remove(Component.GetComponentID(type));
 
-    public void Remove(ReadOnlySpan<ComponentID> components)
+    public void RemoveMany(ReadOnlySpan<ComponentID> components)
     {
         ref var lookup = ref AssertIsAlive(out var w);
         var eloc = lookup.Location;
@@ -305,7 +319,7 @@ partial struct Entity
             return;
         if (w.AllowStructualChanges)
         {
-            w.RemoveComponents(this, eloc, components);
+            w.RemoveComponentRange(this, eloc, components);
         }
         else
         {

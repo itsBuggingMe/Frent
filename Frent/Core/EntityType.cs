@@ -10,18 +10,18 @@ namespace Frent.Core;
 /// </summary>
 public struct EntityType : IEquatable<ArchetypeID>
 {
-    internal EntityType(ushort id) => ID = id;
-    internal ushort ID;
+    internal EntityType(ushort id) => RawIndex = id;
+    internal ushort RawIndex;
 
     /// <summary>
     /// The component types
     /// </summary>
-    public readonly ImmutableArray<ComponentID> Types => Core.Archetype.ArchetypeTable[ID].ComponentTypes;
+    public readonly ImmutableArray<ComponentID> Types => Core.Archetype.ArchetypeTable[RawIndex].ComponentTypes;
 
     /// <summary>
     /// The tag types
     /// </summary>
-    public readonly ImmutableArray<TagID> Tags => Core.Archetype.ArchetypeTable[ID].TagTypes;
+    public readonly ImmutableArray<TagID> Tags => Core.Archetype.ArchetypeTable[RawIndex].TagTypes;
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> has a component represented by a <see cref="ComponentID"/>
@@ -42,7 +42,7 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// </summary>
     /// <param name="other">The EntityType to compare against</param>
     /// <returns><see langword="true"/> if they represent the same ID, <see langword="false"/> otherwise</returns>
-    public bool Equals(EntityType other) => ID == other.ID;
+    public bool Equals(EntityType other) => RawIndex == other.RawIndex;
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> represents the same ID as <paramref name="obj"/>
@@ -55,7 +55,7 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// Gets the hash code for this <see cref="EntityType"/>
     /// </summary>
     /// <returns>An integer hash code representing this <see cref="EntityType"/></returns>
-    public override int GetHashCode() => ID;
+    public override int GetHashCode() => RawIndex;
 
     /// <summary>
     /// Checks if two <see cref="EntityType"/> instances represent the same ID
@@ -73,5 +73,5 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// <returns><see langword="true"/> if they represent different IDs, <see langword="false"/> otherwise</returns>
     public static bool operator !=(EntityType left, EntityType right) => !left.Equals(right);
 
-    internal ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(ID);
+    internal ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex);
 }

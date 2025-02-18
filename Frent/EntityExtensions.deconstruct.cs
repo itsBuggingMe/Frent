@@ -39,7 +39,7 @@ partial class EntityExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Ref<TC> GetComp<TC>(byte[] archetypeTable, IComponentRunner[] comps, int index)
     {
-        int compIndex = archetypeTable.UnsafeArrayIndex(Component<TC>.ID.Index) & GlobalWorldTables.IndexBits;
+        int compIndex = archetypeTable.UnsafeArrayIndex(Component<TC>.ID.RawIndex) & GlobalWorldTables.IndexBits;
         return new Ref<TC>(ref UnsafeExtensions.UnsafeCast<ComponentStorage<TC>>(comps.UnsafeArrayIndex(compIndex))[index]);
     }
 }

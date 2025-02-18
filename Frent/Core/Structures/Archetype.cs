@@ -105,18 +105,22 @@ internal partial class Archetype
         }
     }
 
-    public Archetype FindArchetypeAdjacentRemove(World world, ComponentID component)
+    public Archetype FindArchetypeAdjacent(World world, ComponentID component, ArchetypeStructualAction actionType)
     {
-        var destination = CreateOrGetExistingArchetype(MemoryHelpers.Remove(ArchetypeTypeArray, component, out var arr), ArchetypeTagArray.AsSpan(), world, arr, ArchetypeTagArray);
-        world.CompRemoveLookup.SetArchetype(component.Index, ID, destination);
+        var destination = CreateOrGetExistingArchetype(
+
+            actionType == ArchetypeStructualAction.Add ? 
+                MemoryHelpers.Concat(ArchetypeTypeArray, component, out var arr) : 
+                MemoryHelpers.Remove(ArchetypeTypeArray, component, out arr), 
+
+            ArchetypeTagArray.AsSpan(), world, arr, ArchetypeTagArray);
         return destination;
     }
 
-    public Archetype FindArchetypeAdjacentAdd(World world, ComponentID component)
+    internal enum ArchetypeStructualAction
     {
-        var destination = CreateOrGetExistingArchetype(MemoryHelpers.Concat(ArchetypeTypeArray, component, out var res), ArchetypeTagArray.AsSpan(), world, res, ArchetypeTagArray);
-        world.CompAddLookup.SetArchetype(component.Index, ID, destination);
-        return destination;
+        Add,
+        Remove,
     }
 
     /// <summary>
@@ -225,13 +229,13 @@ internal partial class Archetype
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetComponentIndex<T>()
     {
-        return ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.Index) & GlobalWorldTables.IndexBits;
+        return ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetComponentIndex(ComponentID component)
     {
-        return ComponentTagTable.UnsafeArrayIndex(component.Index) & GlobalWorldTables.IndexBits;
+        return ComponentTagTable.UnsafeArrayIndex(component.RawIndex) & GlobalWorldTables.IndexBits;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

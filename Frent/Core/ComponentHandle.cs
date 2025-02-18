@@ -1,5 +1,5 @@
 ﻿namespace Frent.Core;
-public struct ComponentHandle
+public struct ComponentHandle : IDisposable
 {
     private int _index;
     private ComponentID _componentType;
@@ -8,6 +8,11 @@ public struct ComponentHandle
     {
         _index = index;
         _componentType = componentID;
+    }
+
+    public static ComponentHandle Create<T>(in T comp)
+    {
+        return Component<T>.StoreComponent(comp);
     }
 
     public T Retrieve<T>()
@@ -19,8 +24,10 @@ public struct ComponentHandle
 
     public object RetrieveBoxed()
     {
-        return Component.ComponentTable[_componentType.Index].Storage.TakeBoxed(_index);
+        return Component.ComponentTable[_componentType.RawIndex].Storage.TakeBoxed(_index);
     }
+
+    public void Dispose() => Component.ComponentTable[_componentType.RawIndex].Storage.Consume(_index);
 
     public Type Type => _componentType.Type;
     public ComponentID ComponentID => _componentType;

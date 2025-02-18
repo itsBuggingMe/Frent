@@ -50,6 +50,6 @@ internal static class GlobalWorldTables
         }
     }
 
-    public static int ComponentIndex(ArchetypeID archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(component.Index) & IndexBits;
-    public static bool HasTag(ArchetypeID archetype, TagID tag) => (ComponentTagLocationTable.UnsafeArrayIndex(archetype.ID).UnsafeArrayIndex(tag.Index) & HasTagMask) != 0;
+    public static int ComponentIndex(ArchetypeID archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype.RawIndex).UnsafeArrayIndex(component.RawIndex) & IndexBits;
+    public static bool HasTag(ArchetypeID archetype, TagID tag) => (ComponentTagLocationTable.UnsafeArrayIndex(archetype.RawIndex).UnsafeArrayIndex(tag.Index) & HasTagMask) != 0;
 }

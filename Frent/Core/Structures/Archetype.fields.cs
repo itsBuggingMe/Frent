@@ -17,7 +17,7 @@ partial class Archetype(ArchetypeID archetypeID, IComponentRunner[] components)
     //information for tag existence & component index per id
     //updated by static methods
     //saves a lookup on hot paths
-    internal byte[] ComponentTagTable = GlobalWorldTables.ComponentTagLocationTable[archetypeID.ID];
+    internal byte[] ComponentTagTable = GlobalWorldTables.ComponentTagLocationTable[archetypeID.RawIndex];
     //2
     private readonly ArchetypeID _archetypeID = archetypeID;
     //4

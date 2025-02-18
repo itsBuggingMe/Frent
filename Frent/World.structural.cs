@@ -20,7 +20,8 @@ partial class World
     /// </summary>
     internal void AddComponentRange(Entity entity, ReadOnlySpan<ComponentHandle> comps)
     {
-        EntityLocation location = EntityTable[entity.EntityID].Location;
+        ref EntityLocation location = ref EntityTable.UnsafeIndexNoResize(entity.EntityID).Location;
+
         Archetype currentArchetype = location.Archetype;
 
         ReadOnlySpan<ComponentID> existingComponentIDs = currentArchetype.ArchetypeTypeArray.AsSpan();
@@ -35,7 +36,13 @@ partial class World
             allComps[i] = comps[j++].ComponentID;
         var tags = currentArchetype.ArchetypeTagArray;
 
-        var destination = Archetype.CreateOrGetExistingArchetype(allComps, tags.AsSpan(), this, null, tags);
+        ArchetypeID destinationID = currentArchetype.ID;
+        foreach (var component in comps)
+        {
+            destinationID = CompAddLookup.FindAdjacentArchetypeID(component.ComponentID, destinationID, Archetype.ArchetypeStructualAction.Add, this);
+        }
+        Archetype destination = destinationID.Archetype(this);
+
         destination.CreateEntityLocation(location.Flags, out var nextELoc).Init(entity);
 
         for (int i = 1; i < currentArchetype.Components.Length; i++)
@@ -48,7 +55,7 @@ partial class World
         {
             var componentLocation = comps[j++];
             currentArchetype.Components[i].PullComponentFrom(
-                Component.ComponentTable[componentLocation.ComponentID.Index].Storage,
+                Component.ComponentTable[componentLocation.ComponentID.RawIndex].Storage,
                 nextELoc.Index,
                 componentLocation.Index);
         }
@@ -56,8 +63,8 @@ partial class World
 
         EntityIDOnly movedDown = currentArchetype.DeleteEntityFromStorage(location.Index);
 
-        EntityTable[movedDown.ID].Location = location;
-        EntityTable[entity.EntityID].Location = nextELoc;
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = location;
+        location = nextELoc;
     }
 
     //Add
@@ -68,17 +75,7 @@ partial class World
     {
         Archetype from = currentLookup.Location.Archetype;
 
-        Archetype? destination;
-        uint key = CompAddLookup.GetKey(component.Index, currentLookup.Location.ArchetypeID);
-        int index = CompAddLookup.LookupIndex(key);
-        if(index != 32)
-        {
-            destination = CompAddLookup.Archetypes.UnsafeArrayIndex(index);
-        }
-        else if(!CompAddLookup.FallbackLookup.TryGetValue(key, out destination))
-        {
-            destination = from.FindArchetypeAdjacentAdd(this, component);
-        }
+        Archetype destination = CompAddLookup.FindAdjacentArchetype(component, from, Archetype.ArchetypeStructualAction.Add, this);
 
         destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
 
@@ -102,18 +99,7 @@ partial class World
     //Remove
     internal void RemoveComponent(Entity entity, ref EntityLookup currentLookup, ComponentID component)
     {
-        Archetype? destination;
-        uint key = CompRemoveLookup.GetKey(component.Index, currentLookup.Location.ArchetypeID);
-        int index = CompRemoveLookup.LookupIndex(key);
-
-        if (index != 32)
-        {
-            destination = CompRemoveLookup.Archetypes.UnsafeArrayIndex(index);
-        }
-        else
-        {
-            destination = GetArchetypeRemoveNoCache(key, currentLookup.Location.Archetype, component);
-        }
+        Archetype destination = CompAddLookup.FindAdjacentArchetype(component, currentLookup.Location.Archetype, Archetype.ArchetypeStructualAction.Remove, this);
 
         ref EntityIDOnly archetypeEntity = ref destination.CreateEntityLocation(currentLookup.Location.Flags, out EntityLocation nextLocation);
         archetypeEntity.Init(entity);
@@ -165,41 +151,19 @@ partial class World
         }
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private Archetype GetArchetypeRemoveNoCache(uint key, Archetype archetype, ComponentID component)
-    {
-        if (!CompRemoveLookup.FallbackLookup.TryGetValue(key, out Archetype? destination))
-        {
-            destination = archetype.FindArchetypeAdjacentRemove(this, component);
-        }
-        return destination;
-    }
-
     //components cannot be empty
     [SkipLocalsInit]
-    internal void RemoveComponents(Entity entity, EntityLocation entityLocation, ReadOnlySpan<ComponentID> components)
+    internal void RemoveComponentRange(Entity entity, EntityLocation entityLocation, ReadOnlySpan<ComponentID> components)
     {
         Debug.Assert(components.Length != 0);
         Archetype from = entityLocation.Archetype;
 
-        Archetype destination = from;
+        ArchetypeID destinationID = from.ID;
         foreach(var component in components)
         {
-            uint key = CompRemoveLookup.GetKey(component.Index, destination.ID);
-            int index = CompRemoveLookup.LookupIndex(key);
-            if (index != 32)
-            {
-                destination = CompRemoveLookup.Archetypes.UnsafeArrayIndex(index);
-            }
-            else if(CompRemoveLookup.FallbackLookup.TryGetValue(key, out Archetype? newDestination))
-            {
-                destination = newDestination;
-            }
-            else
-            {
-                destination = destination.FindArchetypeAdjacentRemove(this, component);
-            }
+            destinationID = CompAddLookup.FindAdjacentArchetypeID(component, destinationID, Archetype.ArchetypeStructualAction.Remove, this);
         }
+        Archetype destination = destinationID.Archetype(this);
 
         destination!.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
 
@@ -214,8 +178,8 @@ partial class World
         }
         skipIndicies.Sort();
 
-        int j = 0;
-        for(int i = 0; i < from.Components.Length; i++)
+        int j = 1;
+        for(int i = 1; i < from.Components.Length; i++)
         {
             if(i == skipIndicies[skipIndexIndex])
             {

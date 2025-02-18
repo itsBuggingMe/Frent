@@ -106,7 +106,7 @@ public static class Component
             var type = typeof(T);
             if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
             {
-                return (value, (IDTable<T>)ComponentTable[value.Index].Storage, ComponentTable[value.Index].Initer);
+                return (value, (IDTable<T>)ComponentTable[value.RawIndex].Storage, ComponentTable[value.RawIndex].Initer);
             }
 
             int nextIDInt = ++NextComponentID;
@@ -117,7 +117,7 @@ public static class Component
             ComponentID id = new ComponentID((ushort)nextIDInt);
             ExistingComponentIDs[type] = id;
 
-            GlobalWorldTables.GrowComponentTagTableIfNeeded(id.Index);
+            GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
             IDTable<T> stack = new IDTable<T>();
             ComponentTable.Push(new ComponentData(type, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? (Component<T>.CallInit)v1 : null));
@@ -148,7 +148,7 @@ public static class Component
             ComponentID id = new ComponentID((ushort)nextIDInt);
             ExistingComponentIDs[t] = id;
 
-            GlobalWorldTables.GrowComponentTagTableIfNeeded(id.Index);
+            GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
             ComponentTable.Push(new ComponentData(t, GetComponentTable(t), GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null));
 

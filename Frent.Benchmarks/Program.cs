@@ -11,11 +11,12 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.CreateMany());
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.AddRemoveMany());
 
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
+        //ProfileTest(disasmCall);
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true

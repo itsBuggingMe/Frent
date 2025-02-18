@@ -19,7 +19,7 @@ internal static class Archetype<T>
 
     //ArchetypeTypes init first, then ID
     public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeComponentIDs.AsSpan(), [], ArchetypeComponentIDs, ImmutableArray<TagID>.Empty);
-    public static readonly uint IDasUInt = ID.ID;
+    public static readonly uint IDasUInt = ID.RawIndex;
 
     internal static Archetype CreateNewOrGetExistingArchetype(World world)
     {
@@ -56,7 +56,7 @@ partial class Archetype
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
         ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
-        ref Archetype archetype = ref world.WorldArchetypeTable[id.ID];
+        ref Archetype archetype = ref world.WorldArchetypeTable[id.RawIndex];
         if (archetype is not null)
             return archetype;
 
@@ -101,7 +101,7 @@ partial class Archetype
 
                 slot = new ArchetypeData(finalID, arr, tagArr);
                 ArchetypeTable.Push(slot);
-                ModifyComponentLocationTable(arr, tagArr, finalID.ID);
+                ModifyComponentLocationTable(arr, tagArr, finalID.RawIndex);
             }
 
             return finalID;
@@ -135,7 +135,7 @@ partial class Archetype
         for (int i = 0; i < archetypeTypes.Length; i++)
         {
             //add 1 so zero is null always
-            componentTable[archetypeTypes[i].Index] = (byte)(i + 1);
+            componentTable[archetypeTypes[i].RawIndex] = (byte)(i + 1);
         }
 
         for (int i = 0; i < archetypeTags.Length; i++)

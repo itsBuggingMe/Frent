@@ -5,20 +5,20 @@
 /// </summary>
 public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
 {
-    internal ComponentID(ushort id) => Index = id;
-    internal readonly ushort Index;
+    internal ComponentID(ushort id) => RawIndex = id;
+    internal readonly ushort RawIndex;
 
     /// <summary>
     /// The type of component this component ID represents
     /// </summary>
-    public Type Type => Component.ComponentTable[Index].Type;
+    public Type Type => Component.ComponentTable[RawIndex].Type;
 
     /// <summary>
     /// Checks if this ComponentID instance represents the same ID as <paramref name="other"/>
     /// </summary>
     /// <param name="other">The ComponentID to compare against</param>
     /// <returns><see langword="true"/> if they represent the same ID, <see langword="false"/> otherwise</returns>
-    public bool Equals(ComponentID other) => Index == other.Index;
+    public bool Equals(ComponentID other) => RawIndex == other.RawIndex;
 
     /// <summary>
     /// Checks if this ComponentID instance represents the same ID as <paramref name="obj"/>
@@ -31,7 +31,7 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
     /// Gets the hash code for this ComponentID
     /// </summary>
     /// <returns>An integer hash code representing this ComponentID</returns>
-    public override int GetHashCode() => Index;
+    public override int GetHashCode() => RawIndex;
 
     /// <summary>
     /// Checks if two ComponentID instances represent the same ID

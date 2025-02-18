@@ -93,7 +93,7 @@ public class CommandBuffer
     public void AddComponent(Entity entity, ComponentID componentID, object component)
     {
         SetIsActive();
-        int index = Component.ComponentTable[componentID.Index].Storage.CreateBoxed(component);
+        int index = Component.ComponentTable[componentID.RawIndex].Storage.CreateBoxed(component);
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, componentID, index));
     }
 
@@ -151,7 +151,7 @@ public class CommandBuffer
     {
         AssertCreatingEntity();
         //we don't check IsAssignableTo - reason is perf - InvalidCastException anyways
-        int index = Component.ComponentTable[componentID.Index].Storage.CreateBoxed(component);
+        int index = Component.ComponentTable[componentID.RawIndex].Storage.CreateBoxed(component);
         _createEntityComponents.Push(new ComponentHandle(index, componentID));
         return this;
     }
@@ -257,7 +257,7 @@ public class CommandBuffer
                 Entity concrete = command.Entity.ToEntity(_world);
                 var runner = _world.AddComponent(command.Entity, ref record, command.ComponentID,
                     out var location);
-                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.Index].Storage, location.Index, command.Index);
+                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.RawIndex].Storage, location.Index, command.Index);
 
 
                 if (record.Location.HasEvent(EntityFlags.AddComp))
