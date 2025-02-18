@@ -14,8 +14,10 @@ internal class DelegateBehavior(Action onUpdate) : IComponent
     public void Update() => onUpdate();
 }
 
-internal class FilteredBehavior1(Action onUpdate) : IComponent
+internal class FilteredBehavior1(Action onUpdate, Action<Entity>? onInit = null, Action? onDestroy = null) : IComponent, IInitable, IDestroyable
 {
+    public void Init(Entity self) => onInit?.Invoke(self);
+    public void Destroy() => onDestroy?.Invoke();
     [FilterAttribute1]
     public void Update() => onUpdate();
 }
