@@ -38,7 +38,7 @@ internal struct FastLookup()
         int index = LookupIndex(key);
         if (index != 32)
         {
-            return LookupIDs.Index(ref _ids, index);
+            return new ArchetypeID(LookupIDs.Index(ref _ids, index));
         }
         else if (FallbackLookup.TryGetValue(key, out var destination))
         {
@@ -86,13 +86,12 @@ internal struct FastLookup()
         FallbackLookup[key] = to;
 
         LookupData.Index(ref _data, index) = key;
-        LookupIDs.Index(ref _ids, index) = to.ID;
+        LookupIDs.Index(ref _ids, index) = to.ID.RawIndex;
         Archetypes[index] = to;
 
         index = (index + 1) & 7;
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
     public int LookupIndex(uint key)
     {
 #if NET7_0_OR_GREATER
@@ -114,50 +113,50 @@ internal struct FastLookup()
         int bclIndex = MemoryMarshal.CreateSpan(ref _data.l0, 8).IndexOf(key);
         return bclIndex == -1 ? 32 : bclIndex;
     }
+}
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    private struct LookupData
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+internal struct LookupData
+{
+    public static ref uint Index(ref LookupData data, int index)
     {
-        public static ref uint Index(ref LookupData data, int index)
-        {
 #if DEBUG
             if(index< 0 || index >= 8)
                 throw new IndexOutOfRangeException();
 #endif
 
-            return ref Unsafe.Add(ref data.l0, index);
-        }
-
-        internal uint l0;
-        internal uint l1;
-        internal uint l2;
-        internal uint l3;
-        internal uint l4;
-        internal uint l5;
-        internal uint l6;
-        internal uint l7;
+        return ref Unsafe.Add(ref data.l0, index);
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 2)]
-    private struct LookupIDs
+    internal uint l0;
+    internal uint l1;
+    internal uint l2;
+    internal uint l3;
+    internal uint l4;
+    internal uint l5;
+    internal uint l6;
+    internal uint l7;
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 2)]
+internal struct LookupIDs
+{
+    public static ref ushort Index(ref LookupIDs data, int index)
     {
-        public static ref ArchetypeID Index(ref LookupIDs data, int index)
-        {
 #if DEBUG
             if(index< 0 || index >= 8)
                 throw new IndexOutOfRangeException();
 #endif
 
-            return ref Unsafe.Add(ref data._id0, index);
-        }
-
-        internal ArchetypeID _id0;
-        internal ArchetypeID _id1;
-        internal ArchetypeID _id2;
-        internal ArchetypeID _id3;
-        internal ArchetypeID _id4;
-        internal ArchetypeID _id5;
-        internal ArchetypeID _id6;
-        internal ArchetypeID _id7;
+        return ref Unsafe.Add(ref data._id0, index);
     }
+
+    internal ushort _id0;
+    internal ushort _id1;
+    internal ushort _id2;
+    internal ushort _id3;
+    internal ushort _id4;
+    internal ushort _id5;
+    internal ushort _id6;
+    internal ushort _id7;
 }

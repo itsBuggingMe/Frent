@@ -96,6 +96,12 @@ partial class World
         return toRunners.UnsafeArrayIndex(i);
     }
 
+    [SkipLocalsInit]
+    internal Span<IComponentRunner> MoveEntityToArchetype(Archetype from, Archetype to)
+    {
+        throw new NotImplementedException();
+    }
+
     //Remove
     internal void RemoveComponent(Entity entity, ref EntityLookup currentLookup, ComponentID component)
     {
