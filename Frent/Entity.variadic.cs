@@ -69,21 +69,29 @@ partial struct Entity
             internal static ArchetypeNeighborCache Lookup;
         }
 
-        public static Archetype TraverseThroughCacheOrAdd(Entity entity, ref ArchetypeNeighborCache cache, Archetype.ArchetypeStructualAction action)
+        public static Archetype TraverseThroughCacheOrCreate(
+            out World world, 
+            Entity entity, 
+            ComponentID componentID, 
+            ref ArchetypeNeighborCache cache, 
+            Archetype.ArchetypeStructualAction action)
         {
-            ref EntityLookup thisLookup = ref entity.AssertIsAlive(out World world);
+            ref EntityLookup thisLookup = ref entity.AssertIsAlive(out world);
             int index = cache.Traverse(thisLookup.Location.Archetype.ID.RawIndex);
 
             Archetype destination;
 
             if (index == 32)
             {
-                
+                thisLookup.Location.Archetype.FindArchetypeAdjacent(world, componentID, action);
+                destination = ;
             }
             else
             {
                 destination = world.WorldArchetypeTable.UnsafeArrayIndex(cache.Lookup(index));
             }
+
+            return destination;
         }
     }
 }
