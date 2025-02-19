@@ -102,6 +102,11 @@ partial class World
         throw new NotImplementedException();
     }
 
+    internal Archetype FindArchetype(Archetype archetype, ComponentID component, Archetype.ArchetypeStructualAction action)
+    {
+        archetype.FindArchetypeAdjacent();
+    }
+
     //Remove
     internal void RemoveComponent(Entity entity, ref EntityLookup currentLookup, ComponentID component)
     {

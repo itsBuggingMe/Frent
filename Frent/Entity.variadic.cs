@@ -11,6 +11,11 @@ namespace Frent;
 
 partial struct Entity
 {
+    //traversing archetype graph strategy:
+    //1. hit small & fast static per type cache - 1 branch
+    //2. hit per world cache - hardware accelerated
+    //3. dictionary lookup
+    //4. create new archetype
     public void Add<T>()
     {
         ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
@@ -25,7 +30,7 @@ partial struct Entity
         }
         else
         {
-            destination = new ArchetypeID(cache.Lookup(index)).Archetype(world);
+            destination = world.WorldArchetypeTable.UnsafeArrayIndex(cache.Lookup(index));
         }
         
 
@@ -59,6 +64,23 @@ partial struct Entity
         internal static class Detach
         {
             internal static ArchetypeNeighborCache Lookup;
+        }
+
+        public static Archetype TraverseThroughCacheOrAdd(Entity entity, ref ArchetypeNeighborCache cache, Archetype.ArchetypeStructualAction action)
+        {
+            ref EntityLookup thisLookup = ref entity.AssertIsAlive(out World world);
+            int index = cache.Traverse(thisLookup.Location.Archetype.ID.RawIndex);
+
+            Archetype destination;
+
+            if (index == 32)
+            {
+                
+            }
+            else
+            {
+                destination = world.WorldArchetypeTable.UnsafeArrayIndex(cache.Lookup(index));
+            }
         }
     }
 }
