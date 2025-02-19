@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Frent.Collections;
 using Frent.Core;
+using Frent.Updating;
 
 namespace Frent;
 
@@ -22,18 +23,20 @@ partial struct Entity
         ref ArchetypeNeighborCache cache = ref NeighborCache<T>.Add.Lookup;
         int index = cache.Traverse(thisLookup.Location.Archetype.ID.RawIndex);
 
+        Archetype from = thisLookup.Location.Archetype;
         Archetype destination;
 
         if(index == 32)
         {
             //TODO: slow path
+            destination = null!;
         }
         else
         {
             destination = world.WorldArchetypeTable.UnsafeArrayIndex(cache.Lookup(index));
         }
         
-
+        //ReadOnlySpan<IComponentRunner> runners = world.MoveEntityToArchetypeAdd(from, destination, out);
 
         throw new NotImplementedException();
     }

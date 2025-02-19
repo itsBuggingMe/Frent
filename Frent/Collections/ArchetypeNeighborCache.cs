@@ -10,7 +10,7 @@ namespace Frent.Collections;
 internal struct ArchetypeNeighborCache
 {
     //128 bits
-    private LookupIDs _keysAndValues;
+    private InlineArray8<ushort> _keysAndValues;
     //32
     private int _nextIndex;
 
@@ -21,34 +21,35 @@ internal struct ArchetypeNeighborCache
         //there is no way Vector64 not hardware accelerated
         if(Vector64.IsHardwareAccelerated)
         {
-            Vector64<ushort> bits = Vector64.Equals(Vector64.LoadUnsafe(ref _keysAndValues._id0), Vector64.Create(value));
+            Vector64<ushort> bits = Vector64.Equals(Vector64.LoadUnsafe(ref _keysAndValues._0), Vector64.Create(value));
             int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());
             Debugger.Break();
             return index;
         }
 #endif
-
-        if (value == _keysAndValues._id0)
+        //TODO: better impl
+        if (value == _keysAndValues._0)
             return 0;
-        if (value == _keysAndValues._id1)
+        if (value == _keysAndValues._1)
             return 1;
-        if (value == _keysAndValues._id2)
+        if (value == _keysAndValues._2)
             return 2;
-        if (value == _keysAndValues._id3)
+        if (value == _keysAndValues._3)
             return 3;
+        
         return 32;
     }
 
     public ushort Lookup(int index)
     {
         Debug.Assert(index < 4);
-        return Unsafe.Add(ref _keysAndValues._id4, index);
+        return Unsafe.Add(ref _keysAndValues._4, index);
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
     public void Set(ushort key, ushort value)
     {
-        Unsafe.Add(ref _keysAndValues._id4, _nextIndex) = value;
+        Unsafe.Add(ref _keysAndValues._4, _nextIndex) = value;
+        Unsafe.Add(ref _keysAndValues._0, _nextIndex) = key;
         _nextIndex = (_nextIndex + 1) & 3;
     }
 }

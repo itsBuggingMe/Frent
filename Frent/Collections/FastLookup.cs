@@ -1,17 +1,15 @@
 ﻿using Frent.Core;
-using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Security.AccessControl;
 
 namespace Frent.Collections;
 
 internal struct FastLookup()
 {
-    private LookupData _data;
-    private LookupIDs _ids;
+    private InlineArray8<uint> _data;
+    private InlineArray8<ushort> _ids;
     internal Archetype[] Archetypes = new Archetype[8];
     internal Dictionary<uint, Archetype> FallbackLookup = [];
     private int index;
@@ -38,7 +36,7 @@ internal struct FastLookup()
         int index = LookupIndex(key);
         if (index != 32)
         {
-            return new ArchetypeID(LookupIDs.Index(ref _ids, index));
+            return new ArchetypeID(InlineArray8<ushort>.Get(ref _ids, index));
         }
         else if (FallbackLookup.TryGetValue(key, out var destination))
         {
@@ -85,8 +83,9 @@ internal struct FastLookup()
         
         FallbackLookup[key] = to;
 
-        LookupData.Index(ref _data, index) = key;
-        LookupIDs.Index(ref _ids, index) = to.ID.RawIndex;
+        InlineArray8<uint>.Get(ref _data, index) = key;
+        InlineArray8<ushort>.Get(ref _ids, index) = to.ID.RawIndex;
+        
         Archetypes[index] = to;
 
         index = (index + 1) & 7;
@@ -95,7 +94,7 @@ internal struct FastLookup()
     public int LookupIndex(uint key)
     {
 #if NET7_0_OR_GREATER
-        Vector256<uint> bits = Vector256.Equals(Vector256.Create(key), Vector256.LoadUnsafe(ref _data.l0));
+        Vector256<uint> bits = Vector256.Equals(Vector256.Create(key), Vector256.LoadUnsafe(ref _data._0));
         int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());
         return index;
         //else if (Vector128.IsHardwareAccelerated)
@@ -110,53 +109,7 @@ internal struct FastLookup()
         //    return index;
         //}
 #endif
-        int bclIndex = MemoryMarshal.CreateSpan(ref _data.l0, 8).IndexOf(key);
+        int bclIndex = MemoryMarshal.CreateSpan(ref _data._0, 8).IndexOf(key);
         return bclIndex == -1 ? 32 : bclIndex;
     }
-}
-
-[StructLayout(LayoutKind.Sequential, Pack = 4)]
-internal struct LookupData
-{
-    public static ref uint Index(ref LookupData data, int index)
-    {
-#if DEBUG
-            if(index< 0 || index >= 8)
-                throw new IndexOutOfRangeException();
-#endif
-
-        return ref Unsafe.Add(ref data.l0, index);
-    }
-
-    internal uint l0;
-    internal uint l1;
-    internal uint l2;
-    internal uint l3;
-    internal uint l4;
-    internal uint l5;
-    internal uint l6;
-    internal uint l7;
-}
-
-[StructLayout(LayoutKind.Sequential, Pack = 2)]
-internal struct LookupIDs
-{
-    public static ref ushort Index(ref LookupIDs data, int index)
-    {
-#if DEBUG
-            if(index< 0 || index >= 8)
-                throw new IndexOutOfRangeException();
-#endif
-
-        return ref Unsafe.Add(ref data._id0, index);
-    }
-
-    internal ushort _id0;
-    internal ushort _id1;
-    internal ushort _id2;
-    internal ushort _id3;
-    internal ushort _id4;
-    internal ushort _id5;
-    internal ushort _id6;
-    internal ushort _id7;
 }

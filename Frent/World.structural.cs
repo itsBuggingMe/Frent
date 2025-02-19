@@ -97,9 +97,30 @@ partial class World
     }
 
     [SkipLocalsInit]
-    internal Span<IComponentRunner> MoveEntityToArchetype(Archetype from, Archetype to)
+    internal Span<IComponentRunner> MoveEntityToArchetypeAdd(Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype from, Archetype destination)
     {
-        throw new NotImplementedException();
+        Debug.Assert(from.Components.Length < destination.Components.Length);
+
+
+        destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
+
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index);
+
+        IComponentRunner[] fromRunners = from.Components;
+        IComponentRunner[] toRunners = destination.Components;
+
+        Span<IComponentRunner> availibleRunners = [null!, null!, null!, null!, null!, null!, null!, null!];
+        
+        int i = 1;
+        for (; i < fromRunners.Length; i++)
+        {
+            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index);
+        }
+
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
+        currentLookup.Location = nextLocation;
+
+        return toRunners.UnsafeArrayIndex(i);
     }
 
     internal Archetype FindArchetype(Archetype archetype, ComponentID component, Archetype.ArchetypeStructualAction action)
