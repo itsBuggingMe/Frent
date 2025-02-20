@@ -31,9 +31,8 @@ ent.Deconstruct(out Ref<double> d, out Ref<int> i, out Ref<float> f, out Ref<str
 d.Component = 4;
 str.Component = "Hello, World!";
 
-//You can also deconstruct like this - you just can't assign the value of the struct
-//This also won't work with the tuple deconstruction syntax unfortunately due to a bug w/ the C# compiler
-ent.Deconstruct(out string str1);
+//str1 here is "Hello, World" since we just reassigned it in the previous line.
+string str1 = ent.Get<string>();
 Console.WriteLine(str1);
 ```
 
