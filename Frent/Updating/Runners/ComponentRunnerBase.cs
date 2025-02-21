@@ -27,14 +27,19 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public void InvokeGenericActionWith(IGenericAction action, int index) => action?.Invoke(ref this[index]);
     public ComponentID ComponentID => Component<TComponent>.ID;
 
-    public void PullComponentFromAndClear(IComponentRunner otherRunner, int me, int other)
+    public void PullComponentFromAndClear(IComponentRunner otherRunner, int me, int other, int otherRemoveIndex)
     {
         ComponentStorage<TComponent> componentRunner = UnsafeExtensions.UnsafeCast<ComponentStorage<TComponent>>(otherRunner);
+
         ref var item = ref componentRunner[other];
         this[me] = item;
+        
+        ref var downItem = ref componentRunner[otherRemoveIndex];
+        item = downItem;
+
         if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
         {
-            item = default;
+            downItem = default;
         }
     }
 

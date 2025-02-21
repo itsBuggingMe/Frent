@@ -1,6 +1,7 @@
 ﻿namespace Frent.Core;
 
-public interface ITypeID
+internal interface ITypeID
 {
     public Type Type { get; }
+    public ushort Value { get; }
 }

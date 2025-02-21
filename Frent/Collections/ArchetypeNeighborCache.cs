@@ -14,19 +14,19 @@ internal struct ArchetypeNeighborCache
     //32
     private int _nextIndex;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public int Traverse(ushort value)
     {
-#if NET7_0_OR_GREATER
-        //there is no way Vector64 not hardware accelerated
-        if(Vector64.IsHardwareAccelerated)
-        {
-            Vector64<ushort> bits = Vector64.Equals(Vector64.LoadUnsafe(ref _keysAndValues._0), Vector64.Create(value));
-            int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());
-            Debugger.Break();
-            return index;
-        }
-#endif
+        //my simd code is garbage
+//#if NET7_0_OR_GREATER
+//        if(Vector256.IsHardwareAccelerated)
+//        {
+//            Vector256<ushort> bits = Vector256.Equals(Vector256.LoadUnsafe(ref _keysAndValues._0), Vector256.Create(value));
+//            int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());
+//            return index;
+//        }
+//#endif
         //TODO: better impl
         if (value == _keysAndValues._0)
             return 0;

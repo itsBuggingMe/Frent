@@ -8,6 +8,7 @@ using Frent.Systems;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -53,10 +54,6 @@ public partial class World : IDisposable
     internal TagEvent Detached = new TagEvent();
 
     internal EntityFlags WorldEventFlags; 
-    internal FastLookup CompAddLookup = new();
-    internal FastLookup CompRemoveLookup = new();
-    internal FastLookup TagAddLookup = new();
-    internal FastLookup TagRemoveLookup = new();
 
     /// <summary>
     /// Invoked whenever an entity is created on this world.
@@ -449,10 +446,9 @@ public partial class World : IDisposable
     /// <remarks>Use this method when creating a large number of entities</remarks>
     public void EnsureCapacity(ArchetypeID entityType, int count)
     {
-        var types = entityType.Types;
         if (count < 1)
             return;
-        Archetype archetype = Archetype.CreateOrGetExistingArchetype(entityType.Types.AsSpan(), entityType.Tags.AsSpan(), this, entityType.Types, entityType.Tags);
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype(entityType, this);
         EnsureCapacityCore(archetype, count);
     }
 

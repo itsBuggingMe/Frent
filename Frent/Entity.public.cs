@@ -287,7 +287,8 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            w.RemoveComponent(this, ref lookup, componentID);
+            throw null;
+            //w.RemoveComponent(this, ref lookup, componentID);
         }
         else
         {

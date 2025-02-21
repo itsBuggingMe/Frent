@@ -105,31 +105,14 @@ internal partial class Archetype
         }
     }
 
-    public Archetype FindArchetypeAdjacent(World world, ComponentID component, ArchetypeStructualAction actionType)
-    {
-        var destination = CreateOrGetExistingArchetype(
-
-            actionType == ArchetypeStructualAction.Add ? 
-                MemoryHelpers.Concat(ArchetypeTypeArray, component, out var arr) : 
-                MemoryHelpers.Remove(ArchetypeTypeArray, component, out arr), 
-
-            ArchetypeTagArray.AsSpan(), world, arr, ArchetypeTagArray);
-        return destination;
-    }
-
-    internal enum ArchetypeStructualAction
-    {
-        Add,
-        Remove,
-    }
-
     /// <summary>
     /// This method doesn't modify component storages
     /// </summary>
-    internal EntityIDOnly DeleteEntityFromStorage(int index)
+    internal EntityIDOnly DeleteEntityFromStorage(int index, out int deletedIndex)
     {
-        _componentIndex--;
+        deletedIndex = --_componentIndex;
         Debug.Assert(_componentIndex >= 0);
+        //TODO: unsafe
         return _entities[index] = _entities[_componentIndex];
     }
 
@@ -241,13 +224,13 @@ internal partial class Archetype
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool HasTag<T>()
     {
-        return (ComponentTagTable.UnsafeArrayIndex(Tag<T>.ID.Index) << 7) != 0;
+        return (ComponentTagTable.UnsafeArrayIndex(Tag<T>.ID.RawValue) << 7) != 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool HasTag(TagID tagID)
     {
-        return (ComponentTagTable.UnsafeArrayIndex(tagID.Index) << 7) != 0;
+        return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) << 7) != 0;
     }
 
     internal Span<EntityIDOnly> GetEntitySpan()

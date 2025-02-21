@@ -244,7 +244,8 @@ public class CommandBuffer
             ref var record = ref _world.EntityTable[id];
             if (record.Version == item.Entity.Version)
             {
-                _world.RemoveComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
+                throw new NotImplementedException();
+                //_world.RemoveComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
             }
         }
 

@@ -32,7 +32,7 @@ internal static class MemoryHelpers
         return builder.MoveToImmutable();
     }
 
-    public static ReadOnlySpan<T> Concat<T>(ImmutableArray<T> types, T type, out ImmutableArray<T> result)
+    public static ImmutableArray<T> Concat<T>(ImmutableArray<T> types, T type)
         where T : ITypeID
     {
         if (types.IndexOf(type) != -1)
@@ -42,18 +42,18 @@ internal static class MemoryHelpers
         builder.AddRange(types);
         builder.Add(type);
 
-        result = builder.MoveToImmutable();
-        return result.AsSpan();
+        var result = builder.MoveToImmutable();
+        return result;
     }
 
-    public static ReadOnlySpan<T> Remove<T>(ImmutableArray<T> types, T type, out ImmutableArray<T> result)
+    public static ImmutableArray<T> Remove<T>(ImmutableArray<T> types, T type)
         where T : ITypeID
     {
         int index = types.IndexOf(type);
         if (index == -1)
             FrentExceptions.Throw_ComponentNotFoundException(type.Type);
-        result = types.RemoveAt(index);
-        return result.AsSpan();
+        var result = types.RemoveAt(index);
+        return result;
     }
 }
 

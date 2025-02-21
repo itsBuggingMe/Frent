@@ -37,6 +37,13 @@ internal struct EntityLocation
         var res = (Flags & entityFlags) != EntityFlags.None;
         return res;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool HasEventFlag(EntityFlags entityFlags, EntityFlags target)
+    {
+        var res = (entityFlags & target) != EntityFlags.None;
+        return res;
+    }
 }
 
 [Flags]

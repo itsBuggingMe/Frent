@@ -12,7 +12,7 @@ internal interface IComponentRunner
     internal void Delete(DeleteComponentData deleteComponentData);
     internal void Trim(int chunkIndex);
     internal void ResizeBuffer(int size);
-    internal void PullComponentFromAndClear(IComponentRunner otherRunner, int me, int other);
+    internal void PullComponentFromAndClear(IComponentRunner otherRunner, int me, int other, int otherRemove);
     internal void PullComponentFrom(IDTable storage, int me, int other);
     internal void InvokeGenericActionWith(GenericEvent? action, Entity entity, int index);
     internal void InvokeGenericActionWith(IGenericAction action, int index);

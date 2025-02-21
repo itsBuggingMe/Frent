@@ -82,7 +82,7 @@ public partial struct Entity : IEquatable<Entity>
         entityLocation = lookup.Location;
         return lookup.Version == EntityVersion;
     }
-
+    [MethodImpl(MethodImplOptions.NoInlining)]
     internal ref EntityLookup AssertIsAlive(out World world)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
@@ -144,21 +144,21 @@ public partial struct Entity : IEquatable<Entity>
         public ImmutableArray<TagID> Tags => target.TagTypes;
 
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public object[] Components
+        public Dictionary<Type, object> Components
         {
             get
             {
                 if (!target.InternalIsAlive(out World? world, out var eloc))
-                    return Array.Empty<object>();
+                    return [];
 
-                object[] objects = new object[ComponentTypes.Length];
-                Archetype archetype = eloc.Archetype;
-                for (int i = 0; i < objects.Length; i++)
+                Dictionary<Type, object> components = [];
+
+                for(int i = 0; i < ComponentTypes.Length; i++)
                 {
-                    objects[i] = archetype.Components[i].GetAt(eloc.Index);
+                    components[ComponentTypes[i].Type] = target.Get(ComponentTypes[i]);
                 }
 
-                return objects;
+                return components;
             }
         }
     }

@@ -56,16 +56,51 @@ partial class Archetype
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
         ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
+        return CreateOrGetExistingArchetype(id, world);
+    }
+
+    internal static Archetype CreateOrGetExistingArchetype(ArchetypeID id, World world)
+    {
         ref Archetype archetype = ref world.WorldArchetypeTable[id.RawIndex];
         if (archetype is not null)
             return archetype;
 
+        var types = id.Types;
         IComponentRunner[] componentRunners = new IComponentRunner[types.Length + 1];
         for (int i = 1; i < componentRunners.Length; i++)
             componentRunners[i] = Component.GetComponentRunnerFromType(types[i - 1].Type);
 
         archetype = new Archetype(id, componentRunners);
         world.ArchetypeAdded(archetype.ID);
+
+        return archetype;
+    }
+
+    internal static Archetype GetAdjacentArchetypeCold(World world, ArchetypeEdgeKey edge)
+    {
+        //this world doesn't have the archetype, or it doesnt even exist
+
+        Archetype from = edge.ArchetypeFrom.Archetype(world);
+        ImmutableArray<ComponentID> fromComponents = edge.ArchetypeFrom.Types;
+        ImmutableArray<TagID> fromTags = edge.ArchetypeFrom.Tags;
+
+        switch (edge.EdgeType)
+        {
+            case ArchetypeEdgeType.AddComponent:
+                fromComponents = MemoryHelpers.Concat(fromComponents, edge.ComponentID);
+                break;
+            case ArchetypeEdgeType.RemoveComponent:
+                fromComponents = MemoryHelpers.Remove(fromComponents, edge.ComponentID);
+                break;
+            case ArchetypeEdgeType.AddTag:
+                fromTags = MemoryHelpers.Concat(fromTags, edge.TagID);
+                break;
+            case ArchetypeEdgeType.RemoveTag:
+                fromTags = MemoryHelpers.Remove(fromTags, edge.TagID);
+                break;
+        }
+
+        var archetype = CreateOrGetExistingArchetype(fromComponents.AsSpan(), fromTags.AsSpan(), world, fromComponents, fromTags);
 
         return archetype;
     }
@@ -140,7 +175,7 @@ partial class Archetype
 
         for (int i = 0; i < archetypeTags.Length; i++)
         {
-            componentTable[archetypeTags[i].Index] |= GlobalWorldTables.HasTagMask;
+            componentTable[archetypeTags[i].RawValue] |= GlobalWorldTables.HasTagMask;
         }
     }
 
@@ -161,8 +196,8 @@ partial class Archetype
 
         foreach (var item in andMoreTypes)
         {
-            hash1 ^= item.Index * 98317U;
-            hash2 += item.Index * 53U;
+            hash1 ^= item.RawValue * 98317U;
+            hash2 += item.RawValue * 53U;
         }
 
         h1.Add(HashCode.Combine(hash1, hash2));

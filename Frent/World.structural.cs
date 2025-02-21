@@ -2,9 +2,10 @@
 using Frent.Core;
 using Frent.Core.Structures;
 using Frent.Updating;
+using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -20,231 +21,124 @@ partial class World
     /// </summary>
     internal void AddComponentRange(Entity entity, ReadOnlySpan<ComponentHandle> comps)
     {
-        ref EntityLocation location = ref EntityTable.UnsafeIndexNoResize(entity.EntityID).Location;
-
-        Archetype currentArchetype = location.Archetype;
-
-        ReadOnlySpan<ComponentID> existingComponentIDs = currentArchetype.ArchetypeTypeArray.AsSpan();
-        int newCompCount = comps.Length + existingComponentIDs.Length;
-        if (newCompCount > MemoryHelpers.MaxComponentCount)
-            FrentExceptions.Throw_InvalidOperationException("Too many components");
-
-        Span<ComponentID> allComps = stackalloc ComponentID[newCompCount];
-        existingComponentIDs.CopyTo(allComps);
-        int j = 0;
-        for (int i = existingComponentIDs.Length; i < comps.Length; i++)
-            allComps[i] = comps[j++].ComponentID;
-        var tags = currentArchetype.ArchetypeTagArray;
-
-        ArchetypeID destinationID = currentArchetype.ID;
-        foreach (var component in comps)
-        {
-            destinationID = CompAddLookup.FindAdjacentArchetypeID(component.ComponentID, destinationID, Archetype.ArchetypeStructualAction.Add, this);
-        }
-        Archetype destination = destinationID.Archetype(this);
-
-        destination.CreateEntityLocation(location.Flags, out var nextELoc).Init(entity);
-
-        for (int i = 1; i < currentArchetype.Components.Length; i++)
-        {
-            destination.Components[i].PullComponentFromAndClear(currentArchetype.Components[i], nextELoc.Index, location.Index);
-        }
-
-        j = 0;
-        for (int i = existingComponentIDs.Length; i < currentArchetype.Components.Length - 1; i++)
-        {
-            var componentLocation = comps[j++];
-            currentArchetype.Components[i].PullComponentFrom(
-                Component.ComponentTable[componentLocation.ComponentID.RawIndex].Storage,
-                nextELoc.Index,
-                componentLocation.Index);
-        }
-
-
-        EntityIDOnly movedDown = currentArchetype.DeleteEntityFromStorage(location.Index);
-
-        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = location;
-        location = nextELoc;
+        throw new NotImplementedException();
     }
 
     //Add
-    //Note: this fucntion doesn't actually do the last step of setting the component in the new archetype
+    //Note: this function doesn't actually do the last step of setting the component in the new archetype
     //the caller's job is to set the component
     [SkipLocalsInit]
     internal IComponentRunner AddComponent(EntityIDOnly entity, ref EntityLookup currentLookup, ComponentID component, out EntityLocation nextLocation)
     {
-        Archetype from = currentLookup.Location.Archetype;
-
-        Archetype destination = CompAddLookup.FindAdjacentArchetype(component, from, Archetype.ArchetypeStructualAction.Add, this);
-
-        destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
-
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index);
-
-        IComponentRunner[] fromRunners = from.Components;
-        IComponentRunner[] toRunners = destination.Components;
-
-        int i = 1;
-        for (; i < fromRunners.Length; i++)
-        {
-            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index);
-        }
-
-        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
-        currentLookup.Location = nextLocation;
-
-        return toRunners.UnsafeArrayIndex(i);
+        throw new NotImplementedException();
     }
 
     [SkipLocalsInit]
-    internal Span<IComponentRunner> MoveEntityToArchetypeAdd(Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype from, Archetype destination)
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void MoveEntityToArchetypeAdd(Span<IComponentRunner> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
     {
+        Archetype from = currentLookup.Location.Archetype;
+
         Debug.Assert(from.Components.Length < destination.Components.Length);
 
-
         destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
 
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index);
 
         IComponentRunner[] fromRunners = from.Components;
-        IComponentRunner[] toRunners = destination.Components;
+        IComponentRunner[] destRunners = destination.Components;
+        byte[] fromMap = from.ComponentTagTable;
+        byte[] destMap = destination.ComponentTagTable;
 
-        Span<IComponentRunner> availibleRunners = [null!, null!, null!, null!, null!, null!, null!, null!];
-        
-        int i = 1;
-        for (; i < fromRunners.Length; i++)
+        ImmutableArray<ComponentID> destinationComponents = destination.ArchetypeTypeArray;
+
+        int writeToIndex = 0;
+        for(int i = 0; i < destinationComponents.Length;)
         {
-            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index);
+            ComponentID componentToMove = destinationComponents[i];
+            int fromIndex = fromMap.UnsafeArrayIndex(componentToMove.RawIndex) & GlobalWorldTables.IndexBits;
+
+            //index for dest is offset by one for hardware trap
+            i++;
+
+            if(fromIndex == 0)
+            {
+                writeTo[writeToIndex++] = destRunners[i];
+            }
+            else
+            {
+                destRunners[i].PullComponentFromAndClear(fromRunners[fromIndex], nextLocation.Index, currentLookup.Location.Index, deletedIndex);
+            }
+        }
+
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
+        currentLookup.Location = nextLocation;
+    }
+
+    [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void MoveEntityToArchetypeRemove(Span<IComponentRunner> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
+    {
+        Archetype from = currentLookup.Location.Archetype;
+
+        Debug.Assert(from.Components.Length > destination.Components.Length);
+
+        destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
+
+
+        IComponentRunner[] fromRunners = from.Components;
+        IComponentRunner[] destRunners = destination.Components;
+        byte[] fromMap = from.ComponentTagTable;
+        byte[] destMap = destination.ComponentTagTable;
+
+        ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
+
+        int writeToIndex = 0;
+        for (int i = 0; i < fromComponents.Length;)
+        {
+            ComponentID componentToMoveFromFromToTo = fromComponents[i];
+            int toIndex = destMap.UnsafeArrayIndex(componentToMoveFromFromToTo.RawIndex);
+
+            i++;
+
+            if(toIndex == 0)
+            {
+                writeTo[writeToIndex++] = fromRunners[i];
+            }
+            else
+            {
+                destRunners[toIndex].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index, deletedIndex);
+            }
         }
 
         EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
         currentLookup.Location = nextLocation;
 
-        return toRunners.UnsafeArrayIndex(i);
-    }
 
-    internal Archetype FindArchetype(Archetype archetype, ComponentID component, Archetype.ArchetypeStructualAction action)
-    {
-        archetype.FindArchetypeAdjacent();
-    }
-
-    //Remove
-    internal void RemoveComponent(Entity entity, ref EntityLookup currentLookup, ComponentID component)
-    {
-        Archetype destination = CompAddLookup.FindAdjacentArchetype(component, currentLookup.Location.Archetype, Archetype.ArchetypeStructualAction.Remove, this);
-
-        ref EntityIDOnly archetypeEntity = ref destination.CreateEntityLocation(currentLookup.Location.Flags, out EntityLocation nextLocation);
-        archetypeEntity.Init(entity);
-
-
-        int skipIndex = currentLookup.Location.Archetype.GetComponentIndex(component);
-
-        IDTable? tmpEventComponentStorage = null;
-        int tmpEventComponentIndex = -1;
-
-        ref IComponentRunner destRef = ref MemoryMarshal.GetArrayDataReference(destination.Components);
-        ref IComponentRunner fromRef = ref MemoryMarshal.GetArrayDataReference(currentLookup.Location.Archetype.Components);
-        destRef = ref Unsafe.Add(ref destRef, 1);
-        fromRef = ref Unsafe.Add(ref fromRef, 1);
-
-        int i = 1;
-
-        for (; i < skipIndex; i++)
-        {
-            destRef.PullComponentFromAndClear(fromRef, nextLocation.Index, currentLookup.Location.Index);
-            destRef = ref Unsafe.Add(ref destRef, 1);
-            fromRef = ref Unsafe.Add(ref fromRef, 1);
-        }
-
-        if (currentLookup.Location.HasEvent(EntityFlags.RemoveComp))
-        {
-            tmpEventComponentStorage = fromRef.PushComponentToStack(currentLookup.Location.Index, out tmpEventComponentIndex);
-        }
-
-        for (i++, fromRef = ref Unsafe.Add(ref fromRef, 1); i < currentLookup.Location.Archetype.Components.Length; i++)
-        {
-            destRef.PullComponentFromAndClear(fromRef, nextLocation.Index, currentLookup.Location.Index);
-            destRef = ref Unsafe.Add(ref destRef, 1);
-            fromRef = ref Unsafe.Add(ref fromRef, 1);
-        }
-
-        EntityIDOnly movedDown = currentLookup.Location.Archetype.DeleteEntityFromStorage(currentLookup.Location.Index);
-
-        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
-        currentLookup.Location = nextLocation;
-
-        currentLookup.Location.Flags |= WorldEventFlags;
-        if(currentLookup.Location.HasEvent(EntityFlags.RemoveComp | EntityFlags.WorldRemoveComp))
-        {
-            ComponentRemovedEvent.Invoke(entity, component);
-            ref var eventData = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
-            eventData.Remove.NormalEvent.Invoke(entity, component);
-            tmpEventComponentStorage?.InvokeEventWithAndConsume(eventData.Remove.GenericEvent, entity, tmpEventComponentIndex);
-        }
+        //TODO: invoke events 
     }
 
     //components cannot be empty
     [SkipLocalsInit]
     internal void RemoveComponentRange(Entity entity, EntityLocation entityLocation, ReadOnlySpan<ComponentID> components)
     {
-        Debug.Assert(components.Length != 0);
-        Archetype from = entityLocation.Archetype;
-
-        ArchetypeID destinationID = from.ID;
-        foreach(var component in components)
-        {
-            destinationID = CompAddLookup.FindAdjacentArchetypeID(component, destinationID, Archetype.ArchetypeStructualAction.Remove, this);
-        }
-        Archetype destination = destinationID.Archetype(this);
-
-        destination!.CreateEntityLocation(entityLocation.Flags, out EntityLocation nextLocation).Init(entity);
-
-        Span<int> skipIndicies = stackalloc int[components.Length];
-        Span<int> stackIndicies = stackalloc int[components.Length];
-        Span<IDTable> stacks = [null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!];
-        int skipIndexIndex = 0;
-
-        for(int i1 = 0; i1 < skipIndicies.Length; i1++)
-        {
-            skipIndicies[i1] = from.GetComponentIndex(components[i1]);
-        }
-        skipIndicies.Sort();
-
-        int j = 1;
-        for(int i = 1; i < from.Components.Length; i++)
-        {
-            if(i == skipIndicies[skipIndexIndex])
-            {
-                if(entityLocation.HasEvent(EntityFlags.AddComp))
-                {
-                    stacks[skipIndexIndex] = from.Components[i].PushComponentToStack(entityLocation.Index, out int stackIndex);
-                    stackIndicies[skipIndexIndex] = stackIndex;
-                }
-                skipIndexIndex++;
-                continue;
-            }
-
-            destination.Components[j++].PullComponentFromAndClear(from.Components[i], nextLocation.Index, entityLocation.Index);
-        }
-
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
-
-        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = entityLocation;
-        EntityTable.UnsafeIndexNoResize(entity.EntityID).Location = nextLocation;
-
-        entityLocation.Flags |= WorldEventFlags;
-        if (entityLocation.HasEvent(EntityFlags.RemoveComp | EntityFlags.WorldRemoveComp))
-        {
-            for(int i = 0; i < components.Length; i++)
-            {
-                ComponentRemovedEvent.Invoke(entity, components[i]);
-                ref var eventData = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
-                eventData.Remove.NormalEvent.Invoke(entity, components[i]);
-                stacks[i]?.InvokeEventWithAndConsume(eventData.Remove.GenericEvent, entity, stackIndicies[i]);
-            }
-        }
+        throw new NotImplementedException();
     }
 
+    //Tag
+    internal bool Tag(Entity entity, EntityLocation entityLocation, TagID tagID)
+    {
+        throw new NotImplementedException();
+    }
+
+    //Detach
+    internal bool Detach(Entity entity, EntityLocation entityLocation, TagID tagID)
+    {
+        throw new NotImplementedException();
+    }
+
+    #region Delete
     //Delete
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DeleteEntity(Entity entity, ref EntityLookup entityLocation)
@@ -291,84 +185,5 @@ partial class World
             id.Version++;
         }
     }
-
-    //Tag
-    internal bool Tag(Entity entity, EntityLocation entityLocation, TagID tagID)
-    {
-        if (entityLocation.Archetype.HasTag(tagID))
-            return false;
-
-        Archetype from = entityLocation.Archetype;
-
-        ref var destination = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
-            ArchetypeEdgeKey.Tag(tagID, entityLocation.ArchetypeID, ArchetypeEdgeType.AddTag),
-            out bool exist);
-
-        if (!exist)
-        {
-            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), MemoryHelpers.Concat(from.ArchetypeTagArray, tagID, out var res), this, from.ArchetypeTypeArray, res);
-        }
-
-        destination!.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
-
-        Debug.Assert(from.Components.Length == destination.Components.Length);
-        Span<IComponentRunner> fromRunners = from.Components.AsSpan();
-        Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
-
-        for (int i = 1; i < fromRunners.Length; i++)
-            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, entityLocation.Index);
-
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
-
-        EntityTable[movedDown.ID].Location = entityLocation;
-        EntityTable[entity.EntityID].Location = nextLocation;
-
-        ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.Tagged, out bool eventExist);
-        if (eventExist)
-            eventData.Tag.Invoke(entity, tagID);
-
-        Tagged.Invoke(entity, tagID);
-
-        return true;
-    }
-
-    //Detach
-    internal bool Detach(Entity entity, EntityLocation entityLocation, TagID tagID)
-    {
-        if (!GlobalWorldTables.HasTag(entityLocation.ArchetypeID, tagID))
-            return false;
-
-        Archetype from = entityLocation.Archetype;
-        ref var destination = ref CollectionsMarshal.GetValueRefOrAddDefault(ArchetypeGraphEdges,
-            ArchetypeEdgeKey.Tag(tagID, from.ID, ArchetypeEdgeType.RemoveTag),
-            out bool exist);
-
-        if (!exist)
-        {
-            destination = Archetype.CreateOrGetExistingArchetype(from.ArchetypeTypeArray.AsSpan(), MemoryHelpers.Remove(from.ArchetypeTagArray, tagID, out var arr), this, from.ArchetypeTypeArray, arr);
-        }
-
-        destination!.CreateEntityLocation(entityLocation.Flags, out var nextLocation).Init(entity);
-
-        Debug.Assert(from.Components.Length == destination.Components.Length);
-        Span<IComponentRunner> fromRunners = from.Components.AsSpan();
-        Span<IComponentRunner> toRunners = destination.Components.AsSpan()[..fromRunners.Length];//avoid bounds checks
-
-        for (int i = 1; i < fromRunners.Length; i++)
-            toRunners[i].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, entityLocation.Index);
-
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(entityLocation.Index);
-        
-        EntityTable[movedDown.ID].Location = entityLocation;
-        EntityTable[entity.EntityID].Location = nextLocation;
-
-
-        ref var eventData = ref TryGetEventData(entityLocation, entity.EntityIDOnly, EntityFlags.Detach, out bool eventExist);
-        if (eventExist)
-            eventData.Detach.Invoke(entity, tagID);
-
-        Detached.Invoke(entity, tagID);
-
-        return true;
-    }
+    #endregion
 }

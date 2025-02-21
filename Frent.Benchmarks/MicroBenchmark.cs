@@ -36,72 +36,18 @@ public class MicroBenchmark
         _entities = new Entity[100];
         for (int i = 0; i < _entities.Length; i++)
         {
-            _entities[i] = _world.Create<int, double, long, float, Half>(default, default, default, default, default);
+            _entities[i] = _world.Create<int, double>(default, default);
         }
     }
 
     [Benchmark]
-    public void AddRemoveMany()
-    {
-        var types = _entities[0].ComponentTypes;
-
-        ReadOnlySpan<ComponentHandle> components = [
-                ComponentHandle.Create<int>(0),
-                ComponentHandle.Create<double>(0),
-                ComponentHandle.Create<long>(0),
-                ComponentHandle.Create<float>(0),
-                ComponentHandle.Create<Half>(default)];
-
-        foreach (var item in _entities)
-        {
-            item.RemoveMany(types.AsSpan());
-
-            item.AddMany(components);
-        }
-
-        components[0].Dispose();
-        components[1].Dispose();
-        components[2].Dispose();
-        components[3].Dispose();
-        components[4].Dispose();
-    }
-
-    [Benchmark]
-    public void AddRemove()
+    public void AddRemoveNew()
     {
         foreach (var item in _entities)
         {
-            item.Remove<int>();
-            item.Remove<double>();
-            item.Remove<long>();
-            item.Remove<float>();
-            item.Remove<Half>();
+            item.RemoveNew<int>();
 
-            item.Add<int>(default);
-            item.Add<double>(default);
-            item.Add<long>(default);
-            item.Add<float>(default);
-            item.Add<Half>(default);
-        }
-    }
-
-    [Benchmark]
-    public void AddRemoveOne()
-    {
-        foreach (var item in _entities)
-        {
-            item.Remove<int>();
-
-            item.Add<int>(default);
-        }
-    }
-
-    [Benchmark]
-    public void CreateRemoveTarget()
-    {
-        foreach (var item in _entities)
-        {
-            _world.Create<int, double, long, float, Half>(default, default, default, default, default).Delete();
+            item.AddNew<int>(default);
         }
     }
 
