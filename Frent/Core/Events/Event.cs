@@ -1,5 +1,6 @@
 ﻿global using TagEvent = Frent.Core.Events.Event<Frent.Core.TagID>;
 using Frent.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Core.Events;
 
@@ -40,10 +41,15 @@ internal struct Event<T>()
     {
         if (_first is not null)
         {
-            _first.Invoke(entity, arg);
-            foreach (var item in _invokationList.AsSpan())
-                item.Invoke(entity, arg);
+            InvokeInternal(entity, arg);
         }
+    }
+
+    private readonly void InvokeInternal(Entity entity, T arg)
+    {
+        _first!.Invoke(entity, arg);
+        foreach (var item in _invokationList.AsSpan())
+            item.Invoke(entity, arg);
     }
 }
 

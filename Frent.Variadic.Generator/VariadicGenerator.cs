@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -87,12 +88,22 @@ namespace Frent.Variadic.Generator
         static (string, string, int)[] ExtractArguments(ISymbol symbol)
         {
             var att = symbol.GetAttributes();
+
             (string, string, int)[] output = new (string, string, int)[att.Length];
 
+            int j = 0;
             for (int i = 0; i < att.Length; i++)
             {
                 AttributeData @this = att[i];
-                output[i] = ((string)@this.ConstructorArguments[0].Value!, (string)@this.ConstructorArguments[1].Value!, (int)@this.ConstructorArguments[2].Value!);
+                if(@this.AttributeClass?.ToString() == Helpers.AttributeMetadataString)
+                {
+                    output[j++] = ((string)@this.ConstructorArguments[0].Value!, (string)@this.ConstructorArguments[1].Value!, (int)@this.ConstructorArguments[2].Value!);
+                }
+            }
+
+            if(j != output.Length)
+            {
+                return output.AsSpan(0, j).ToArray();
             }
 
             return output;

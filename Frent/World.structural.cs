@@ -33,8 +33,27 @@ partial class World
         throw new NotImplementedException();
     }
 
+
+    //components cannot be empty
     [SkipLocalsInit]
-    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void RemoveComponentRange(Entity entity, EntityLocation entityLocation, ReadOnlySpan<ComponentID> components)
+    {
+        throw new NotImplementedException();
+    }
+
+    //Tag
+    internal bool Tag(Entity entity, EntityLocation entityLocation, TagID tagID)
+    {
+        throw new NotImplementedException();
+    }
+
+    //Detach
+    internal bool Detach(Entity entity, EntityLocation entityLocation, TagID tagID)
+    {
+        throw new NotImplementedException();
+    }
+
+    [SkipLocalsInit]
     internal void MoveEntityToArchetypeAdd(Span<IComponentRunner> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
     {
         Archetype from = currentLookup.Location.Archetype;
@@ -48,7 +67,6 @@ partial class World
         IComponentRunner[] fromRunners = from.Components;
         IComponentRunner[] destRunners = destination.Components;
         byte[] fromMap = from.ComponentTagTable;
-        byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> destinationComponents = destination.ArchetypeTypeArray;
 
@@ -76,7 +94,6 @@ partial class World
     }
 
     [SkipLocalsInit]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     internal void MoveEntityToArchetypeRemove(Span<IComponentRunner> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
     {
         Archetype from = currentLookup.Location.Archetype;
@@ -89,7 +106,6 @@ partial class World
 
         IComponentRunner[] fromRunners = from.Components;
         IComponentRunner[] destRunners = destination.Components;
-        byte[] fromMap = from.ComponentTagTable;
         byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
@@ -117,25 +133,6 @@ partial class World
 
 
         //TODO: invoke events 
-    }
-
-    //components cannot be empty
-    [SkipLocalsInit]
-    internal void RemoveComponentRange(Entity entity, EntityLocation entityLocation, ReadOnlySpan<ComponentID> components)
-    {
-        throw new NotImplementedException();
-    }
-
-    //Tag
-    internal bool Tag(Entity entity, EntityLocation entityLocation, TagID tagID)
-    {
-        throw new NotImplementedException();
-    }
-
-    //Detach
-    internal bool Detach(Entity entity, EntityLocation entityLocation, TagID tagID)
-    {
-        throw new NotImplementedException();
     }
 
     #region Delete

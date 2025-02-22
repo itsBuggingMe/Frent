@@ -22,13 +22,20 @@ internal static class MemoryHelpers
             builder.Add(span[i]);
         return builder.MoveToImmutable();
     }
-    public static ImmutableArray<T> ConcatImmutable<T>(ImmutableArray<T> start, ReadOnlySpan<T> span)
+
+    public static ImmutableArray<T> Concat<T>(ImmutableArray<T> start, ReadOnlySpan<T> span)
+        where T : ITypeID
     {
         var builder = ImmutableArray.CreateBuilder<T>(start.Length + span.Length);
         for (int i = 0; i < start.Length; i++)
             builder.Add(start[i]);
         for (int i = 0; i < span.Length; i++)
-            builder.Add(span[i]);
+        {
+            var t = span[i];
+            if (start.IndexOf(t) != -1)
+                FrentExceptions.Throw_InvalidOperationException($"This entity already has a component of type {t.Type.Name}");
+            builder.Add(t);
+        }
         return builder.MoveToImmutable();
     }
 
@@ -55,6 +62,24 @@ internal static class MemoryHelpers
         var result = types.RemoveAt(index);
         return result;
     }
+
+    public static ImmutableArray<T> Remove<T>(ImmutableArray<T> types, ReadOnlySpan<T> span)
+        where T : ITypeID
+    {
+        var builder = ImmutableArray.CreateBuilder<T>(types.Length);
+        builder.AddRange(types);
+
+        foreach (var type in span)
+        {
+            int index = builder.IndexOf(type);
+            if (index == -1)
+                FrentExceptions.Throw_ComponentNotFoundException(type.Type);
+            builder.RemoveAt(index);
+        }
+
+        return builder.ToImmutable();
+    }
+
 }
 
 internal static class MemoryHelpers<T>
