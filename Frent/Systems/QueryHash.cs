@@ -23,10 +23,5 @@ internal struct QueryHash
         return this;
     }
 
-    public int ToHashCodeIncludeDisable() => _state;
-    public int ToHashCodeExcludeDisable()
-    {
-        _state *= Rule.NotTag(Core.Tag<Disable>.ID).GetHashCode();
-        return _state;
-    }
+    public int ToHashCode() => _state;
 }

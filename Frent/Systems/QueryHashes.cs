@@ -56,5 +56,5 @@ public struct IncludeDisabled : IRuleProvider
     /// <summary>
     /// The rule.
     /// </summary>
-    public Rule Rule => Rule.HasTag(Tag<Disable>.ID);
+    public Rule Rule => Rule.IncludeDisabledRule;
 }

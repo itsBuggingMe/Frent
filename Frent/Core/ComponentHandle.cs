@@ -1,4 +1,7 @@
-﻿namespace Frent.Core;
+﻿using Frent.Core.Events;
+
+namespace Frent.Core;
+
 public struct ComponentHandle : IDisposable
 {
     private int _index;
@@ -25,6 +28,11 @@ public struct ComponentHandle : IDisposable
     public object RetrieveBoxed()
     {
         return Component.ComponentTable[_componentType.RawIndex].Storage.TakeBoxed(_index);
+    }
+
+    public void InvokeComponentEventAndConsume(Entity entity, GenericEvent? @event)
+    {
+        Component.ComponentTable[_componentType.RawIndex].Storage.InvokeEventWithAndConsume(@event, entity, _index);
     }
 
     public void Dispose() => Component.ComponentTable[_componentType.RawIndex].Storage.Consume(_index);

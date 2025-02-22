@@ -19,6 +19,7 @@ public struct Rule : IEquatable<Rule>
         RuleState.NotTag => !archetypeID.HasTag(_tagID),
         RuleState.HasTag => archetypeID.HasTag(_tagID),
         RuleState.CustomDelegate => _custom!(archetypeID),
+        RuleState.IncludeDisabled => true,
         _ => throw new InvalidDataException("Rule not initialized correctly. Use one of the factory methods."),
     };
 
@@ -125,5 +126,8 @@ public struct Rule : IEquatable<Rule>
         NotComponent,
         HasTag,
         NotTag,
+        IncludeDisabled,
     }
+
+    public static readonly Rule IncludeDisabledRule = new Rule() { _ruleState = RuleState.IncludeDisabled };
 }

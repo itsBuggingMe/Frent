@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -94,7 +95,7 @@ partial class World
     }
 
     [SkipLocalsInit]
-    internal void MoveEntityToArchetypeRemove(Span<IComponentRunner> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
+    internal void MoveEntityToArchetypeRemove(Span<ComponentHandle> componentHandles, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
     {
         Archetype from = currentLookup.Location.Archetype;
 
@@ -120,20 +121,46 @@ partial class World
 
             if(toIndex == 0)
             {
-                writeTo[writeToIndex++] = fromRunners[i];
+                componentHandles[writeToIndex++] = fromRunners[i].Store(currentLookup.Location.Index);
             }
             else
             {
                 destRunners[toIndex].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index, deletedIndex);
             }
         }
-
+        
         EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
         currentLookup.Location = nextLocation;
 
+        
 
-        //TODO: invoke events 
+        EntityFlags flags = currentLookup.Location.Flags | WorldEventFlags;
+        if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp | EntityFlags.WorldRemoveComp))
+        {
+            if(ComponentRemovedEvent.HasListeners)
+            {
+                foreach(var handle in componentHandles)
+                    ComponentRemovedEvent.Invoke(entity, handle.ComponentID);
+            }
+
+            if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp))
+            {
+                ref var lookup = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
+                foreach(var handle in componentHandles)
+                {
+                    lookup.Remove.NormalEvent.Invoke(entity, handle.ComponentID);
+                    handle.InvokeComponentEventAndConsume(entity, lookup.Remove.GenericEvent);
+                }
+            }
+            else
+            {
+                foreach(var handle in componentHandles)
+                    handle.Dispose();
+            }
+        }
     }
+
+
 
     #region Delete
     //Delete

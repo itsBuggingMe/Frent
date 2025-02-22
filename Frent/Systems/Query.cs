@@ -14,16 +14,26 @@ public partial class Query
 
     private FastStack<Archetype> _archetypes = FastStack<Archetype>.Create(2);
     private ImmutableArray<Rule> _rules;
-    internal World World { get; private set; }
+    internal World World { get; init; }
+    internal bool IncludeDisabled { get; init; }
 
     internal Query(World world, ImmutableArray<Rule> rules)
     {
         World = world;
         _rules = rules;
+        foreach(var rule in rules)
+            if(rule == Rule.IncludeDisabledRule)
+            {
+                IncludeDisabled = true;
+                break;
+            }
     }
 
     internal void TryAttachArchetype(Archetype archetype)
     {
+        if(!IncludeDisabled && archetype.HasTag<Disable>())
+            return;
+
         if (ArchetypeSatisfiesQuery(archetype.ID))
             _archetypes.Push(archetype);
     }

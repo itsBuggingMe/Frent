@@ -66,10 +66,15 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
             from = default;
     }
 
-    public IDTable PushComponentToStack(int componentIndex, out int stackIndex)
+    public ComponentHandle Store(int componentIndex)
     {
-        Component<TComponent>.GeneralComponentStorage.Create(out stackIndex) = this[componentIndex];
-        return Component<TComponent>.GeneralComponentStorage;
+        ref var item = ref this[componentIndex];
+        if (Component<TComponent>.IsDestroyable)
+        {
+            ((IDestroyable)item!)?.Destroy();
+        }
+        Component<TComponent>.GeneralComponentStorage.Create(out var stackIndex) = item;
+        return new ComponentHandle(stackIndex, Component<TComponent>.ID);
     }
 }
 

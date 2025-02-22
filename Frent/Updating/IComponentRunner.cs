@@ -16,7 +16,7 @@ internal interface IComponentRunner
     internal void PullComponentFrom(IDTable storage, int me, int other);
     internal void InvokeGenericActionWith(GenericEvent? action, Entity entity, int index);
     internal void InvokeGenericActionWith(IGenericAction action, int index);
-    internal IDTable PushComponentToStack(int index, out int stackIndex);
+    internal ComponentHandle Store(int index);
     internal void SetAt(object component, int index);
     internal object GetAt(int index);
     internal ComponentID ComponentID { get; }

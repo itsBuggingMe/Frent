@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Frent.Collections;
@@ -43,10 +44,13 @@ partial struct Entity
 
         ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;
 
+        Component<T>.Initer?.Invoke(this, ref c1ref);
+
         EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
         if(EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.WorldAddComp))
         {
-            InvokeComponentWorldEvents<T>(ref world.ComponentAddedEvent, this);
+            if(world.ComponentAddedEvent.HasListeners)
+                InvokeComponentWorldEvents<T>(ref world.ComponentAddedEvent, this);
 
             if(EntityLocation.HasEventFlag(flags, EntityFlags.AddComp))
             {
@@ -66,24 +70,18 @@ partial struct Entity
             ref thisLookup,
             false);
 
-        Span<IComponentRunner> runners = [null!];
+        Span<ComponentHandle> runners = stackalloc ComponentHandle[1];
         world.MoveEntityToArchetypeRemove(runners, this, ref thisLookup, out var nextLocation, to);
     }
 
     private static void InvokeComponentWorldEvents<T>(ref Event<ComponentID> @event, Entity entity)
     {
-        if(@event.HasListeners)
-        {
-            @event.Invoke(entity, Component<T>.ID);
-        }
+        @event.Invoke(entity, Component<T>.ID);
     }
 
     private static void InvokeTagWorldEvents<T>(ref TagEvent @event, Entity entity)
     {
-        if (@event.HasListeners)
-        {
-            @event.Invoke(entity, Core.Tag<T>.ID);
-        }
+        @event.Invoke(entity, Core.Tag<T>.ID);
     }
 
     private static void InvokePerEntityEvents<T>(Entity entity, ref ComponentEvent events, ref T component)

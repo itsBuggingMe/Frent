@@ -10,5 +10,5 @@ internal static class QueryHashCache<T>
 {
     public static readonly int Value = new QueryHash()
         .AddRule(default(T).Rule)
-        .ToHashCodeExcludeDisable();
+        .ToHashCode();
 }
