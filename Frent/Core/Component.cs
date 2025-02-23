@@ -126,7 +126,7 @@ public static class Component
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? (Component<T>.CallLifetime)v1 : null,
                 GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? (Component<T>.CallLifetime)d : null));
 
-            return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.CallLifetime)v : null);
+            return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.CallLifetime)v : null, GenerationServices.TypeDestroyers.TryGetValue(type, out var v2) ? (Component<T>.CallLifetime)v2 : null);
         }
     }
 
