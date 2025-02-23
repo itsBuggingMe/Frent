@@ -18,6 +18,14 @@ public struct ComponentHandle : IDisposable
         return Component<T>.StoreComponent(comp);
     }
 
+    public static ComponentHandle CreateFromBoxed(ComponentID typeAs, object @object)
+    {
+        var index = Component.ComponentTable[typeAs.RawIndex].Storage.CreateBoxed(@object);
+        return new ComponentHandle(index, typeAs);
+    }
+
+    public static ComponentHandle CreateFromBoxed(object @object) => CreateFromBoxed(Component.GetComponentID(@object.GetType()), @object);
+
     public T Retrieve<T>()
     {
         if(_componentType != Component<T>.ID)
