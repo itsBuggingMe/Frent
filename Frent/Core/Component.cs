@@ -22,14 +22,15 @@ public static class Component<T>
     private static readonly ComponentID _id;
     private static readonly IComponentRunnerFactory<T> RunnerInstance;
     internal static readonly IDTable<T> GeneralComponentStorage;
-    internal static readonly CallInit? Initer;
+    internal static readonly CallLifetime? Initer;
+    internal static readonly CallLifetime? Destroyer;
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(T).IsAssignableTo(typeof(IDestroyable));
 
     /// <summary>
     /// Used only in source generation
     /// </summary>
-    public delegate void CallInit(Entity entity, ref T component);
+    public delegate void CallLifetime(Entity entity, ref T component);
 
     public static ComponentHandle StoreComponent(in T component)
     {
@@ -39,8 +40,9 @@ public static class Component<T>
 
     static Component()
     {
-        (_id, GeneralComponentStorage, object o) = Component.GetExistingOrSetupNewComponent<T>();
-        Initer = (CallInit)o;
+        (_id, GeneralComponentStorage, object o1, object o2) = Component.GetExistingOrSetupNewComponent<T>();
+        Initer = (CallLifetime)o1;
+        Destroyer = (CallLifetime)o2;
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
         {
@@ -99,14 +101,14 @@ public static class Component
             NoneComponentRunnerTable[typeof(T)] = new NoneUpdateRunnerFactory<T>();
     }
 
-    internal static (ComponentID ComponentID, IDTable<T> Stack, object? Initer) GetExistingOrSetupNewComponent<T>()
+    internal static (ComponentID ComponentID, IDTable<T> Stack, object? Initer, object? Destroyer) GetExistingOrSetupNewComponent<T>()
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
             var type = typeof(T);
             if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
             {
-                return (value, (IDTable<T>)ComponentTable[value.RawIndex].Storage, ComponentTable[value.RawIndex].Initer);
+                return (value, (IDTable<T>)ComponentTable[value.RawIndex].Storage, ComponentTable[value.RawIndex].Initer, ComponentTable[value.RawIndex].Destroyer);
             }
 
             int nextIDInt = ++NextComponentID;
@@ -120,9 +122,11 @@ public static class Component
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
             IDTable<T> stack = new IDTable<T>();
-            ComponentTable.Push(new ComponentData(type, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? (Component<T>.CallInit)v1 : null));
+            ComponentTable.Push(new ComponentData(type, stack, 
+                GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? (Component<T>.CallLifetime)v1 : null,
+                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? (Component<T>.CallLifetime)d : null));
 
-            return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.CallInit)v : null);
+            return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.CallLifetime)v : null);
         }
     }
 
@@ -150,7 +154,9 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            ComponentTable.Push(new ComponentData(t, GetComponentTable(t), GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null));
+            ComponentTable.Push(new ComponentData(t, GetComponentTable(t), 
+                GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
+                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null));
 
             return id;
         }

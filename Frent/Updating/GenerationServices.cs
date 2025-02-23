@@ -14,6 +14,7 @@ public static class GenerationServices
     internal static readonly Dictionary<Type, (IComponentRunnerFactory Factory, int UpdateOrder)> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, HashSet<Type>> TypeAttributeCache = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
+    internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
 
     /// <summary>
     /// Used only for source generation
@@ -21,7 +22,16 @@ public static class GenerationServices
     public static void RegisterInit<T>()
         where T : IInitable
     {
-        TypeIniters[typeof(T)] = (Component<T>.CallInit)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.Init(e));
+        TypeIniters[typeof(T)] = (Component<T>.CallLifetime)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.Init(e));
+    }
+
+        /// <summary>
+    /// Used only for source generation
+    /// </summary>
+    public static void RegisterDestroy<T>()
+        where T : IDestroyable
+    {
+        TypeDestroyers[typeof(T)] = (Component<T>.CallLifetime)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.Destroy(e));
     }
 
     /// <summary>

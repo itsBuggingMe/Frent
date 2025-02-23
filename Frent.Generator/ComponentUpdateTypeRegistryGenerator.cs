@@ -36,7 +36,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                             //stack allocate 6 slots
                             var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
                             bool initable = ImplementsInterface(symbol, RegistryHelpers.FullyQualifiedInitableInterfaceName);
-
+                            bool destroyable = ImplementsInterface(symbol, RegistryHelpers.FullyQualifiedDestroyableInterfaceName);
+                            
                             foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
                             {
                                 if (item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
@@ -68,6 +69,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                             //TODO: avoid alloc?
                             return new ComponentUpdateItemModel(
                                 initable,
+                                destroyable,
                                 symbol.ToString(),
                                 symbol.Name,
                                 @interface.Name,
@@ -79,7 +81,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     }
                 }
 
-                return new ComponentUpdateItemModel(false, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
+                return new ComponentUpdateItemModel(false, false, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
             });
 
         IncrementalValuesProvider<(string Name, string Source)> file = models
@@ -137,6 +139,14 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         if(model.Initable)
         {
             sb.Append("        GenerationServices.RegisterInit<")
+                .AppendNamespace(model.SubNamespace)
+                .Append(model.Type)
+                .AppendLine(">();");
+        }
+
+        if(model.Destroyable)
+        {
+            sb.Append("        GenerationServices.RegisterDestroy<")
                 .AppendNamespace(model.SubNamespace)
                 .Append(model.Type)
                 .AppendLine(">();");
@@ -205,5 +215,5 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         namedTypeSymbol.Interfaces.Length == 0 &&
         namedTypeSymbol.ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName;
 
-    internal record struct ComponentUpdateItemModel(bool Initable, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
+    internal record struct ComponentUpdateItemModel(bool Initable, bool Destroyable, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
 }

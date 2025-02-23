@@ -55,12 +55,9 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public void Delete(DeleteComponentData data)
     {
         ref var from = ref this[data.FromIndex];
+        Component<TComponent>.Destroyer?.Invoke(ref from);
         this[data.ToIndex] = from;
 
-        if (Component<TComponent>.IsDestroyable)
-        {
-            ((IDestroyable)from!)?.Destroy();
-        }
 
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             from = default;
@@ -69,10 +66,11 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
     public ComponentHandle Store(int componentIndex)
     {
         ref var item = ref this[componentIndex];
-        if (Component<TComponent>.IsDestroyable)
-        {
-            ((IDestroyable)item!)?.Destroy();
-        }
+        
+        //we can't just copy to stack and run the destroyer on it
+        //it is stored
+        Component<TComponent>.Destroyer?.Invoke(ref item);
+
         Component<TComponent>.GeneralComponentStorage.Create(out var stackIndex) = item;
         return new ComponentHandle(stackIndex, Component<TComponent>.ID);
     }
