@@ -18,6 +18,10 @@ namespace Frent;
 [Variadic("        events.NormalEvent.Invoke(entity, Component<T>.ID);", "|        events.NormalEvent.Invoke(entity, Component<T$>.ID);\n|")]
 [Variadic("ref T component", "|ref T$ component$, |")]
 [Variadic("in T c1", "|in T$ c$, |")]
+[Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[|1 + |0]")]
+[Variadic("        @event.Invoke(entity, Component<T>.ID);", "|        @event.Invoke(entity, Component<T$>.ID);\n|")]
+[Variadic("        @event.Invoke(entity, Core.Tag<T>.ID);", "|        @event.Invoke(entity, Core.Tag<T$>.ID);\n|")]
+[Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
 [Variadic("        ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;", 
     "|        ref var c$ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(buff.UnsafeSpanIndex($ - 1))[nextLocation.Index]; c$ref = c$;\n|")]
 [Variadic("Core.Tag<T>.ID", "[|Core.Tag<T$>.ID, |]")]
@@ -29,7 +33,8 @@ partial struct Entity
     //1. hit small & fast static per type cache - 1 branch
     //2. dictionary lookup
     //3. create new archetype
-    public void AddNew<T>(in T c1)
+    [SkipLocalsInit]
+    public void Add<T>(in T c1)
     {
         ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
 
@@ -60,7 +65,8 @@ partial struct Entity
         }
     }
 
-    public void RemoveNew<T>()
+    [SkipLocalsInit]
+    public void Remove<T>()
     {
         ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
 
@@ -71,7 +77,36 @@ partial struct Entity
             false);
 
         Span<ComponentHandle> runners = stackalloc ComponentHandle[1];
-        world.MoveEntityToArchetypeRemove(runners, this, ref thisLookup, out var nextLocation, to);
+        world.MoveEntityToArchetypeRemove(runners, this, ref thisLookup, to);
+    }
+
+    [SkipLocalsInit]
+    public void Tag<T>()
+    {
+        ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
+
+        Archetype to = TraverseThroughCacheOrCreate<TagID, NeighborCache<T>>(
+            world,
+            ref NeighborCache<T>.Tag.Lookup,
+            ref thisLookup,
+            true);
+
+        world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
+    }
+
+
+    [SkipLocalsInit]
+    public void Detach<T>()
+    {
+        ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
+
+        Archetype to = TraverseThroughCacheOrCreate<TagID, NeighborCache<T>>(
+            world,
+            ref NeighborCache<T>.Detach.Lookup,
+            ref thisLookup,
+            false);
+
+        world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
     }
 
     private static void InvokeComponentWorldEvents<T>(ref Event<ComponentID> @event, Entity entity)

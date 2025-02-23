@@ -25,7 +25,6 @@ internal struct Table<T>(int size)
         }
     }
     
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private ref T ResizeGet(int index)
     {
         FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, (int)BitOperations.RoundUpToPowerOf2((uint)(index + 1)));

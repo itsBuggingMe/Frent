@@ -185,70 +185,6 @@ partial struct Entity
     #endregion
 
     #region Add
-    //TODO: opt structural changes
-
-    /// <summary>
-    /// Adds a component to an <see cref="Entity"/>
-    /// </summary>
-    /// <typeparam name="T">The type of component</typeparam>
-    /// <param name="component">The component instance to add</param>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentAlreadyExistsException"><see cref="Entity"/> already has a component of type <typeparamref name="T"/></exception>
-    [SkipLocalsInit]
-    public void Add<T>(T component)
-    {
-        ref var lookup = ref AssertIsAlive(out var w);
-        EntityLocation eloc = lookup.Location;
-        if (w.AllowStructualChanges)
-        {
-            var to = w.AddComponent(EntityIDOnly, ref lookup, Component<T>.ID, out var location);
-            UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(to)[location.Index] = component;
-
-            location.Flags |= w.WorldEventFlags;
-            if(location.HasEvent(EntityFlags.AddComp | EntityFlags.WorldAddComp))
-            {
-                w.ComponentAddedEvent.Invoke(this, Component<T>.ID);
-                ref EventRecord eventRecord = ref CollectionsMarshal.GetValueRefOrNullRef(w.EventLookup, EntityIDOnly);
-                eventRecord.Add.NormalEvent.Invoke(this, Component<T>.ID);
-                to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.Index);
-            }
-        }
-        else
-        {
-            w.WorldUpdateCommandBuffer.AddComponent(this, component);
-        }
-    }
-
-    /// <summary>
-    /// Adds a boxed component as the given component ID type
-    /// </summary>
-    /// <param name="componentID">The ID representing the component type to add as.</param>
-    /// <param name="component"></param>
-    /// <remarks><paramref name="component"/> must be assignable to the type represented by <paramref name="componentID"/></remarks>
-    public void Add(ComponentID componentID, object component)
-    {
-        ref var lookup = ref AssertIsAlive(out var w);
-        var eloc = lookup.Location;
-        if (w.AllowStructualChanges)
-        {
-            var to = w.AddComponent(EntityIDOnly, ref lookup, componentID, out var location);
-            //we don't check IsAssignableTo. The reason is perf - we get InvalidCastException anyways
-            to.SetAt(component, location.Index);
-
-            w.ComponentAddedEvent.Invoke(this, componentID);
-            ref var eventRecord = ref w.TryGetEventData(eloc, EntityIDOnly, EntityFlags.AddComp, out bool exists);
-            if (exists)
-            {
-                eventRecord.Add.NormalEvent.Invoke(this, componentID);
-                to.InvokeGenericActionWith(eventRecord.Add.GenericEvent, this, location.Index);
-            }
-        }
-        else
-        {
-            w.WorldUpdateCommandBuffer.AddComponent(this, componentID, component);
-        }
-    }
-
     /// <summary>
     /// Adds a component to this <see cref="Entity"/> as its own type
     /// </summary>
@@ -261,20 +197,6 @@ partial struct Entity
     /// <param name="type">The type to add the component as. Note that a component of type DerivedClass and BaseClass are different component types.</param>
     /// <param name="component">The component to add</param>
     public void Add(Type type, object component) => Add(Component.GetComponentID(type), component);
-
-    public void AddMany(ReadOnlySpan<ComponentHandle> components)
-    {
-        ref var lookup = ref AssertIsAlive(out var w);
-        var eloc = lookup.Location;
-        if (w.AllowStructualChanges)
-        {
-            w.AddComponentRange(this, components);
-        }
-        else
-        {
-            throw new NotImplementedException();
-        }
-    }
     #endregion
 
     #region Remove
@@ -287,7 +209,7 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            throw null;
+            throw new NotImplementedException();
             //w.RemoveComponent(this, ref lookup, componentID);
         }
         else
@@ -299,42 +221,13 @@ partial struct Entity
     /// <summary>
     /// Removes a component from an <see cref="Entity"/>
     /// </summary>
-    /// <typeparam name="T">The type of component</typeparam>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
-    public void Remove<T>() => Remove(Component<T>.ID);
-
-    /// <summary>
-    /// Removes a component from an <see cref="Entity"/>
-    /// </summary>
     /// <param name="type">The type of component to remove</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     public void Remove(Type type) => Remove(Component.GetComponentID(type));
-
-    public void RemoveMany(ReadOnlySpan<ComponentID> components)
-    {
-        ref var lookup = ref AssertIsAlive(out var w);
-        var eloc = lookup.Location;
-        if (components.Length == 0)
-            return;
-        if (w.AllowStructualChanges)
-        {
-            w.RemoveComponentRange(this, eloc, components);
-        }
-        else
-        {
-            foreach(var compnoent in components)
-            {//TODO: make better impl
-                w.WorldUpdateCommandBuffer.RemoveComponent(this, compnoent);
-            }
-        }
-    }
     #endregion
 
     #region Tag
-
-
     /// <summary>
     /// Checks whether this <see cref="Entity"/> has a specific tag, using a <see cref="TagID"/> to represent the tag.
     /// </summary>
@@ -374,23 +267,8 @@ partial struct Entity
     /// Adds a tag to this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <typeparam name="T">The type to use as the tag.</typeparam>
-    public bool Tag<T>()
-    {
-        ref var lookup = ref AssertIsAlive(out var w);
-        return w.Tag(this, lookup.Location, Core.Tag<T>.ID);
-    }
-
-    /// <summary>
-    /// Adds a tag to this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
-    /// </summary>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <param name="type">The type to use as a tag</param>
-    public bool Tag(Type type)
-    {
-        ref var lookup = ref AssertIsAlive(out var w);
-        return w.Tag(this, lookup.Location, Core.Tag.GetTagID(type));
-    }
+    public bool Tag(Type type) => Tag(Core.Tag.GetTagID(type));
 
     /// <summary>
     /// Adds a tag to this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
@@ -401,7 +279,13 @@ partial struct Entity
     public bool Tag(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        return w.Tag(this, lookup.Location, tagID);
+        if(lookup.Location.Archetype.HasTag(tagID))
+            return false;
+
+        ArchetypeID archetype = w.AddTag.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.AddTag);
+        w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
+
+        return true;
     }
     #endregion
 
@@ -411,24 +295,8 @@ partial struct Entity
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
-    /// <typeparam name="T">The type of tag to remove.</typeparam>
-    public bool Detach<T>()
-    {
-        ref var lookup = ref AssertIsAlive(out var w);
-        return w.Detach(this, lookup.Location, Core.Tag<T>.ID);
-    }
-
-    /// <summary>
-    /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
-    /// </summary>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
     /// <param name="type">The type of tag to remove.</param>
-    public bool Detach(Type type)
-    {
-        ref var lookup = ref AssertIsAlive(out var w);
-        return w.Detach(this, lookup.Location, Core.Tag.GetTagID(type));
-    }
+    public bool Detach(Type type) => Detach(Core.Tag.GetTagID(type));
 
     /// <summary>
     /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
@@ -439,7 +307,13 @@ partial struct Entity
     public bool Detach(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        return w.Detach(this, lookup.Location, tagID);
+        if (!lookup.Location.Archetype.HasTag(tagID))
+            return false;
+
+        ArchetypeID archetype = w.AddTag.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
+        w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
+
+        return true;
     }
     #endregion
 

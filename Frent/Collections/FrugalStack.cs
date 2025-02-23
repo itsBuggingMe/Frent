@@ -19,7 +19,6 @@ internal struct FrugalStack<T>()
             ResizeAndPush(comp);
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private void ResizeAndPush(in T comp)
     {
         FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, _buffer.Length > 16 ? _buffer.Length << 1 : _buffer.Length + 2);

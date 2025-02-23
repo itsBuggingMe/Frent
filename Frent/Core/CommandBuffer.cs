@@ -223,8 +223,9 @@ public class CommandBuffer
         while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
             Entity concrete = createCommand.Entity.ToEntity(_world);
-            _world.AddComponentRange(concrete, _createEntityComponents.AsSpan()
-                .Slice(createCommand.BufferIndex, createCommand.BufferLength));
+            throw new NotImplementedException();
+            //_world.AddComponentRange(concrete, _createEntityComponents.AsSpan()
+            //    .Slice(createCommand.BufferIndex, createCommand.BufferLength));
             _world.InvokeEntityCreated(concrete);
         }
 
@@ -256,17 +257,19 @@ public class CommandBuffer
             if (record.Version == command.Entity.Version)
             {
                 Entity concrete = command.Entity.ToEntity(_world);
-                var runner = _world.AddComponent(command.Entity, ref record, command.ComponentID,
-                    out var location);
-                runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.RawIndex].Storage, location.Index, command.Index);
+                throw new NotImplementedException();
+
+                //var runner = _world.AddComponent(command.Entity, ref record, command.ComponentID,
+                //    out var location);
+                //runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.RawIndex].Storage, location.Index, command.Index);
 
 
-                if (record.Location.HasEvent(EntityFlags.AddComp))
-                {
-                    ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
-                    events.Add.NormalEvent.Invoke(concrete, command.ComponentID);
-                    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
-                }
+                //if (record.Location.HasEvent(EntityFlags.AddComp))
+                //{
+                //    ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
+                //    events.Add.NormalEvent.Invoke(concrete, command.ComponentID);
+                //    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
+                //}
             }
         }
 

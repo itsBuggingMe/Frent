@@ -53,6 +53,14 @@ public partial class World : IDisposable
     internal TagEvent Tagged = new TagEvent();
     internal TagEvent Detached = new TagEvent();
 
+    //these lookups exists for programmical api optimization
+    //normal <T1, T2...> methods use a shared global static cache
+    internal FastLookup AddComponent;
+    internal FastLookup RemoveComponent;
+    internal FastLookup AddTag;
+    internal FastLookup RemoveTag;
+
+
     internal EntityFlags WorldEventFlags; 
 
     /// <summary>
@@ -297,7 +305,7 @@ public partial class World : IDisposable
         foreach (Rule rule in rules)
             queryHash.AddRule(rule);
 
-        return CollectionsMarshal.GetValueRefOrAddDefault(QueryCache, queryHash.ToHashCodeIncludeDisable(), out _) ??= CreateQueryFromSpan([.. rules]);
+        return CollectionsMarshal.GetValueRefOrAddDefault(QueryCache, queryHash.ToHashCode(), out _) ??= CreateQueryFromSpan([.. rules]);
     } 
 
     internal void ArchetypeAdded(ArchetypeID archetype)

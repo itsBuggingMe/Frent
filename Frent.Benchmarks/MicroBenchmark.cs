@@ -45,9 +45,9 @@ public class MicroBenchmark
     {
         foreach (var item in _entities)
         {
-            item.RemoveNew<int, double>();
+            item.Remove<int, double>();
 
-            item.AddNew<int, double>(default, default);
+            item.Add<int, double>(default, default);
         }
     }
 

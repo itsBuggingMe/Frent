@@ -38,7 +38,7 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 
 ## Preformance
 
-[Preliminary benchmarks](https://github.com/itsBuggingMe/FrentComparisons) show that Frent is as fast, if not faster in many operations, compared to existing high preformance ECS libraries.
+Frent is a lot faster than most C# ECS implementations - [Benchmark](https://github.com/Doraku/Ecs.CSharp.Benchmark).
 
 # Features
 ## Implemented

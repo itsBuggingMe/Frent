@@ -14,8 +14,7 @@ internal struct ArchetypeNeighborCache
     //32
     private int _nextIndex;
 
-    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [MethodImpl(MethodImplOptions.NoInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Traverse(ushort value)
     {
         //my simd code is garbage

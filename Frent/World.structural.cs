@@ -18,41 +18,6 @@ partial class World
      *  These functions take all the data it needs, with no validation that an entity is alive
      */
     /// <summary>
-    /// Note - This function DOES NOT invoke events, as it is also used for command buffer entity creation
-    /// </summary>
-    internal void AddComponentRange(Entity entity, ReadOnlySpan<ComponentHandle> comps)
-    {
-        throw new NotImplementedException();
-    }
-
-    //Add
-    //Note: this function doesn't actually do the last step of setting the component in the new archetype
-    //the caller's job is to set the component
-    [SkipLocalsInit]
-    internal IComponentRunner AddComponent(EntityIDOnly entity, ref EntityLookup currentLookup, ComponentID component, out EntityLocation nextLocation)
-    {
-        throw new NotImplementedException();
-    }
-
-
-    //components cannot be empty
-    [SkipLocalsInit]
-    internal void RemoveComponentRange(Entity entity, EntityLocation entityLocation, ReadOnlySpan<ComponentID> components)
-    {
-        throw new NotImplementedException();
-    }
-
-    //Tag
-    internal bool Tag(Entity entity, EntityLocation entityLocation, TagID tagID)
-    {
-        throw new NotImplementedException();
-    }
-
-    //Detach
-    internal bool Detach(Entity entity, EntityLocation entityLocation, TagID tagID)
-    {
-        throw new NotImplementedException();
-    }
 
     [SkipLocalsInit]
     internal void MoveEntityToArchetypeAdd(Span<IComponentRunner> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
@@ -95,13 +60,13 @@ partial class World
     }
 
     [SkipLocalsInit]
-    internal void MoveEntityToArchetypeRemove(Span<ComponentHandle> componentHandles, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
+    internal void MoveEntityToArchetypeRemove(Span<ComponentHandle> componentHandles, Entity entity, ref EntityLookup currentLookup, Archetype destination)
     {
         Archetype from = currentLookup.Location.Archetype;
 
         Debug.Assert(from.Components.Length > destination.Components.Length);
 
-        destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
+        destination.CreateEntityLocation(currentLookup.Location.Flags, out var nextLocation).Init(entity);
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
 
 
@@ -110,6 +75,8 @@ partial class World
         byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
+
+        EntityFlags flags = currentLookup.Location.Flags | WorldEventFlags;
 
         int writeToIndex = 0;
         for (int i = 0; i < fromComponents.Length;)
@@ -121,7 +88,8 @@ partial class World
 
             if(toIndex == 0)
             {
-                componentHandles[writeToIndex++] = fromRunners[i].Store(currentLookup.Location.Index);
+                if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp))
+                    componentHandles[writeToIndex++] = fromRunners[i].Store(currentLookup.Location.Index);
             }
             else
             {
@@ -134,7 +102,6 @@ partial class World
 
         
 
-        EntityFlags flags = currentLookup.Location.Flags | WorldEventFlags;
         if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp | EntityFlags.WorldRemoveComp))
         {
             if(ComponentRemovedEvent.HasListeners)
@@ -160,8 +127,35 @@ partial class World
         }
     }
 
+    [SkipLocalsInit]
+    internal void MoveEntityToArchetypeIso(Entity entity, ref EntityLookup currentLookup, Archetype destination)
+    {
+        Archetype from = currentLookup.Location.Archetype;
+
+        Debug.Assert(from.Components.Length == destination.Components.Length);
+
+        destination.CreateEntityLocation(currentLookup.Location.Flags, out var nextLocation).Init(entity);
+        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
 
 
+        IComponentRunner[] fromRunners = from.Components;
+        IComponentRunner[] destRunners = destination.Components;
+        byte[] destMap = destination.ComponentTagTable;
+
+        ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
+        
+        for (int i = 0; i < fromComponents.Length;)
+        {
+            int toIndex = destMap.UnsafeArrayIndex(fromComponents[i].RawIndex);
+
+            i++;
+
+            destRunners[toIndex].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index, deletedIndex);
+        }
+
+        EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
+        currentLookup.Location = nextLocation;
+    }
     #region Delete
     //Delete
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

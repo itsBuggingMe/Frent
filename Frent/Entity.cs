@@ -82,7 +82,7 @@ public partial struct Entity : IEquatable<Entity>
         entityLocation = lookup.Location;
         return lookup.Version == EntityVersion;
     }
-    [MethodImpl(MethodImplOptions.NoInlining)]
+
     internal ref EntityLookup AssertIsAlive(out World world)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
