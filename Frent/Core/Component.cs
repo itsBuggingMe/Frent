@@ -22,15 +22,19 @@ public static class Component<T>
     private static readonly ComponentID _id;
     private static readonly IComponentRunnerFactory<T> RunnerInstance;
     internal static readonly IDTable<T> GeneralComponentStorage;
-    internal static readonly CallLifetime? Initer;
-    internal static readonly CallLifetime? Destroyer;
+    internal static readonly InitDelegate? Initer;
+    internal static readonly DestroyDelegate? Destroyer;
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(T).IsAssignableTo(typeof(IDestroyable));
 
     /// <summary>
     /// Used only in source generation
     /// </summary>
-    public delegate void CallLifetime(Entity entity, ref T component);
+    public delegate void InitDelegate(Entity entity, ref T component);
+    /// <summary>
+    /// Used only in source generation
+    /// </summary>
+    public delegate void DestroyDelegate(ref T component);
 
     public static ComponentHandle StoreComponent(in T component)
     {
@@ -40,9 +44,9 @@ public static class Component<T>
 
     static Component()
     {
-        (_id, GeneralComponentStorage, object o1, object o2) = Component.GetExistingOrSetupNewComponent<T>();
-        Initer = (CallLifetime)o1;
-        Destroyer = (CallLifetime)o2;
+        (_id, GeneralComponentStorage, object? o1, object? o2) = Component.GetExistingOrSetupNewComponent<T>();
+        Initer = (InitDelegate?)o1;
+        Destroyer = (DestroyDelegate?)o2;
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
         {
@@ -123,10 +127,10 @@ public static class Component
 
             IDTable<T> stack = new IDTable<T>();
             ComponentTable.Push(new ComponentData(type, stack, 
-                GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? (Component<T>.CallLifetime)v1 : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? (Component<T>.CallLifetime)d : null));
+                GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? (Component<T>.InitDelegate)v1 : null,
+                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? (Component<T>.InitDelegate)d : null));
 
-            return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.CallLifetime)v : null, GenerationServices.TypeDestroyers.TryGetValue(type, out var v2) ? (Component<T>.CallLifetime)v2 : null);
+            return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.InitDelegate)v : null, GenerationServices.TypeDestroyers.TryGetValue(type, out var v2) ? (Component<T>.InitDelegate)v2 : null);
         }
     }
 
