@@ -17,7 +17,21 @@ partial class World
      *  The only core structual change function not here is the normal create function, since it needs to be source generated
      *  These functions take all the data it needs, with no validation that an entity is alive
      */
-    /// <summary>
+
+    internal void RemoveComponent(Entity entity, ref EntityLookup lookup, ComponentID componentID)
+    {
+        Archetype destination = RemoveComponentLookup.FindAdjacentArchetypeID(componentID, lookup.Location.ArchetypeID, this, ArchetypeEdgeType.RemoveComponent)
+            .Archetype(this);
+        Unsafe.SkipInit(out ComponentHandle tmpHandle);
+        MoveEntityToArchetypeRemove(MemoryMarshal.CreateSpan(ref tmpHandle, 1), entity, ref lookup, destination);
+    }
+
+    internal void AddComponent(Entity entity, ref EntityLookup lookup, ComponentID componentID, ref IComponentRunner runner, out EntityLocation entityLocation)
+    {
+        Archetype destination = AddComponentLookup.FindAdjacentArchetypeID(componentID, lookup.Location.ArchetypeID, this, ArchetypeEdgeType.AddComponent)
+            .Archetype(this);
+        MoveEntityToArchetypeAdd(MemoryMarshal.CreateSpan(ref runner, 1), entity, ref lookup, out entityLocation, destination);
+    }
 
     [SkipLocalsInit]
     internal void MoveEntityToArchetypeAdd(Span<IComponentRunner> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
@@ -28,7 +42,6 @@ partial class World
 
         destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
-
 
         IComponentRunner[] fromRunners = from.Components;
         IComponentRunner[] destRunners = destination.Components;
@@ -47,11 +60,11 @@ partial class World
 
             if(fromIndex == 0)
             {
-                writeTo[writeToIndex++] = destRunners[i];
+                writeTo.UnsafeSpanIndex(writeToIndex++) = destRunners[i];
             }
             else
             {
-                destRunners[i].PullComponentFromAndClear(fromRunners[fromIndex], nextLocation.Index, currentLookup.Location.Index, deletedIndex);
+                destRunners.UnsafeArrayIndex(i).PullComponentFromAndClear(fromRunners.UnsafeArrayIndex(fromIndex), nextLocation.Index, currentLookup.Location.Index, deletedIndex);
             }
         }
 
@@ -68,7 +81,6 @@ partial class World
 
         destination.CreateEntityLocation(currentLookup.Location.Flags, out var nextLocation).Init(entity);
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
-
 
         IComponentRunner[] fromRunners = from.Components;
         IComponentRunner[] destRunners = destination.Components;
@@ -89,18 +101,16 @@ partial class World
             if(toIndex == 0)
             {
                 if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp))
-                    componentHandles[writeToIndex++] = fromRunners[i].Store(currentLookup.Location.Index);
+                    componentHandles.UnsafeSpanIndex(writeToIndex++) = fromRunners.UnsafeArrayIndex(i).Store(currentLookup.Location.Index);
             }
             else
             {
-                destRunners[toIndex].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index, deletedIndex);
+                destRunners.UnsafeArrayIndex(toIndex).PullComponentFromAndClear(fromRunners.UnsafeArrayIndex(i), nextLocation.Index, currentLookup.Location.Index, deletedIndex);
             }
         }
         
         EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
         currentLookup.Location = nextLocation;
-
-        
 
         if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp | EntityFlags.WorldRemoveComp))
         {
@@ -146,7 +156,7 @@ partial class World
         
         for (int i = 0; i < fromComponents.Length;)
         {
-            int toIndex = destMap.UnsafeArrayIndex(fromComponents[i].RawIndex);
+            int toIndex = destMap.UnsafeArrayIndex(fromComponents[i].RawIndex) & GlobalWorldTables.IndexBits;
 
             i++;
 

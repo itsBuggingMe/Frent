@@ -112,8 +112,7 @@ internal partial class Archetype
     {
         deletedIndex = --_componentIndex;
         Debug.Assert(_componentIndex >= 0);
-        //TODO: unsafe
-        return _entities[index] = _entities[_componentIndex];
+        return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_componentIndex);
     }
 
     internal EntityIDOnly DeleteEntity(int index)

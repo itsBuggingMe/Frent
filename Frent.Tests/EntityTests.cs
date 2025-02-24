@@ -125,10 +125,10 @@ internal class EntityTests
     {
         using World world = new();
         var e = world.Create();
-        e.Add(Component<BaseClass>.ID, new ChildClass());
+        e.AddAs(Component<BaseClass>.ID, new ChildClass());
 
         That(e.Get<BaseClass>().GetType(), Is.EqualTo(typeof(ChildClass)));
-        Throws<InvalidCastException>(() => e.Add(Component<ChildClass>.ID, new BaseClass()));
+        Throws<InvalidCastException>(() => e.AddAs(Component<ChildClass>.ID, new BaseClass()));
     }
 
     [Test]
@@ -136,7 +136,7 @@ internal class EntityTests
     {
         using World world = new();
         var e = world.Create();
-        e.Add((object)1);
+        e.AddBoxed((object)1);
 
         That(e.Has<int>());
         That(e.Get<int>(), Is.EqualTo(1));
@@ -154,7 +154,7 @@ internal class EntityTests
         e.Add(typeof(ChildClass), new ChildClass());
 
         That(e.Get<ChildClass>().GetType(), Is.EqualTo(typeof(ChildClass)));
-        Throws<InvalidCastException>(() => e.Add(typeof(Class1), new Class2()));
+        Throws<InvalidCastException>(() => e.AddAs(typeof(Class1), new Class2()));
     }
 
     [Test]

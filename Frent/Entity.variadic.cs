@@ -16,11 +16,16 @@ namespace Frent;
 [Variadic("            @event.Invoke(entity, Core.Tag<T>.ID);", "|            @event.Invoke(entity, Core.Tag<T$>.ID);\n|")]
 [Variadic("        events.GenericEvent?.Invoke(entity, ref component);", "|        events.GenericEvent?.Invoke(entity, ref component$);\n|")]
 [Variadic("        events.NormalEvent.Invoke(entity, Component<T>.ID);", "|        events.NormalEvent.Invoke(entity, Component<T$>.ID);\n|")]
+[Variadic("            world.WorldUpdateCommandBuffer.AddComponent(this, c1);", "|            world.WorldUpdateCommandBuffer.AddComponent(this, c$);\n|")]
+[Variadic("            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T>.ID);", "|            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T$>.ID);\n|")]
 [Variadic("ref T component", "|ref T$ component$, |")]
 [Variadic("in T c1", "|in T$ c$, |")]
 [Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[|1 + |0]")]
 [Variadic("        @event.Invoke(entity, Component<T>.ID);", "|        @event.Invoke(entity, Component<T$>.ID);\n|")]
-[Variadic("        @event.Invoke(entity, Core.Tag<T>.ID);", "|        @event.Invoke(entity, Core.Tag<T$>.ID);\n|")]
+
+[Variadic("        @event.InvokeInternal(entity, Core.Tag<T>.ID);", "|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);\n|")]
+[Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
+
 [Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
 [Variadic("        ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;", 
     "|        ref var c$ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(buff.UnsafeSpanIndex($ - 1))[nextLocation.Index]; c$ref = c$;\n|")]
@@ -32,11 +37,18 @@ partial struct Entity
     //traversing archetype graph strategy:
     //1. hit small & fast static per type cache - 1 branch
     //2. dictionary lookup
-    //3. create new archetype
+    //3. find existing archetype
+    //4. create new archetype
     [SkipLocalsInit]
     public void Add<T>(in T c1)
     {
         ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
+
+        if(!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.AddComponent(this, c1);
+            return;
+        }
 
         Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
             world, 
@@ -70,6 +82,12 @@ partial struct Entity
     {
         ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
 
+        if(!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T>.ID);
+            return;
+        }
+
         Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
             world,
             ref NeighborCache<T>.Remove.Lookup,
@@ -78,6 +96,7 @@ partial struct Entity
 
         Span<ComponentHandle> runners = stackalloc ComponentHandle[1];
         world.MoveEntityToArchetypeRemove(runners, this, ref thisLookup, to);
+        //world.MoveEntityToArchetypeRemove invokes the events for us
     }
 
     [SkipLocalsInit]
@@ -92,6 +111,19 @@ partial struct Entity
             true);
 
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
+
+        EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
+        if(EntityLocation.HasEventFlag(flags, EntityFlags.Tagged | EntityFlags.WorldTagged))
+        {
+            if (world.Tagged.HasListeners)
+                InvokeTagWorldEvents<T>(ref world.Tagged, this);
+
+            if(EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+            {
+                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
+                InvokePerEntityTagEvents<T>(this, ref events.Tag);
+            }
+        }
     }
 
 
@@ -107,6 +139,19 @@ partial struct Entity
             false);
 
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
+
+        EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
+        if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach | EntityFlags.WorldDetach))
+        {
+            if(world.Detached.HasListeners)
+                InvokeTagWorldEvents<T>(ref world.Detached, this);
+
+            if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
+            {
+                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
+                InvokePerEntityTagEvents<T>(this, ref events.Detach);
+            }
+        }
     }
 
     private static void InvokeComponentWorldEvents<T>(ref Event<ComponentID> @event, Entity entity)
@@ -114,15 +159,20 @@ partial struct Entity
         @event.Invoke(entity, Component<T>.ID);
     }
 
-    private static void InvokeTagWorldEvents<T>(ref TagEvent @event, Entity entity)
-    {
-        @event.Invoke(entity, Core.Tag<T>.ID);
-    }
-
     private static void InvokePerEntityEvents<T>(Entity entity, ref ComponentEvent events, ref T component)
     {
         events.GenericEvent?.Invoke(entity, ref component);
         events.NormalEvent.Invoke(entity, Component<T>.ID);
+    }
+
+    private static void InvokeTagWorldEvents<T>(ref TagEvent @event, Entity entity)
+    {
+        @event.InvokeInternal(entity, Core.Tag<T>.ID);
+    }
+
+    private static void InvokePerEntityTagEvents<T>(Entity entity, ref TagEvent events)
+    {
+        events.Invoke(entity, Core.Tag<T>.ID);
     }
 
     private struct NeighborCache<T> : IArchetypeGraphEdge
@@ -195,7 +245,7 @@ partial struct Entity
         }
         else
         {
-            return world.WorldArchetypeTable.UnsafeArrayIndex(cache.Lookup(index));
+            return Archetype.CreateOrGetExistingArchetype(new EntityType(cache.Lookup(index)), world);
         }
 
         static Archetype NotInCache(World world, ref ArchetypeNeighborCache cache, ArchetypeID archetypeFromID, bool add)

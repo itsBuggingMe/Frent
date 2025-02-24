@@ -22,19 +22,10 @@ public static class Component<T>
     private static readonly ComponentID _id;
     private static readonly IComponentRunnerFactory<T> RunnerInstance;
     internal static readonly IDTable<T> GeneralComponentStorage;
-    internal static readonly InitDelegate? Initer;
-    internal static readonly DestroyDelegate? Destroyer;
+    internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
+    internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(T).IsAssignableTo(typeof(IDestroyable));
-
-    /// <summary>
-    /// Used only in source generation
-    /// </summary>
-    public delegate void InitDelegate(Entity entity, ref T component);
-    /// <summary>
-    /// Used only in source generation
-    /// </summary>
-    public delegate void DestroyDelegate(ref T component);
 
     public static ComponentHandle StoreComponent(in T component)
     {
@@ -44,9 +35,7 @@ public static class Component<T>
 
     static Component()
     {
-        (_id, GeneralComponentStorage, object? o1, object? o2) = Component.GetExistingOrSetupNewComponent<T>();
-        Initer = (InitDelegate?)o1;
-        Destroyer = (DestroyDelegate?)o2;
+        (_id, GeneralComponentStorage, Initer, Destroyer) = Component.GetExistingOrSetupNewComponent<T>();
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
         {
@@ -65,6 +54,21 @@ public static class Component<T>
     }
 
     internal static IComponentRunner<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
+}
+
+/// <summary>
+/// Used only in source generation
+/// </summary>
+public static class ComponentDelegates<T>
+{
+    /// <summary>
+    /// Used only in source generation
+    /// </summary>
+    public delegate void InitDelegate(Entity entity, ref T component);
+    /// <summary>
+    /// Used only in source generation
+    /// </summary>
+    public delegate void DestroyDelegate(ref T component);
 }
 
 /// <summary>
@@ -105,14 +109,14 @@ public static class Component
             NoneComponentRunnerTable[typeof(T)] = new NoneUpdateRunnerFactory<T>();
     }
 
-    internal static (ComponentID ComponentID, IDTable<T> Stack, object? Initer, object? Destroyer) GetExistingOrSetupNewComponent<T>()
+    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer) GetExistingOrSetupNewComponent<T>()
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
             var type = typeof(T);
             if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
             {
-                return (value, (IDTable<T>)ComponentTable[value.RawIndex].Storage, ComponentTable[value.RawIndex].Initer, ComponentTable[value.RawIndex].Destroyer);
+                return (value, (IDTable<T>)ComponentTable[value.RawIndex].Storage, (ComponentDelegates<T>.InitDelegate?)ComponentTable[value.RawIndex].Initer, (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[value.RawIndex].Destroyer);
             }
 
             int nextIDInt = ++NextComponentID;
@@ -125,12 +129,15 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
+            var initDelegate = (ComponentDelegates<T>.InitDelegate?)(GenerationServices.TypeIniters.TryGetValue(type, out var v) ? v : null);
+            var destroyDelegate = (ComponentDelegates<T>.DestroyDelegate?)(GenerationServices.TypeDestroyers.TryGetValue(type, out var v2) ? v2 : null);
+
             IDTable<T> stack = new IDTable<T>();
             ComponentTable.Push(new ComponentData(type, stack, 
-                GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? (Component<T>.InitDelegate)v1 : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? (Component<T>.InitDelegate)d : null));
+                GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
+                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null));
 
-            return (id, stack, GenerationServices.TypeIniters.TryGetValue(type, out var v) ? (Component<T>.InitDelegate)v : null, GenerationServices.TypeDestroyers.TryGetValue(type, out var v2) ? (Component<T>.InitDelegate)v2 : null);
+            return (id, stack, initDelegate, destroyDelegate);
         }
     }
 

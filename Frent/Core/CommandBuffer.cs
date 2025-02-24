@@ -1,4 +1,6 @@
 using Frent.Collections;
+using Frent.Core.Structures;
+using Frent.Updating;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -14,6 +16,7 @@ public class CommandBuffer
     internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(4);
     internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(4);
     internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(4);
+    private readonly IComponentRunner[] _componentRunnerBuffer = new IComponentRunner[MemoryHelpers.MaxComponentCount];
 
     internal World _world;
     //-1 indicates normal state
@@ -79,8 +82,7 @@ public class CommandBuffer
     public void AddComponent<T>(Entity entity, in T component)
     {
         SetIsActive();
-        Component<T>.GeneralComponentStorage.Create(out int index) = component;
-        _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, Component<T>.ID, index));
+        _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, ComponentHandle.Create(component)));
     }
 
     /// <summary>
@@ -93,8 +95,7 @@ public class CommandBuffer
     public void AddComponent(Entity entity, ComponentID componentID, object component)
     {
         SetIsActive();
-        int index = Component.ComponentTable[componentID.RawIndex].Storage.CreateBoxed(component);
-        _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, componentID, index));
+        _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, ComponentHandle.CreateFromBoxed(componentID, component)));
     }
 
     /// <summary>
@@ -223,9 +224,22 @@ public class CommandBuffer
         while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
             Entity concrete = createCommand.Entity.ToEntity(_world);
-            throw new NotImplementedException();
-            //_world.AddComponentRange(concrete, _createEntityComponents.AsSpan()
-            //    .Slice(createCommand.BufferIndex, createCommand.BufferLength));
+            ref EntityLookup lookup = ref _world.EntityTable.UnsafeIndexNoResize(concrete.EntityID);
+            
+            if(createCommand.BufferLength > 0)
+            {
+                Span<IComponentRunner> runners = _componentRunnerBuffer.AsSpan(0, createCommand.BufferLength);
+
+                ArchetypeID id = _world.DefaultArchetype.ID;
+                Span<ComponentHandle> handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
+                for (int i = 0; i < handles.Length; i++)
+                {
+                    id = _world.AddComponentLookup.FindAdjacentArchetypeID(handles[i].ComponentID, id, _world, ArchetypeEdgeType.AddComponent);
+                }
+
+                _world.MoveEntityToArchetypeAdd(runners, concrete, ref lookup, out EntityLocation location, id.Archetype(_world));
+            }
+
             _world.InvokeEntityCreated(concrete);
         }
 
@@ -245,8 +259,7 @@ public class CommandBuffer
             ref var record = ref _world.EntityTable[id];
             if (record.Version == item.Entity.Version)
             {
-                throw new NotImplementedException();
-                //_world.RemoveComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
+                _world.RemoveComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
             }
         }
 
@@ -257,19 +270,20 @@ public class CommandBuffer
             if (record.Version == command.Entity.Version)
             {
                 Entity concrete = command.Entity.ToEntity(_world);
-                throw new NotImplementedException();
 
-                //var runner = _world.AddComponent(command.Entity, ref record, command.ComponentID,
-                //    out var location);
-                //runner.PullComponentFrom(Component.ComponentTable[command.ComponentID.RawIndex].Storage, location.Index, command.Index);
+                IComponentRunner runner = null!;
+                _world.AddComponent(concrete, ref record, command.ComponentHandle.ComponentID, ref runner, out var location);
 
+                runner.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
 
-                //if (record.Location.HasEvent(EntityFlags.AddComp))
-                //{
-                //    ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
-                //    events.Add.NormalEvent.Invoke(concrete, command.ComponentID);
-                //    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
-                //}
+                if (record.Location.HasEvent(EntityFlags.AddComp))
+                {
+                    ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
+                    events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
+                    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
+                }
+
+                command.ComponentHandle.Dispose();
             }
         }
 

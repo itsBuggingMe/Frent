@@ -45,7 +45,7 @@ internal struct Event<T>()
         }
     }
 
-    private readonly void InvokeInternal(Entity entity, T arg)
+    public readonly void InvokeInternal(Entity entity, T arg)
     {
         _first!.Invoke(entity, arg);
         foreach (var item in _invokationList.AsSpan())
@@ -119,4 +119,5 @@ internal struct ComponentEvent()
 {
     internal Event<ComponentID> NormalEvent = new();
     internal GenericEvent? GenericEvent = null;
+    public bool HasListeners => NormalEvent.HasListeners || GenericEvent?.HasListeners;
 }

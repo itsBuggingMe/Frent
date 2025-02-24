@@ -8,7 +8,6 @@ using Frent.Systems;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -55,10 +54,10 @@ public partial class World : IDisposable
 
     //these lookups exists for programmical api optimization
     //normal <T1, T2...> methods use a shared global static cache
-    internal FastLookup AddComponent;
-    internal FastLookup RemoveComponent;
-    internal FastLookup AddTag;
-    internal FastLookup RemoveTag;
+    internal FastLookup AddComponentLookup;
+    internal FastLookup RemoveComponentLookup;
+    internal FastLookup AddTagLookup;
+    internal FastLookup RemoveTagLookup;
 
 
     internal EntityFlags WorldEventFlags; 
@@ -103,17 +102,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, ComponentID> ComponentAdded
     {
-        add
-        {
-            ComponentAddedEvent.Add(value);
-            WorldEventFlags |= EntityFlags.WorldAddComp;
-        } 
-        remove
-        {
-            ComponentAddedEvent.Remove(value);
-            if(!ComponentAddedEvent.HasListeners)
-                WorldEventFlags &= ~EntityFlags.WorldAddComp;
-        }
+        add => AddEvent(ref ComponentAddedEvent, value, EntityFlags.WorldAddComp);
+        remove => RemoveEvent(ref ComponentAddedEvent, value, EntityFlags.WorldAddComp);
     }
 
     /// <summary>
@@ -121,17 +111,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, ComponentID> ComponentRemoved
     {
-        add
-        {
-            ComponentRemovedEvent.Add(value);
-            WorldEventFlags |= EntityFlags.WorldRemoveComp;
-        } 
-        remove
-        {
-            ComponentRemovedEvent.Remove(value);
-            if(!ComponentRemovedEvent.HasListeners)
-                WorldEventFlags &= ~EntityFlags.WorldRemoveComp;
-        }
+        add => AddEvent(ref ComponentRemovedEvent, value, EntityFlags.WorldRemoveComp);
+        remove => RemoveEvent(ref ComponentRemovedEvent, value, EntityFlags.WorldRemoveComp);
     }
 
     /// <summary>
@@ -139,17 +120,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, TagID> TagTagged
     {
-        add
-        {
-            Tagged.Add(value);
-            WorldEventFlags |= EntityFlags.WorldTagged;
-        } 
-        remove
-        {
-            Tagged.Remove(value);
-            if(!Tagged.HasListeners)
-                WorldEventFlags &= ~EntityFlags.WorldTagged;
-        }
+        add => AddEvent(ref Tagged, value, EntityFlags.WorldTagged);
+        remove => RemoveEvent(ref Tagged, value, EntityFlags.WorldTagged);
     }
 
     /// <summary>
@@ -157,17 +129,21 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, TagID> TagDetached
     {
-        add
-        {
-            Detached.Add(value);
-            WorldEventFlags |= EntityFlags.WorldDetach;
-        } 
-        remove
-        {
-            Detached.Remove(value);
-            if(!Detached.HasListeners)
-                WorldEventFlags &= ~EntityFlags.WorldDetach;
-        }
+        add => AddEvent(ref Detached, value, EntityFlags.WorldDetach);
+        remove => RemoveEvent(ref Detached, value, EntityFlags.WorldDetach);
+    }
+
+    private void AddEvent<T>(ref Event<T> @event, Action<Entity, T> action, EntityFlags flag)
+    {
+        @event.Add(action);
+        WorldEventFlags |= flag;
+    }
+
+    private void RemoveEvent<T>(ref Event<T> @event, Action<Entity, T> action, EntityFlags flag)
+    {
+        @event.Remove(action);
+        if (!@event.HasListeners)
+            WorldEventFlags &= ~flag;
     }
 
     internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
@@ -209,6 +185,7 @@ public partial class World : IDisposable
 
         WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultWorldEntity = new Entity(ID, default, default);
+        DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
@@ -429,11 +406,10 @@ public partial class World : IDisposable
         return entity;
     }
 
-    internal Archetype? _emptyArchetype;
+    internal readonly Archetype DefaultArchetype;
     internal Entity CreateEntityWithoutEvent()
     {
-        _emptyArchetype ??= Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
-        ref var entity = ref _emptyArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
+        ref var entity = ref DefaultArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new EntityIDOnly(NextEntityID++, 0);
         EntityTable[id] = new(eloc, version);

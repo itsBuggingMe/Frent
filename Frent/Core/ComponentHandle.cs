@@ -1,11 +1,14 @@
-﻿using Frent.Core.Events;
+﻿using Frent.Collections;
+using Frent.Core.Events;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Frent.Core;
 
-public struct ComponentHandle : IDisposable
+public readonly struct ComponentHandle : IEquatable<ComponentHandle>, IDisposable
 {
-    private int _index;
-    private ComponentID _componentType;
+    private readonly int _index;
+    private readonly ComponentID _componentType;
+
 
     internal ComponentHandle(int index, ComponentID componentID)
     {
@@ -45,7 +48,14 @@ public struct ComponentHandle : IDisposable
 
     public void Dispose() => Component.ComponentTable[_componentType.RawIndex].Storage.Consume(_index);
 
+    public bool Equals(ComponentHandle other) => other.ComponentID == ComponentID && other.Index == Index;
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is ComponentHandle handle && Equals(handle);
+
+    public static bool operator ==(ComponentHandle left, ComponentHandle right) => left.Equals(right);
+    public static bool operator !=(ComponentHandle left, ComponentHandle right) => !left.Equals(right);
+
     public Type Type => _componentType.Type;
     public ComponentID ComponentID => _componentType;
     internal int Index => _index;
+    internal IDTable ParentTable => Component.ComponentTable[_componentType.RawIndex].Storage;
 }

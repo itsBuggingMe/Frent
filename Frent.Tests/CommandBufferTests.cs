@@ -96,6 +96,8 @@ internal class CommandBufferTests
         var e1 = commandBuffer.Entity()
             .End();
 
+        Component.RegisterComponent<ChildClass>();
+
         commandBuffer.AddComponent(e1, Component<BaseClass>.ID, new ChildClass());
 
         commandBuffer.Playback();

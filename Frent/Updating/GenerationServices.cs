@@ -22,7 +22,7 @@ public static class GenerationServices
     public static void RegisterInit<T>()
         where T : IInitable
     {
-        TypeIniters[typeof(T)] = (Component<T>.InitDelegate)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.Init(e));
+        TypeIniters[typeof(T)] = (ComponentDelegates<T>.InitDelegate)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.Init(e));
     }
 
         /// <summary>
@@ -31,7 +31,7 @@ public static class GenerationServices
     public static void RegisterDestroy<T>()
         where T : IDestroyable
     {
-        TypeDestroyers[typeof(T)] = (Component<T>.DestroyDelegate)([method: DebuggerHidden, DebuggerStepThrough] static (ref T c) => c.Destroy());
+        TypeDestroyers[typeof(T)] = (ComponentDelegates<T>.DestroyDelegate)([method: DebuggerHidden, DebuggerStepThrough] static (ref T c) => c.Destroy());
     }
 
     /// <summary>

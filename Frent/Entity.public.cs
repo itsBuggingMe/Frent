@@ -189,14 +189,30 @@ partial struct Entity
     /// Adds a component to this <see cref="Entity"/> as its own type
     /// </summary>
     /// <param name="component">The component, which could be boxed</param>
-    public void Add(object component) => Add(component.GetType(), component);
+    public void AddBoxed(object component) => AddAs(component.GetType(), component);
 
     /// <summary>
     /// Add a component to an <see cref="Entity"/>
     /// </summary>
     /// <param name="type">The type to add the component as. Note that a component of type DerivedClass and BaseClass are different component types.</param>
     /// <param name="component">The component to add</param>
-    public void Add(Type type, object component) => Add(Component.GetComponentID(type), component);
+    public void AddAs(Type type, object component) => AddAs(Component.GetComponentID(type), component);
+
+
+    public void AddAs(ComponentID componentID, object component)
+    {
+        ref EntityLookup lookup = ref AssertIsAlive(out var w);
+        if(w.AllowStructualChanges)
+        {
+            IComponentRunner componentRunner = null!;
+            w.AddComponent(this, ref lookup, componentID, ref componentRunner, out EntityLocation entityLocation);
+            componentRunner.SetAt(component, entityLocation.Index);
+        }
+        else
+        {
+            w.WorldUpdateCommandBuffer.AddComponent(this, componentID, component);
+        }
+    }
     #endregion
 
     #region Remove
@@ -209,8 +225,7 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            throw new NotImplementedException();
-            //w.RemoveComponent(this, ref lookup, componentID);
+            w.RemoveComponent(this, ref lookup, componentID);
         }
         else
         {
@@ -282,7 +297,7 @@ partial struct Entity
         if(lookup.Location.Archetype.HasTag(tagID))
             return false;
 
-        ArchetypeID archetype = w.AddTag.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.AddTag);
+        ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.AddTag);
         w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
 
         return true;
@@ -310,7 +325,7 @@ partial struct Entity
         if (!lookup.Location.Archetype.HasTag(tagID))
             return false;
 
-        ArchetypeID archetype = w.AddTag.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
+        ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
         w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
 
         return true;
@@ -340,7 +355,7 @@ partial struct Entity
             if (exists)
             {
                 events.Delete.Remove(value);
-                if (!events.Add.NormalEvent.HasListeners)
+                if (!events.Add.HasListeners)
                 {
                     world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.OnDelete;
                 }
@@ -370,7 +385,7 @@ partial struct Entity
             if (exists)
             {
                 events.Add.NormalEvent.Remove(value);
-                if (!events.Add.NormalEvent.HasListeners)
+                if (!events.Add.HasListeners)
                 {
                     world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.AddComp;
                 }
@@ -400,7 +415,7 @@ partial struct Entity
             if (exists)
             {
                 events.Remove.NormalEvent.Remove(value);
-                if (!events.Remove.NormalEvent.HasListeners)
+                if (!events.Remove.HasListeners)
                 {
                     world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.RemoveComp;
                 }

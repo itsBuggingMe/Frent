@@ -6,6 +6,8 @@ public class GenericEvent
 {
     internal GenericEvent() { }
 
+    internal bool HasListeners => _first is not null;
+
     private IGenericAction<Entity>? _first;
     private FrugalStack<IGenericAction<Entity>> _invokationList = new FrugalStack<IGenericAction<Entity>>();
 

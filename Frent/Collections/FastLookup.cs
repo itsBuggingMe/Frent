@@ -33,9 +33,9 @@ internal struct FastLookup()
             return destination.ID;
         }
         //cold path
-        Archetype archtype = Archetype.GetAdjacentArchetypeCold(world, edgeKey);
-        world.ArchetypeGraphEdges.Add(edgeKey, archtype);
-        return archetype;
+        Archetype dest = Archetype.GetAdjacentArchetypeCold(world, edgeKey);
+        world.ArchetypeGraphEdges.Add(edgeKey, dest);
+        return dest.ID;
     }
 
     public uint GetKey(ushort id, ArchetypeID archetypeID)
