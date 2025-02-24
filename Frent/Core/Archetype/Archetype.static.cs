@@ -19,12 +19,10 @@ internal static class Archetype<T>
 
     //ArchetypeTypes init first, then ID
     public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeComponentIDs.AsSpan(), [], ArchetypeComponentIDs, ImmutableArray<TagID>.Empty);
-    public static readonly uint IDasUInt = ID.RawIndex;
 
     internal static Archetype CreateNewOrGetExistingArchetype(World world)
     {
-        var index = IDasUInt;
-        ref Archetype archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
+        ref Archetype archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(ID.RawIndex);
         if (archetype is null)
             CreateArchetype(out archetype, world);
         return archetype!;
