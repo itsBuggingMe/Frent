@@ -8,6 +8,8 @@ A high preformance, low memory usage, archetyped based **[ECF](https://itsbuggin
 
 While Frent's implementation is an archetype based ECS, thats not why Frent was made. Frent is primarily an **ECF** - Entity Component Framework - that allows you to easily use composition for code reuse rather than inheritance with minimal boilerplate. Think Unity's Monobehavior powered by the principles and speed of an ECS, as well as less boilerplate.
 
+Want to write systems anyways? Frent also has a Systems API that allows you to query entities in the style of an ECS.
+
 > [!CAUTION]
 > Frent is still in beta and is not completely stable.
 
@@ -24,7 +26,7 @@ Entity entity = world.Create<Position, Velocity>(new(Vector2.Zero), new(Vector2.
 //Call Update to run the update functions of your components
 world.Update();
 
-// Position is { Value = <1, 1> }
+// Position is (1, 1)
 Console.WriteLine(entity.Get<Position>());
 
 record struct Position(Vector2 Value);
@@ -49,7 +51,7 @@ Frent is a lot faster than most C# ECS implementations - [Benchmark](https://git
 - [x]  Structs as components
 - [x]  Deconstructing entities
 - [x]  Component memory stored contiguously (when using structs)
-- [x]  All entity functions are O(1) and highly optimised
+- [x]  Get/Has/TryGet O(1) and highly optimised
 - [x]  Pass in uniform data e.g., `deltaTime`
 - [x]  Deconstructing entities
 - [x]  Zero reflection
@@ -59,13 +61,15 @@ Frent is a lot faster than most C# ECS implementations - [Benchmark](https://git
 - [X]  Entity Tags
 - [X]  World Update Filtering
 - [X]  Command buffer
-- [X]  Events
+- [X]  Component/Tag Add/Remove Events (with generic version)
+- [X]  Automatic structual change management during queries
 
 ## Future
 - [ ]  Comprehensive docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
 - [ ]  Multithreading
+- [ ] `EntityMarshal` and `WorldMarshal` for even faster speeds!
 
 # Contributing
 Wanna help?
