@@ -119,5 +119,5 @@ internal struct ComponentEvent()
 {
     internal Event<ComponentID> NormalEvent = new();
     internal GenericEvent? GenericEvent = null;
-    public bool HasListeners => NormalEvent.HasListeners || GenericEvent?.HasListeners;
+    public bool HasListeners => NormalEvent.HasListeners || (GenericEvent is { } e && e.HasListeners);
 }
