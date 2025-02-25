@@ -28,7 +28,7 @@ public partial class World : IDisposable
     internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
 
     internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
-    private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
+    private Dictionary<Type, WorldUpdateFilter> _updatesByAttributes = [];
     internal int NextEntityID;
 
     internal readonly ushort ID;
@@ -41,7 +41,7 @@ public partial class World : IDisposable
     private CountdownEvent _sharedCountdown = new(0);
     private FastStack<ArchetypeID> _enabledArchetypes = FastStack<ArchetypeID>.Create(16);
 
-    private volatile int _allowStructuralChanges;
+    private int _allowStructuralChanges;
 
     internal CommandBuffer WorldUpdateCommandBuffer;
 
@@ -240,12 +240,9 @@ public partial class World : IDisposable
 
         try
         {
-            ref var appliesTo = ref CollectionsMarshal.
-                GetValueRefOrAddDefault(_updatesByAttributes, attributeType, out bool exists);
-            if (!exists)
-            {
-                appliesTo.Stack = FastStack<ComponentID>.Create(8);
-            }
+            if(!_updatesByAttributes.TryGetValue(attributeType, out WorldUpdateFilter? appliesTo))
+                _updatesByAttributes[attributeType] = appliesTo = new WorldUpdateFilter();
+
             //fill up the table with the correct IDs
             //works for initalization as well as updating it
             for (ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
@@ -282,8 +279,13 @@ public partial class World : IDisposable
         foreach (Rule rule in rules)
             queryHash.AddRule(rule);
 
-        return CollectionsMarshal.GetValueRefOrAddDefault(QueryCache, queryHash.ToHashCode(), out _) ??= CreateQueryFromSpan([.. rules]);
-    } 
+        int hashCode = queryHash.ToHashCode();
+
+        if (!QueryCache.TryGetValue(hashCode, out Query? query))
+            QueryCache[hashCode] = query = CreateQueryFromSpan([.. rules]);
+
+        return query;
+    }
 
     internal void ArchetypeAdded(ArchetypeID archetype)
     {
@@ -326,6 +328,7 @@ public partial class World : IDisposable
         }
     }
 
+#if !NET481
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EventRecord TryGetEventData(EntityLocation entityLocation, EntityIDOnly entity, EntityFlags eventType, out bool exists)
     {
@@ -339,6 +342,7 @@ public partial class World : IDisposable
         exists = false;
         return ref Unsafe.NullRef<EventRecord>();
     }
+#endif
 
     internal bool AllowStructualChanges => _allowStructuralChanges == 0;
 

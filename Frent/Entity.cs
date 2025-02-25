@@ -109,25 +109,11 @@ public partial struct Entity : IEquatable<Entity>
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(
             entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex));
 
-        return new Ref<T>(ref storage[entityLocation.Index]);
+        return new Ref<T>(storage, entityLocation.Index);
 
     doesntExist:
         exists = false;
         return default;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation, IComponentRunner[] archetypeComponents)
-    {
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);
-
-        if (compIndex == 0)
-            FrentExceptions.Throw_ComponentNotFoundException(typeof(TComp));
-
-        ComponentStorage<TComp> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<TComp>>(
-            archetypeComponents.UnsafeArrayIndex(compIndex));
-
-        return new Ref<TComp>(ref storage[entityLocation.Index]);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

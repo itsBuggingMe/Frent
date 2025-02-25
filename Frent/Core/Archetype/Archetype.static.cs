@@ -114,6 +114,27 @@ partial class Archetype
             throw new InvalidOperationException("Entities can have a max of 127 components!");
         lock (GlobalWorldTables.BufferChangeLock)
         {
+#if NET481
+            var key = GetHash(types, tagTypes);
+            if (ExistingArchetypes.TryGetValue(key, out ArchetypeData value))
+            {
+                return value.ID;
+            }
+
+            int nextIDInt = ++NextArchetypeID;
+            if (nextIDInt == ushort.MaxValue)
+                throw new InvalidOperationException($"Exceeded maximum unique archetype count of 65535");
+            var finalID = new ArchetypeID((ushort)nextIDInt);
+
+            var arr = typesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(types);
+            var tagArr = tagTypesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(tagTypes);
+
+            var slot = new ArchetypeData(finalID, arr, tagArr);
+            ArchetypeTable.Push(slot);
+            ModifyComponentLocationTable(arr, tagArr, finalID.RawIndex);
+
+            ExistingArchetypes[key] = slot;
+#else
             ref ArchetypeData slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);
             ArchetypeID finalID;
 
@@ -136,6 +157,7 @@ partial class Archetype
                 ArchetypeTable.Push(slot);
                 ModifyComponentLocationTable(arr, tagArr, finalID.RawIndex);
             }
+#endif
 
             return finalID;
         }

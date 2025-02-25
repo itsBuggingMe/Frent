@@ -1,4 +1,6 @@
-﻿namespace Frent;
+﻿using System.Runtime.CompilerServices;
+
+namespace Frent;
 
 /// <summary>
 /// The default uniform provider, using a dictionary.
@@ -17,7 +19,12 @@ public class DefaultUniformProvider : IUniformProvider
         where T : notnull
     {
         object boxed = obj;
-        ArgumentNullException.ThrowIfNull(boxed, nameof(obj));
+#if NET481
+        if (boxed is null)
+            throw new ArgumentNullException(nameof(obj));
+#else
+        ArgumentNullException.ThrowIfNull(boxed);
+#endif
         _uniforms[typeof(T)] = boxed;
         return this;
     }
@@ -31,8 +38,13 @@ public class DefaultUniformProvider : IUniformProvider
     /// <exception cref="ArgumentException"><paramref name="object"/> is not assignable to <paramref name="type"/>.</exception>
     public DefaultUniformProvider Add(Type type, object @object)
     {
+#if NET481
+        if(type is null)
+            throw new ArgumentNullException(nameof(type));
+#else
         ArgumentNullException.ThrowIfNull(type);
-        if (!@object.GetType().IsAssignableTo(type))
+#endif
+        if (!type.IsAssignableFrom(@object.GetType()))
             throw new ArgumentException("Object must be assignable to the type!", nameof(@object));
         _uniforms[type] = @object;
         return this;

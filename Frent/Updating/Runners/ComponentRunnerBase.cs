@@ -102,7 +102,11 @@ internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
 
     public Span<TComponent> AsSpan() => _managed;
 
+#if NET481
+    public Span<TComponent> AsSpan(int length) => _managed.AsSpan(length);
+#else
     public Span<TComponent> AsSpan(int length) => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_managed), length);
+#endif
 
     public ref TComponent GetComponentStorageDataReference() => ref MemoryMarshal.GetArrayDataReference(_managed);
 

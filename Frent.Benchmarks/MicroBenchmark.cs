@@ -41,13 +41,23 @@ public class MicroBenchmark
     }
 
     [Benchmark]
-    public void AddRemoveNew()
+    public void Create()
     {
-        foreach (var item in _entities)
+        using World world = new();
+        for(int i = 0; i < 100_000; i++)
         {
-            item.Remove<int, double>();
+            world.Create<Component1, Component2, Component3>(default, default, default);
+        }
+    }
 
-            item.Add<int, double>(default, default);
+    [Benchmark]
+    public void CreateCap()
+    {
+        using World world = new();
+        world.EnsureCapacity(Entity.EntityTypeOf([Component<Component1>.ID, Component<Component2>.ID, Component<Component3>.ID], []), 100_000);
+        for (int i = 0; i < 100_000; i++)
+        {
+            world.Create<Component1, Component2, Component3>(default, default, default);
         }
     }
 

@@ -25,7 +25,7 @@ public static class Component<T>
     internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
     internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
 
-    internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(T).IsAssignableTo(typeof(IDestroyable));
+    internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
 
     public static ComponentHandle StoreComponent(in T component)
     {
@@ -188,7 +188,7 @@ public static class Component
     [DoesNotReturn]
     private static void Throw_ComponentTypeNotInit(Type t)
     {
-        if (t.IsAssignableTo(typeof(IComponentBase)))
+        if (typeof(IComponentBase).IsAssignableFrom(t))
         {
             throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
         }

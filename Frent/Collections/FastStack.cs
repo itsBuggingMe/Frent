@@ -90,7 +90,11 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
     /// <summary>
     /// DO NOT ALTER WHILE SPAN IS IN USE
     /// </summary>
+#if NET481
+    public readonly Span<T> AsSpan() => _buffer.AsSpan(0, _nextIndex);
+#else
     public readonly Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_buffer), _nextIndex);
+#endif
 
     public void Clear()
     {

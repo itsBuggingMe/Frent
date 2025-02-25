@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net7.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net7.0;net6.0;net481</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>Latest</LangVersion>
@@ -25,4 +25,12 @@
     <None Include="..\LICENSE.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <ItemGroup Condition="$(TargetFramework) == 'net481'">
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="10.0.0-preview.1.25080.5" />
+    <PackageReference Include="System.Memory" Version="4.6.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
+  </ItemGroup>
+  
 </Project>

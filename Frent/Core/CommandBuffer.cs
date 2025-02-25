@@ -278,7 +278,11 @@ public class CommandBuffer
 
                 if (record.Location.HasEvent(EntityFlags.AddComp))
                 {
-                    ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
+#if NET481
+                    var events = _world.EventLookup[command.Entity];
+#else
+                    ref var events = ref CollectionsMarshal.GetValueRefOrNullRef(_world.EventLookup, command.Entity);
+#endif
                     events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
                     runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
                 }

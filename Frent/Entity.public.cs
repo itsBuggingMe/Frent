@@ -338,29 +338,8 @@ partial struct Entity
     /// </summary>
     public event Action<Entity> OnDelete
     {
-        add
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
-            EventRecord.Initalize(exists, ref events);
-            events.Delete.Push(value);
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.OnDelete;
-        }
-        remove
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.OnDelete, out bool exists);
-            if (exists)
-            {
-                events.Delete.Remove(value);
-                if (!events.Add.HasListeners)
-                {
-                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.OnDelete;
-                }
-            }
-        }
+        add => InitalizeEventRecord(value, EntityFlags.OnDelete);
+        remove => UnsubscribeEvent(value, EntityFlags.OnDelete);
     }
 
     /// <summary>
@@ -368,29 +347,8 @@ partial struct Entity
     /// </summary>
     public event Action<Entity, ComponentID> OnComponentAdded
     {
-        add
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
-            EventRecord.Initalize(exists, ref events);
-            events.Add.NormalEvent.Add(value);
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.AddComp;
-        }
-        remove
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.AddComp, out bool exists);
-            if (exists)
-            {
-                events.Add.NormalEvent.Remove(value);
-                if (!events.Add.HasListeners)
-                {
-                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.AddComp;
-                }
-            }
-        }
+        add => InitalizeEventRecord(value, EntityFlags.AddComp);
+        remove => UnsubscribeEvent(value, EntityFlags.AddComp);
     }
 
     /// <summary>
@@ -398,29 +356,8 @@ partial struct Entity
     /// </summary>
     public event Action<Entity, ComponentID> OnComponentRemoved
     {
-        add
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
-            EventRecord.Initalize(exists, ref events);
-            events.Remove.NormalEvent.Add(value);
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.RemoveComp;
-        }
-        remove
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.RemoveComp, out bool exists);
-            if (exists)
-            {
-                events.Remove.NormalEvent.Remove(value);
-                if (!events.Remove.HasListeners)
-                {
-                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.RemoveComp;
-                }
-            }
-        }
+        add => InitalizeEventRecord(value, EntityFlags.RemoveComp);
+        remove => UnsubscribeEvent(value, EntityFlags.RemoveComp);
     }
 
     /// <summary>
@@ -428,24 +365,13 @@ partial struct Entity
     /// </summary>
     public GenericEvent? OnComponentAddedGeneric
     {
-        set
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
-            EventRecord.Initalize(exists, ref events);
-            events.Add.GenericEvent = value;
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.AddComp;
-        }
+        readonly set { /*the set is just to enable the += syntax*/ }
         get
         {
-            if (!InternalIsAlive(out var world, out EntityLocation entityLocation))
+            if (!InternalIsAlive(out var world, out _))
                 return null;
-
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.AddComp, out bool exists);
-            if (exists)
-                return events.Add.GenericEvent;
-            return null;
+            var events = world.EventLookup[EntityIDOnly];
+            return events.Add.GenericEvent ??= new();
         }
     }
 
@@ -454,24 +380,13 @@ partial struct Entity
     /// </summary>
     public GenericEvent? OnComponentRemovedGeneric
     {
-        set
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
-            EventRecord.Initalize(exists, ref events);
-            events.Remove.GenericEvent = value;
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.RemoveComp;
-        }
+        readonly set { /*the set is just to enable the += syntax*/ }
         get
         {
-            if (!InternalIsAlive(out var world, out EntityLocation entityLocation))
+            if (!InternalIsAlive(out var world, out _))
                 return null;
-
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.RemoveComp, out bool exists);
-            if (exists)
-                return events.Remove.GenericEvent;
-            return null;
+            var events = world.EventLookup[EntityIDOnly];
+            return events.Remove.GenericEvent ??= new();
         }
     }
 
@@ -480,29 +395,8 @@ partial struct Entity
     /// </summary>
     public event Action<Entity, TagID> OnTagged
     {
-        add
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
-            EventRecord.Initalize(exists, ref events);
-            events.Tag.Add(value);
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.Tagged;
-        }
-        remove
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.Tagged, out bool exists);
-            if (exists)
-            {
-                events.Tag.Remove(value);
-                if (!events.Tag.HasListeners)
-                {
-                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.Tagged;
-                }
-            }
-        }
+        add => InitalizeEventRecord(value, EntityFlags.Tagged);
+        remove => UnsubscribeEvent(value, EntityFlags.Tagged);
     }
 
     /// <summary>
@@ -510,31 +404,93 @@ partial struct Entity
     /// </summary>
     public event Action<Entity, TagID> OnDetach
     {
-        add
+        add => InitalizeEventRecord(value, EntityFlags.Detach);
+        remove => UnsubscribeEvent(value, EntityFlags.Detach);
+    }
+
+    private void UnsubscribeEvent(object value, EntityFlags flag)
+    {
+        if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+            return;
+
+#if NET481
+        bool exists = entityLocation.HasEvent(flag);
+        var events = exists ? world.EventLookup[EntityIDOnly] : default;
+#else
+        ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, flag, out bool exists);
+#endif
+
+
+        if (exists)
         {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
-            EventRecord.Initalize(exists, ref events);
-            events.Detach.Add(value);
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.Detach;
-        }
-        remove
-        {
-            if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
-                return;
-            ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, EntityFlags.Detach, out bool exists);
-            if (exists)
+            bool removeFlags = false;
+
+            switch(flag)
             {
-                events.Detach.Remove(value);
-                if (!events.Detach.HasListeners)
-                {
-                    world.EntityTable[EntityID].Location.Flags &= ~EntityFlags.Detach;
-                }
+                case EntityFlags.AddComp:
+                    events.Add.NormalEvent.Remove((Action<Entity, ComponentID>)value);
+                    removeFlags = !events.Add.HasListeners;
+                    break;
+                case EntityFlags.RemoveComp:
+                    events.Remove.NormalEvent.Remove((Action<Entity, ComponentID>)value);
+                    removeFlags = !events.Remove.HasListeners;
+                    break;
+                case EntityFlags.Tagged:
+                    events.Tag.Remove((Action<Entity, TagID>)value);
+                    removeFlags = !events.Tag.HasListeners;
+                    break;
+                case EntityFlags.Detach:
+                    events.Detach.Remove((Action<Entity, TagID>)value);
+                    removeFlags = !events.Detach.HasListeners;
+                    break;
+                case EntityFlags.OnDelete:
+                    events.Delete.Remove((Action<Entity>)value);
+                    removeFlags = !events.Delete.Any;
+                    break;
             }
+
+            if(removeFlags)
+                world.EntityTable[EntityID].Location.Flags &= ~flag;
         }
     }
-    #endregion
+
+    private void InitalizeEventRecord(object @delegate, EntityFlags flag, bool isGenericEvent = false)
+    {
+        if(@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+            return;
+#if NET481
+        bool exists = entityLocation.HasEvent(flag);
+        var record = exists ? world.EventLookup[EntityIDOnly] : default;
+#else
+        ref var record = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
+#endif
+        world.EntityTable[EntityID].Location.Flags |= flag;
+        EventRecord.Initalize(exists, ref record);
+
+        switch(flag)
+        {
+            case EntityFlags.AddComp:
+                if(isGenericEvent)
+                    record.Add.GenericEvent = (GenericEvent)@delegate;
+                else
+                    record.Add.NormalEvent.Add((Action<Entity, ComponentID>)@delegate);
+                break;
+            case EntityFlags.RemoveComp:
+                if (isGenericEvent)
+                    record.Remove.GenericEvent = (GenericEvent)@delegate;
+                else
+                    record.Remove.NormalEvent.Add((Action<Entity, ComponentID>)@delegate);
+                break;
+            case EntityFlags.Tagged:
+                record.Tag.Add((Action<Entity, TagID>)@delegate);
+                break;
+            case EntityFlags.Detach:
+                record.Detach.Remove((Action<Entity, TagID>)@delegate);
+                break;
+        }
+    }
+
+#endregion
 
     #region Misc
     /// <summary>
@@ -640,5 +596,5 @@ partial struct Entity
     }
     #endregion
 
-    #endregion
+#endregion
 }

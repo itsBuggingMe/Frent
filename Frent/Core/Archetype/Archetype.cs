@@ -235,7 +235,11 @@ internal partial class Archetype
     internal Span<EntityIDOnly> GetEntitySpan()
     {
         Debug.Assert(_componentIndex <= _entities.Length);
+#if NET481
+        return _entities.AsSpan(0, _componentIndex);
+#else
         return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_entities), _componentIndex);
+#endif
     }
 
     internal ref EntityIDOnly GetEntityDataReference() => ref MemoryMarshal.GetArrayDataReference(_entities);

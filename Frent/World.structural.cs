@@ -1,9 +1,7 @@
-﻿using Frent.Collections;
-using Frent.Core;
+﻿using Frent.Core;
 using Frent.Core.Structures;
 using Frent.Updating;
 using System.Collections.Immutable;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -22,15 +20,27 @@ partial class World
     {
         Archetype destination = RemoveComponentLookup.FindAdjacentArchetypeID(componentID, lookup.Location.ArchetypeID, this, ArchetypeEdgeType.RemoveComponent)
             .Archetype(this);
+
+#if NET481
+        Span<ComponentHandle> tmpHandleSpan = [default!];
+        MoveEntityToArchetypeRemove(tmpHandleSpan, entity, ref lookup, destination);
+#else
         Unsafe.SkipInit(out ComponentHandle tmpHandle);
         MoveEntityToArchetypeRemove(MemoryMarshal.CreateSpan(ref tmpHandle, 1), entity, ref lookup, destination);
+#endif
     }
 
     internal void AddComponent(Entity entity, ref EntityLookup lookup, ComponentID componentID, ref IComponentRunner runner, out EntityLocation entityLocation)
     {
         Archetype destination = AddComponentLookup.FindAdjacentArchetypeID(componentID, lookup.Location.ArchetypeID, this, ArchetypeEdgeType.AddComponent)
             .Archetype(this);
+#if NET481
+        Span<IComponentRunner> runnerSpan = [null!];
+        MoveEntityToArchetypeAdd(runnerSpan, entity, ref lookup, out entityLocation, destination);
+        runner = MemoryMarshal.GetReference(runnerSpan);
+#else
         MoveEntityToArchetypeAdd(MemoryMarshal.CreateSpan(ref runner, 1), entity, ref lookup, out entityLocation, destination);
+#endif
     }
 
     [SkipLocalsInit]
@@ -122,8 +132,13 @@ partial class World
 
             if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp))
             {
+#if NET481
+                var lookup = EventLookup[entity.EntityIDOnly];
+#else
                 ref var lookup = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
-                foreach(var handle in componentHandles)
+#endif
+
+                foreach (var handle in componentHandles)
                 {
                     lookup.Remove.NormalEvent.Invoke(entity, handle.ComponentID);
                     handle.InvokeComponentEventAndConsume(entity, lookup.Remove.GenericEvent);
@@ -166,6 +181,7 @@ partial class World
         EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
         currentLookup.Location = nextLocation;
     }
+
     #region Delete
     //Delete
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
