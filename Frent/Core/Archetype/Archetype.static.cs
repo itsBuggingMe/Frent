@@ -8,11 +8,11 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
+[Variadic("            runners[map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits] = Component<T>.CreateInstance();",
+    "|            runners[map.UnsafeArrayIndex(Component<T$>.ID.RawIndex) & GlobalWorldTables.IndexBits] = Component<T$>.CreateInstance();\n|")]
 [Variadic("Archetype<T>", "Archetype<|T$, |>")]
 [Variadic("typeof(T)", "|typeof(T$), |")]
 [Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
-[Variadic("[null!, Component<T>.CreateInstance()]", "[null!, |Component<T$>.CreateInstance(), |]")]
-[Variadic("&& Component<T>.Initer is not null", "|&& Component<T$>.Initer is not null\n|")]
 internal static class Archetype<T>
 {
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
@@ -31,7 +31,11 @@ internal static class Archetype<T>
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void CreateArchetype(out Archetype archetype, World world)
         {
-            IComponentRunner[] runners = [null!, Component<T>.CreateInstance()];
+            IComponentRunner[] runners = new IComponentRunner[ArchetypeComponentIDs.Length + 1];
+            byte[] map = GlobalWorldTables.ComponentTagLocationTable[ID.RawIndex];
+
+            runners[map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits] = Component<T>.CreateInstance();
+
             archetype = new Archetype(ID, runners);
             world.ArchetypeAdded(archetype.ID);
         }
