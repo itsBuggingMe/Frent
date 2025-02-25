@@ -237,4 +237,6 @@ internal partial class Archetype
         Debug.Assert(_componentIndex <= _entities.Length);
         return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_entities), _componentIndex);
     }
+
+    internal ref EntityIDOnly GetEntityDataReference() => ref MemoryMarshal.GetArrayDataReference(_entities);
 }

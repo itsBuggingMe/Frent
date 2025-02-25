@@ -1,4 +1,5 @@
 ﻿using System.Collections.Specialized;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Frent.Buffers;
 using Frent.Collections;
@@ -15,15 +16,19 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<Entity
 {
     public override void Run(World world, Archetype b)
     {
-        Span<TComp> comps = AsSpan(b.EntityCount);
+        ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
+        ref TComp comp = ref GetComponentStorageDataReference();
+
         Entity entity = world.DefaultWorldEntity;
-        Span<EntityIDOnly> entityIds = b.GetEntitySpan()[..comps.Length];
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for(int i = 0; i < comps.Length; i++)
+        for(int i = b.EntityCount; i >= 0; i--)
         {
-            entityIds[i].SetEntity(ref entity);
-            comps[i].Update(entity, uniform);
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, uniform);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
         }
     }
     public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
@@ -51,15 +56,21 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<
 {
     public override void Run(World world, Archetype b)
     {
+        ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
+        ref TComp comp = ref GetComponentStorageDataReference();
+        ref TArg arg = ref b.GetComponentDataReference<TArg>();
+
         Entity entity = world.DefaultWorldEntity;
-        Span<TComp> comps = AsSpan(b.EntityCount);
-        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
-        for(int i = 0; i < comps.Length; i++)
+
+        for (int i = b.EntityCount; i >= 0; i--)
         {
-            entities[i].SetEntity(ref entity);
-            comps[i].Update(entity, uniform, ref arg[i]);
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, uniform, ref arg);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+            arg = ref Unsafe.Add(ref arg, 1);
         }
     }
     public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
