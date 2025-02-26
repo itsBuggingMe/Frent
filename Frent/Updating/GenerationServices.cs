@@ -11,7 +11,7 @@ namespace Frent.Updating;
 /// </summary>
 public static class GenerationServices
 {
-    internal static readonly Dictionary<Type, (IComponentRunnerFactory Factory, int UpdateOrder)> UserGeneratedTypeMap = new();
+    internal static readonly Dictionary<Type, (IComponentStorageBaseFactory Factory, int UpdateOrder)> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, HashSet<Type>> TypeAttributeCache = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
@@ -37,7 +37,7 @@ public static class GenerationServices
     /// <summary>
     /// Used only for source generation
     /// </summary>
-    public static void RegisterType(Type type, IComponentRunnerFactory value)
+    public static void RegisterType(Type type, IComponentStorageBaseFactory value)
     {
         if (UserGeneratedTypeMap.TryGetValue(type, out var val))
         {

@@ -1,4 +1,8 @@
 ﻿#if NET481
+#pragma warning disable CS0436 // Type conflicts with imported type
+global using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
+global using RuntimeHelpers = System.Runtime.CompilerServices.RuntimeHelpers;
+#pragma warning restore CS0436 // Type conflicts with imported type
 
 #region Attributes
 using CommunityToolkit.HighPerformance;
@@ -53,6 +57,7 @@ namespace System.Runtime.InteropServices
     {
         public static ref T GetReference<T>(Span<T> span) => ref span.DangerousGetReference();
         public static ref T GetArrayDataReference<T>(T[] arr) => ref arr.DangerousGetReference();
+        public static ref byte GetArrayDataReference(Array arr) => throw new NotSupportedException();
     }
 }
 
@@ -396,3 +401,12 @@ namespace System
 #endregion
 
 #endif
+
+internal static class Versioning
+{
+#if NET481
+    public const bool MemoryMarshalNonGenericGetArrayDataReferenceSupported = false;
+#else
+    public const bool MemoryMarshalNonGenericGetArrayDataReferenceSupported = true;
+#endif
+}

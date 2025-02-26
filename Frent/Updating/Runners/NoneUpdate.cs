@@ -2,18 +2,18 @@
 using Frent.Core;
 
 namespace Frent.Updating.Runners;
-internal class NoneUpdate<TComp> : ComponentRunnerBase<NoneUpdate<TComp>, TComp>
+internal class NoneUpdate<TComp> : ComponentStorage<TComp>
 {
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) { }
-    public override void Run(World world, Archetype b) { }
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) { }
+    internal override void Run(World world, Archetype b) { }
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
-public class NoneUpdateRunnerFactory<T> : IComponentRunnerFactory, IComponentRunnerFactory<T>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+public class NoneUpdateRunnerFactory<T> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<T>
 {
     /// <inheritdoc/>
     public object Create() => new NoneUpdate<T>();
     /// <inheritdoc/>
     public object CreateStack() => new IDTable<T>();
-    IComponentRunner<T> IComponentRunnerFactory<T>.CreateStronglyTyped() => new NoneUpdate<T>();
+    ComponentStorage<T> IComponentStorageBaseFactory<T>.CreateStronglyTyped() => new NoneUpdate<T>();
 }

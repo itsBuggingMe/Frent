@@ -8,10 +8,10 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TComp>
+internal class EntityUpdate<TComp> : ComponentStorage<TComp>
     where TComp : IEntityComponent
 {
-    public override void Run(World world, Archetype b)
+    internal override void Run(World world, Archetype b)
     {
         Span<TComp> comps = AsSpan(b.EntityCount);
         Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
@@ -23,29 +23,29 @@ internal class EntityUpdate<TComp> : ComponentRunnerBase<EntityUpdate<TComp>, TC
         }
     }
     
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
-public class EntityUpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+public class EntityUpdateRunnerFactory<TComp> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityComponent
 {
     /// <inheritdoc/>
     public object Create() => new EntityUpdate<TComp>();
     /// <inheritdoc/>
     public object CreateStack() => new IDTable<TComp>();
-    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp>();
 }
 
 [Variadic(GetSpanFrom, GetSpanPattern)]
 [Variadic(GenArgFrom, GenArgPattern)]
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TComp, TArg>, TComp>
+internal class EntityUpdate<TComp, TArg> : ComponentStorage<TComp>
     where TComp : IEntityComponent<TArg>
 {
-    public override void Run(World world, Archetype b)
+    internal override void Run(World world, Archetype b)
     {
         Span<TComp> comps = AsSpan(b.EntityCount);
         Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
@@ -58,18 +58,18 @@ internal class EntityUpdate<TComp, TArg> : ComponentRunnerBase<EntityUpdate<TCom
         }
     }
 
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b)
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b)
         => throw new NotImplementedException();
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
 [Variadic(GenArgFrom, GenArgPattern)]
-public class EntityUpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+public class EntityUpdateRunnerFactory<TComp, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityComponent<TArg>
 {
     /// <inheritdoc/>
     public object Create() => new EntityUpdate<TComp, TArg>();
     /// <inheritdoc/>
     public object CreateStack() => new IDTable<TComp>();
-    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp, TArg>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp, TArg>();
 }

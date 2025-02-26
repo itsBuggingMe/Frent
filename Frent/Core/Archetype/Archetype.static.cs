@@ -22,7 +22,8 @@ internal static class Archetype<T>
 
     internal static Archetype CreateNewOrGetExistingArchetype(World world)
     {
-        ref Archetype archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(ID.RawIndex);
+        var index = ID.RawIndex;
+        ref Archetype archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
         if (archetype is null)
             CreateArchetype(out archetype, world);
         return archetype!;
@@ -31,7 +32,7 @@ internal static class Archetype<T>
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void CreateArchetype(out Archetype archetype, World world)
         {
-            IComponentRunner[] runners = new IComponentRunner[ArchetypeComponentIDs.Length + 1];
+            ComponentStorageBase[] runners = new ComponentStorageBase[ArchetypeComponentIDs.Length + 1];
             byte[] map = GlobalWorldTables.ComponentTagLocationTable[ID.RawIndex];
 
             runners[map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits] = Component<T>.CreateInstance();
@@ -68,7 +69,7 @@ partial class Archetype
             return archetype;
 
         var types = id.Types;
-        IComponentRunner[] componentRunners = new IComponentRunner[types.Length + 1];
+        ComponentStorageBase[] componentRunners = new ComponentStorageBase[types.Length + 1];
         for (int i = 1; i < componentRunners.Length; i++)
             componentRunners[i] = Component.GetComponentRunnerFromType(types[i - 1].Type);
 

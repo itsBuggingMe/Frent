@@ -6,13 +6,13 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Frent.Benchmarks.Program;
 
 namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.CreateCap());
-
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Setup());
     
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)

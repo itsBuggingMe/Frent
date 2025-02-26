@@ -389,7 +389,7 @@ public partial class World : IDisposable
         entityID.ID = entity.EntityID;
         entityID.Version = entity.EntityVersion;
 
-        Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
+        Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
         for (int i = 1; i < archetypeComponents.Length; i++)
         {
             archetypeComponents[i].SetAt(components[i - 1], loc.Index);

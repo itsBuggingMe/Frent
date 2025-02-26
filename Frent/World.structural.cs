@@ -30,12 +30,12 @@ partial class World
 #endif
     }
 
-    internal void AddComponent(Entity entity, ref EntityLookup lookup, ComponentID componentID, ref IComponentRunner runner, out EntityLocation entityLocation)
+    internal void AddComponent(Entity entity, ref EntityLookup lookup, ComponentID componentID, ref ComponentStorageBase runner, out EntityLocation entityLocation)
     {
         Archetype destination = AddComponentLookup.FindAdjacentArchetypeID(componentID, lookup.Location.ArchetypeID, this, ArchetypeEdgeType.AddComponent)
             .Archetype(this);
 #if NET481
-        Span<IComponentRunner> runnerSpan = [null!];
+        Span<ComponentStorageBase> runnerSpan = [null!];
         MoveEntityToArchetypeAdd(runnerSpan, entity, ref lookup, out entityLocation, destination);
         runner = MemoryMarshal.GetReference(runnerSpan);
 #else
@@ -44,7 +44,7 @@ partial class World
     }
 
     [SkipLocalsInit]
-    internal void MoveEntityToArchetypeAdd(Span<IComponentRunner> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
+    internal void MoveEntityToArchetypeAdd(Span<ComponentStorageBase> writeTo, Entity entity, ref EntityLookup currentLookup, out EntityLocation nextLocation, Archetype destination)
     {
         Archetype from = currentLookup.Location.Archetype;
 
@@ -53,8 +53,8 @@ partial class World
         destination.CreateEntityLocation(currentLookup.Location.Flags, out nextLocation).Init(entity);
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
 
-        IComponentRunner[] fromRunners = from.Components;
-        IComponentRunner[] destRunners = destination.Components;
+        ComponentStorageBase[] fromRunners = from.Components;
+        ComponentStorageBase[] destRunners = destination.Components;
         byte[] fromMap = from.ComponentTagTable;
 
         ImmutableArray<ComponentID> destinationComponents = destination.ArchetypeTypeArray;
@@ -74,7 +74,7 @@ partial class World
             }
             else
             {
-                destRunners.UnsafeArrayIndex(i).PullComponentFromAndClear(fromRunners.UnsafeArrayIndex(fromIndex), nextLocation.Index, currentLookup.Location.Index, deletedIndex);
+                destRunners.UnsafeArrayIndex(i).PullComponentFromAndClearTryDevirt(fromRunners.UnsafeArrayIndex(fromIndex), nextLocation.Index, currentLookup.Location.Index, deletedIndex);
             }
         }
 
@@ -92,8 +92,8 @@ partial class World
         destination.CreateEntityLocation(currentLookup.Location.Flags, out var nextLocation).Init(entity);
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
 
-        IComponentRunner[] fromRunners = from.Components;
-        IComponentRunner[] destRunners = destination.Components;
+        ComponentStorageBase[] fromRunners = from.Components;
+        ComponentStorageBase[] destRunners = destination.Components;
         byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
@@ -110,12 +110,15 @@ partial class World
 
             if(toIndex == 0)
             {
-                if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp))
-                    componentHandles.UnsafeSpanIndex(writeToIndex++) = fromRunners.UnsafeArrayIndex(i).Store(currentLookup.Location.Index);
+                var runner = fromRunners.UnsafeArrayIndex(i);
+                if (EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp))
+                    componentHandles.UnsafeSpanIndex(writeToIndex++) = runner.Store(currentLookup.Location.Index);
+
+                runner.Delete(new DeleteComponentData(currentLookup.Location.Index, deletedIndex));
             }
             else
             {
-                destRunners.UnsafeArrayIndex(toIndex).PullComponentFromAndClear(fromRunners.UnsafeArrayIndex(i), nextLocation.Index, currentLookup.Location.Index, deletedIndex);
+                destRunners.UnsafeArrayIndex(toIndex).PullComponentFromAndClearTryDevirt(fromRunners.UnsafeArrayIndex(i), nextLocation.Index, currentLookup.Location.Index, deletedIndex);
             }
         }
         
@@ -144,11 +147,8 @@ partial class World
                     handle.InvokeComponentEventAndConsume(entity, lookup.Remove.GenericEvent);
                 }
             }
-            else
-            {
-                foreach(var handle in componentHandles)
-                    handle.Dispose();
-            }
+
+            //no need to dispose here, as they were never created
         }
     }
 
@@ -163,8 +163,8 @@ partial class World
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Location.Index, out int deletedIndex);
 
 
-        IComponentRunner[] fromRunners = from.Components;
-        IComponentRunner[] destRunners = destination.Components;
+        ComponentStorageBase[] fromRunners = from.Components;
+        ComponentStorageBase[] destRunners = destination.Components;
         byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
@@ -175,7 +175,7 @@ partial class World
 
             i++;
 
-            destRunners[toIndex].PullComponentFromAndClear(fromRunners[i], nextLocation.Index, currentLookup.Location.Index, deletedIndex);
+            destRunners[toIndex].PullComponentFromAndClearTryDevirt(fromRunners[i], nextLocation.Index, currentLookup.Location.Index, deletedIndex);
         }
 
         EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;

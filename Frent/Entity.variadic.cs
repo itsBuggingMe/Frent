@@ -56,7 +56,7 @@ partial struct Entity
             ref thisLookup, 
             true);
 
-        Span<IComponentRunner> buff = [null!];
+        Span<ComponentStorageBase> buff = [null!];
         world.MoveEntityToArchetypeAdd(buff, this, ref thisLookup, out EntityLocation nextLocation, to);
 
         ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;

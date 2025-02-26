@@ -11,10 +11,10 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform>, TComp>
+internal class EntityUniformUpdate<TComp, TUniform> : ComponentStorage<TComp>
     where TComp : IEntityUniformComponent<TUniform>
 {
-    public override void Run(World world, Archetype b)
+    internal override void Run(World world, Archetype b)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
         ref TComp comp = ref GetComponentStorageDataReference();
@@ -31,32 +31,43 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentRunnerBase<Entity
             comp = ref Unsafe.Add(ref comp, 1);
         }
     }
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
-public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform>
 {
     /// <inheritdoc/>
     public object Create() => new EntityUniformUpdate<TComp, TUniform>();
     /// <inheritdoc/>
     public object CreateStack() => new IDTable<TComp>();
-    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform>();
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
 [Variadic(GetSpanFrom, GetSpanPattern)]
 [Variadic(GenArgFrom, GenArgPattern)]
 [Variadic(GetArgFrom, GetArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<EntityUniformUpdate<TComp, TUniform, TArg>, TComp>
+internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentStorage<TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
-    public override void Run(World world, Archetype b)
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b)
     {
-        ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
+        throw new NotImplementedException();
+    }
+
+
+    internal override void Run(World world, Archetype b)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/*
+         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
         ref TComp comp = ref GetComponentStorageDataReference();
         ref TArg arg = ref b.GetComponentDataReference<TArg>();
 
@@ -72,20 +83,16 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<
             comp = ref Unsafe.Add(ref comp, 1);
             arg = ref Unsafe.Add(ref arg, 1);
         }
-    }
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        throw new NotImplementedException();
-}
+ */
 
-
-/// <inheritdoc cref="IComponentRunnerFactory"/>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
 [Variadic(GenArgFrom, GenArgPattern)]
-public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
     /// <inheritdoc/>
     public object Create() => new EntityUniformUpdate<TComp, TUniform, TArg>();
     /// <inheritdoc/>
     public object CreateStack() => new IDTable<TComp>();
-    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform, TArg>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform, TArg>();
 }

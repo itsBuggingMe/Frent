@@ -204,7 +204,7 @@ partial struct Entity
         ref EntityLookup lookup = ref AssertIsAlive(out var w);
         if(w.AllowStructualChanges)
         {
-            IComponentRunner componentRunner = null!;
+            ComponentStorageBase componentRunner = null!;
             w.AddComponent(this, ref lookup, componentID, ref componentRunner, out EntityLocation entityLocation);
             componentRunner.SetAt(component, entityLocation.Index);
         }
@@ -370,8 +370,7 @@ partial struct Entity
         {
             if (!InternalIsAlive(out var world, out _))
                 return null;
-            var events = world.EventLookup[EntityIDOnly];
-            return events.Add.GenericEvent ??= new();
+            return world.EventLookup.GetOrAddNew(EntityIDOnly).Add.GenericEvent ??= new();
         }
     }
 
@@ -385,8 +384,7 @@ partial struct Entity
         {
             if (!InternalIsAlive(out var world, out _))
                 return null;
-            var events = world.EventLookup[EntityIDOnly];
-            return events.Remove.GenericEvent ??= new();
+            return world.EventLookup.GetOrAddNew(EntityIDOnly).Remove.GenericEvent ??= new();
         }
     }
 
@@ -428,23 +426,23 @@ partial struct Entity
             switch(flag)
             {
                 case EntityFlags.AddComp:
-                    events.Add.NormalEvent.Remove((Action<Entity, ComponentID>)value);
+                    events!.Add.NormalEvent.Remove((Action<Entity, ComponentID>)value);
                     removeFlags = !events.Add.HasListeners;
                     break;
                 case EntityFlags.RemoveComp:
-                    events.Remove.NormalEvent.Remove((Action<Entity, ComponentID>)value);
+                    events!.Remove.NormalEvent.Remove((Action<Entity, ComponentID>)value);
                     removeFlags = !events.Remove.HasListeners;
                     break;
                 case EntityFlags.Tagged:
-                    events.Tag.Remove((Action<Entity, TagID>)value);
+                    events!.Tag.Remove((Action<Entity, TagID>)value);
                     removeFlags = !events.Tag.HasListeners;
                     break;
                 case EntityFlags.Detach:
-                    events.Detach.Remove((Action<Entity, TagID>)value);
+                    events!.Detach.Remove((Action<Entity, TagID>)value);
                     removeFlags = !events.Detach.HasListeners;
                     break;
                 case EntityFlags.OnDelete:
-                    events.Delete.Remove((Action<Entity>)value);
+                    events!.Delete.Remove((Action<Entity>)value);
                     removeFlags = !events.Delete.Any;
                     break;
             }
@@ -465,7 +463,7 @@ partial struct Entity
         ref var record = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
 #endif
         world.EntityTable[EntityID].Location.Flags |= flag;
-        EventRecord.Initalize(exists, ref record);
+        EventRecord.Initalize(exists, ref record!);
 
         switch(flag)
         {
@@ -485,7 +483,10 @@ partial struct Entity
                 record.Tag.Add((Action<Entity, TagID>)@delegate);
                 break;
             case EntityFlags.Detach:
-                record.Detach.Remove((Action<Entity, TagID>)@delegate);
+                record.Detach.Add((Action<Entity, TagID>)@delegate);
+                break;
+            case EntityFlags.OnDelete:
+                record.Delete.Push((Action<Entity>)@delegate);
                 break;
         }
     }
@@ -578,7 +579,7 @@ partial struct Entity
     public void EnumerateComponents(IGenericAction onEach)
     {
         ref var lookup = ref AssertIsAlive(out var _);
-        IComponentRunner[] runners = lookup.Location.Archetype.Components;
+        ComponentStorageBase[] runners = lookup.Location.Archetype.Components;
         for(int i = 1; i < runners.Length; i++)
         {
             runners[i].InvokeGenericActionWith(onEach, lookup.Location.Index);

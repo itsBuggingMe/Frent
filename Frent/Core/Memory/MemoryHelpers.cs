@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Immutable;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
@@ -80,6 +81,21 @@ internal static class MemoryHelpers
         return builder.ToImmutable();
     }
 
+    public static TValue GetOrAddNew<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key)
+        where TKey : notnull
+        where TValue : new()
+    {
+#if NET481
+        if(dictionary.TryGetValue(key, out var value))
+        {
+            return value;
+        }
+        return dictionary[key] = new();
+#else
+        ref var res = ref CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out bool _);
+        return res ??= new();
+#endif
+    }
 }
 
 internal static class MemoryHelpers<T>

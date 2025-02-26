@@ -20,7 +20,7 @@ public static class Component<T>
     public static ComponentID ID => _id;
 
     private static readonly ComponentID _id;
-    private static readonly IComponentRunnerFactory<T> RunnerInstance;
+    private static readonly IComponentStorageBaseFactory<T> RunnerInstance;
     internal static readonly IDTable<T> GeneralComponentStorage;
     internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
     internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
@@ -39,7 +39,7 @@ public static class Component<T>
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
         {
-            if (type.Factory is IComponentRunnerFactory<T> casted)
+            if (type.Factory is IComponentStorageBaseFactory<T> casted)
             {
                 RunnerInstance = casted;
                 return;
@@ -53,7 +53,7 @@ public static class Component<T>
         RunnerInstance = fac;
     }
 
-    internal static IComponentRunner<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
+    internal static ComponentStorage<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
 }
 
 /// <summary>
@@ -78,21 +78,21 @@ public static class Component
 {
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
 
-    internal static Dictionary<Type, IComponentRunnerFactory> NoneComponentRunnerTable = [];
+    internal static Dictionary<Type, IComponentStorageBaseFactory> NoneComponentRunnerTable = [];
 
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
 
     private static int NextComponentID = -1;
 
-    internal static IComponentRunner GetComponentRunnerFromType(Type t)
+    internal static ComponentStorageBase GetComponentRunnerFromType(Type t)
     {
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var type))
         {
-            return (IComponentRunner)type.Factory.Create();
+            return (ComponentStorageBase)type.Factory.Create();
         }
         if (NoneComponentRunnerTable.TryGetValue(t, out var t1))
         {
-            return (IComponentRunner)t1.Create();
+            return (ComponentStorageBase)t1.Create();
         }
 
         Throw_ComponentTypeNotInit(t);

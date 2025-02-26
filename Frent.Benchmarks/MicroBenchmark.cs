@@ -33,31 +33,16 @@ public class MicroBenchmark
     {
         _world = new World();
         _entity = _world.Create<int, double, long, float, Half>(default, default, default, default, default);
-        _entities = new Entity[100];
+        _entities = new Entity[Count];
         for (int i = 0; i < _entities.Length; i++)
         {
-            _entities[i] = _world.Create<int, double>(default, default);
+            _entities[i] = _world.Create<int, double, long, float, Half>(default, default, default, default, default);
         }
-    }
 
-    [Benchmark]
-    public void Create()
-    {
-        using World world = new();
-        for(int i = 0; i < 100_000; i++)
+        foreach (var entity in _entities)
         {
-            world.Create<Component1, Component2, Component3>(default, default, default);
-        }
-    }
-
-    [Benchmark]
-    public void CreateCap()
-    {
-        using World world = new();
-        world.EnsureCapacity(Entity.EntityTypeOf([Component<Component1>.ID, Component<Component2>.ID, Component<Component3>.ID], []), 100_000);
-        for (int i = 0; i < 100_000; i++)
-        {
-            world.Create<Component1, Component2, Component3>(default, default, default);
+            entity.Remove<int, double>();
+            entity.Add<int, double>(default, default);
         }
     }
 

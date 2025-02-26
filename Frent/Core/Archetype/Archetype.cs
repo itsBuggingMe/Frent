@@ -123,7 +123,7 @@ internal partial class Archetype
         #region Unroll
         DeleteComponentData args = new(index, _componentIndex);
 
-        ref IComponentRunner first = ref MemoryMarshal.GetArrayDataReference(Components);
+        ref ComponentStorageBase first = ref MemoryMarshal.GetArrayDataReference(Components);
 
         switch (Components.Length)
         {
