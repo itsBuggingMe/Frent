@@ -1,6 +1,6 @@
 ## Component Composition
 Frent allows you to create entities which are a composition of unqiue components. Components can contain behavior and data.
-### Behavior using `IUpdateComponent`
+### Behavior using `IComponent`
 
 You must implement one of many interfaces for component behavior, while any type can be a component. The first of these are `IComponent` and `IComponent<T1, T2, ...>` (up to `T15`).
 
