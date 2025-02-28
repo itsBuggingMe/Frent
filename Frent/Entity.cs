@@ -97,7 +97,7 @@ public partial struct Entity : IEquatable<Entity>
 
     private Ref<T> TryGetCore<T>(out bool exists)
     {
-        if (!InternalIsAlive(out var world, out var entityLocation))
+        if (!InternalIsAlive(out var _, out var entityLocation))
             goto doesntExist;
 
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);

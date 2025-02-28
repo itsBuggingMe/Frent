@@ -53,7 +53,7 @@ public static class Component<T>
         RunnerInstance = fac;
     }
 
-    internal static ComponentStorage<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
+    internal static ComponentStorage<T> CreateInstance(int cap) => RunnerInstance.CreateStronglyTyped(cap);
 }
 
 /// <summary>
@@ -84,15 +84,15 @@ public static class Component
 
     private static int NextComponentID = -1;
 
-    internal static ComponentStorageBase GetComponentRunnerFromType(Type t)
+    internal static IComponentStorageBaseFactory GetComponentFactoryFromType(Type t)
     {
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var type))
         {
-            return (ComponentStorageBase)type.Factory.Create();
+            return type.Factory;
         }
         if (NoneComponentRunnerTable.TryGetValue(t, out var t1))
         {
-            return (ComponentStorageBase)t1.Create();
+            return t1;
         }
 
         Throw_ComponentTypeNotInit(t);

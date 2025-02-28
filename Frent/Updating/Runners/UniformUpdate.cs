@@ -9,7 +9,7 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class UniformUpdate<TComp, TUniform> : ComponentStorage<TComp>
+internal class UniformUpdate<TComp, TUniform>(int cap) : ComponentStorage<TComp>(cap)
     where TComp : IUniformComponent<TUniform>
 {
     internal override void Run(World world, Archetype b)
@@ -33,18 +33,16 @@ internal class UniformUpdate<TComp, TUniform> : ComponentStorage<TComp>
 public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IUniformComponent<TUniform>
 {
-    /// <inheritdoc/>
-    public object Create() => new UniformUpdate<TComp, TUniform>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new UniformUpdate<TComp, TUniform>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new UniformUpdate<TComp, TUniform>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new UniformUpdate<TComp, TUniform>(capacity);
 }
 
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class UniformUpdate<TComp, TUniform, TArg> : ComponentStorage<TComp>
+internal class UniformUpdate<TComp, TUniform, TArg>(int capacity) : ComponentStorage<TComp>(capacity)
     where TComp : IUniformComponent<TUniform, TArg>
 {
     internal override void Run(World world, Archetype b)
@@ -72,9 +70,7 @@ internal class UniformUpdate<TComp, TUniform, TArg> : ComponentStorage<TComp>
 public class UniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IUniformComponent<TUniform, TArg>
 {
-    /// <inheritdoc/>
-    public object Create() => new UniformUpdate<TComp, TUniform, TArg>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new UniformUpdate<TComp, TUniform, TArg>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new UniformUpdate<TComp, TUniform, TArg>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new UniformUpdate<TComp, TUniform, TArg>(capacity);
 }

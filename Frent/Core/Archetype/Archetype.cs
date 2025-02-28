@@ -232,6 +232,12 @@ internal partial class Archetype
         return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) << 7) != 0;
     }
 
+    internal Fields Data => new Fields()
+    {
+        Map = ComponentTagTable,
+        Components = Components,
+    };
+
     internal Span<EntityIDOnly> GetEntitySpan()
     {
         Debug.Assert(_componentIndex <= _entities.Length);
@@ -243,4 +249,17 @@ internal partial class Archetype
     }
 
     internal ref EntityIDOnly GetEntityDataReference() => ref MemoryMarshal.GetArrayDataReference(_entities);
+
+    internal struct Fields
+    {
+        internal byte[] Map;
+        internal ComponentStorageBase[] Components;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal ref T GetComponentDataReference<T>()
+        {
+            int index = Map.UnsafeArrayIndex(Component<T>.ID.RawIndex);
+            return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
+        }
+    }
 }

@@ -37,8 +37,11 @@ public static class GenerationServices
     /// <summary>
     /// Used only for source generation
     /// </summary>
-    public static void RegisterType(Type type, IComponentStorageBaseFactory value)
+    public static void RegisterType(Type type, object fact)
     {
+        if (fact is not IComponentStorageBaseFactory value)
+            throw new InvalidOperationException("Source generation appears to be broken. This method should not be called from user code!");
+
         if (UserGeneratedTypeMap.TryGetValue(type, out var val))
         {
             if (val.Factory.GetType() != value.GetType())

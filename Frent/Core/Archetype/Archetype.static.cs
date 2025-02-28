@@ -5,11 +5,12 @@ using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace Frent.Core;
 
-[Variadic("            runners[map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits] = Component<T>.CreateInstance();",
-    "|            runners[map.UnsafeArrayIndex(Component<T$>.ID.RawIndex) & GlobalWorldTables.IndexBits] = Component<T$>.CreateInstance();\n|")]
+[Variadic("            i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0);",
+    "|            i = map.UnsafeArrayIndex(Component<T$>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T$>.CreateInstance(1); tmpStorages[i] = Component<T$>.CreateInstance(0);\n|")]
 [Variadic("Archetype<T>", "Archetype<|T$, |>")]
 [Variadic("typeof(T)", "|typeof(T$), |")]
 [Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
@@ -24,21 +25,25 @@ internal static class Archetype<T>
     {
         var index = ID.RawIndex;
         ref Archetype archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
-        if (archetype is null)
-            CreateArchetype(out archetype, world);
+        archetype ??= CreateArchetype(world);
         return archetype!;
 
         //this method is literally only called once per world
         [MethodImpl(MethodImplOptions.NoInlining)]
-        static void CreateArchetype(out Archetype archetype, World world)
+        static Archetype CreateArchetype(World world)
         {
             ComponentStorageBase[] runners = new ComponentStorageBase[ArchetypeComponentIDs.Length + 1];
+            ComponentStorageBase[] tmpStorages = new ComponentStorageBase[runners.Length];
             byte[] map = GlobalWorldTables.ComponentTagLocationTable[ID.RawIndex];
 
-            runners[map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits] = Component<T>.CreateInstance();
+            int i;
 
-            archetype = new Archetype(ID, runners);
+            i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0);
+
+            Archetype archetype = new Archetype(ID, runners, tmpStorages);
+
             world.ArchetypeAdded(archetype.ID);
+            return archetype;
         }
     }
 
@@ -70,10 +75,16 @@ partial class Archetype
 
         var types = id.Types;
         ComponentStorageBase[] componentRunners = new ComponentStorageBase[types.Length + 1];
+        ComponentStorageBase[] tmpRunners = new ComponentStorageBase[types.Length + 1];
         for (int i = 1; i < componentRunners.Length; i++)
-            componentRunners[i] = Component.GetComponentRunnerFromType(types[i - 1].Type);
+        {
+            var fact = Component.GetComponentFactoryFromType(types[i - 1].Type);
+            componentRunners[i] = fact.Create(1);
+            tmpRunners[i] = fact.Create(0);
 
-        archetype = new Archetype(id, componentRunners);
+        }
+
+        archetype = new Archetype(id, componentRunners, tmpRunners);
         world.ArchetypeAdded(archetype.ID);
 
         return archetype;

@@ -39,7 +39,6 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
             downItem = default;
         }
     }
-
     internal override void PullComponentFrom(IDTable storage, int me, int other)
     {
         ref var item = ref ((IDTable<TComponent>)storage).Buffer[other];
@@ -74,7 +73,7 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
 }
 
 #if MANAGED_COMPONENTS || TRUE
-internal unsafe abstract partial class ComponentStorage<TComponent>
+internal unsafe abstract partial class ComponentStorage<TComponent>(int length) : ComponentStorageBase(length == 0 ? [] : new TComponent[length])
 {
     public ref TComponent this[int index]
     {
@@ -83,11 +82,6 @@ internal unsafe abstract partial class ComponentStorage<TComponent>
         {
             return ref TypedBuffer.UnsafeArrayIndex(index);
         }
-    }
-
-    public ComponentStorage() : base(new TComponent[1])
-    {
-
     }
 
     private ref TComponent[] TypedBuffer => ref Unsafe.As<Array, TComponent[]>(ref _buffer);

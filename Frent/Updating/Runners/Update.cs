@@ -9,7 +9,7 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class Update<TComp> : ComponentStorage<TComp>
+internal class Update<TComp>(int cap) : ComponentStorage<TComp>(cap)
     where TComp : IComponent
 {
     internal override void Run(World world, Archetype b)
@@ -32,18 +32,16 @@ internal class Update<TComp> : ComponentStorage<TComp>
 public class UpdateRunnerFactory<TComp> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IComponent
 {
-    /// <inheritdoc/>
-    public object Create() => new Update<TComp>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new Update<TComp>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new Update<TComp>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new Update<TComp>(capacity);
 }
 
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class Update<TComp, TArg> : ComponentStorage<TComp>
+internal class Update<TComp, TArg>(int cap) : ComponentStorage<TComp>(cap)
     where TComp : IComponent<TArg>
 {
     internal override void Run(World world, Archetype b)
@@ -71,9 +69,7 @@ internal class Update<TComp, TArg> : ComponentStorage<TComp>
 public class UpdateRunnerFactory<TComp, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IComponent<TArg>
 {
-    /// <inheritdoc/>
-    public object Create() => new Update<TComp, TArg>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new Update<TComp, TArg>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new Update<TComp, TArg>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new Update<TComp, TArg>(capacity);
 }

@@ -11,7 +11,7 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUniformUpdate<TComp, TUniform> : ComponentStorage<TComp>
+internal class EntityUniformUpdate<TComp, TUniform>(int len) : ComponentStorage<TComp>(len)
     where TComp : IEntityUniformComponent<TUniform>
 {
     internal override void Run(World world, Archetype b)
@@ -40,11 +40,9 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentStorage<TComp>
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform>
 {
-    /// <inheritdoc/>
-    public object Create() => new EntityUniformUpdate<TComp, TUniform>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new EntityUniformUpdate<TComp, TUniform>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new EntityUniformUpdate<TComp, TUniform>(capacity);
 }
 
 /// <inheritdoc cref="IComponentStorageBaseFactory"/>
@@ -52,7 +50,7 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentStora
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentStorage<TComp>
+internal class EntityUniformUpdate<TComp, TUniform, TArg>(int capacity) : ComponentStorage<TComp>(capacity)
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
     //maybe field acsesses can be optimzed???
@@ -106,9 +104,7 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentStorage<TCo
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
-    /// <inheritdoc/>
-    public object Create() => new EntityUniformUpdate<TComp, TUniform, TArg>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUniformUpdate<TComp, TUniform, TArg>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new EntityUniformUpdate<TComp, TUniform, TArg>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new EntityUniformUpdate<TComp, TUniform, TArg>(capacity);
 }

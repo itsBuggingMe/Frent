@@ -1,4 +1,5 @@
-﻿using Frent.Updating.Runners;
+﻿using Frent.Collections;
+using Frent.Updating.Runners;
 
 namespace Frent.Updating;
 
@@ -6,19 +7,19 @@ namespace Frent.Updating;
 /// Defines an object for creating component runners
 /// </summary>
 /// <remarks>Used only in source generation</remarks>
-public interface IComponentStorageBaseFactory
+internal interface IComponentStorageBaseFactory
 {
     /// <summary>
     /// Used only in source generation
     /// </summary>
-    public object Create();
+    internal ComponentStorageBase Create(int capacity);
     /// <summary>
     /// Used only in source generation
     /// </summary>
-    public object CreateStack();
+    internal IDTable CreateStack();
 }
 
 internal interface IComponentStorageBaseFactory<T>
 {
-    internal ComponentStorage<T> CreateStronglyTyped();
+    internal ComponentStorage<T> CreateStronglyTyped(int capacity);
 }

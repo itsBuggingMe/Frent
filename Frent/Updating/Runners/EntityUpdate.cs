@@ -9,7 +9,7 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUpdate<TComp> : ComponentStorage<TComp>
+internal class EntityUpdate<TComp>(int capacity) : ComponentStorage<TComp>(capacity)
     where TComp : IEntityComponent
 {
     internal override void Run(World world, Archetype b)
@@ -37,18 +37,16 @@ internal class EntityUpdate<TComp> : ComponentStorage<TComp>
 public class EntityUpdateRunnerFactory<TComp> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityComponent
 {
-    /// <inheritdoc/>
-    public object Create() => new EntityUpdate<TComp>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new EntityUpdate<TComp>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new EntityUpdate<TComp>(capacity);
 }
 
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class EntityUpdate<TComp, TArg> : ComponentStorage<TComp>
+internal class EntityUpdate<TComp, TArg>(int capacity) : ComponentStorage<TComp>(capacity)
     where TComp : IEntityComponent<TArg>
 {
     internal override void Run(World world, Archetype b)
@@ -81,9 +79,7 @@ internal class EntityUpdate<TComp, TArg> : ComponentStorage<TComp>
 public class EntityUpdateRunnerFactory<TComp, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityComponent<TArg>
 {
-    /// <inheritdoc/>
-    public object Create() => new EntityUpdate<TComp, TArg>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp, TArg>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new EntityUpdate<TComp, TArg>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new EntityUpdate<TComp, TArg>(capacity);
 }
