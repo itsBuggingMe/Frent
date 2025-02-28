@@ -85,10 +85,7 @@ internal unsafe abstract partial class ComponentStorage<TComponent>
         }
     }
 
-    public ComponentStorage() : base(new TComponent[1], 
-        RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>() ? 
-        -1 : 
-        Unsafe.SizeOf<TComponent>())
+    public ComponentStorage() : base(new TComponent[1])
     {
 
     }
@@ -100,12 +97,13 @@ internal unsafe abstract partial class ComponentStorage<TComponent>
         Array.Resize(ref TypedBuffer, size);
     }
 
-    public Span<TComponent> AsSpan() => TypedBuffer;
 
 #if NET481
     public Span<TComponent> AsSpan(int length) => TypedBuffer.AsSpan(length);
+    public Span<TComponent> AsSpan() => TypedBuffer;
 #else
     public Span<TComponent> AsSpan(int length) => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(TypedBuffer), length);
+    public Span<TComponent> AsSpan() => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(TypedBuffer), TypedBuffer.Length);
 #endif
 
     public ref TComponent GetComponentStorageDataReference() => ref MemoryMarshal.GetArrayDataReference(TypedBuffer);

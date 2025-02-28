@@ -98,9 +98,12 @@ partial class World
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
 
-        EntityFlags flags = currentLookup.Location.Flags | WorldEventFlags;
+        bool hasGenericRemoveEvent = EntityLocation.HasEventFlag(currentLookup.Location.Flags, EntityFlags.RemoveGenericComp);
 
         int writeToIndex = 0;
+
+        DeleteComponentData deleteData = new DeleteComponentData(currentLookup.Location.Index, deletedIndex);
+
         for (int i = 0; i < fromComponents.Length;)
         {
             ComponentID componentToMoveFromFromToTo = fromComponents[i];
@@ -111,10 +114,12 @@ partial class World
             if(toIndex == 0)
             {
                 var runner = fromRunners.UnsafeArrayIndex(i);
-                if (EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp))
-                    componentHandles.UnsafeSpanIndex(writeToIndex++) = runner.Store(currentLookup.Location.Index);
-
-                runner.Delete(new DeleteComponentData(currentLookup.Location.Index, deletedIndex));
+                ref ComponentHandle writeTo = ref componentHandles.UnsafeSpanIndex(writeToIndex++);
+                if (hasGenericRemoveEvent)
+                    writeTo = runner.Store(currentLookup.Location.Index);
+                else//kinda illegal but whatever
+                    writeTo = new ComponentHandle(0, componentToMoveFromFromToTo);
+                runner.Delete(deleteData);
             }
             else
             {
@@ -125,7 +130,7 @@ partial class World
         EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
         currentLookup.Location = nextLocation;
 
-        if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp | EntityFlags.WorldRemoveComp))
+        if(EntityLocation.HasEventFlag(currentLookup.Location.Flags | WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
         {
             if(ComponentRemovedEvent.HasListeners)
             {
@@ -133,7 +138,7 @@ partial class World
                     ComponentRemovedEvent.Invoke(entity, handle.ComponentID);
             }
 
-            if(EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp))
+            if(EntityLocation.HasEventFlag(currentLookup.Location.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
             {
 #if NET481
                 var lookup = EventLookup[entity.EntityIDOnly];
@@ -141,14 +146,24 @@ partial class World
                 ref var lookup = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
 #endif
 
-                foreach (var handle in componentHandles)
+                if(hasGenericRemoveEvent)
                 {
-                    lookup.Remove.NormalEvent.Invoke(entity, handle.ComponentID);
-                    handle.InvokeComponentEventAndConsume(entity, lookup.Remove.GenericEvent);
+                    foreach (var handle in componentHandles)
+                    {
+                        lookup.Remove.NormalEvent.Invoke(entity, handle.ComponentID);
+                        handle.InvokeComponentEventAndConsume(entity, lookup.Remove.GenericEvent);
+                    }
+                }
+                else
+                {
+                    //no need to dispose here, as they were never created
+                    foreach (var handle in componentHandles)
+                    {
+                        lookup.Remove.NormalEvent.Invoke(entity, handle.ComponentID);
+                    }
                 }
             }
 
-            //no need to dispose here, as they were never created
         }
     }
 
@@ -188,7 +203,7 @@ partial class World
     internal void DeleteEntity(Entity entity, ref EntityLookup entityLocation)
     {
         EntityFlags check = entityLocation.Location.Flags | WorldEventFlags;
-        if ((check & EntityFlags.AllEvents) != 0)
+        if ((check & EntityFlags.Events) != 0)
             InvokeDeleteEvents(entity, entityLocation.Location);
         DeleteEntityWithoutEvents(entity, ref entityLocation);
     }

@@ -3,6 +3,7 @@ using Frent.Core;
 using Frent;
 using Frent.Systems;
 using static Frent.Benchmarks.Program;
+using Frent.Updating;
 
 namespace Frent.Benchmarks;
 
@@ -32,18 +33,33 @@ public class MicroBenchmark
     public void Setup()
     {
         _world = new World();
-        _entity = _world.Create<int, double, long, float, Half>(default, default, default, default, default);
+        _entity = _world.Create<Component1, Component2, Component3>(default, default, default);
         _entities = new Entity[Count];
         for (int i = 0; i < _entities.Length; i++)
         {
-            _entities[i] = _world.Create<int, double, long, float, Half>(default, default, default, default, default);
+            _entities[i] = _world.Create<Component1, Component2, Component3>(default, default, default);
         }
 
         foreach (var entity in _entities)
         {
-            entity.Remove<int, double>();
-            entity.Add<int, double>(default, default);
+            entity.Remove<Component1>();
+            entity.Add<Component1>(default);
         }
+    }
+
+    [Benchmark]
+    public void Decon()
+    {
+        foreach(var entity in _entities)
+        {
+            entity.Deconstruct<Component1, Component2, Component3>(out var _, out var _, out var _);
+        }
+    }
+
+    [Benchmark]
+    public void Norm()
+    {
+
     }
 
     /*

@@ -370,6 +370,7 @@ partial struct Entity
         {
             if (!InternalIsAlive(out var world, out _))
                 return null;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.AddGenericComp;
             return world.EventLookup.GetOrAddNew(EntityIDOnly).Add.GenericEvent ??= new();
         }
     }
@@ -384,6 +385,7 @@ partial struct Entity
         {
             if (!InternalIsAlive(out var world, out _))
                 return null;
+            world.EntityTable[EntityID].Location.Flags |= EntityFlags.RemoveGenericComp;
             return world.EventLookup.GetOrAddNew(EntityIDOnly).Remove.GenericEvent ??= new();
         }
     }

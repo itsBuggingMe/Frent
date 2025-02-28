@@ -8,4 +8,9 @@ public static class EntityMarshal
     {
         return GlobalWorldTables.Worlds.UnsafeIndexNoResize(entity.EntityID);
     }
+
+    public static int EntityID(Entity entity)
+    {
+        return entity.EntityID;
+    }
 }

@@ -24,10 +24,10 @@ internal class EntityTests
             That(o, Is.EqualTo(1));
             if (t == typeof(int))
                 Pass();
-            Fail();
         });
 
         entity.Add(1);
+        Fail();
     }
 
     [Test]
@@ -42,10 +42,10 @@ internal class EntityTests
 
             if (t == typeof(int))
                 Pass();
-            Fail();
         });
 
         entity.Remove<int>();
+        Fail();
     }
 
     [Test]
@@ -59,10 +59,10 @@ internal class EntityTests
             That(t.Get<int>(), Is.EqualTo(1));
             if (o.Type == typeof(int))
                 Pass();
-            Fail();
         };
 
         entity.Add(1);
+        Fail();
     }
 
     [Test]
@@ -75,10 +75,10 @@ internal class EntityTests
         {
             if (o.Type == typeof(int))
                 Pass();
-            Fail();
         };
 
         entity.Remove<int>();
+        Fail();
     }
 
     [Test]

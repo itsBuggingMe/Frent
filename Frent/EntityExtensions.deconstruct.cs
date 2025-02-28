@@ -12,9 +12,9 @@ namespace Frent;
 /// Deconstruction extensions for entities.
 /// </summary>
 [Variadic("Deconstruct<T>", "Deconstruct<|T$, |>", 8)]
-[Variadic("out Ref<T> comp", "|out Ref<T$> comp$, |", 8)]
+[Variadic("out Ref<T> comp", "|out Ref<T$> comp$, |")]
 [Variadic("        comp = GetComp<T>(archetypeTable, comps, eloc.Index);",
-    "|        comp$ = GetComp<T$>(archetypeTable, comps, eloc.Index);|", 8)]
+    "|        comp$ = GetComp<T$>(archetypeTable, comps, eloc.Index);\n|")]
 public static partial class EntityExtensions
 {
     /// <summary>
@@ -22,7 +22,6 @@ public static partial class EntityExtensions
     /// </summary>
     /// <exception cref="InvalidOperationException">The entity is not alive.</exception>
     /// <exception cref="ComponentNotFoundException">The entity does not have all the components specified.</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Deconstruct<T>(this Entity e, out Ref<T> comp)
     {
         EntityLocation eloc = e.AssertIsAlive(out _).Location;

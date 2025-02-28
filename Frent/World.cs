@@ -87,13 +87,13 @@ public partial class World : IDisposable
         add
         {
             EntityDeletedEvent.Add(value);
-            WorldEventFlags |= EntityFlags.WorldOnDelete;
+            WorldEventFlags |= EntityFlags.OnDelete;
         } 
         remove
         {
             EntityDeletedEvent.Remove(value);
             if(!EntityDeletedEvent.HasListeners)
-                WorldEventFlags &= ~EntityFlags.WorldOnDelete;
+                WorldEventFlags &= ~EntityFlags.OnDelete;
         }
     }
 
@@ -102,8 +102,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, ComponentID> ComponentAdded
     {
-        add => AddEvent(ref ComponentAddedEvent, value, EntityFlags.WorldAddComp);
-        remove => RemoveEvent(ref ComponentAddedEvent, value, EntityFlags.WorldAddComp);
+        add => AddEvent(ref ComponentAddedEvent, value, EntityFlags.AddComp);
+        remove => RemoveEvent(ref ComponentAddedEvent, value, EntityFlags.AddComp);
     }
 
     /// <summary>
@@ -111,8 +111,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, ComponentID> ComponentRemoved
     {
-        add => AddEvent(ref ComponentRemovedEvent, value, EntityFlags.WorldRemoveComp);
-        remove => RemoveEvent(ref ComponentRemovedEvent, value, EntityFlags.WorldRemoveComp);
+        add => AddEvent(ref ComponentRemovedEvent, value, EntityFlags.RemoveComp);
+        remove => RemoveEvent(ref ComponentRemovedEvent, value, EntityFlags.RemoveComp);
     }
 
     /// <summary>
@@ -120,8 +120,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, TagID> TagTagged
     {
-        add => AddEvent(ref Tagged, value, EntityFlags.WorldTagged);
-        remove => RemoveEvent(ref Tagged, value, EntityFlags.WorldTagged);
+        add => AddEvent(ref Tagged, value, EntityFlags.Tagged);
+        remove => RemoveEvent(ref Tagged, value, EntityFlags.Tagged);
     }
 
     /// <summary>
@@ -129,8 +129,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, TagID> TagDetached
     {
-        add => AddEvent(ref Detached, value, EntityFlags.WorldDetach);
-        remove => RemoveEvent(ref Detached, value, EntityFlags.WorldDetach);
+        add => AddEvent(ref Detached, value, EntityFlags.Detach);
+        remove => RemoveEvent(ref Detached, value, EntityFlags.Detach);
     }
 
     private void AddEvent<T>(ref Event<T> @event, Action<Entity, T> action, EntityFlags flag)

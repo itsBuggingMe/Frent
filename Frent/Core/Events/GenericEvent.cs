@@ -52,27 +52,26 @@ public class GenericEvent
     //I don't think its violating "DO NOT be cute when defining operator overloads." since its what event does.
     public static GenericEvent? operator +(GenericEvent? left, IGenericAction<Entity> right)
     {
-        if (right is not null)
+        if (left is null)
+            return null;
+
+        if (left._first is null)
         {
-            if (left is null)
-            {
-                left = new();
-                left._first = right;
-            }
-            else
-            {
-                left._invokationList.Push(right);
-            }
+            left._first = right;
+        }
+        else
+        {
+            left._invokationList.Push(right);
         }
         return left;
     }
 
     public static GenericEvent? operator -(GenericEvent? left, IGenericAction<Entity> right)
     {
-        if (left is not null && right is not null)
-        {
-            left.Remove(right);
-        }
+        if (left is null)
+            return null;
+        
+        left.Remove(right);
         return left;
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Frent.Buffers;
 using System.Buffers;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -96,6 +97,27 @@ internal static class MemoryHelpers
         return res ??= new();
 #endif
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void CopyBlock<TBlock>(ref byte destination, ref byte source)
+        where TBlock : struct
+    {
+        Debug.Assert(
+            typeof(TBlock) == typeof(Block2) 
+            || typeof(TBlock) == typeof(Block4)
+            || typeof(TBlock) == typeof(Block8)
+            || typeof(TBlock) == typeof(Block16));
+        Unsafe.As<byte, TBlock>(ref destination) = Unsafe.As<byte, TBlock>(ref destination);
+    }
+
+    [StructLayout(LayoutKind.Sequential, Size = 2)]
+    internal struct Block2;
+    [StructLayout(LayoutKind.Sequential, Size = 4)]
+    internal struct Block4;
+    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    internal struct Block8;
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    internal struct Block16;
 }
 
 internal static class MemoryHelpers<T>
