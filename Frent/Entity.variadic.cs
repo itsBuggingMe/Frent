@@ -37,6 +37,11 @@ partial struct Entity
     //2. dictionary lookup
     //3. find existing archetype
     //4. create new archetype
+
+    /// <summary>
+    /// Adds a component to this <see cref="Entity"/>.
+    /// </summary>
+    /// <remarks>If the world is being updated, changed are deffered to the end of the world update.</remarks>
     [SkipLocalsInit]
     public void Add<T>(in T c1)
     {
@@ -79,6 +84,10 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Removes a component from this <see cref="Entity"/>
+    /// </summary>
+    /// <inheritdoc cref="Add{T}(in T)"/>
     [SkipLocalsInit]
     public void Remove<T>()
     {
@@ -101,6 +110,10 @@ partial struct Entity
         //world.MoveEntityToArchetypeRemove invokes the events for us
     }
 
+    /// <summary>
+    /// Adds a tag to this <see cref="Entity"/>
+    /// </summary>
+    /// <inheritdoc cref="Add{T}(in T)"/>
     [SkipLocalsInit]
     public void Tag<T>()
     {
@@ -132,6 +145,10 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Removes a tag from this <see cref="Entity"/>
+    /// </summary>
+    /// <inheritdoc cref="Add{T}(in T)"/>
     [SkipLocalsInit]
     public void Detach<T>()
     {

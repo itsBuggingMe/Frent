@@ -31,6 +31,7 @@ internal class EntityUniformUpdate<TComp, TUniform> : ComponentStorage<TComp>
             comp = ref Unsafe.Add(ref comp, 1);
         }
     }
+
     internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
@@ -47,23 +48,38 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentStora
 }
 
 /// <inheritdoc cref="IComponentStorageBaseFactory"/>
-[Variadic(GetSpanFrom, GetSpanPattern)]
-[Variadic(GenArgFrom, GenArgPattern)]
-[Variadic(GetArgFrom, GetArgPattern)]
+[Variadic(GetComponentRefFrom, GetComponentRefPattern)]
+[Variadic(IncRefFrom, IncRefPattern)]
+[Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
 internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentStorage<TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
-    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b)
-    {
-        throw new NotImplementedException();
-    }
-
-
+    //maybe field acsesses can be optimzed???
     internal override void Run(World world, Archetype b)
     {
-        throw new NotImplementedException();
+        ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
+        ref TComp comp = ref GetComponentStorageDataReference();
+
+        ref TArg arg = ref b.GetComponentDataReference<TArg>();
+
+        Entity entity = world.DefaultWorldEntity;
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+
+        for (int i = b.EntityCount; i >= 0; i--)
+        {
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, uniform, ref arg);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+
+            arg = ref Unsafe.Add(ref arg, 1);
+        }
     }
+
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b)
+        => throw new NotImplementedException();
 }
 
 /*
@@ -86,7 +102,7 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg> : ComponentStorage<TCo
  */
 
 /// <inheritdoc cref="IComponentStorageBaseFactory"/>
-[Variadic(GenArgFrom, GenArgPattern)]
+[Variadic(TArgFrom, TArgPattern)]
 public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {

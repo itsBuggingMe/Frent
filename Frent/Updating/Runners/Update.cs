@@ -1,4 +1,5 @@
-﻿using Frent.Buffers;
+﻿using System.Runtime.CompilerServices;
+using Frent.Buffers;
 using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
@@ -13,10 +14,13 @@ internal class Update<TComp> : ComponentStorage<TComp>
 {
     internal override void Run(World world, Archetype b)
     {
-        Span<TComp> arr = AsSpan(b.EntityCount);
-        for(int i = 0; i < arr.Length; i++)
+        ref TComp comp = ref GetComponentStorageDataReference();
+
+        for(int i = b.EntityCount; i >= 0; i--)
         {
-            arr[i].Update();
+            comp.Update();
+
+            comp = ref Unsafe.Add(ref comp, 1);
         }
     }
 
@@ -35,21 +39,27 @@ public class UpdateRunnerFactory<TComp> : IComponentStorageBaseFactory, ICompone
     ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new Update<TComp>();
 }
 
-[Variadic(GetSpanFrom, GetSpanPattern)]
-[Variadic(GenArgFrom, GenArgPattern)]
-[Variadic(GetArgFrom, GetArgPattern)]
+[Variadic(GetComponentRefFrom, GetComponentRefPattern)]
+[Variadic(IncRefFrom, IncRefPattern)]
+[Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
 internal class Update<TComp, TArg> : ComponentStorage<TComp>
     where TComp : IComponent<TArg>
 {
     internal override void Run(World world, Archetype b)
     {
-        Span<TComp> comps = AsSpan(b.EntityCount);
-        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
-        for(int i = 0; i < comps.Length; i++)
+        ref TComp comp = ref GetComponentStorageDataReference();
+
+        ref TArg arg = ref b.GetComponentDataReference<TArg>();
+
+        for (int i = b.EntityCount; i >= 0; i--)
         {
-            comps[i].Update(ref arg[i]);
-        }    
+            comp.Update(ref arg);
+
+            comp = ref Unsafe.Add(ref comp, 1);
+
+            arg = ref Unsafe.Add(ref arg, 1);
+        }
     }
 
     internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
@@ -57,7 +67,7 @@ internal class Update<TComp, TArg> : ComponentStorage<TComp>
 }
 
 /// <inheritdoc cref="IComponentStorageBaseFactory"/>
-[Variadic(GenArgFrom, GenArgPattern)]
+[Variadic(TArgFrom, TArgPattern)]
 public class UpdateRunnerFactory<TComp, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IComponent<TArg>
 {

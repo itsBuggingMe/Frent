@@ -116,8 +116,7 @@ public partial struct Entity : IEquatable<Entity>
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
+    private static void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
     internal string DebuggerDisplayString => IsNull ? "Null" : InternalIsAlive(out _, out _) ? $"World: {WorldID}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;

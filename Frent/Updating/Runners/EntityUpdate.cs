@@ -1,4 +1,5 @@
-﻿using Frent.Buffers;
+﻿using System.Runtime.CompilerServices;
+using Frent.Buffers;
 using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
@@ -13,13 +14,18 @@ internal class EntityUpdate<TComp> : ComponentStorage<TComp>
 {
     internal override void Run(World world, Archetype b)
     {
-        Span<TComp> comps = AsSpan(b.EntityCount);
-        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
+        ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
+        ref TComp comp = ref GetComponentStorageDataReference();
+
         Entity entity = world.DefaultWorldEntity;
-        for(int i = 0; i < comps.Length; i++)
+
+        for (int i = b.EntityCount; i >= 0; i--)
         {
-            entities[i].SetEntity(ref entity);
-            comps[i].Update(entity);
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
         }
     }
     
@@ -38,23 +44,31 @@ public class EntityUpdateRunnerFactory<TComp> : IComponentStorageBaseFactory, IC
     ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped() => new EntityUpdate<TComp>();
 }
 
-[Variadic(GetSpanFrom, GetSpanPattern)]
-[Variadic(GenArgFrom, GenArgPattern)]
-[Variadic(GetArgFrom, GetArgPattern)]
+[Variadic(GetComponentRefFrom, GetComponentRefPattern)]
+[Variadic(IncRefFrom, IncRefPattern)]
+[Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
 internal class EntityUpdate<TComp, TArg> : ComponentStorage<TComp>
     where TComp : IEntityComponent<TArg>
 {
     internal override void Run(World world, Archetype b)
     {
-        Span<TComp> comps = AsSpan(b.EntityCount);
-        Span<EntityIDOnly> entities = b.GetEntitySpan()[..comps.Length];
+        ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
+        ref TComp comp = ref GetComponentStorageDataReference();
+
+        ref TArg arg = ref b.GetComponentDataReference<TArg>();
+
         Entity entity = world.DefaultWorldEntity;
-        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
-        for(int i = 0; i < comps.Length; i++)
+
+        for (int i = b.EntityCount; i >= 0; i--)
         {
-            entities[i].SetEntity(ref entity);
-            comps[i].Update(entity, ref arg[i]);
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, ref arg);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+
+            arg = ref Unsafe.Add(ref arg, 1);
         }
     }
 
@@ -63,7 +77,7 @@ internal class EntityUpdate<TComp, TArg> : ComponentStorage<TComp>
 }
 
 /// <inheritdoc cref="IComponentStorageBaseFactory"/>
-[Variadic(GenArgFrom, GenArgPattern)]
+[Variadic(TArgFrom, TArgPattern)]
 public class EntityUpdateRunnerFactory<TComp, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IEntityComponent<TArg>
 {
