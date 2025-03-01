@@ -24,10 +24,10 @@ internal class EntityTests
             That(o, Is.EqualTo(1));
             if (t == typeof(int))
                 Pass();
-            Fail();
         });
 
         entity.Add(1);
+        Fail();
     }
 
     [Test]
@@ -42,10 +42,10 @@ internal class EntityTests
 
             if (t == typeof(int))
                 Pass();
-            Fail();
         });
 
         entity.Remove<int>();
+        Fail();
     }
 
     [Test]
@@ -59,10 +59,10 @@ internal class EntityTests
             That(t.Get<int>(), Is.EqualTo(1));
             if (o.Type == typeof(int))
                 Pass();
-            Fail();
         };
 
         entity.Add(1);
+        Fail();
     }
 
     [Test]
@@ -75,10 +75,10 @@ internal class EntityTests
         {
             if (o.Type == typeof(int))
                 Pass();
-            Fail();
         };
 
         entity.Remove<int>();
+        Fail();
     }
 
     [Test]
@@ -262,6 +262,18 @@ internal class EntityTests
         e.Remove(Component<Struct2>.ID);
 
         That(e.ComponentTypes, Has.Length.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveMany_RetainValue()
+    {
+        using World world = new();
+        var e = world.Create(69, 42.0, new Struct1(), new Struct2(), new Struct3());
+
+        e.Remove<int, Struct1, Struct2, Struct3>();
+
+        That(e.Get<double>(), Is.EqualTo(42.0));
+        That(e.ComponentTypes.Length, Is.EqualTo(1));
     }
 
     [Test]

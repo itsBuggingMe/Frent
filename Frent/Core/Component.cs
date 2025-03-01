@@ -20,12 +20,12 @@ public static class Component<T>
     public static ComponentID ID => _id;
 
     private static readonly ComponentID _id;
-    private static readonly IComponentRunnerFactory<T> RunnerInstance;
+    private static readonly IComponentStorageBaseFactory<T> RunnerInstance;
     internal static readonly IDTable<T> GeneralComponentStorage;
     internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
     internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
 
-    internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(T).IsAssignableTo(typeof(IDestroyable));
+    internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
 
     public static ComponentHandle StoreComponent(in T component)
     {
@@ -39,7 +39,7 @@ public static class Component<T>
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
         {
-            if (type.Factory is IComponentRunnerFactory<T> casted)
+            if (type.Factory is IComponentStorageBaseFactory<T> casted)
             {
                 RunnerInstance = casted;
                 return;
@@ -53,7 +53,7 @@ public static class Component<T>
         RunnerInstance = fac;
     }
 
-    internal static IComponentRunner<T> CreateInstance() => RunnerInstance.CreateStronglyTyped();
+    internal static ComponentStorage<T> CreateInstance(int cap) => RunnerInstance.CreateStronglyTyped(cap);
 }
 
 /// <summary>
@@ -78,21 +78,21 @@ public static class Component
 {
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
 
-    internal static Dictionary<Type, IComponentRunnerFactory> NoneComponentRunnerTable = [];
+    internal static Dictionary<Type, IComponentStorageBaseFactory> NoneComponentRunnerTable = [];
 
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
 
     private static int NextComponentID = -1;
 
-    internal static IComponentRunner GetComponentRunnerFromType(Type t)
+    internal static IComponentStorageBaseFactory GetComponentFactoryFromType(Type t)
     {
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var type))
         {
-            return (IComponentRunner)type.Factory.Create();
+            return type.Factory;
         }
         if (NoneComponentRunnerTable.TryGetValue(t, out var t1))
         {
-            return (IComponentRunner)t1.Create();
+            return t1;
         }
 
         Throw_ComponentTypeNotInit(t);
@@ -188,7 +188,7 @@ public static class Component
     [DoesNotReturn]
     private static void Throw_ComponentTypeNotInit(Type t)
     {
-        if (t.IsAssignableTo(typeof(IComponentBase)))
+        if (typeof(IComponentBase).IsAssignableFrom(t))
         {
             throw new InvalidOperationException($"{t.FullName} is not initalized. (Is the source generator working?)");
         }

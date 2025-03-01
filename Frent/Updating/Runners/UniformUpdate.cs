@@ -1,4 +1,5 @@
-﻿using Frent.Buffers;
+﻿using System.Runtime.CompilerServices;
+using Frent.Buffers;
 using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
@@ -8,62 +9,68 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class UniformUpdate<TComp, TUniform> : ComponentRunnerBase<UniformUpdate<TComp, TUniform>, TComp>
+internal class UniformUpdate<TComp, TUniform>(int cap) : ComponentStorage<TComp>(cap)
     where TComp : IUniformComponent<TUniform>
 {
-    public override void Run(World world, Archetype b)
+    internal override void Run(World world, Archetype b)
     {
+        ref TComp comp = ref GetComponentStorageDataReference();
+
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-        Span<TComp> comps = AsSpan(b.EntityCount);
-        for(int i = 0; i < comps.Length; i++)
+
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
-            comps[i].Update(uniform);
+            comp.Update(uniform);
+
+            comp = ref Unsafe.Add(ref comp, 1);
         }
     }
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
-public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IUniformComponent<TUniform>
 {
-    /// <inheritdoc/>
-    public object Create() => new UniformUpdate<TComp, TUniform>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new UniformUpdate<TComp, TUniform>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new UniformUpdate<TComp, TUniform>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new UniformUpdate<TComp, TUniform>(capacity);
 }
 
-[Variadic(GetSpanFrom, GetSpanPattern)]
-[Variadic(GenArgFrom, GenArgPattern)]
-[Variadic(GetArgFrom, GetArgPattern)]
+[Variadic(GetComponentRefFrom, GetComponentRefPattern)]
+[Variadic(IncRefFrom, IncRefPattern)]
+[Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class UniformUpdate<TComp, TUniform, TArg> : ComponentRunnerBase<UniformUpdate<TComp, TUniform, TArg>, TComp>
+internal class UniformUpdate<TComp, TUniform, TArg>(int capacity) : ComponentStorage<TComp>(capacity)
     where TComp : IUniformComponent<TUniform, TArg>
 {
-    public override void Run(World world, Archetype b)
+    internal override void Run(World world, Archetype b)
     {
-        Span<TComp> comps = AsSpan(b.EntityCount);
+        ref TComp comp = ref GetComponentStorageDataReference();
+
+        ref TArg arg = ref b.GetComponentDataReference<TArg>();
+
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
-        for(int i = 0; i < comps.Length; i++)
+
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
-            comps[i].Update(uniform, ref arg[i]);
+            comp.Update(uniform, ref arg);
+
+            comp = ref Unsafe.Add(ref comp, 1);
+            arg = ref Unsafe.Add(ref arg, 1);
         }
     }
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
-[Variadic(GenArgFrom, GenArgPattern)]
-public class UniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+[Variadic(TArgFrom, TArgPattern)]
+public class UniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IUniformComponent<TUniform, TArg>
 {
-    /// <inheritdoc/>
-    public object Create() => new UniformUpdate<TComp, TUniform, TArg>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new UniformUpdate<TComp, TUniform, TArg>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new UniformUpdate<TComp, TUniform, TArg>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new UniformUpdate<TComp, TUniform, TArg>(capacity);
 }

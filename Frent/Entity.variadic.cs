@@ -12,16 +12,14 @@ using Frent.Variadic.Generator;
 namespace Frent;
 
 [Variadic("[null!]", "[|null!, |]", 8)]
-[Variadic("            @event.Invoke(entity, Component<T>.ID);", "|            @event.Invoke(entity, Component<T$>.ID);\n|")]
-[Variadic("            @event.Invoke(entity, Core.Tag<T>.ID);", "|            @event.Invoke(entity, Core.Tag<T$>.ID);\n|")]
-[Variadic("        events.GenericEvent?.Invoke(entity, ref component);", "|        events.GenericEvent?.Invoke(entity, ref component$);\n|")]
+[Variadic("        events.GenericEvent!.Invoke(entity, ref component);", "|        events.GenericEvent!.Invoke(entity, ref component$);\n|")]
 [Variadic("        events.NormalEvent.Invoke(entity, Component<T>.ID);", "|        events.NormalEvent.Invoke(entity, Component<T$>.ID);\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.AddComponent(this, c1);", "|            world.WorldUpdateCommandBuffer.AddComponent(this, c$);\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T>.ID);", "|            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T$>.ID);\n|")]
 [Variadic("ref T component", "|ref T$ component$, |")]
 [Variadic("in T c1", "|in T$ c$, |")]
 [Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[|1 + |0]")]
-[Variadic("        @event.Invoke(entity, Component<T>.ID);", "|        @event.Invoke(entity, Component<T$>.ID);\n|")]
+[Variadic("        @event.InvokeInternal(entity, Component<T>.ID);", "|        @event.InvokeInternal(entity, Component<T$>.ID);\n|")]
 
 [Variadic("        @event.InvokeInternal(entity, Core.Tag<T>.ID);", "|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);\n|")]
 [Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
@@ -39,6 +37,11 @@ partial struct Entity
     //2. dictionary lookup
     //3. find existing archetype
     //4. create new archetype
+
+    /// <summary>
+    /// Adds a component to this <see cref="Entity"/>.
+    /// </summary>
+    /// <remarks>If the world is being updated, changed are deffered to the end of the world update.</remarks>
     [SkipLocalsInit]
     public void Add<T>(in T c1)
     {
@@ -56,27 +59,35 @@ partial struct Entity
             ref thisLookup, 
             true);
 
-        Span<IComponentRunner> buff = [null!];
+        Span<ComponentStorageBase> buff = [null!];
         world.MoveEntityToArchetypeAdd(buff, this, ref thisLookup, out EntityLocation nextLocation, to);
 
         ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
 
-        EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
-        if(EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.WorldAddComp))
+        EntityFlags flags = thisLookup.Location.Flags;
+        if(EntityLocation.HasEventFlag(flags | world.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
         {
             if(world.ComponentAddedEvent.HasListeners)
                 InvokeComponentWorldEvents<T>(ref world.ComponentAddedEvent, this);
 
-            if(EntityLocation.HasEventFlag(flags, EntityFlags.AddComp))
+            if(EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
-                ref EventRecord eventRecord = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
-                InvokePerEntityEvents(this, ref eventRecord.Add, ref c1ref);
+#if NET481
+                EventRecord events = world.EventLookup[EntityIDOnly];
+#else
+                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
+#endif
+                InvokePerEntityEvents(this, EntityLocation.HasEventFlag(thisLookup.Location.Flags, EntityFlags.AddGenericComp), ref events.Add, ref c1ref);
             }
         }
     }
 
+    /// <summary>
+    /// Removes a component from this <see cref="Entity"/>
+    /// </summary>
+    /// <inheritdoc cref="Add{T}(in T)"/>
     [SkipLocalsInit]
     public void Remove<T>()
     {
@@ -99,6 +110,10 @@ partial struct Entity
         //world.MoveEntityToArchetypeRemove invokes the events for us
     }
 
+    /// <summary>
+    /// Adds a tag to this <see cref="Entity"/>
+    /// </summary>
+    /// <inheritdoc cref="Add{T}(in T)"/>
     [SkipLocalsInit]
     public void Tag<T>()
     {
@@ -113,20 +128,27 @@ partial struct Entity
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
 
         EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
-        if(EntityLocation.HasEventFlag(flags, EntityFlags.Tagged | EntityFlags.WorldTagged))
+        if(EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
         {
             if (world.Tagged.HasListeners)
                 InvokeTagWorldEvents<T>(ref world.Tagged, this);
 
             if(EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
             {
+#if NET481
+                EventRecord events = world.EventLookup[EntityIDOnly];
+#else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
+#endif
                 InvokePerEntityTagEvents<T>(this, ref events.Tag);
             }
         }
     }
 
-
+    /// <summary>
+    /// Removes a tag from this <see cref="Entity"/>
+    /// </summary>
+    /// <inheritdoc cref="Add{T}(in T)"/>
     [SkipLocalsInit]
     public void Detach<T>()
     {
@@ -141,14 +163,18 @@ partial struct Entity
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
 
         EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
-        if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach | EntityFlags.WorldDetach))
+        if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
         {
             if(world.Detached.HasListeners)
                 InvokeTagWorldEvents<T>(ref world.Detached, this);
 
             if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
             {
+#if NET481
+                EventRecord events = world.EventLookup[EntityIDOnly];
+#else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
+#endif
                 InvokePerEntityTagEvents<T>(this, ref events.Detach);
             }
         }
@@ -156,13 +182,17 @@ partial struct Entity
 
     private static void InvokeComponentWorldEvents<T>(ref Event<ComponentID> @event, Entity entity)
     {
-        @event.Invoke(entity, Component<T>.ID);
+        @event.InvokeInternal(entity, Component<T>.ID);
     }
 
-    private static void InvokePerEntityEvents<T>(Entity entity, ref ComponentEvent events, ref T component)
+    private static void InvokePerEntityEvents<T>(Entity entity, bool hasGenericEvent, ref ComponentEvent events, ref T component)
     {
-        events.GenericEvent?.Invoke(entity, ref component);
         events.NormalEvent.Invoke(entity, Component<T>.ID);
+
+        if (!hasGenericEvent)
+            return;
+
+        events.GenericEvent!.Invoke(entity, ref component);
     }
 
     private static void InvokeTagWorldEvents<T>(ref TagEvent @event, Entity entity)

@@ -15,6 +15,7 @@ internal abstract class IDTable
     {
         _buffer = empty;
         _hasGCReferences = gcRefs;
+        _recycled = new NativeStack<int>(2);
     }
 
     public int CreateBoxed(object toStore)

@@ -1,7 +1,8 @@
 ﻿using Frent.Collections;
 
 namespace Frent.Core.Events;
-internal struct EventRecord
+
+internal class EventRecord
 {
     internal TagEvent Tag;
     internal TagEvent Detach;
@@ -13,6 +14,7 @@ internal struct EventRecord
     {
         if (!exists)
         {
+            record = new EventRecord();
             record.Tag = new TagEvent();
             record.Detach = new TagEvent();
             record.Add = new ComponentEvent();

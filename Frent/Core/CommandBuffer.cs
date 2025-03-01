@@ -16,7 +16,7 @@ public class CommandBuffer
     internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(4);
     internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(4);
     internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(4);
-    private readonly IComponentRunner[] _componentRunnerBuffer = new IComponentRunner[MemoryHelpers.MaxComponentCount];
+    private readonly ComponentStorageBase[] _componentRunnerBuffer = new ComponentStorageBase[MemoryHelpers.MaxComponentCount];
 
     internal World _world;
     //-1 indicates normal state
@@ -228,7 +228,7 @@ public class CommandBuffer
             
             if(createCommand.BufferLength > 0)
             {
-                Span<IComponentRunner> runners = _componentRunnerBuffer.AsSpan(0, createCommand.BufferLength);
+                Span<ComponentStorageBase> runners = _componentRunnerBuffer.AsSpan(0, createCommand.BufferLength);
 
                 ArchetypeID id = _world.DefaultArchetype.ID;
                 Span<ComponentHandle> handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
@@ -271,14 +271,18 @@ public class CommandBuffer
             {
                 Entity concrete = command.Entity.ToEntity(_world);
 
-                IComponentRunner runner = null!;
+                ComponentStorageBase runner = null!;
                 _world.AddComponent(concrete, ref record, command.ComponentHandle.ComponentID, ref runner, out var location);
 
                 runner.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
 
                 if (record.Location.HasEvent(EntityFlags.AddComp))
                 {
-                    ref var events = ref CollectionsMarshal.GetValueRefOrAddDefault(_world.EventLookup, command.Entity, out bool exists);
+#if NET481
+                    var events = _world.EventLookup[command.Entity];
+#else
+                    ref var events = ref CollectionsMarshal.GetValueRefOrNullRef(_world.EventLookup, command.Entity);
+#endif
                     events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
                     runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
                 }

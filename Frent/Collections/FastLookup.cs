@@ -1,9 +1,11 @@
 ﻿using Frent.Core;
 using Frent.Core.Structures;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+
+#if NET7_0_OR_GREATER
+using System.Numerics;
 using System.Runtime.Intrinsics;
+#endif
 
 namespace Frent.Collections;
 

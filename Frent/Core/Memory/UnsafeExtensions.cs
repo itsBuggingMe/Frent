@@ -22,8 +22,6 @@ internal static class UnsafeExtensions
         ref Unsafe.Add(ref MemoryMarshal.GetReference(arr), index);
     public static T UnsafeCast<T>(object o) where T : class =>
         Unsafe.As<T>(o);
-    public static Span<T> UnsafeSliceFromStart<T>(this Span<T> span, int length) =>
-        MemoryMarshal.CreateSpan(ref MemoryMarshal.GetReference(span), length);
 #else
     public static ref T UnsafeArrayIndex<T>(this T[] arr, nint index) =>
         ref arr[index];
@@ -41,7 +39,5 @@ internal static class UnsafeExtensions
         ref arr[(int)index];
     public static T UnsafeCast<T>(object o) where T : class =>
         (T)o;
-    public static Span<T> UnsafeSliceFromStart<T>(this Span<T> span, int length) =>
-        span[..length];
 #endif
 }

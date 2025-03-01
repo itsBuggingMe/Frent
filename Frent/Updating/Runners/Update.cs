@@ -1,4 +1,5 @@
-﻿using Frent.Buffers;
+﻿using System.Runtime.CompilerServices;
+using Frent.Buffers;
 using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
@@ -8,62 +9,67 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class Update<TComp> : ComponentRunnerBase<Update<TComp>, TComp>
+internal class Update<TComp>(int cap) : ComponentStorage<TComp>(cap)
     where TComp : IComponent
 {
-    public override void Run(World world, Archetype b)
+    internal override void Run(World world, Archetype b)
     {
-        Span<TComp> arr = AsSpan(b.EntityCount);
-        for(int i = 0; i < arr.Length; i++)
+        ref TComp comp = ref GetComponentStorageDataReference();
+
+        for(int i = b.EntityCount - 1; i >= 0; i--)
         {
-            arr[i].Update();
+            comp.Update();
+
+            comp = ref Unsafe.Add(ref comp, 1);
         }
     }
 
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
-public class UpdateRunnerFactory<TComp> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+public class UpdateRunnerFactory<TComp> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IComponent
 {
-    /// <inheritdoc/>
-    public object Create() => new Update<TComp>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new Update<TComp>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new Update<TComp>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new Update<TComp>(capacity);
 }
 
-[Variadic(GetSpanFrom, GetSpanPattern)]
-[Variadic(GenArgFrom, GenArgPattern)]
-[Variadic(GetArgFrom, GetArgPattern)]
+[Variadic(GetComponentRefFrom, GetComponentRefPattern)]
+[Variadic(IncRefFrom, IncRefPattern)]
+[Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class Update<TComp, TArg> : ComponentRunnerBase<Update<TComp, TArg>, TComp>
+internal class Update<TComp, TArg>(int cap) : ComponentStorage<TComp>(cap)
     where TComp : IComponent<TArg>
 {
-    public override void Run(World world, Archetype b)
+    internal override void Run(World world, Archetype b)
     {
-        Span<TComp> comps = AsSpan(b.EntityCount);
-        Span<TArg> arg = b.GetComponentSpan<TArg>()[..comps.Length];
-        for(int i = 0; i < comps.Length; i++)
+        ref TComp comp = ref GetComponentStorageDataReference();
+
+        ref TArg arg = ref b.GetComponentDataReference<TArg>();
+
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
-            comps[i].Update(ref arg[i]);
-        }    
+            comp.Update(ref arg);
+
+            comp = ref Unsafe.Add(ref comp, 1);
+
+            arg = ref Unsafe.Add(ref arg, 1);
+        }
     }
 
-    public override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
 
-/// <inheritdoc cref="IComponentRunnerFactory"/>
-[Variadic(GenArgFrom, GenArgPattern)]
-public class UpdateRunnerFactory<TComp, TArg> : IComponentRunnerFactory, IComponentRunnerFactory<TComp>
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+[Variadic(TArgFrom, TArgPattern)]
+public class UpdateRunnerFactory<TComp, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
     where TComp : IComponent<TArg>
 {
-    /// <inheritdoc/>
-    public object Create() => new Update<TComp, TArg>();
-    /// <inheritdoc/>
-    public object CreateStack() => new IDTable<TComp>();
-    IComponentRunner<TComp> IComponentRunnerFactory<TComp>.CreateStronglyTyped() => new Update<TComp, TArg>();
+    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new Update<TComp, TArg>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new Update<TComp, TArg>(capacity);
 }

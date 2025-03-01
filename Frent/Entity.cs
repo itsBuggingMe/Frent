@@ -97,7 +97,7 @@ public partial struct Entity : IEquatable<Entity>
 
     private Ref<T> TryGetCore<T>(out bool exists)
     {
-        if (!InternalIsAlive(out var world, out var entityLocation))
+        if (!InternalIsAlive(out var _, out var entityLocation))
             goto doesntExist;
 
         int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
@@ -109,29 +109,14 @@ public partial struct Entity : IEquatable<Entity>
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(
             entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex));
 
-        return new Ref<T>(ref storage[entityLocation.Index]);
+        return new Ref<T>(storage, entityLocation.Index);
 
     doesntExist:
         exists = false;
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Ref<TComp> GetComp<TComp>(scoped ref readonly EntityLocation entityLocation, IComponentRunner[] archetypeComponents)
-    {
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<TComp>.ID);
-
-        if (compIndex == 0)
-            FrentExceptions.Throw_ComponentNotFoundException(typeof(TComp));
-
-        ComponentStorage<TComp> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<TComp>>(
-            archetypeComponents.UnsafeArrayIndex(compIndex));
-
-        return new Ref<TComp>(ref storage[entityLocation.Index]);
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
+    private static void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
     internal string DebuggerDisplayString => IsNull ? "Null" : InternalIsAlive(out _, out _) ? $"World: {WorldID}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;

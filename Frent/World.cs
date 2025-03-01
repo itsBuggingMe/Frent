@@ -28,7 +28,7 @@ public partial class World : IDisposable
     internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
 
     internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
-    private Dictionary<Type, (FastStack<ComponentID> Stack, int NextComponentIndex)> _updatesByAttributes = [];
+    private Dictionary<Type, WorldUpdateFilter> _updatesByAttributes = [];
     internal int NextEntityID;
 
     internal readonly ushort ID;
@@ -41,7 +41,7 @@ public partial class World : IDisposable
     private CountdownEvent _sharedCountdown = new(0);
     private FastStack<ArchetypeID> _enabledArchetypes = FastStack<ArchetypeID>.Create(16);
 
-    private volatile int _allowStructuralChanges;
+    private int _allowStructuralChanges;
 
     internal CommandBuffer WorldUpdateCommandBuffer;
 
@@ -87,13 +87,13 @@ public partial class World : IDisposable
         add
         {
             EntityDeletedEvent.Add(value);
-            WorldEventFlags |= EntityFlags.WorldOnDelete;
+            WorldEventFlags |= EntityFlags.OnDelete;
         } 
         remove
         {
             EntityDeletedEvent.Remove(value);
             if(!EntityDeletedEvent.HasListeners)
-                WorldEventFlags &= ~EntityFlags.WorldOnDelete;
+                WorldEventFlags &= ~EntityFlags.OnDelete;
         }
     }
 
@@ -102,8 +102,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, ComponentID> ComponentAdded
     {
-        add => AddEvent(ref ComponentAddedEvent, value, EntityFlags.WorldAddComp);
-        remove => RemoveEvent(ref ComponentAddedEvent, value, EntityFlags.WorldAddComp);
+        add => AddEvent(ref ComponentAddedEvent, value, EntityFlags.AddComp);
+        remove => RemoveEvent(ref ComponentAddedEvent, value, EntityFlags.AddComp);
     }
 
     /// <summary>
@@ -111,8 +111,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, ComponentID> ComponentRemoved
     {
-        add => AddEvent(ref ComponentRemovedEvent, value, EntityFlags.WorldRemoveComp);
-        remove => RemoveEvent(ref ComponentRemovedEvent, value, EntityFlags.WorldRemoveComp);
+        add => AddEvent(ref ComponentRemovedEvent, value, EntityFlags.RemoveComp);
+        remove => RemoveEvent(ref ComponentRemovedEvent, value, EntityFlags.RemoveComp);
     }
 
     /// <summary>
@@ -120,8 +120,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, TagID> TagTagged
     {
-        add => AddEvent(ref Tagged, value, EntityFlags.WorldTagged);
-        remove => RemoveEvent(ref Tagged, value, EntityFlags.WorldTagged);
+        add => AddEvent(ref Tagged, value, EntityFlags.Tagged);
+        remove => RemoveEvent(ref Tagged, value, EntityFlags.Tagged);
     }
 
     /// <summary>
@@ -129,8 +129,8 @@ public partial class World : IDisposable
     /// </summary>
     public event Action<Entity, TagID> TagDetached
     {
-        add => AddEvent(ref Detached, value, EntityFlags.WorldDetach);
-        remove => RemoveEvent(ref Detached, value, EntityFlags.WorldDetach);
+        add => AddEvent(ref Detached, value, EntityFlags.Detach);
+        remove => RemoveEvent(ref Detached, value, EntityFlags.Detach);
     }
 
     private void AddEvent<T>(ref Event<T> @event, Action<Entity, T> action, EntityFlags flag)
@@ -240,12 +240,9 @@ public partial class World : IDisposable
 
         try
         {
-            ref var appliesTo = ref CollectionsMarshal.
-                GetValueRefOrAddDefault(_updatesByAttributes, attributeType, out bool exists);
-            if (!exists)
-            {
-                appliesTo.Stack = FastStack<ComponentID>.Create(8);
-            }
+            if(!_updatesByAttributes.TryGetValue(attributeType, out WorldUpdateFilter? appliesTo))
+                _updatesByAttributes[attributeType] = appliesTo = new WorldUpdateFilter();
+
             //fill up the table with the correct IDs
             //works for initalization as well as updating it
             for (ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
@@ -282,16 +279,21 @@ public partial class World : IDisposable
         foreach (Rule rule in rules)
             queryHash.AddRule(rule);
 
-        return CollectionsMarshal.GetValueRefOrAddDefault(QueryCache, queryHash.ToHashCode(), out _) ??= CreateQueryFromSpan([.. rules]);
-    } 
+        int hashCode = queryHash.ToHashCode();
 
-    internal void ArchetypeAdded(ArchetypeID archetype)
+        if (!QueryCache.TryGetValue(hashCode, out Query? query))
+            QueryCache[hashCode] = query = CreateQueryFromSpan([.. rules]);
+
+        return query;
+    }
+
+    internal void ArchetypeAdded(Archetype archetype)
     {
-        if (!GlobalWorldTables.HasTag(archetype, Tag<Disable>.ID))
-            _enabledArchetypes.Push(archetype);
+        if (!GlobalWorldTables.HasTag(archetype.ID, Tag<Disable>.ID))
+            _enabledArchetypes.Push(archetype.ID);
         foreach (var qkvp in QueryCache)
         {
-            qkvp.Value.TryAttachArchetype(archetype.Archetype(this));
+            qkvp.Value.TryAttachArchetype(archetype);
         }
     }
 
@@ -326,6 +328,7 @@ public partial class World : IDisposable
         }
     }
 
+#if !NET481
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EventRecord TryGetEventData(EntityLocation entityLocation, EntityIDOnly entity, EntityFlags eventType, out bool exists)
     {
@@ -339,6 +342,7 @@ public partial class World : IDisposable
         exists = false;
         return ref Unsafe.NullRef<EventRecord>();
     }
+#endif
 
     internal bool AllowStructualChanges => _allowStructuralChanges == 0;
 
@@ -385,7 +389,7 @@ public partial class World : IDisposable
         entityID.ID = entity.EntityID;
         entityID.Version = entity.EntityVersion;
 
-        Span<IComponentRunner> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
+        Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
         for (int i = 1; i < archetypeComponents.Length; i++)
         {
             archetypeComponents[i].SetAt(components[i - 1], loc.Index);

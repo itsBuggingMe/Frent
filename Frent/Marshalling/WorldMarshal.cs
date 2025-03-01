@@ -10,4 +10,10 @@ public static class WorldMarshal
         EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID).Location;
         return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(location.Archetype.Components.UnsafeArrayIndex(location.Archetype.GetComponentIndex<T>()))[location.Index];
     }
+
+    public static Span<T> GetRawBuffer<T>(World world, Entity entity)
+    {
+        EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID).Location;
+        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(location.Archetype.Components.UnsafeArrayIndex(location.Archetype.GetComponentIndex<T>())).AsSpan();
+    }
 }

@@ -5,37 +5,45 @@ using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace Frent.Core;
 
+[Variadic("            i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0);",
+    "|            i = map.UnsafeArrayIndex(Component<T$>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T$>.CreateInstance(1); tmpStorages[i] = Component<T$>.CreateInstance(0);\n|")]
 [Variadic("Archetype<T>", "Archetype<|T$, |>")]
 [Variadic("typeof(T)", "|typeof(T$), |")]
 [Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
-[Variadic("[null!, Component<T>.CreateInstance()]", "[null!, |Component<T$>.CreateInstance(), |]")]
-[Variadic("&& Component<T>.Initer is not null", "|&& Component<T$>.Initer is not null\n|")]
 internal static class Archetype<T>
 {
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
 
     //ArchetypeTypes init first, then ID
     public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeComponentIDs.AsSpan(), [], ArchetypeComponentIDs, ImmutableArray<TagID>.Empty);
-    public static readonly uint IDasUInt = ID.RawIndex;
 
     internal static Archetype CreateNewOrGetExistingArchetype(World world)
     {
-        var index = IDasUInt;
+        var index = ID.RawIndex;
         ref Archetype archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
-        if (archetype is null)
-            CreateArchetype(out archetype, world);
+        archetype ??= CreateArchetype(world);
         return archetype!;
 
         //this method is literally only called once per world
         [MethodImpl(MethodImplOptions.NoInlining)]
-        static void CreateArchetype(out Archetype archetype, World world)
+        static Archetype CreateArchetype(World world)
         {
-            IComponentRunner[] runners = [null!, Component<T>.CreateInstance()];
-            archetype = new Archetype(ID, runners);
-            world.ArchetypeAdded(archetype.ID);
+            ComponentStorageBase[] runners = new ComponentStorageBase[ArchetypeComponentIDs.Length + 1];
+            ComponentStorageBase[] tmpStorages = new ComponentStorageBase[runners.Length];
+            byte[] map = GlobalWorldTables.ComponentTagLocationTable[ID.RawIndex];
+
+            int i;
+
+            i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0);
+
+            Archetype archetype = new Archetype(ID, runners, tmpStorages);
+
+            world.ArchetypeAdded(archetype);
+            return archetype;
         }
     }
 
@@ -66,12 +74,18 @@ partial class Archetype
             return archetype;
 
         var types = id.Types;
-        IComponentRunner[] componentRunners = new IComponentRunner[types.Length + 1];
+        ComponentStorageBase[] componentRunners = new ComponentStorageBase[types.Length + 1];
+        ComponentStorageBase[] tmpRunners = new ComponentStorageBase[types.Length + 1];
         for (int i = 1; i < componentRunners.Length; i++)
-            componentRunners[i] = Component.GetComponentRunnerFromType(types[i - 1].Type);
+        {
+            var fact = Component.GetComponentFactoryFromType(types[i - 1].Type);
+            componentRunners[i] = fact.Create(1);
+            tmpRunners[i] = fact.Create(0);
 
-        archetype = new Archetype(id, componentRunners);
-        world.ArchetypeAdded(archetype.ID);
+        }
+
+        archetype = new Archetype(id, componentRunners, tmpRunners);
+        world.ArchetypeAdded(archetype);
 
         return archetype;
     }
@@ -116,6 +130,27 @@ partial class Archetype
             throw new InvalidOperationException("Entities can have a max of 127 components!");
         lock (GlobalWorldTables.BufferChangeLock)
         {
+#if NET481
+            var key = GetHash(types, tagTypes);
+            if (ExistingArchetypes.TryGetValue(key, out ArchetypeData value))
+            {
+                return value.ID;
+            }
+
+            int nextIDInt = ++NextArchetypeID;
+            if (nextIDInt == ushort.MaxValue)
+                throw new InvalidOperationException($"Exceeded maximum unique archetype count of 65535");
+            var finalID = new ArchetypeID((ushort)nextIDInt);
+
+            var arr = typesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(types);
+            var tagArr = tagTypesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(tagTypes);
+
+            var slot = new ArchetypeData(finalID, arr, tagArr);
+            ArchetypeTable.Push(slot);
+            ModifyComponentLocationTable(arr, tagArr, finalID.RawIndex);
+
+            ExistingArchetypes[key] = slot;
+#else
             ref ArchetypeData slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);
             ArchetypeID finalID;
 
@@ -138,6 +173,7 @@ partial class Archetype
                 ArchetypeTable.Push(slot);
                 ModifyComponentLocationTable(arr, tagArr, finalID.RawIndex);
             }
+#endif
 
             return finalID;
         }

@@ -11,7 +11,7 @@ namespace Frent.Updating;
 /// </summary>
 public static class GenerationServices
 {
-    internal static readonly Dictionary<Type, (IComponentRunnerFactory Factory, int UpdateOrder)> UserGeneratedTypeMap = new();
+    internal static readonly Dictionary<Type, (IComponentStorageBaseFactory Factory, int UpdateOrder)> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, HashSet<Type>> TypeAttributeCache = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
@@ -37,8 +37,11 @@ public static class GenerationServices
     /// <summary>
     /// Used only for source generation
     /// </summary>
-    public static void RegisterType(Type type, IComponentRunnerFactory value)
+    public static void RegisterType(Type type, object fact)
     {
+        if (fact is not IComponentStorageBaseFactory value)
+            throw new InvalidOperationException("Source generation appears to be broken. This method should not be called from user code!");
+
         if (UserGeneratedTypeMap.TryGetValue(type, out var val))
         {
             if (val.Factory.GetType() != value.GetType())
@@ -57,6 +60,12 @@ public static class GenerationServices
     /// </summary>
     public static void RegisterUpdateMethodAttribute(Type attributeType, Type componentType)
     {
+#if NET481
+        if (!TypeAttributeCache.TryGetValue(attributeType, out var set))
+            set = TypeAttributeCache[attributeType] = [];
+        set.Add(componentType);
+#else
         (CollectionsMarshal.GetValueRefOrAddDefault(TypeAttributeCache, attributeType, out _) ??= []).Add(componentType);
+#endif
     }
 }

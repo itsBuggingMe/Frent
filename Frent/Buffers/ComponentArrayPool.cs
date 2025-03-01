@@ -46,7 +46,7 @@ internal class ComponentArrayPool<T> : ArrayPool<T>
     {
         //easier to deal w/ all logic here
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            Array.Clear(array);
+            array.AsSpan().Clear();
         int bucketIndex = BitOperations.Log2((uint)array.Length) - 4;
         if ((uint)bucketIndex < (uint)Buckets.Length)
             Buckets[bucketIndex] = array;

@@ -123,7 +123,7 @@ internal partial class Archetype
         #region Unroll
         DeleteComponentData args = new(index, _componentIndex);
 
-        ref IComponentRunner first = ref MemoryMarshal.GetArrayDataReference(Components);
+        ref ComponentStorageBase first = ref MemoryMarshal.GetArrayDataReference(Components);
 
         switch (Components.Length)
         {
@@ -232,9 +232,34 @@ internal partial class Archetype
         return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) << 7) != 0;
     }
 
+    internal Fields Data => new Fields()
+    {
+        Map = ComponentTagTable,
+        Components = Components,
+    };
+
     internal Span<EntityIDOnly> GetEntitySpan()
     {
         Debug.Assert(_componentIndex <= _entities.Length);
+#if NET481
+        return _entities.AsSpan(0, _componentIndex);
+#else
         return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_entities), _componentIndex);
+#endif
+    }
+
+    internal ref EntityIDOnly GetEntityDataReference() => ref MemoryMarshal.GetArrayDataReference(_entities);
+
+    internal struct Fields
+    {
+        internal byte[] Map;
+        internal ComponentStorageBase[] Components;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal ref T GetComponentDataReference<T>()
+        {
+            int index = Map.UnsafeArrayIndex(Component<T>.ID.RawIndex);
+            return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
+        }
     }
 }

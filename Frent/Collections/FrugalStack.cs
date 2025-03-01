@@ -8,6 +8,8 @@ internal struct FrugalStack<T>()
     private T[] _buffer = [];
     private int _nextIndex = 0;
 
+    public bool Any => _nextIndex != 0;
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Push(T comp)

@@ -3,11 +3,17 @@ using Frent.Updating;
 
 namespace Frent.Core;
 
-//38 bytes total - 16 header + mt, 8 comps, 8 entities, 6 ids and tracking
-partial class Archetype(ArchetypeID archetypeID, IComponentRunner[] components)
+//38 bytes total - 16 header + mt, 8 comps, 8 create, 8 entities, 6 ids and tracking
+partial class Archetype(ArchetypeID archetypeID, ComponentStorageBase[] components, ComponentStorageBase[] createBuffers)
 {
     //8
-    internal readonly IComponentRunner[] Components = components;
+    internal readonly ComponentStorageBase[] Components = components;
+    //for speeeeeed reasons
+    //when creating components during world updates
+    //they are added to these arrays
+    //these arrays should be heavily pooled to and fro
+    internal readonly ComponentStorageBase[] CreateComponentBuffers = createBuffers;
+
     //8
     //we include version
     //this is so we dont need to lookup

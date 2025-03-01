@@ -7,6 +7,7 @@ namespace Frent;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 internal struct EntityLocation
 {
+    //TODO: i dont think this struct is packed properly!
     internal Archetype Archetype;
     internal int Index;
     internal EntityFlags Flags;
@@ -55,31 +56,23 @@ internal enum EntityFlags : ushort
     Detach = 1 << 1,
 
     AddComp = 1 << 2,
-    RemoveComp = 1 << 3,
 
-    OnDelete = 1 << 4,
+    AddGenericComp = 1 << 3,
+    RemoveComp = 1 << 4,
+
+    RemoveGenericComp = 1 << 5,
+
+    OnDelete = 1 << 6,
      
-    Events = Tagged | Detach | AddComp | RemoveComp | OnDelete,
+    Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate,
 
-    WorldCreate = 1 << 5,
+    WorldCreate = 1 << 7,
 
-    WorldTagged = 1 << 6,
-    WorldDetach = 1 << 7,
+    HasWorldCommandBufferRemove = 1 << 8,
 
-    WorldAddComp = 1 << 8,
-    WorldRemoveComp = 1 << 9,
+    HasWorldCommandBufferAdd = 1 << 9,
 
-    WorldOnDelete = 1 << 10,
+    HasWorldCommandBufferDelete = 1 << 10,
 
-    WorldEvents = WorldTagged | WorldDetach | WorldAddComp | WorldRemoveComp | WorldOnDelete,
-
-    AllEvents = Events | WorldEvents,
-
-    HasWorldCommandBufferRemove = 1 << 11,
-
-    HasWorldCommandBufferAdd = 1 << 13,
-
-    HasWorldCommandBufferDelete = 1 << 14,
-
-    IsUnmergedEntity = 1 << 15,
+    IsUnmergedEntity = 1 << 11,
 }

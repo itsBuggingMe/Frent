@@ -6,17 +6,17 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Frent.Benchmarks.Program;
 
 namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.AddRemoveNew());
-
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Decon());
+    
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
-        ProfileTest(disasmCall);
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true
@@ -29,6 +29,7 @@ public class Program
         }
         else
         {
+            ProfileTest(disasmCall);
             BenchmarkRunner.Run<T>();
             JitTest(disasmCall);
         }
@@ -51,6 +52,8 @@ public class Program
         }
     }
 
+    //agg opt because i suspect pgo devirtualizes the call
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void ProfileTest<T>(Action<T> call)
     {
         T t = Activator.CreateInstance<T>();

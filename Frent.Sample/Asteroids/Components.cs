@@ -15,14 +15,18 @@ using System.Runtime.InteropServices;
 namespace Frent.Sample.Asteroids;
 
 [Editor]
-internal struct DecayTimer(int frames) : IEntityComponent
+internal struct DecayTimer(int frames) : IInitable, IComponent
 {
     public int Frames = frames;
+    private Entity _self;
+
+    public void Init(Entity self) => _self = self;
+
     [Tick]
-    public void Update(Entity entity)
+    public void Update()
     {
         if (--Frames < 0)
-            entity.Delete();
+            _self.Delete();
     }
 }
 

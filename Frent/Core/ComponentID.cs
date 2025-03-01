@@ -1,8 +1,11 @@
-﻿namespace Frent.Core;
+﻿using System.Diagnostics;
+
+namespace Frent.Core;
 
 /// <summary>
 /// A lightweight struct that represents a component type. Used for fast lookups
 /// </summary>
+[DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
 {
     internal ComponentID(ushort id) => RawIndex = id;
@@ -50,4 +53,6 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
     /// <param name="right">The second ComponentID</param>
     /// <returns><see langword="true"/> if they represent different IDs, <see langword="false"/> otherwise</returns>
     public static bool operator !=(ComponentID left, ComponentID right) => !left.Equals(right);
+
+    internal string DebuggerDisplayString => $"Types: {Type.ToString()} ID: {RawIndex}";
 }

@@ -11,26 +11,23 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Updating.Runners;
 
-internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorage<TComponent>, IComponentRunner<TComponent>
-    where TSelf : IComponentRunner<TComponent>, new()
+internal abstract partial class ComponentStorage<TComponent> : ComponentStorageBase
 {
-    public abstract void Run(World world, Archetype b);
-    public abstract void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
     //TODO: improve
-    public void Trim(int index) => Resize((int)BitOperations.RoundUpToPowerOf2((uint)index));
+    internal override void Trim(int index) => Resize((int)BitOperations.RoundUpToPowerOf2((uint)index));
     //TODO: pool
-    public void ResizeBuffer(int size) => Resize(size);
+    internal override void ResizeBuffer(int size) => Resize(size);
     //Note - no unsafe here
-    public void SetAt(object component, int index) => this[index] = (TComponent)component;
-    public object GetAt(int index) => this[index]!;
-    public void InvokeGenericActionWith(GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref this[index]);
-    public void InvokeGenericActionWith(IGenericAction action, int index) => action?.Invoke(ref this[index]);
-    public ComponentID ComponentID => Component<TComponent>.ID;
-
-    public void PullComponentFromAndClear(IComponentRunner otherRunner, int me, int other, int otherRemoveIndex)
+    internal override void SetAt(object component, int index) => this[index] = (TComponent)component;
+    internal override object GetAt(int index) => this[index]!;
+    internal override void InvokeGenericActionWith(GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref this[index]);
+    internal override void InvokeGenericActionWith(IGenericAction action, int index) => action?.Invoke(ref this[index]);
+    internal override ComponentID ComponentID => Component<TComponent>.ID;
+    internal override void PullComponentFromAndClear(ComponentStorageBase otherRunner, int me, int other, int otherRemoveIndex)
     {
         ComponentStorage<TComponent> componentRunner = UnsafeExtensions.UnsafeCast<ComponentStorage<TComponent>>(otherRunner);
 
+        // see comment in ComponentStorageBase.PullComponentFromAndClearTryDevirt
         ref var item = ref componentRunner[other];
         this[me] = item;
         
@@ -42,8 +39,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
             downItem = default;
         }
     }
-
-    public void PullComponentFrom(IDTable storage, int me, int other)
+    internal override void PullComponentFrom(IDTable storage, int me, int other)
     {
         ref var item = ref ((IDTable<TComponent>)storage).Buffer[other];
         this[me] = item;
@@ -52,7 +48,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
             item = default;
     }
 
-    public void Delete(DeleteComponentData data)
+    internal override void Delete(DeleteComponentData data)
     {
         ref var from = ref this[data.FromIndex];
         Component<TComponent>.Destroyer?.Invoke(ref from);
@@ -63,7 +59,7 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
             from = default;
     }
 
-    public ComponentHandle Store(int componentIndex)
+    internal override ComponentHandle Store(int componentIndex)
     {
         ref var item = ref this[componentIndex];
         
@@ -77,34 +73,34 @@ internal abstract class ComponentRunnerBase<TSelf, TComponent> : ComponentStorag
 }
 
 #if MANAGED_COMPONENTS || TRUE
-internal unsafe abstract class ComponentStorage<TComponent> : IDisposable
+internal unsafe abstract partial class ComponentStorage<TComponent>(int length) : ComponentStorageBase(length == 0 ? [] : new TComponent[length])
 {
     public ref TComponent this[int index]
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            return ref _managed.UnsafeArrayIndex(index);
+            return ref TypedBuffer.UnsafeArrayIndex(index);
         }
     }
 
-    public ComponentStorage()
-    {
-        _managed = new TComponent[1];
-    }
-
-    private TComponent[] _managed;
+    private ref TComponent[] TypedBuffer => ref Unsafe.As<Array, TComponent[]>(ref _buffer);
 
     protected void Resize(int size)
     {
-        Array.Resize(ref _managed, size);
+        Array.Resize(ref TypedBuffer, size);
     }
 
-    public Span<TComponent> AsSpan() => _managed;
 
-    public Span<TComponent> AsSpan(int length) => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_managed), length);
+#if NET481
+    public Span<TComponent> AsSpan(int length) => TypedBuffer.AsSpan(length);
+    public Span<TComponent> AsSpan() => TypedBuffer;
+#else
+    public Span<TComponent> AsSpan(int length) => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(TypedBuffer), length);
+    public Span<TComponent> AsSpan() => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(TypedBuffer), TypedBuffer.Length);
+#endif
 
-    public ref TComponent GetComponentStorageDataReference() => ref MemoryMarshal.GetArrayDataReference(_managed);
+    public ref TComponent GetComponentStorageDataReference() => ref MemoryMarshal.GetArrayDataReference(TypedBuffer);
 
     public void Dispose()
     {

@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Collections;
 
+#if !NET481
 //Do not pass around this struct by value!!!
 //You must use the constructor when initalizating!!!
 
@@ -60,3 +61,4 @@ internal unsafe struct NativeArray<T> : IDisposable
         return MemoryMarshal.CreateSpan(ref Unsafe.AsRef<T>(_array), len);
     }
 }
+#endif
