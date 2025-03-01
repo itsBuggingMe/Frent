@@ -42,7 +42,7 @@ internal static class Archetype<T>
 
             Archetype archetype = new Archetype(ID, runners, tmpStorages);
 
-            world.ArchetypeAdded(archetype.ID);
+            world.ArchetypeAdded(archetype);
             return archetype;
         }
     }
@@ -85,7 +85,7 @@ partial class Archetype
         }
 
         archetype = new Archetype(id, componentRunners, tmpRunners);
-        world.ArchetypeAdded(archetype.ID);
+        world.ArchetypeAdded(archetype);
 
         return archetype;
     }

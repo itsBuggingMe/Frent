@@ -287,13 +287,13 @@ public partial class World : IDisposable
         return query;
     }
 
-    internal void ArchetypeAdded(ArchetypeID archetype)
+    internal void ArchetypeAdded(Archetype archetype)
     {
-        if (!GlobalWorldTables.HasTag(archetype, Tag<Disable>.ID))
-            _enabledArchetypes.Push(archetype);
+        if (!GlobalWorldTables.HasTag(archetype.ID, Tag<Disable>.ID))
+            _enabledArchetypes.Push(archetype.ID);
         foreach (var qkvp in QueryCache)
         {
-            qkvp.Value.TryAttachArchetype(archetype.Archetype(this));
+            qkvp.Value.TryAttachArchetype(archetype);
         }
     }
 

@@ -19,7 +19,7 @@ internal class EntityUpdate<TComp>(int capacity) : ComponentStorage<TComp>(capac
 
         Entity entity = world.DefaultWorldEntity;
 
-        for (int i = b.EntityCount; i >= 0; i--)
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity);
@@ -58,7 +58,7 @@ internal class EntityUpdate<TComp, TArg>(int capacity) : ComponentStorage<TComp>
 
         Entity entity = world.DefaultWorldEntity;
 
-        for (int i = b.EntityCount; i >= 0; i--)
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity, ref arg);

@@ -18,7 +18,7 @@ internal class UniformUpdate<TComp, TUniform>(int cap) : ComponentStorage<TComp>
 
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for (int i = b.EntityCount; i >= 0; i--)
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
             comp.Update(uniform);
 
@@ -53,7 +53,7 @@ internal class UniformUpdate<TComp, TUniform, TArg>(int capacity) : ComponentSto
 
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for (int i = b.EntityCount; i >= 0; i--)
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
             comp.Update(uniform, ref arg);
 

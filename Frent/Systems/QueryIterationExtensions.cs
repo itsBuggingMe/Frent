@@ -36,7 +36,7 @@ public static partial class QueryIterationExtensions
             //use ref instead of span to avoid extra locals
             ref T c1 = ref archetype.GetComponentDataReference<T>();
 
-            for (nint i = archetype.EntityCount; i >= 0; i--)
+            for (nint i = archetype.EntityCount - 1; i >= 0; i--)
             {
                 action.Run(ref c1);
 

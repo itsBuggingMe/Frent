@@ -22,7 +22,7 @@ internal class EntityUniformUpdate<TComp, TUniform>(int len) : ComponentStorage<
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for(int i = b.EntityCount; i >= 0; i--)
+        for(int i = b.EntityCount - 1; i >= 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity, uniform);
@@ -64,7 +64,7 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg>(int capacity) : Compon
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for (int i = b.EntityCount; i >= 0; i--)
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity, uniform, ref arg);
@@ -88,7 +88,7 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg>(int capacity) : Compon
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for (int i = b.EntityCount; i >= 0; i--)
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity, uniform, ref arg);
