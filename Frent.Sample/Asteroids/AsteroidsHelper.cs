@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Frent.Core;
+using FrentSandbox;
 
 namespace Frent.Sample.Asteroids;
 

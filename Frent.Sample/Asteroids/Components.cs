@@ -25,6 +25,8 @@ internal struct DecayTimer(int frames) : IInitable, IComponent
     [Tick]
     public void Update()
     {
+        if (_self == Entity.Null)
+            ;
         if (--Frames < 0)
             _self.Delete();
     }

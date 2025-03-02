@@ -103,6 +103,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
         _nextIndex = 0;
     }
 
+    public void ClearWithoutClearingGCReferences() => _nextIndex = 0;
 
     readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

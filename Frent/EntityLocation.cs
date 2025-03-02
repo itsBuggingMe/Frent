@@ -12,7 +12,6 @@ internal struct EntityLocation
     internal int Index;
     internal EntityFlags Flags;
 
-
     internal ArchetypeID ArchetypeID => Archetype.ID;
 
 

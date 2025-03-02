@@ -151,7 +151,7 @@ public partial class AsteroidsGame : Game
     int _enemyCount;
 
     protected override void Update(GameTime gameTime)
-    {
+    {   
         InputHelper.TickUpdate(IsActive);
         if (InputHelper.RisingEdge(Keys.Q))
             Paused = !Paused;

@@ -56,6 +56,7 @@ internal static class Archetype<T>
 partial class Archetype
 {
     internal static readonly ArchetypeID Null;
+    internal static readonly ArchetypeID DeferredCreate;
     internal static FastStack<ArchetypeData> ArchetypeTable = FastStack<ArchetypeData>.Create(16);
     internal static int NextArchetypeID = -1;
 
@@ -81,7 +82,6 @@ partial class Archetype
             var fact = Component.GetComponentFactoryFromType(types[i - 1].Type);
             componentRunners[i] = fact.Create(1);
             tmpRunners[i] = fact.Create(0);
-
         }
 
         archetype = new Archetype(id, componentRunners, tmpRunners);
@@ -122,6 +122,9 @@ partial class Archetype
     static Archetype()
     {
         Null = GetArchetypeID([Component.GetComponentID(typeof(void))], [Tag.GetTagID(typeof(Disable))]);
+        //this archetype exists only so that "EntityLocation"s of deferred archetypes have something to point to
+        //disable so less overhead
+        DeferredCreate = GetArchetypeID([], [Tag.GetTagID(typeof(DeferredCreate)), Tag.GetTagID(typeof(Disable))]);
     }
 
     internal static ArchetypeID GetArchetypeID(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, ImmutableArray<ComponentID>? typesArray = null, ImmutableArray<TagID>? tagTypesArray = null)

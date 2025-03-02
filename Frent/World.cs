@@ -60,7 +60,9 @@ public partial class World : IDisposable
     internal FastLookup RemoveTagLookup;
 
 
-    internal EntityFlags WorldEventFlags; 
+    internal EntityFlags WorldEventFlags;
+
+    internal FastStack<Archetype> DeferredCreationArchetypes = FastStack<Archetype>.Create(4);
 
     /// <summary>
     /// Invoked whenever an entity is created on this world.
@@ -186,6 +188,7 @@ public partial class World : IDisposable
         WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultWorldEntity = new Entity(ID, default, default);
         DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
+        DeferredCreateArchetype = Archetype.CreateOrGetExistingArchetype(Archetype.DeferredCreate, this);
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
@@ -323,6 +326,12 @@ public partial class World : IDisposable
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
+            Span<Archetype> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
+
+            foreach (var archetype in resolveArchetypes)
+                archetype.ResolveDeferredEntityCreations(this);
+            DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
+
             //i plan on adding events later, so even more command buffer events could be added during playback
             while (WorldUpdateCommandBuffer.Playback()) ;
         }
@@ -411,6 +420,7 @@ public partial class World : IDisposable
     }
 
     internal readonly Archetype DefaultArchetype;
+    internal readonly Archetype DeferredCreateArchetype;
     internal Entity CreateEntityWithoutEvent()
     {
         ref var entity = ref DefaultArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);

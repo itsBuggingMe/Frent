@@ -19,7 +19,7 @@ internal struct Tween(TweenType type, float length, Action<Entity, float> action
         float normalized = DT / Length;
         if (normalized > 1)
         {
-            action(entity, ComputeAnimatedValue(1));
+            action(entity, 1);
             entity.Remove<Tween>();
             return;
         }
