@@ -103,12 +103,13 @@ internal partial class Archetype
             Array.Copy(_createComponentBufferEntities, 0, _entities, oldEntitiesLen, deltaFromMaxDeferredInPlace);
         }
 
+        _nextComponentIndex += _deferredEntityCount;
+
         var entities = _entities;
         var table = world.EntityTable._buffer;
-        for(int i = previousComponentCount; i < entities.Length; i++)
+        for(int i = previousComponentCount; i < entities.Length && i < _nextComponentIndex; i++)
             table.UnsafeArrayIndex(entities[i].ID).Location.Archetype = this;
 
-        _nextComponentIndex += _deferredEntityCount;
         _deferredEntityCount = 0;
     }
 
