@@ -62,7 +62,7 @@ Frent is a lot faster than most C# ECS implementations - [Benchmark](https://git
 - [X]  World Update Filtering
 - [X]  Command buffer
 - [X]  Component/Tag Add/Remove Events (with generic version)
-- [X]  Automatic structual change management during queries
+- [X]  Automatic structual change management during updates
 
 ## Future
 - [ ]  Comprehensive docs

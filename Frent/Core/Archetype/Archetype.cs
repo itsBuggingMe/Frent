@@ -310,7 +310,7 @@ internal partial class Archetype
     internal Span<EntityIDOnly> GetEntitySpan()
     {
         Debug.Assert(_nextComponentIndex <= _entities.Length);
-#if NET481
+#if NETSTANDARD2_1
         return _entities.AsSpan(0, _nextComponentIndex);
 #else
         return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_entities), _nextComponentIndex);

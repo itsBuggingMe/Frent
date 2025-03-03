@@ -1,4 +1,4 @@
-﻿#if NET481
+﻿#if NETSTANDARD2_1
 #pragma warning disable CS0436 // Type conflicts with imported type
 global using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 global using RuntimeHelpers = System.Runtime.CompilerServices.RuntimeHelpers;
@@ -9,14 +9,10 @@ using CommunityToolkit.HighPerformance;
 using Frent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace Frent
 {
     internal class SkipLocalsInit : Attribute;
-    internal class DoesNotReturn : Attribute;
-    internal class NotNullWhen(bool _) : Attribute;
     internal class StackTraceHidden : Attribute;
 }
 
@@ -109,7 +105,8 @@ namespace System.Numerics
 
 namespace System
 {
-    using Frent;
+    using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Runtime.CompilerServices;
 
     /// <summary>Represent a range has start and end indexes.</summary>
@@ -401,12 +398,3 @@ namespace System
 #endregion
 
 #endif
-
-internal static class Versioning
-{
-#if NET481
-    public const bool MemoryMarshalNonGenericGetArrayDataReferenceSupported = false;
-#else
-    public const bool MemoryMarshalNonGenericGetArrayDataReferenceSupported = true;
-#endif
-}

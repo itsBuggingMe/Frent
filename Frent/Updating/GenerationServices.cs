@@ -60,7 +60,7 @@ public static class GenerationServices
     /// </summary>
     public static void RegisterUpdateMethodAttribute(Type attributeType, Type componentType)
     {
-#if NET481
+#if NETSTANDARD2_1
         if (!TypeAttributeCache.TryGetValue(attributeType, out var set))
             set = TypeAttributeCache[attributeType] = [];
         set.Add(componentType);

@@ -337,7 +337,7 @@ public partial class World : IDisposable
         }
     }
 
-#if !NET481
+#if !NETSTANDARD2_1
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EventRecord TryGetEventData(EntityLocation entityLocation, EntityIDOnly entity, EntityFlags eventType, out bool exists)
     {

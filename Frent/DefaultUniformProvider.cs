@@ -19,7 +19,7 @@ public class DefaultUniformProvider : IUniformProvider
         where T : notnull
     {
         object boxed = obj;
-#if NET481
+#if NETSTANDARD2_1
         if (boxed is null)
             throw new ArgumentNullException(nameof(obj));
 #else
@@ -38,8 +38,8 @@ public class DefaultUniformProvider : IUniformProvider
     /// <exception cref="ArgumentException"><paramref name="object"/> is not assignable to <paramref name="type"/>.</exception>
     public DefaultUniformProvider Add(Type type, object @object)
     {
-#if NET481
-        if(type is null)
+#if NETSTANDARD2_1
+        if (type is null)
             throw new ArgumentNullException(nameof(type));
 #else
         ArgumentNullException.ThrowIfNull(type);

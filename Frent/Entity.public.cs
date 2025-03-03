@@ -413,7 +413,7 @@ partial struct Entity
         if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
 
-#if NET481
+#if NETSTANDARD2_1
         bool exists = entityLocation.HasEvent(flag);
         var events = exists ? world.EventLookup[EntityIDOnly] : default;
 #else
@@ -458,7 +458,7 @@ partial struct Entity
     {
         if(@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
-#if NET481
+#if NETSTANDARD2_1
         bool exists = entityLocation.HasEvent(flag);
         var record = exists ? world.EventLookup[EntityIDOnly] : default;
 #else

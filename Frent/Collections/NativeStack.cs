@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Collections;
 
-#if NET481
+#if NETSTANDARD2_1
 //Do not pass around this struct by value!!!
 //You must use the constructor when initalizating!!!
 

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net7.0;net6.0;net481</TargetFrameworks>
+    <TargetFrameworks>net9.0;net8.0;net7.0;net6.0;netstandard2.1</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>Latest</LangVersion>
@@ -9,23 +9,24 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net8;.net7;.net6</PackageTags>
-    <Version>0.4.1.1-beta</Version>
+    <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net9;.net8;.net7;.net6;netstandard</PackageTags>
+    <Version>0.4.2-beta</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <ItemGroup>
-    
+  <ItemGroup Label="Package">
     
     <None Include="$(OutputPath)\Frent.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="'$(Configuration)' == 'Release'" />
     
-    
-    <ProjectReference Include="..\Frent.Variadic.Generator\Frent.Variadic.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <None Include="..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\LICENSE.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(TargetFramework) == 'net481'">
+  <ItemGroup Label="Dependencies">
+    <ProjectReference Include="..\Frent.Variadic.Generator\Frent.Variadic.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  
+  <ItemGroup Label="Polyfill" Condition="$(TargetFramework) == 'netstandard2.1'">
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
     <PackageReference Include="System.Collections.Immutable" Version="10.0.0-preview.1.25080.5" />
     <PackageReference Include="System.Memory" Version="4.6.0" />

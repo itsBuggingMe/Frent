@@ -86,8 +86,8 @@ internal static class MemoryHelpers
         where TKey : notnull
         where TValue : new()
     {
-#if NET481
-        if(dictionary.TryGetValue(key, out var value))
+#if NETSTANDARD2_1
+        if (dictionary.TryGetValue(key, out var value))
         {
             return value;
         }

@@ -58,7 +58,7 @@ public class CommandBuffer
         SetIsActive();
         _removeComponentBuffer.Push(new DeleteComponent(entity.EntityIDOnly, component));
     }
-
+    
     /// <summary>
     /// Removes a component from when <see cref="Playback"/> is called.
     /// </summary>
@@ -278,7 +278,7 @@ public class CommandBuffer
 
                 if (record.Location.HasEvent(EntityFlags.AddComp))
                 {
-#if NET481
+#if NETSTANDARD2_1
                     var events = _world.EventLookup[command.Entity];
 #else
                     ref var events = ref CollectionsMarshal.GetValueRefOrNullRef(_world.EventLookup, command.Entity);

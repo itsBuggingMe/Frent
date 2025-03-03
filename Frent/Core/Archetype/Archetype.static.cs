@@ -133,7 +133,7 @@ partial class Archetype
             throw new InvalidOperationException("Entities can have a max of 127 components!");
         lock (GlobalWorldTables.BufferChangeLock)
         {
-#if NET481
+#if NETSTANDARD2_1
             var key = GetHash(types, tagTypes);
             if (ExistingArchetypes.TryGetValue(key, out ArchetypeData value))
             {

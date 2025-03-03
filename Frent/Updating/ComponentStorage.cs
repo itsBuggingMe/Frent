@@ -92,7 +92,7 @@ internal unsafe abstract partial class ComponentStorage<TComponent>(int length) 
     }
 
 
-#if NET481
+#if NETSTANDARD2_1
     public Span<TComponent> AsSpan(int length) => TypedBuffer.AsSpan(length);
     public Span<TComponent> AsSpan() => TypedBuffer;
 #else

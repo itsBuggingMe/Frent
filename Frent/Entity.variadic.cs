@@ -74,7 +74,7 @@ partial struct Entity
 
             if(EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
-#if NET481
+#if NETSTANDARD2_1
                 EventRecord events = world.EventLookup[EntityIDOnly];
 #else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
@@ -135,7 +135,7 @@ partial struct Entity
 
             if(EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
             {
-#if NET481
+#if NETSTANDARD2_1
                 EventRecord events = world.EventLookup[EntityIDOnly];
 #else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
@@ -170,7 +170,7 @@ partial struct Entity
 
             if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
             {
-#if NET481
+#if NETSTANDARD2_1
                 EventRecord events = world.EventLookup[EntityIDOnly];
 #else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);

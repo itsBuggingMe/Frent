@@ -21,7 +21,7 @@ partial class World
         Archetype destination = RemoveComponentLookup.FindAdjacentArchetypeID(componentID, lookup.Location.ArchetypeID, this, ArchetypeEdgeType.RemoveComponent)
             .Archetype(this);
 
-#if NET481
+#if NETSTANDARD2_1
         Span<ComponentHandle> tmpHandleSpan = [default!];
         MoveEntityToArchetypeRemove(tmpHandleSpan, entity, ref lookup, destination);
 #else
@@ -34,7 +34,7 @@ partial class World
     {
         Archetype destination = AddComponentLookup.FindAdjacentArchetypeID(componentID, lookup.Location.ArchetypeID, this, ArchetypeEdgeType.AddComponent)
             .Archetype(this);
-#if NET481
+#if NETSTANDARD2_1
         Span<ComponentStorageBase> runnerSpan = [null!];
         MoveEntityToArchetypeAdd(runnerSpan, entity, ref lookup, out entityLocation, destination);
         runner = MemoryMarshal.GetReference(runnerSpan);
@@ -140,7 +140,7 @@ partial class World
 
             if(EntityLocation.HasEventFlag(currentLookup.Location.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
             {
-#if NET481
+#if NETSTANDARD2_1
                 var lookup = EventLookup[entity.EntityIDOnly];
 #else
                 ref var lookup = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
