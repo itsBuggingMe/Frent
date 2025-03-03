@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace Frent.Systems;
+﻿namespace Frent.Systems;
 
 
 /// <summary>

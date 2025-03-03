@@ -1,6 +1,5 @@
 ﻿using Frent.Updating.Runners;
 using System.Runtime.InteropServices;
-using System.Xml.Linq;
 
 namespace Frent.Core;
 

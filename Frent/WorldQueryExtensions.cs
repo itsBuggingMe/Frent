@@ -1,7 +1,7 @@
-﻿using System.Runtime.InteropServices;
-using Frent.Core;
+﻿using Frent.Core;
 using Frent.Systems;
 using Frent.Variadic.Generator;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 

@@ -15,14 +15,14 @@ internal struct ArchetypeNeighborCache
     public int Traverse(ushort value)
     {
         //my simd code is garbage
-//#if NET7_0_OR_GREATER
-//        if(Vector256.IsHardwareAccelerated)
-//        {
-//            Vector256<ushort> bits = Vector256.Equals(Vector256.LoadUnsafe(ref _keysAndValues._0), Vector256.Create(value));
-//            int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());
-//            return index;
-//        }
-//#endif
+        //#if NET7_0_OR_GREATER
+        //        if(Vector256.IsHardwareAccelerated)
+        //        {
+        //            Vector256<ushort> bits = Vector256.Equals(Vector256.LoadUnsafe(ref _keysAndValues._0), Vector256.Create(value));
+        //            int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());
+        //            return index;
+        //        }
+        //#endif
         //TODO: better impl
         if (value == _keysAndValues._0)
             return 0;
@@ -32,7 +32,7 @@ internal struct ArchetypeNeighborCache
             return 2;
         if (value == _keysAndValues._3)
             return 3;
-        
+
         return 32;
     }
 

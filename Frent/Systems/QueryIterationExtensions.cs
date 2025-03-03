@@ -1,9 +1,9 @@
-﻿using System.Runtime.CompilerServices;
-using Frent.Variadic.Generator;
+﻿using Frent.Variadic.Generator;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Systems;
 
-[Variadic("            ref T c1 = ref archetype.GetComponentDataReference<T>();", 
+[Variadic("            ref T c1 = ref archetype.GetComponentDataReference<T>();",
     "|            ref T$ c$ = ref archetype.GetComponentDataReference<T$>();\n|")]
 [Variadic("                c1 = ref Unsafe.Add(ref c1, 1);",
     "|                c$ = ref Unsafe.Add(ref c$, 1);\n|")]
@@ -13,7 +13,7 @@ public static partial class QueryIterationExtensions
 {
     public static void Delegate<T>(this Query query, QueryDelegates.Query<T> action)
     {
-        foreach(var archetype in query.AsSpan())
+        foreach (var archetype in query.AsSpan())
         {
             //use ref instead of span to avoid extra locals
             ref T c1 = ref archetype.GetComponentDataReference<T>();

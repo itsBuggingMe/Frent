@@ -5,7 +5,6 @@ using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 
 namespace Frent.Core;
 
@@ -49,7 +48,7 @@ internal static class Archetype<T>
 
     internal static class OfComponent<C>
     {
-         public static readonly int Index = GlobalWorldTables.ComponentIndex(ID, Component<C>.ID);
+        public static readonly int Index = GlobalWorldTables.ComponentIndex(ID, Component<C>.ID);
     }
 }
 

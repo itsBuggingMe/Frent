@@ -58,7 +58,7 @@ public class CommandBuffer
         SetIsActive();
         _removeComponentBuffer.Push(new DeleteComponent(entity.EntityIDOnly, component));
     }
-    
+
     /// <summary>
     /// Removes a component from when <see cref="Playback"/> is called.
     /// </summary>
@@ -196,7 +196,7 @@ public class CommandBuffer
     {
         _isInactive = true;
 
-        while(_createEntityBuffer.TryPop(out CreateCommand createCommand))
+        while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
             var item = createCommand.Entity;
             ref var record = ref _world.EntityTable[item.ID];
@@ -225,8 +225,8 @@ public class CommandBuffer
         {
             Entity concrete = createCommand.Entity.ToEntity(_world);
             ref EntityLookup lookup = ref _world.EntityTable.UnsafeIndexNoResize(concrete.EntityID);
-            
-            if(createCommand.BufferLength > 0)
+
+            if (createCommand.BufferLength > 0)
             {
                 Span<ComponentStorageBase> runners = _componentRunnerBuffer.AsSpan(0, createCommand.BufferLength);
 

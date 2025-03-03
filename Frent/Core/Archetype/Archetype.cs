@@ -87,7 +87,7 @@ internal partial class Archetype
         int deltaFromMaxDeferredInPlace = -(_entities.Length - (_nextComponentIndex + _deferredEntityCount));
         int previousComponentCount = _nextComponentIndex;
 
-        if(!(deltaFromMaxDeferredInPlace <= 0))
+        if (!(deltaFromMaxDeferredInPlace <= 0))
         {//components overflowed into temp storage
 
             int oldEntitiesLen = _entities.Length;
@@ -107,7 +107,7 @@ internal partial class Archetype
 
         var entities = _entities;
         var table = world.EntityTable._buffer;
-        for(int i = previousComponentCount; i < entities.Length && i < _nextComponentIndex; i++)
+        for (int i = previousComponentCount; i < entities.Length && i < _nextComponentIndex; i++)
             table.UnsafeArrayIndex(entities[i].ID).Location.Archetype = this;
 
         _deferredEntityCount = 0;
@@ -122,7 +122,7 @@ internal partial class Archetype
 
         int componentIndex = _nextComponentIndex;
         ref var recycled = ref world.RecycledEntityIds;
-        for(int i = 0; i < entitySpan.Length; i++)
+        for (int i = 0; i < entitySpan.Length; i++)
         {
             ref EntityIDOnly archetypeEntity = ref entitySpan[i];
 
@@ -145,7 +145,7 @@ internal partial class Archetype
     {
         Array.Resize(ref _entities, newLen);
         var runners = Components;
-        for(int i = 1; i < runners.Length; i++)
+        for (int i = 1; i < runners.Length; i++)
             runners[i].ResizeBuffer(newLen);
     }
 
@@ -161,14 +161,14 @@ internal partial class Archetype
 
     public void EnsureCapacity(int count)
     {
-        if(_entities.Length >= count)
+        if (_entities.Length >= count)
         {
             return;
         }
 
         FastStackArrayPool<EntityIDOnly>.ResizeArrayFromPool(ref _entities, count);
         var runners = Components;
-        for(int i = 1; i < runners.Length; i++)
+        for (int i = 1; i < runners.Length; i++)
         {
             runners[i].ResizeBuffer(count);
         }
@@ -210,12 +210,12 @@ internal partial class Archetype
 
     @long:
         var comps = Components;
-        for(int i = 9; i < comps.Length; i++)
+        for (int i = 9; i < comps.Length; i++)
         {
             comps[i].Delete(args);
         }
 
-        //TODO: figure out the distribution of component counts
+    //TODO: figure out the distribution of component counts
     len9:
         Unsafe.Add(ref first, 8).Delete(args);
     len8:
@@ -232,10 +232,10 @@ internal partial class Archetype
         Unsafe.Add(ref first, 2).Delete(args);
     len2:
         Unsafe.Add(ref first, 1).Delete(args);
-        #endregion
-        
+    #endregion
+
     end:
-        
+
         return _entities.UnsafeArrayIndex(args.ToIndex) = _entities.UnsafeArrayIndex(args.FromIndex);
     }
 
@@ -244,7 +244,7 @@ internal partial class Archetype
         if (_nextComponentIndex == 0)
             return;
         var comprunners = Components;
-        for(int i = 1; i < comprunners.Length; i++)
+        for (int i = 1; i < comprunners.Length; i++)
             comprunners[i].Run(world, this);
     }
 
@@ -273,7 +273,7 @@ internal partial class Archetype
     {
         _entities = [];
         var comprunners = Components;
-        for(int i = 1; i < comprunners.Length; i++)
+        for (int i = 1; i < comprunners.Length; i++)
             comprunners[i].Trim(0);
     }
 

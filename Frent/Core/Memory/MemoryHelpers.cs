@@ -103,7 +103,7 @@ internal static class MemoryHelpers
         where TBlock : struct
     {
         Debug.Assert(
-            typeof(TBlock) == typeof(Block2) 
+            typeof(TBlock) == typeof(Block2)
             || typeof(TBlock) == typeof(Block4)
             || typeof(TBlock) == typeof(Block8)
             || typeof(TBlock) == typeof(Block16));

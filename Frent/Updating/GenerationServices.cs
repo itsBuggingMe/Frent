@@ -1,7 +1,6 @@
 ﻿using Frent.Components;
 using Frent.Core;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
@@ -25,7 +24,7 @@ public static class GenerationServices
         TypeIniters[typeof(T)] = (ComponentDelegates<T>.InitDelegate)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.Init(e));
     }
 
-        /// <summary>
+    /// <summary>
     /// Used only for source generation
     /// </summary>
     public static void RegisterDestroy<T>()

@@ -1,7 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-
-namespace Frent.Core;
+﻿namespace Frent.Core;
 
 internal static class UnsafeExtensions
 {

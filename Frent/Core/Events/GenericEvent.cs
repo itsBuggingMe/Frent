@@ -70,7 +70,7 @@ public class GenericEvent
     {
         if (left is null)
             return null;
-        
+
         left.Remove(right);
         return left;
     }

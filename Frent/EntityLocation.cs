@@ -62,7 +62,7 @@ internal enum EntityFlags : ushort
     RemoveGenericComp = 1 << 5,
 
     OnDelete = 1 << 6,
-     
+
     Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate,
 
     WorldCreate = 1 << 7,

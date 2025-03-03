@@ -6,7 +6,7 @@ namespace Frent.Systems;
 [Variadic("    private Span<T> _currentSpan1;", "|    private Span<T$> _currentSpan$;\n|")]
 [Variadic("        Item1 = new Ref<T>(_currentSpan1, _componentIndex),",
     "|        Item$ = new Ref<T$>(_currentSpan$, _componentIndex),\n|")]
-[Variadic("                _currentSpan1 = cur.GetComponentSpan<T>();", 
+[Variadic("                _currentSpan1 = cur.GetComponentSpan<T>();",
     "|                _currentSpan$ = cur.GetComponentSpan<T$>();\n|")]
 [Variadic("<T>", "<|T$, |>")]
 public ref struct EntityQueryEnumerator<T>
@@ -14,7 +14,7 @@ public ref struct EntityQueryEnumerator<T>
     private int _archetypeIndex;
     private int _componentIndex;
     private World _world;
-    private Span<Archetype> _archetypes; 
+    private Span<Archetype> _archetypes;
     private Span<EntityIDOnly> _entityIds;
     private Span<T> _currentSpan1;
     private EntityQueryEnumerator(Query query)
@@ -38,7 +38,7 @@ public ref struct EntityQueryEnumerator<T>
 
     public bool MoveNext()
     {
-        if(++_componentIndex < _currentSpan1.Length)
+        if (++_componentIndex < _currentSpan1.Length)
         {
             return true;
         }

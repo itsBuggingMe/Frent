@@ -1,6 +1,4 @@
-﻿using Frent.Collections;
-using Frent.Components;
-using Frent.Core;
+﻿using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
 using Frent.Updating.Runners;
@@ -35,7 +33,7 @@ partial class World
         ComponentStorageBase[] components;
         Unsafe.SkipInit(out int index);
 
-        if(AllowStructualChanges)
+        if (AllowStructualChanges)
         {
             components = archetype.Components;
             entity = ref archetype.CreateEntityLocation(EntityFlags.None, out eloc);

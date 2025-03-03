@@ -111,7 +111,7 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
         get
         {
 #if DEBUG
-            if(index >= _nextIndex || index < 0)
+            if (index >= _nextIndex || index < 0)
                 throw new IndexOutOfRangeException();
 #endif
             return ref _array[index];
@@ -122,7 +122,7 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             throw new InvalidOperationException("Cannot store managed objects in native code");
-        if(initalCapacity < 1)
+        if (initalCapacity < 1)
             throw new ArgumentOutOfRangeException();
 
         _capacity = initalCapacity;
@@ -149,7 +149,7 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
 
     public bool TryPop(out T value)
     {
-        if(_nextIndex == 0)
+        if (_nextIndex == 0)
         {
             Unsafe.SkipInit(out value);
             return false;
@@ -161,7 +161,7 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
 
     public void RemoveAt(int index)
     {
-        if((uint)index < (uint)_nextIndex)
+        if ((uint)index < (uint)_nextIndex)
         {
             _array[index] = _array[--_nextIndex];
             return;

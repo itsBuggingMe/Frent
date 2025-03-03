@@ -10,7 +10,7 @@ public ref struct ChunkQueryEnumerator<T>
 {
     //ptr, ptr, int, int is better alignment
     private World _world;
-    private Span<Archetype> _archetypes; 
+    private Span<Archetype> _archetypes;
     private int _archetypeIndex;
     private ChunkQueryEnumerator(Query query)
     {

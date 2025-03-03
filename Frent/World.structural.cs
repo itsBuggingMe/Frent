@@ -60,7 +60,7 @@ partial class World
         ImmutableArray<ComponentID> destinationComponents = destination.ArchetypeTypeArray;
 
         int writeToIndex = 0;
-        for(int i = 0; i < destinationComponents.Length;)
+        for (int i = 0; i < destinationComponents.Length;)
         {
             ComponentID componentToMove = destinationComponents[i];
             int fromIndex = fromMap.UnsafeArrayIndex(componentToMove.RawIndex) & GlobalWorldTables.IndexBits;
@@ -68,7 +68,7 @@ partial class World
             //index for dest is offset by one for hardware trap
             i++;
 
-            if(fromIndex == 0)
+            if (fromIndex == 0)
             {
                 writeTo.UnsafeSpanIndex(writeToIndex++) = destRunners[i];
             }
@@ -111,7 +111,7 @@ partial class World
 
             i++;
 
-            if(toIndex == 0)
+            if (toIndex == 0)
             {
                 var runner = fromRunners.UnsafeArrayIndex(i);
                 ref ComponentHandle writeTo = ref componentHandles.UnsafeSpanIndex(writeToIndex++);
@@ -126,19 +126,19 @@ partial class World
                 destRunners.UnsafeArrayIndex(toIndex).PullComponentFromAndClearTryDevirt(fromRunners.UnsafeArrayIndex(i), nextLocation.Index, currentLookup.Location.Index, deletedIndex);
             }
         }
-        
+
         EntityTable.UnsafeIndexNoResize(movedDown.ID).Location = currentLookup.Location;
         currentLookup.Location = nextLocation;
 
-        if(EntityLocation.HasEventFlag(currentLookup.Location.Flags | WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
+        if (EntityLocation.HasEventFlag(currentLookup.Location.Flags | WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
         {
-            if(ComponentRemovedEvent.HasListeners)
+            if (ComponentRemovedEvent.HasListeners)
             {
-                foreach(var handle in componentHandles)
+                foreach (var handle in componentHandles)
                     ComponentRemovedEvent.Invoke(entity, handle.ComponentID);
             }
 
-            if(EntityLocation.HasEventFlag(currentLookup.Location.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
+            if (EntityLocation.HasEventFlag(currentLookup.Location.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
             {
 #if NETSTANDARD2_1
                 var lookup = EventLookup[entity.EntityIDOnly];
@@ -146,7 +146,7 @@ partial class World
                 ref var lookup = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
 #endif
 
-                if(hasGenericRemoveEvent)
+                if (hasGenericRemoveEvent)
                 {
                     foreach (var handle in componentHandles)
                     {
@@ -183,7 +183,7 @@ partial class World
         byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
-        
+
         for (int i = 0; i < fromComponents.Length;)
         {
             int toIndex = destMap.UnsafeArrayIndex(fromComponents[i].RawIndex) & GlobalWorldTables.IndexBits;

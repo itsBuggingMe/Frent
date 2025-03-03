@@ -1,6 +1,5 @@
 ﻿using Frent.Core;
 using Frent.Core.Structures;
-using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -87,7 +86,7 @@ public partial struct Entity : IEquatable<Entity>
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         //hardware trap
-        ref var lookup =  ref world.EntityTable.UnsafeIndexNoResize(EntityID);
+        ref var lookup = ref world.EntityTable.UnsafeIndexNoResize(EntityID);
         if (lookup.Version != EntityVersion)
             Throw_EntityIsDead();
         return ref lookup;
@@ -138,7 +137,7 @@ public partial struct Entity : IEquatable<Entity>
 
                 Dictionary<Type, object> components = [];
 
-                for(int i = 0; i < ComponentTypes.Length; i++)
+                for (int i = 0; i < ComponentTypes.Length; i++)
                 {
                     components[ComponentTypes[i].Type] = target.Get(ComponentTypes[i]);
                 }

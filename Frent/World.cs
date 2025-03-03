@@ -67,17 +67,17 @@ public partial class World : IDisposable
     /// <summary>
     /// Invoked whenever an entity is created on this world.
     /// </summary>
-    public event Action<Entity> EntityCreated 
-    { 
+    public event Action<Entity> EntityCreated
+    {
         add
         {
             EntityCreatedEvent.Add(value);
             WorldEventFlags |= EntityFlags.WorldCreate;
-        } 
+        }
         remove
         {
             EntityCreatedEvent.Remove(value);
-            if(!EntityCreatedEvent.HasListeners)
+            if (!EntityCreatedEvent.HasListeners)
                 WorldEventFlags &= ~EntityFlags.WorldCreate;
         }
     }
@@ -85,16 +85,16 @@ public partial class World : IDisposable
     /// Invoked whenever an entity belonging to this world is deleted.
     /// </summary>
     public event Action<Entity> EntityDeleted
-    { 
+    {
         add
         {
             EntityDeletedEvent.Add(value);
             WorldEventFlags |= EntityFlags.OnDelete;
-        } 
+        }
         remove
         {
             EntityDeletedEvent.Remove(value);
-            if(!EntityDeletedEvent.HasListeners)
+            if (!EntityDeletedEvent.HasListeners)
                 WorldEventFlags &= ~EntityFlags.OnDelete;
         }
     }
@@ -153,10 +153,10 @@ public partial class World : IDisposable
     /// <summary>
     /// The current uniform provider used when updating components/queries with uniforms.
     /// </summary>
-    public IUniformProvider UniformProvider 
-    { 
-        get => _uniformProvider; 
-        set => _uniformProvider = value ?? NullUniformProvider.Instance; 
+    public IUniformProvider UniformProvider
+    {
+        get => _uniformProvider;
+        set => _uniformProvider = value ?? NullUniformProvider.Instance;
     }
     private IUniformProvider _uniformProvider;
 
@@ -243,7 +243,7 @@ public partial class World : IDisposable
 
         try
         {
-            if(!_updatesByAttributes.TryGetValue(attributeType, out WorldUpdateFilter? appliesTo))
+            if (!_updatesByAttributes.TryGetValue(attributeType, out WorldUpdateFilter? appliesTo))
                 _updatesByAttributes[attributeType] = appliesTo = new WorldUpdateFilter();
 
             //fill up the table with the correct IDs
@@ -452,7 +452,7 @@ public partial class World : IDisposable
 
     internal void EnsureCapacityCore(Archetype archetype, int count)
     {
-        if(count < 1)
+        if (count < 1)
             throw new ArgumentOutOfRangeException("Count must be positive", nameof(count));
         archetype.EnsureCapacity(count);
         EntityTable.EnsureCapacity(count + EntityCount);

@@ -4,7 +4,6 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
@@ -133,7 +132,7 @@ public static class Component
             var destroyDelegate = (ComponentDelegates<T>.DestroyDelegate?)(GenerationServices.TypeDestroyers.TryGetValue(type, out var v2) ? v2 : null);
 
             IDTable<T> stack = new IDTable<T>();
-            ComponentTable.Push(new ComponentData(type, stack, 
+            ComponentTable.Push(new ComponentData(type, stack,
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
                 GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null));
 
@@ -165,7 +164,7 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            ComponentTable.Push(new ComponentData(t, GetComponentTable(t), 
+            ComponentTable.Push(new ComponentData(t, GetComponentTable(t),
                 GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
                 GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null));
 
