@@ -1,6 +1,4 @@
 ﻿using Frent.Core;
-using Frent.Variadic.Generator;
-using System.Collections.Immutable;
 
 namespace Frent.Systems;
 

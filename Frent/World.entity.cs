@@ -1,5 +1,4 @@
 ﻿using Frent.Core;
-using Frent.Core.Structures;
 using Frent.Updating.Runners;
 
 namespace Frent;
@@ -14,7 +13,7 @@ partial class World
 
         //world + entity valid hardware trap
         Archetype archetype = location.Location.Archetype;
-        
+
         int compIndex = archetype.GetComponentIndex<T>();
 
         //Components[0] null; trap

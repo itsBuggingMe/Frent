@@ -90,7 +90,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
     /// <summary>
     /// DO NOT ALTER WHILE SPAN IS IN USE
     /// </summary>
-#if NET481
+#if NETSTANDARD2_1
     public readonly Span<T> AsSpan() => _buffer.AsSpan(0, _nextIndex);
 #else
     public readonly Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_buffer), _nextIndex);
@@ -103,6 +103,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
         _nextIndex = 0;
     }
 
+    public void ClearWithoutClearingGCReferences() => _nextIndex = 0;
 
     readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

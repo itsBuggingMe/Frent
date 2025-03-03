@@ -1,12 +1,12 @@
 ﻿using Frent.Core;
-using Frent.Updating;
 using Frent.Core.Events;
 using Frent.Core.Structures;
+using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.Immutable;
-using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -202,7 +202,7 @@ partial struct Entity
     public void AddAs(ComponentID componentID, object component)
     {
         ref EntityLookup lookup = ref AssertIsAlive(out var w);
-        if(w.AllowStructualChanges)
+        if (w.AllowStructualChanges)
         {
             ComponentStorageBase componentRunner = null!;
             w.AddComponent(this, ref lookup, componentID, ref componentRunner, out EntityLocation entityLocation);
@@ -294,7 +294,7 @@ partial struct Entity
     public bool Tag(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        if(lookup.Location.Archetype.HasTag(tagID))
+        if (lookup.Location.Archetype.HasTag(tagID))
             return false;
 
         ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.AddTag);
@@ -413,7 +413,7 @@ partial struct Entity
         if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
 
-#if NET481
+#if NETSTANDARD2_1
         bool exists = entityLocation.HasEvent(flag);
         var events = exists ? world.EventLookup[EntityIDOnly] : default;
 #else
@@ -425,7 +425,7 @@ partial struct Entity
         {
             bool removeFlags = false;
 
-            switch(flag)
+            switch (flag)
             {
                 case EntityFlags.AddComp:
                     events!.Add.NormalEvent.Remove((Action<Entity, ComponentID>)value);
@@ -449,16 +449,16 @@ partial struct Entity
                     break;
             }
 
-            if(removeFlags)
+            if (removeFlags)
                 world.EntityTable[EntityID].Location.Flags &= ~flag;
         }
     }
 
     private void InitalizeEventRecord(object @delegate, EntityFlags flag, bool isGenericEvent = false)
     {
-        if(@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+        if (@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
-#if NET481
+#if NETSTANDARD2_1
         bool exists = entityLocation.HasEvent(flag);
         var record = exists ? world.EventLookup[EntityIDOnly] : default;
 #else
@@ -467,10 +467,10 @@ partial struct Entity
         world.EntityTable[EntityID].Location.Flags |= flag;
         EventRecord.Initalize(exists, ref record!);
 
-        switch(flag)
+        switch (flag)
         {
             case EntityFlags.AddComp:
-                if(isGenericEvent)
+                if (isGenericEvent)
                     record.Add.GenericEvent = (GenericEvent)@delegate;
                 else
                     record.Add.NormalEvent.Add((Action<Entity, ComponentID>)@delegate);
@@ -493,7 +493,7 @@ partial struct Entity
         }
     }
 
-#endregion
+    #endregion
 
     #region Misc
     /// <summary>
@@ -582,7 +582,7 @@ partial struct Entity
     {
         ref var lookup = ref AssertIsAlive(out var _);
         ComponentStorageBase[] runners = lookup.Location.Archetype.Components;
-        for(int i = 1; i < runners.Length; i++)
+        for (int i = 1; i < runners.Length; i++)
         {
             runners[i].InvokeGenericActionWith(onEach, lookup.Location.Index);
         }
@@ -599,5 +599,5 @@ partial struct Entity
     }
     #endregion
 
-#endregion
+    #endregion
 }

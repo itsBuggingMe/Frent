@@ -1,13 +1,8 @@
-﻿using Frent.Buffers;
-using System.Runtime.InteropServices;
-using Frent.Collections;
+﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
-using System.Diagnostics;
 using Frent.Updating.Runners;
 using System.Runtime.CompilerServices;
-using static Frent.Core.MemoryHelpers;
-using System.Numerics;
 
 namespace Frent.Updating;
 
@@ -98,12 +93,12 @@ internal abstract class ComponentStorageBase(Array initalBuffer)
             return -1;
         int size = Unsafe.SizeOf<T>();
 
-        if((size & (size - 1)) != 0)
+        if ((size & (size - 1)) != 0)
         {//is not power of two
             return -1;
         }
 
-        if(size > 16 || size < 2)
+        if (size > 16 || size < 2)
         {//we have block sizes 2, 4, 8, 16
             return -1;
         }

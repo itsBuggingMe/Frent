@@ -17,7 +17,7 @@ internal struct EntityIDOnly(int id, ushort version)
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void SetEntity(ref Entity entity)
-    {   
+    {
         entity.EntityVersion = Version;
         entity.EntityID = ID;
     }

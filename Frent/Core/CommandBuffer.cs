@@ -196,7 +196,7 @@ public class CommandBuffer
     {
         _isInactive = true;
 
-        while(_createEntityBuffer.TryPop(out CreateCommand createCommand))
+        while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
             var item = createCommand.Entity;
             ref var record = ref _world.EntityTable[item.ID];
@@ -225,8 +225,8 @@ public class CommandBuffer
         {
             Entity concrete = createCommand.Entity.ToEntity(_world);
             ref EntityLookup lookup = ref _world.EntityTable.UnsafeIndexNoResize(concrete.EntityID);
-            
-            if(createCommand.BufferLength > 0)
+
+            if (createCommand.BufferLength > 0)
             {
                 Span<ComponentStorageBase> runners = _componentRunnerBuffer.AsSpan(0, createCommand.BufferLength);
 
@@ -278,7 +278,7 @@ public class CommandBuffer
 
                 if (record.Location.HasEvent(EntityFlags.AddComp))
                 {
-#if NET481
+#if NETSTANDARD2_1
                     var events = _world.EventLookup[command.Entity];
 #else
                     ref var events = ref CollectionsMarshal.GetValueRefOrNullRef(_world.EventLookup, command.Entity);

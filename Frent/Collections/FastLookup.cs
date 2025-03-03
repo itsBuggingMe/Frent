@@ -27,8 +27,8 @@ internal struct FastLookup()
         {
             return new ArchetypeID(InlineArray8<ushort>.Get(ref _ids, index));
         }
-        else if (world.ArchetypeGraphEdges.TryGetValue(edgeKey = typeof(T) == typeof(ComponentID) ? 
-            ArchetypeEdgeKey.Component(new(id.Value), archetype, edgeType) : 
+        else if (world.ArchetypeGraphEdges.TryGetValue(edgeKey = typeof(T) == typeof(ComponentID) ?
+            ArchetypeEdgeKey.Component(new(id.Value), archetype, edgeType) :
             ArchetypeEdgeKey.Tag(new(id.Value), archetype, edgeType), out var destination))
         {
             //warm/cool depending on number of times they add/remove
@@ -61,7 +61,7 @@ internal struct FastLookup()
     public int LookupIndex(uint key)
     {
 #if NET7_0_OR_GREATER
-        if(Vector256.IsHardwareAccelerated)
+        if (Vector256.IsHardwareAccelerated)
         {
             Vector256<uint> bits = Vector256.Equals(Vector256.Create(key), Vector256.LoadUnsafe(ref _data._0));
             int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());

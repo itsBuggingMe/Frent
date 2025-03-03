@@ -1,6 +1,5 @@
 ﻿using Frent.Updating.Runners;
 using System.Runtime.InteropServices;
-using System.Xml.Linq;
 
 namespace Frent.Core;
 
@@ -30,7 +29,7 @@ public ref struct Ref<T>
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
     public override readonly string? ToString() => Value?.ToString();
-#elif NET481
+#elif NETSTANDARD2_1
     internal Ref(T[] compArr, int index)
     {
         _data = compArr;

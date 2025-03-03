@@ -1,7 +1,6 @@
 ﻿using Frent.Components;
 using Frent.Core;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
@@ -25,7 +24,7 @@ public static class GenerationServices
         TypeIniters[typeof(T)] = (ComponentDelegates<T>.InitDelegate)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.Init(e));
     }
 
-        /// <summary>
+    /// <summary>
     /// Used only for source generation
     /// </summary>
     public static void RegisterDestroy<T>()
@@ -60,7 +59,7 @@ public static class GenerationServices
     /// </summary>
     public static void RegisterUpdateMethodAttribute(Type attributeType, Type componentType)
     {
-#if NET481
+#if NETSTANDARD2_1
         if (!TypeAttributeCache.TryGetValue(attributeType, out var set))
             set = TypeAttributeCache[attributeType] = [];
         set.Add(componentType);

@@ -1,13 +1,12 @@
-﻿using System.Collections.Immutable;
-using System.Collections.ObjectModel;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using Frent.Collections;
+﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -25,7 +24,7 @@ namespace Frent;
 [Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
 
 [Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
-[Variadic("        ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;", 
+[Variadic("        ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;",
     "|        ref var c$ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(buff.UnsafeSpanIndex($ - 1))[nextLocation.Index]; c$ref = c$;\n|")]
 [Variadic("Core.Tag<T>.ID", "[|Core.Tag<T$>.ID, |]")]
 [Variadic("Component<T>.ID", "[|Component<T$>.ID, |]")]
@@ -47,16 +46,16 @@ partial struct Entity
     {
         ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
 
-        if(!world.AllowStructualChanges)
+        if (!world.AllowStructualChanges)
         {
             world.WorldUpdateCommandBuffer.AddComponent(this, c1);
             return;
         }
 
         Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
-            world, 
-            ref NeighborCache<T>.Add.Lookup, 
-            ref thisLookup, 
+            world,
+            ref NeighborCache<T>.Add.Lookup,
+            ref thisLookup,
             true);
 
         Span<ComponentStorageBase> buff = [null!];
@@ -67,14 +66,14 @@ partial struct Entity
         Component<T>.Initer?.Invoke(this, ref c1ref);
 
         EntityFlags flags = thisLookup.Location.Flags;
-        if(EntityLocation.HasEventFlag(flags | world.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+        if (EntityLocation.HasEventFlag(flags | world.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
         {
-            if(world.ComponentAddedEvent.HasListeners)
+            if (world.ComponentAddedEvent.HasListeners)
                 InvokeComponentWorldEvents<T>(ref world.ComponentAddedEvent, this);
 
-            if(EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+            if (EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
-#if NET481
+#if NETSTANDARD2_1
                 EventRecord events = world.EventLookup[EntityIDOnly];
 #else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
@@ -93,7 +92,7 @@ partial struct Entity
     {
         ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
 
-        if(!world.AllowStructualChanges)
+        if (!world.AllowStructualChanges)
         {
             world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T>.ID);
             return;
@@ -128,14 +127,14 @@ partial struct Entity
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
 
         EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
-        if(EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+        if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
         {
             if (world.Tagged.HasListeners)
                 InvokeTagWorldEvents<T>(ref world.Tagged, this);
 
-            if(EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+            if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
             {
-#if NET481
+#if NETSTANDARD2_1
                 EventRecord events = world.EventLookup[EntityIDOnly];
 #else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
@@ -165,12 +164,12 @@ partial struct Entity
         EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
         if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
         {
-            if(world.Detached.HasListeners)
+            if (world.Detached.HasListeners)
                 InvokeTagWorldEvents<T>(ref world.Detached, this);
 
             if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
             {
-#if NET481
+#if NETSTANDARD2_1
                 EventRecord events = world.EventLookup[EntityIDOnly];
 #else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
@@ -209,7 +208,7 @@ partial struct Entity
     {
         public void ModifyTags(ref ImmutableArray<TagID> tags, bool add)
         {
-            if(add)
+            if (add)
             {
                 tags = MemoryHelpers.Concat(tags, Core.Tag<T>.ID);
             }

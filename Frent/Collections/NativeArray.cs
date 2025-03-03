@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Collections;
 
-#if !NET481
+#if !NETSTANDARD2_1
 //Do not pass around this struct by value!!!
 //You must use the constructor when initalizating!!!
 
@@ -23,7 +23,7 @@ internal unsafe struct NativeArray<T> : IDisposable
         get
         {
 #if DEBUG
-            if(index >= _length || index < 0)
+            if (index >= _length || index < 0)
                 throw new IndexOutOfRangeException();
 #endif
             return ref _array[index];
@@ -34,7 +34,7 @@ internal unsafe struct NativeArray<T> : IDisposable
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             throw new InvalidOperationException("Cannot store managed objects in native code");
-        if(length < 1)
+        if (length < 1)
             throw new ArgumentOutOfRangeException();
 
         _length = length;

@@ -1,11 +1,10 @@
-﻿using System.Diagnostics;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent.Collections;
 
-#if NET481
+#if NETSTANDARD2_1
 //Do not pass around this struct by value!!!
 //You must use the constructor when initalizating!!!
 

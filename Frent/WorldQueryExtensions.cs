@@ -1,7 +1,7 @@
-﻿using System.Runtime.InteropServices;
-using Frent.Core;
+﻿using Frent.Core;
 using Frent.Systems;
 using Frent.Variadic.Generator;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -18,8 +18,8 @@ public static partial class WorldQueryExtensions
     public static Query Query<T>(this World world)
         where T : struct, IRuleProvider
     {
-#if NET481
-        if(world.QueryCache.TryGetValue(QueryHashCache<T>.Value, out Query value))
+#if NETSTANDARD2_1
+        if (world.QueryCache.TryGetValue(QueryHashCache<T>.Value, out Query value))
         {
             return value;
         }

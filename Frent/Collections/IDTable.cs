@@ -1,7 +1,5 @@
-﻿using Frent.Core;
-using Frent.Core.Events;
+﻿using Frent.Core.Events;
 using System.Runtime.CompilerServices;
-using System.Security.AccessControl;
 
 namespace Frent.Collections;
 internal abstract class IDTable
@@ -28,7 +26,7 @@ internal abstract class IDTable
         else
         {
             index = _nextIndex++;
-            if(index == _buffer.Length)
+            if (index == _buffer.Length)
                 Double();
         }
 

@@ -1,10 +1,6 @@
-﻿using Frent.Buffers;
-using Frent.Collections;
-using Frent.Components;
+﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
-using System.Diagnostics;
-using System.Net.Security;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -30,11 +26,11 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
         // see comment in ComponentStorageBase.PullComponentFromAndClearTryDevirt
         ref var item = ref componentRunner[other];
         this[me] = item;
-        
+
         ref var downItem = ref componentRunner[otherRemoveIndex];
         item = downItem;
 
-        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
         {
             downItem = default;
         }
@@ -44,7 +40,7 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
         ref var item = ref ((IDTable<TComponent>)storage).Buffer[other];
         this[me] = item;
 
-        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             item = default;
     }
 
@@ -62,7 +58,7 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
     internal override ComponentHandle Store(int componentIndex)
     {
         ref var item = ref this[componentIndex];
-        
+
         //we can't just copy to stack and run the destroyer on it
         //it is stored
         Component<TComponent>.Destroyer?.Invoke(ref item);
@@ -92,7 +88,7 @@ internal unsafe abstract partial class ComponentStorage<TComponent>(int length) 
     }
 
 
-#if NET481
+#if NETSTANDARD2_1
     public Span<TComponent> AsSpan(int length) => TypedBuffer.AsSpan(length);
     public Span<TComponent> AsSpan() => TypedBuffer;
 #else
@@ -104,7 +100,7 @@ internal unsafe abstract partial class ComponentStorage<TComponent>(int length) 
 
     public void Dispose()
     {
-        
+
     }
 }
 #else

@@ -1,6 +1,5 @@
 ﻿global using TagEvent = Frent.Core.Events.Event<Frent.Core.TagID>;
 using Frent.Collections;
-using System.Runtime.CompilerServices;
 
 namespace Frent.Core.Events;
 
@@ -67,7 +66,7 @@ internal struct EntityOnlyEvent()
         {
             _first = action;
         }
-        else if(_second is null)
+        else if (_second is null)
         {
             _second = action;
         }
@@ -85,7 +84,7 @@ internal struct EntityOnlyEvent()
             if (_invokationList.TryPop(out var v))
                 _first = v;
         }
-        else if(_second == action)
+        else if (_second == action)
         {
             _second = null;
             if (_invokationList.TryPop(out var v))

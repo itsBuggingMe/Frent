@@ -86,8 +86,8 @@ internal static class MemoryHelpers
         where TKey : notnull
         where TValue : new()
     {
-#if NET481
-        if(dictionary.TryGetValue(key, out var value))
+#if NETSTANDARD2_1
+        if (dictionary.TryGetValue(key, out var value))
         {
             return value;
         }
@@ -103,7 +103,7 @@ internal static class MemoryHelpers
         where TBlock : struct
     {
         Debug.Assert(
-            typeof(TBlock) == typeof(Block2) 
+            typeof(TBlock) == typeof(Block2)
             || typeof(TBlock) == typeof(Block4)
             || typeof(TBlock) == typeof(Block8)
             || typeof(TBlock) == typeof(Block16));

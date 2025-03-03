@@ -1,12 +1,8 @@
-﻿using System.Collections.Specialized;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using Frent.Buffers;
-using Frent.Collections;
+﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
-using Frent.Systems;
 using Frent.Variadic.Generator;
+using System.Runtime.CompilerServices;
 using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
@@ -22,7 +18,7 @@ internal class EntityUniformUpdate<TComp, TUniform>(int len) : ComponentStorage<
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for(int i = b.EntityCount - 1; i >= 0; i--)
+        for (int i = b.EntityCount - 1; i >= 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity, uniform);

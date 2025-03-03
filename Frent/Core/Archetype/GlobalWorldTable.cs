@@ -35,13 +35,13 @@ internal static class GlobalWorldTables
             {
                 ref var componentsForArchetype = ref table[i];
                 Array.Resize(ref componentsForArchetype, ComponentTagTableBufferSize);
-                
+
                 //componentsForArchetype.AsSpan(tableSize).Fill(DefaultNoTag);
 
                 //update world archetypes
-                foreach(var world in worlds)
+                foreach (var world in worlds)
                 {
-                    if(world is not null && world.WorldArchetypeTable[i] is Archetype archetype)
+                    if (world is not null && world.WorldArchetypeTable[i] is Archetype archetype)
                     {
                         archetype.ComponentTagTable = componentsForArchetype;
                     }

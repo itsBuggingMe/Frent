@@ -20,6 +20,8 @@ partial class Archetype(ArchetypeID archetypeID, ComponentStorageBase[] componen
     //the world table every time
     private EntityIDOnly[] _entities = new EntityIDOnly[1];
 
+    private EntityIDOnly[] _createComponentBufferEntities = Array.Empty<EntityIDOnly>();
+
     //information for tag existence & component index per id
     //updated by static methods
     //saves a lookup on hot paths
@@ -30,5 +32,6 @@ partial class Archetype(ArchetypeID archetypeID, ComponentStorageBase[] componen
     /// <summary>
     /// The next component index
     /// </summary>
-    private int _componentIndex = 0;
+    private int _nextComponentIndex = 0;
+    private int _deferredEntityCount = 0;
 }

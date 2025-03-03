@@ -1,7 +1,6 @@
 ﻿using Frent.Buffers;
 using Frent.Core;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
 
@@ -24,7 +23,7 @@ internal struct Table<T>(int size)
             return ref ResizeGet(index);
         }
     }
-    
+
     private ref T ResizeGet(int index)
     {
         FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, (int)BitOperations.RoundUpToPowerOf2((uint)(index + 1)));

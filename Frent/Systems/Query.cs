@@ -1,7 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using System.Collections.Immutable;
 using Frent.Variadic.Generator;
+using System.Collections.Immutable;
 
 namespace Frent.Systems;
 
@@ -21,8 +21,8 @@ public partial class Query
     {
         World = world;
         _rules = rules;
-        foreach(var rule in rules)
-            if(rule == Rule.IncludeDisabledRule)
+        foreach (var rule in rules)
+            if (rule == Rule.IncludeDisabledRule)
             {
                 IncludeDisabled = true;
                 break;
@@ -31,7 +31,7 @@ public partial class Query
 
     internal void TryAttachArchetype(Archetype archetype)
     {
-        if(!IncludeDisabled && archetype.HasTag<Disable>())
+        if (!IncludeDisabled && archetype.HasTag<Disable>())
             return;
 
         if (ArchetypeSatisfiesQuery(archetype.ID))
@@ -51,7 +51,7 @@ public partial class Query
     }
 }
 
-[Variadic("<T>","<|T$, |>")]
+[Variadic("<T>", "<|T$, |>")]
 partial class Query
 {
     public QueryEnumerator<T>.QueryEnumerable Enumerate<T>() => new(this);

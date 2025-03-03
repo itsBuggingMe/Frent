@@ -140,6 +140,7 @@ public partial class AsteroidsGame : Game
             new Vector2(-10, 10),
         ]), default, new() { Radius = 25 });
         _player.Tag<Shootable>();
+        _player.OnDelete += e => CreateNewPlayer();
     }
 
     private void Window_ClientSizeChanged(object? sender, EventArgs e)
@@ -151,7 +152,7 @@ public partial class AsteroidsGame : Game
     int _enemyCount;
 
     protected override void Update(GameTime gameTime)
-    {
+    {   
         InputHelper.TickUpdate(IsActive);
         if (InputHelper.RisingEdge(Keys.Q))
             Paused = !Paused;
