@@ -16,7 +16,7 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
     /// </summary>
     public Type Type => Component.ComponentTable[RawIndex].Type;
 
-    internal ushort Value => RawIndex;
+    ushort ITypeID.Value => RawIndex;
 
     /// <summary>
     /// Checks if this ComponentID instance represents the same ID as <paramref name="other"/>
