@@ -13,7 +13,7 @@ public readonly struct TagID : ITypeID, IEquatable<TagID>
     /// </summary>
     public Type Type => Tag.TagTable[RawValue];
 
-    public ushort Value => RawValue;
+    internal ushort Value => RawValue;
 
     /// <summary>
     /// Checks if this TagID instance represents the same type as <paramref name="other"/>

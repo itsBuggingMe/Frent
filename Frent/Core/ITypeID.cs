@@ -2,6 +2,6 @@
 
 internal interface ITypeID
 {
-    public Type Type { get; }
-    public ushort Value { get; }
+    internal Type Type { get; }
+    internal ushort Value { get; }
 }
