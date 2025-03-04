@@ -92,15 +92,15 @@ partial struct Entity
     }//2, 0
 
     /// <summary>
-    /// Gets this <see cref="Entity"/>'s component of type <paramref name="type"/>.
+    /// Gets this <see cref="Entity"/>'s component of type <paramref name="id"/>.
     /// </summary>
     /// <param name="id">The ID of the type of component to get</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
-    /// <returns>The component of type <paramref name="type"/></returns>
+    /// <returns>The boxed component.</returns>
     public object Get(ComponentID id)
     {
-        ref var lookup = ref AssertIsAlive(out var world);
+        ref var lookup = ref AssertIsAlive(out _);
 
         int compIndex = lookup.Location.Archetype.GetComponentIndex(id);
 
@@ -122,7 +122,7 @@ partial struct Entity
     /// <param name="id">The ID of the type of component to get</param>
     /// <param name="obj">The component to set</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="id"/>.</exception>
     public void Set(ComponentID id, object obj)
     {
         ref var lookup = ref AssertIsAlive(out _);
@@ -198,7 +198,12 @@ partial struct Entity
     /// <param name="component">The component to add</param>
     public void AddAs(Type type, object component) => AddAs(Component.GetComponentID(type), component);
 
-
+    /// <summary>
+    /// Adds a component to this <see cref="Entity"/>, as a specific component type.
+    /// </summary>
+    /// <param name="componentID">The component type to add as.</param>
+    /// <param name="component">The component to add.</param>
+    /// <exception cref="InvalidCastException"><paramref name="component"/> is not assignable to the type represented by <paramref name="componentID"/>.</exception>
     public void AddAs(ComponentID componentID, object component)
     {
         ref EntityLookup lookup = ref AssertIsAlive(out var w);
@@ -565,6 +570,9 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// The <see cref="EntityType"/> of this <see cref="Entity"/>.
+    /// </summary>
     public EntityType Type
     {
         get
@@ -593,6 +601,11 @@ partial struct Entity
     /// </summary>
     public static Entity Null => default;
 
+    /// <summary>
+    /// Gets an <see cref="EntityType"/> without needing an <see cref="Entity"/> of the specific type.
+    /// </summary>
+    /// <param name="components">The components the <see cref="EntityType"/> should have.</param>
+    /// <param name="tags">The tags the <see cref="EntityType"/> should have.</param>
     public static EntityType EntityTypeOf(ReadOnlySpan<ComponentID> components, ReadOnlySpan<TagID> tags)
     {
         return Archetype.GetArchetypeID(components, tags);
