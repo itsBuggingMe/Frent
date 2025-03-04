@@ -28,34 +28,34 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// </summary>
     /// <param name="componentID">The ID of the component type to check if this <see cref="EntityType"/> has</param>
     /// <returns><see langword="true"/> if this Entity type has a component of the specified component ID, <see langword="false"/> otherwise</returns>
-    public bool HasComponent(ComponentID componentID) => GlobalWorldTables.ComponentIndex(this, componentID) != 0;
+    public readonly bool HasComponent(ComponentID componentID) => GlobalWorldTables.ComponentIndex(this, componentID) != 0;
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> has a tag represented by a <see cref="TagID"/>
     /// </summary>
     /// <param name="tagID">The ID of the tag type to check if this <see cref="EntityType"/> has</param>
     /// <returns><see langword="true"/> if this Entity type has a tag of the specified tag ID, <see langword="false"/> otherwise</returns>
-    public bool HasTag(TagID tagID) => GlobalWorldTables.HasTag(this, tagID);
+    public readonly bool HasTag(TagID tagID) => GlobalWorldTables.HasTag(this, tagID);
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> represents the same ID as <paramref name="other"/>
     /// </summary>
     /// <param name="other">The EntityType to compare against</param>
     /// <returns><see langword="true"/> if they represent the same ID, <see langword="false"/> otherwise</returns>
-    public bool Equals(EntityType other) => RawIndex == other.RawIndex;
+    public readonly bool Equals(EntityType other) => RawIndex == other.RawIndex;
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> represents the same ID as <paramref name="obj"/>
     /// </summary>
     /// <param name="obj">The object to compare against</param>
     /// <returns><see langword="true"/> if they represent the same ID, <see langword="false"/> otherwise</returns>
-    public override bool Equals(object? obj) => obj is EntityType other && Equals(other);
+    public override readonly bool Equals(object? obj) => obj is EntityType other && Equals(other);
 
     /// <summary>
     /// Gets the hash code for this <see cref="EntityType"/>
     /// </summary>
     /// <returns>An integer hash code representing this <see cref="EntityType"/></returns>
-    public override int GetHashCode() => RawIndex;
+    public override readonly int GetHashCode() => RawIndex;
 
     /// <summary>
     /// Checks if two <see cref="EntityType"/> instances represent the same ID
@@ -73,5 +73,5 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// <returns><see langword="true"/> if they represent different IDs, <see langword="false"/> otherwise</returns>
     public static bool operator !=(EntityType left, EntityType right) => !left.Equals(right);
 
-    internal ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex);
+    internal readonly ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex);
 }
