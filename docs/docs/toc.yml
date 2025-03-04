@@ -6,3 +6,5 @@
   href: components.md
 - name: Filtering Updates
   href: filter-components.md
+- name: Component Lifetimes
+  href: component-lifetimes.md
