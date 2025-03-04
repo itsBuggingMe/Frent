@@ -1,14 +1,12 @@
 # Component Lifetimes
 
-Components can optionally implement `IInitable` and `IDestroyable` for lifetime management. The `IInitable` interface is used to define a component which has an `Init(Entity self)` function to be called whenever the component's lifetime begins.
+Components can optionally implement `IInitable` and `IDestroyable` for lifetime management. A component's lifetime begins when it is added to a world, and ends when it is removed for the world. For example, a component might begin its lifetime when added to an entity and end its lifetime when the parent entity is deleted.
+
+The `IInitable` interface is used to define a component which has an `Init(Entity self)` function to be called whenever the component's lifetime begins.
 
 The `IDestroyable` interface does the opposite, with the `Destroy()` method called on the end of the component's lifetime.
 
-A component's lifetime begins when it is added to a world, and ends when it is removed for the world. For example, a component might begin its lifetime when added to an entity and end its lifetime when the parent entity is deleted.
-
-
-``csharp
-
+```csharp
 using World world = new World();
 
 //Init is called here
