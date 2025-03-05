@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential, Pack = 2)]
 internal struct EntityLocation
 {
     //TODO: i dont think this struct is packed properly!

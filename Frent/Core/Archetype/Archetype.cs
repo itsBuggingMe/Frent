@@ -26,7 +26,7 @@ internal partial class Archetype
         {
             FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
         }
-        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpan(_nextComponentIndex);
+        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpanLength(_nextComponentIndex);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
