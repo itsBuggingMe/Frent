@@ -126,3 +126,8 @@ struct ConsoleText(ConsoleColor Color) : IComponent<string>
         Console.Write(str);
     }
 }
+
+internal struct WriteAction : IAction<int>
+{
+    public void Run(ref int x) => Console.Write($"{x++}, ");
+}

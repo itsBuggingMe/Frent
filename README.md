@@ -38,6 +38,8 @@ record struct Velocity(Vector2 Delta) : IComponent<Position>
 
 Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs/getting-started.html)!
 
+There is also a [Monogame](https://github.com/itsBuggingMe/Frent/blob/master/Frent.Sample/Asteroids/AsteroidsGame.cs) and [Godot](https://github.com/itsBuggingMe/FrentGodotSample) sample.
+
 ## Preformance
 
 Frent is a lot faster than most C# ECS implementations - [Benchmark](https://github.com/Doraku/Ecs.CSharp.Benchmark).
