@@ -248,12 +248,15 @@ public partial class World : IDisposable
 
             //fill up the table with the correct IDs
             //works for initalization as well as updating it
-            for (ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
+            if(GenerationServices.TypeAttributeCache.TryGetValue(attributeType, out var compSet))
             {
-                var id = new ComponentID((ushort)i);
-                if (GenerationServices.TypeAttributeCache.TryGetValue(attributeType, out var compSet) && compSet.Contains(id.Type))
+                for (ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
                 {
-                    appliesTo.Stack.Push(id);
+                    var id = new ComponentID((ushort)i);
+                    if (compSet.Contains(id.Type))
+                    {
+                        appliesTo.Stack.Push(id);
+                    }
                 }
             }
 
