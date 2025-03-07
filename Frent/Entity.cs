@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using Frent.Core.Structures;
 using Frent.Updating.Runners;
+using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -74,15 +75,14 @@ public partial struct Entity : IEquatable<Entity>
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         if (world is null)
         {
-            Unsafe.SkipInit(out entityLocation);
+            entityLocation = default;
             return false;
         }
-        ref EntityLookup lookup = ref world.EntityTable.UnsafeIndexNoResize(EntityID);
-        entityLocation = lookup.Location;
-        return lookup.Version == EntityVersion;
+        entityLocation = world.EntityTable.UnsafeIndexNoResize(EntityID);
+        return entityLocation.Version == EntityVersion;
     }
 
-    internal ref EntityLookup AssertIsAlive(out World world)
+    internal ref EntityLocation AssertIsAlive(out World world)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         //hardware trap
@@ -113,6 +113,12 @@ public partial struct Entity : IEquatable<Entity>
     doesntExist:
         exists = false;
         return default;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void M()
+    {
+
     }
 
     private static void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);

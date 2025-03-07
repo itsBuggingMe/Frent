@@ -5,7 +5,7 @@ namespace Frent.Marshalling;
 /// <summary>
 /// Contains unsafe methods for higher preformance operations.
 /// </summary>
-/// <remarks>API consumers are expected to understand the internals. Improper unsage could result in world corruption, memory corruption, or segmentation faults.<remarks/>
+/// <remarks>API consumers are expected to understand the internals. Improper unsage could result in world corruption, memory corruption, or segmentation faults.</remarks>
 public static class EntityMarshal
 {
     public static World? GetWorld(Entity entity)

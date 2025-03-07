@@ -36,6 +36,9 @@ internal partial class Archetype
         return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
     }
 
+    /// <summary>
+    /// Note! Entity location version is not set!
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EntityIDOnly CreateEntityLocation(EntityFlags flags, out EntityLocation entityLocation)
     {
@@ -45,7 +48,8 @@ internal partial class Archetype
         entityLocation.Archetype = this;
         entityLocation.Index = _nextComponentIndex;
         entityLocation.Flags = flags;
-
+        Unsafe.SkipInit(out entityLocation.Version);
+        MemoryHelpers.Poison(ref entityLocation.Version);
         return ref _entities.UnsafeArrayIndex(_nextComponentIndex++);
     }
 
@@ -108,7 +112,7 @@ internal partial class Archetype
         var entities = _entities;
         var table = world.EntityTable._buffer;
         for (int i = previousComponentCount; i < entities.Length && i < _nextComponentIndex; i++)
-            table.UnsafeArrayIndex(entities[i].ID).Location.Archetype = this;
+            table.UnsafeArrayIndex(entities[i].ID).Archetype = this;
 
         _deferredEntityCount = 0;
     }
@@ -128,12 +132,12 @@ internal partial class Archetype
 
             archetypeEntity = recycled.CanPop() ? recycled.PopUnsafe() : new EntityIDOnly(world.NextEntityID++, 0);
 
-            ref EntityLookup lookup = ref world.EntityTable.UnsafeIndexNoResize(archetypeEntity.ID);
+            ref EntityLocation lookup = ref world.EntityTable.UnsafeIndexNoResize(archetypeEntity.ID);
 
             lookup.Version = archetypeEntity.Version;
-            lookup.Location.Archetype = this;
-            lookup.Location.Index = componentIndex++;
-            lookup.Location.Flags = EntityFlags.None;
+            lookup.Archetype = this;
+            lookup.Index = componentIndex++;
+            lookup.Flags = EntityFlags.None;
         }
 
         _nextComponentIndex = componentIndex;

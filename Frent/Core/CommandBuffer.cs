@@ -224,7 +224,7 @@ public class CommandBuffer
         while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
             Entity concrete = createCommand.Entity.ToEntity(_world);
-            ref EntityLookup lookup = ref _world.EntityTable.UnsafeIndexNoResize(concrete.EntityID);
+            ref EntityLocation lookup = ref _world.EntityTable.UnsafeIndexNoResize(concrete.EntityID);
 
             if (createCommand.BufferLength > 0)
             {
@@ -276,7 +276,7 @@ public class CommandBuffer
 
                 runner.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
 
-                if (record.Location.HasEvent(EntityFlags.AddComp))
+                if (record.HasEvent(EntityFlags.AddComp))
                 {
 #if NETSTANDARD2_1
                     var events = _world.EventLookup[command.Entity];

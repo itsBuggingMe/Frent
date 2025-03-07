@@ -12,7 +12,7 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Decon());
+    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Equals(null));
     
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
@@ -29,7 +29,6 @@ public class Program
         }
         else
         {
-            ProfileTest(disasmCall);
             BenchmarkRunner.Run<T>();
             JitTest(disasmCall);
         }
@@ -48,7 +47,7 @@ public class Program
         {
             for (int j = 0; j < 32; j++)
                 call(t);
-            Thread.Sleep(100);
+            Thread.Sleep(100);  
         }
     }
 

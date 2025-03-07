@@ -32,6 +32,7 @@ partial class World
 
         ComponentStorageBase[] components;
         Unsafe.SkipInit(out int index);
+        MemoryHelpers.Poison(ref index);
 
         if (AllowStructualChanges)
         {
@@ -49,12 +50,14 @@ partial class World
         //The jit likes to inline the outer create function and not inline
         //the inner functions - benchmarked to improve perf by 10-20%
         var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new(NextEntityID++, 0);
-        EntityTable[id] = new(eloc, version);
+        eloc.Version = version;
+        EntityTable[id] = eloc;
 
         //1x array lookup per component
         ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[index]; ref1 = comp;
 
         Entity concreteEntity = new Entity(ID, version, id);
+            
         EntityCreatedEvent.Invoke(concreteEntity);
         Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
 

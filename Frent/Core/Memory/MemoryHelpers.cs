@@ -17,6 +17,7 @@ internal static class MemoryHelpers
     public static int RoundUpToNextMultipleOf16(int value) => (value + 15) & ~15;
     public static int RoundDownToNextMultipleOf16(int value) => value & ~15;
     public static byte BoolToByte(bool b) => Unsafe.As<bool, byte>(ref b);
+
     public static ImmutableArray<T> ReadOnlySpanToImmutableArray<T>(ReadOnlySpan<T> span)
     {
         var builder = ImmutableArray.CreateBuilder<T>(span.Length);
@@ -118,6 +119,20 @@ internal static class MemoryHelpers
     internal struct Block8;
     [StructLayout(LayoutKind.Sequential, Size = 16)]
     internal struct Block16;
+
+
+    // catch bugs with Unsafe.SkitInit
+    [Conditional("DEBUG")]
+    public static void Poison<T>(ref T item)
+    {
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            throw new NotSupportedException("Cleared anyways");
+
+#if NET6_0_OR_GREATER
+        Span<byte> raw = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), Unsafe.SizeOf<T>());
+        raw.Fill(93);
+#endif
+    }
 }
 
 internal static class MemoryHelpers<T>

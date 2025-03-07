@@ -23,7 +23,7 @@ public static partial class EntityExtensions
     /// <exception cref="ComponentNotFoundException">The entity does not have all the components specified.</exception>
     public static void Deconstruct<T>(this Entity e, out Ref<T> comp)
     {
-        EntityLocation eloc = e.AssertIsAlive(out _).Location;
+        EntityLocation eloc = e.AssertIsAlive(out _);
 
         ComponentStorageBase[] comps = eloc.Archetype.Components;
         byte[] archetypeTable = eloc.Archetype.ComponentTagTable;
