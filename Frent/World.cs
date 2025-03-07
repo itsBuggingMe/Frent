@@ -23,12 +23,17 @@ public partial class World : IDisposable
     private static ushort _nextWorldID = 1;
     #endregion
 
-    internal Table<EntityLookup> EntityTable = new Table<EntityLookup>(256);
-    internal Archetype[] WorldArchetypeTable;
+    //entityID -> entity metadata
+    internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
+    //archetype ID -> Archetype?
+    internal Archetype?[] WorldArchetypeTable;
+    
     internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
 
     internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
+    
     private Dictionary<Type, WorldUpdateFilter> _updatesByAttributes = [];
+    
     internal int NextEntityID;
 
     internal readonly ushort ID;
@@ -170,6 +175,9 @@ public partial class World : IDisposable
     /// </summary>
     public Config CurrentConfig { get; set; }
 
+    internal readonly Archetype DefaultArchetype;
+    internal readonly Archetype DeferredCreateArchetype;
+
     /// <summary>
     /// Creates a world with zero entities and a uniform provider.
     /// </summary>
@@ -194,7 +202,8 @@ public partial class World : IDisposable
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
     {
         var (id, version) = RecycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(NextEntityID++, (ushort)0);
-        EntityTable[id] = new(entityLocation, version);
+        entityLocation.Version = version;
+        EntityTable[id] = entityLocation;
         return new Entity(ID, version, id);
     }
 
@@ -419,14 +428,13 @@ public partial class World : IDisposable
         return entity;
     }
 
-    internal readonly Archetype DefaultArchetype;
-    internal readonly Archetype DeferredCreateArchetype;
     internal Entity CreateEntityWithoutEvent()
     {
         ref var entity = ref DefaultArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
 
         var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new EntityIDOnly(NextEntityID++, 0);
-        EntityTable[id] = new(eloc, version);
+        eloc.Version = version;
+        EntityTable[id] = eloc;
 
         return new Entity(ID, version, id);
     }

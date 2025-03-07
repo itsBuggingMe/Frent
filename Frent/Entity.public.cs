@@ -22,8 +22,8 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool Has(ComponentID componentID)
     {
-        ref EntityLookup entityLocation = ref AssertIsAlive(out _);
-        return entityLocation.Location.Archetype.GetComponentIndex(componentID) != 0;
+        ref EntityLocation entityLocation = ref AssertIsAlive(out _);
+        return entityLocation.Archetype.GetComponentIndex(componentID) != 0;
     }
 
     /// <summary>
@@ -81,14 +81,14 @@ partial struct Entity
 
         //1x
         //other lookup is optimized into indirect pointer addressing
-        Archetype archetype = lookup.Location.Archetype;
+        Archetype archetype = lookup.Archetype;
 
         int compIndex = archetype.GetComponentIndex<T>();
 
         //2x
         //hardware trap
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
-        return ref storage[lookup.Location.Index];
+        return ref storage[lookup.Index];
     }//2, 0
 
     /// <summary>
@@ -102,9 +102,9 @@ partial struct Entity
     {
         ref var lookup = ref AssertIsAlive(out _);
 
-        int compIndex = lookup.Location.Archetype.GetComponentIndex(id);
+        int compIndex = lookup.Archetype.GetComponentIndex(id);
 
-        return lookup.Location.Archetype.Components[compIndex].GetAt(lookup.Location.Index);
+        return lookup.Archetype.Components[compIndex].GetAt(lookup.Index);
     }
 
     /// <summary>
@@ -128,12 +128,12 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out _);
 
         //2x
-        int compIndex = lookup.Location.Archetype.GetComponentIndex(id);
+        int compIndex = lookup.Archetype.GetComponentIndex(id);
 
         if (compIndex == 0)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
-        lookup.Location.Archetype.Components[compIndex].SetAt(obj, lookup.Location.Index);
+        lookup.Archetype.Components[compIndex].SetAt(obj, lookup.Index);
     }
 
     /// <summary>
@@ -171,7 +171,7 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out _);
 
         ComponentID componentId = Component.GetComponentID(type);
-        int compIndex = GlobalWorldTables.ComponentIndex(lookup.Location.ArchetypeID, componentId);
+        int compIndex = GlobalWorldTables.ComponentIndex(lookup.ArchetypeID, componentId);
 
         if (compIndex == 0)
         {
@@ -179,7 +179,7 @@ partial struct Entity
             return false;
         }
 
-        value = lookup.Location.Archetype.Components[compIndex].GetAt(lookup.Location.Index);
+        value = lookup.Archetype.Components[compIndex].GetAt(lookup.Index);
         return true;
     }
     #endregion
@@ -206,7 +206,7 @@ partial struct Entity
     /// <exception cref="InvalidCastException"><paramref name="component"/> is not assignable to the type represented by <paramref name="componentID"/>.</exception>
     public void AddAs(ComponentID componentID, object component)
     {
-        ref EntityLookup lookup = ref AssertIsAlive(out var w);
+        ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
             ComponentStorageBase componentRunner = null!;
@@ -259,7 +259,7 @@ partial struct Entity
     public bool Tagged(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        return lookup.Location.Archetype.HasTag(tagID);
+        return lookup.Archetype.HasTag(tagID);
     }
 
     /// <summary>
@@ -299,10 +299,10 @@ partial struct Entity
     public bool Tag(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        if (lookup.Location.Archetype.HasTag(tagID))
+        if (lookup.Archetype.HasTag(tagID))
             return false;
 
-        ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.AddTag);
+        ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.AddTag);
         w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
 
         return true;
@@ -327,10 +327,10 @@ partial struct Entity
     public bool Detach(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
-        if (!lookup.Location.Archetype.HasTag(tagID))
+        if (!lookup.Archetype.HasTag(tagID))
             return false;
 
-        ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Location.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
+        ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
         w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
 
         return true;
@@ -375,7 +375,7 @@ partial struct Entity
         {
             if (!InternalIsAlive(out var world, out _))
                 return null;
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.AddGenericComp;
+            world.EntityTable[EntityID].Flags |= EntityFlags.AddGenericComp;
             return world.EventLookup.GetOrAddNew(EntityIDOnly).Add.GenericEvent ??= new();
         }
     }
@@ -390,7 +390,7 @@ partial struct Entity
         {
             if (!InternalIsAlive(out var world, out _))
                 return null;
-            world.EntityTable[EntityID].Location.Flags |= EntityFlags.RemoveGenericComp;
+            world.EntityTable[EntityID].Flags |= EntityFlags.RemoveGenericComp;
             return world.EventLookup.GetOrAddNew(EntityIDOnly).Remove.GenericEvent ??= new();
         }
     }
@@ -455,7 +455,7 @@ partial struct Entity
             }
 
             if (removeFlags)
-                world.EntityTable[EntityID].Location.Flags &= ~flag;
+                world.EntityTable[EntityID].Flags &= ~flag;
         }
     }
 
@@ -469,7 +469,7 @@ partial struct Entity
 #else
         ref var record = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
 #endif
-        world.EntityTable[EntityID].Location.Flags |= flag;
+        world.EntityTable[EntityID].Flags |= flag;
         EventRecord.Initalize(exists, ref record!);
 
         switch (flag)
@@ -553,7 +553,7 @@ partial struct Entity
         get
         {
             ref var lookup = ref AssertIsAlive(out _);
-            return lookup.Location.Archetype.ArchetypeTypeArray;
+            return lookup.Archetype.ArchetypeTypeArray;
         }
     }
 
@@ -566,7 +566,7 @@ partial struct Entity
         get
         {
             ref var lookup = ref AssertIsAlive(out _);
-            return lookup.Location.Archetype.ArchetypeTagArray;
+            return lookup.Archetype.ArchetypeTagArray;
         }
     }
 
@@ -578,7 +578,7 @@ partial struct Entity
         get
         {
             ref var lookup = ref AssertIsAlive(out _);
-            return lookup.Location.Archetype.ID;
+            return lookup.Archetype.ID;
         }
     }
 
@@ -589,10 +589,10 @@ partial struct Entity
     public void EnumerateComponents(IGenericAction onEach)
     {
         ref var lookup = ref AssertIsAlive(out var _);
-        ComponentStorageBase[] runners = lookup.Location.Archetype.Components;
+        ComponentStorageBase[] runners = lookup.Archetype.Components;
         for (int i = 1; i < runners.Length; i++)
         {
-            runners[i].InvokeGenericActionWith(onEach, lookup.Location.Index);
+            runners[i].InvokeGenericActionWith(onEach, lookup.Index);
         }
     }
 

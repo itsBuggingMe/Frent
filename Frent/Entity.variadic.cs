@@ -44,7 +44,7 @@ partial struct Entity
     [SkipLocalsInit]
     public void Add<T>(in T c1)
     {
-        ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
+        ref EntityLocation thisLookup = ref AssertIsAlive(out World world);
 
         if (!world.AllowStructualChanges)
         {
@@ -65,7 +65,7 @@ partial struct Entity
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
 
-        EntityFlags flags = thisLookup.Location.Flags;
+        EntityFlags flags = thisLookup.Flags;
         if (EntityLocation.HasEventFlag(flags | world.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
         {
             if (world.ComponentAddedEvent.HasListeners)
@@ -78,7 +78,7 @@ partial struct Entity
 #else
                 ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
 #endif
-                InvokePerEntityEvents(this, EntityLocation.HasEventFlag(thisLookup.Location.Flags, EntityFlags.AddGenericComp), ref events.Add, ref c1ref);
+                InvokePerEntityEvents(this, EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.AddGenericComp), ref events.Add, ref c1ref);
             }
         }
     }
@@ -90,7 +90,7 @@ partial struct Entity
     [SkipLocalsInit]
     public void Remove<T>()
     {
-        ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
+        ref EntityLocation thisLookup = ref AssertIsAlive(out World world);
 
         if (!world.AllowStructualChanges)
         {
@@ -116,7 +116,7 @@ partial struct Entity
     [SkipLocalsInit]
     public void Tag<T>()
     {
-        ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
+        ref EntityLocation thisLookup = ref AssertIsAlive(out World world);
 
         Archetype to = TraverseThroughCacheOrCreate<TagID, NeighborCache<T>>(
             world,
@@ -126,7 +126,7 @@ partial struct Entity
 
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
 
-        EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
+        EntityFlags flags = thisLookup.Flags | world.WorldEventFlags;
         if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
         {
             if (world.Tagged.HasListeners)
@@ -151,7 +151,7 @@ partial struct Entity
     [SkipLocalsInit]
     public void Detach<T>()
     {
-        ref EntityLookup thisLookup = ref AssertIsAlive(out World world);
+        ref EntityLocation thisLookup = ref AssertIsAlive(out World world);
 
         Archetype to = TraverseThroughCacheOrCreate<TagID, NeighborCache<T>>(
             world,
@@ -161,7 +161,7 @@ partial struct Entity
 
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
 
-        EntityFlags flags = thisLookup.Location.Flags | world.WorldEventFlags;
+        EntityFlags flags = thisLookup.Flags | world.WorldEventFlags;
         if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
         {
             if (world.Detached.HasListeners)
@@ -260,12 +260,12 @@ partial struct Entity
     internal static Archetype TraverseThroughCacheOrCreate<T, TEdge>(
         World world,
         ref ArchetypeNeighborCache cache,
-        ref EntityLookup currentLookup,
+        ref EntityLocation currentLookup,
         bool add)
             where T : ITypeID
             where TEdge : struct, IArchetypeGraphEdge
     {
-        ArchetypeID archetypeFromID = currentLookup.Location.ArchetypeID;
+        ArchetypeID archetypeFromID = currentLookup.ArchetypeID;
         int index = cache.Traverse(archetypeFromID.RawIndex);
 
         if (index == 32)

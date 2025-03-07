@@ -62,6 +62,7 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
         if (_nextIndex == 0)
         {
             Unsafe.SkipInit(out value);
+            MemoryHelpers.Poison(ref value);
             return false;
         }
 
@@ -152,6 +153,7 @@ internal unsafe struct NativeStack<T> : IDisposable where T : struct
         if (_nextIndex == 0)
         {
             Unsafe.SkipInit(out value);
+            MemoryHelpers.Poison(ref value);
             return false;
         }
 

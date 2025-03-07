@@ -7,13 +7,13 @@ public static class WorldMarshal
 {
     public static ref T GetComponent<T>(World world, Entity entity)
     {
-        EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID).Location;
+        EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID);
         return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(location.Archetype.Components.UnsafeArrayIndex(location.Archetype.GetComponentIndex<T>()))[location.Index];
     }
 
     public static Span<T> GetRawBuffer<T>(World world, Entity entity)
     {
-        EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID).Location;
+        EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID);
         return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(location.Archetype.Components.UnsafeArrayIndex(location.Archetype.GetComponentIndex<T>())).AsSpan();
     }
 }

@@ -9,15 +9,15 @@ partial class World
     {
         //world valid x, entity valid x, has component
 
-        EntityLookup location = EntityTable.UnsafeIndexNoResize(entity.EntityID);
+        EntityLocation location = EntityTable.UnsafeIndexNoResize(entity.EntityID);
 
         //world + entity valid hardware trap
-        Archetype archetype = location.Location.Archetype;
+        Archetype archetype = location.Archetype;
 
         int compIndex = archetype.GetComponentIndex<T>();
 
         //Components[0] null; trap
         ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
-        return ref storage[location.Location.Index];
+        return ref storage[location.Index];
     }
 }

@@ -4,16 +4,16 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential, Pack = 2)]
 internal struct EntityLocation
 {
-    //TODO: i dont think this struct is packed properly!
+    //128 bits
     internal Archetype Archetype;
     internal int Index;
     internal EntityFlags Flags;
+    internal ushort Version;
 
-    internal ArchetypeID ArchetypeID => Archetype.ID;
-
+    internal readonly ArchetypeID ArchetypeID => Archetype.ID;
 
     public EntityLocation(Archetype archetype, int index)
     {
