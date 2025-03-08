@@ -57,9 +57,9 @@ partial class World
         ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[index]; ref1 = comp;
 
         Entity concreteEntity = new Entity(ID, version, id);
-            
-        EntityCreatedEvent.Invoke(concreteEntity);
+        
         Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
+        EntityCreatedEvent.Invoke(concreteEntity);
 
         return concreteEntity;
     }
