@@ -89,10 +89,10 @@ internal unsafe abstract partial class ComponentStorage<TComponent>(int length) 
 
 
 #if NETSTANDARD2_1
-    public Span<TComponent> AsSpan(int length) => TypedBuffer.AsSpan(length);
+    public Span<TComponent> AsSpanLength(int length) => TypedBuffer.AsSpan(0, length);
     public Span<TComponent> AsSpan() => TypedBuffer;
 #else
-    public Span<TComponent> AsSpan(int length) => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(TypedBuffer), length);
+    public Span<TComponent> AsSpanLength(int length) => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(TypedBuffer), length);
     public Span<TComponent> AsSpan() => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(TypedBuffer), TypedBuffer.Length);
 #endif
 
