@@ -21,10 +21,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         var models = context.SyntaxProvider.CreateSyntaxProvider(static (n, _) => n is TypeDeclarationSyntax typeDec && typeDec.BaseList is not null,
             static (gsc, ct) =>
             {
+
                 INamedTypeSymbol? symbol = gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) as INamedTypeSymbol;
-                LanguageVersion langVersion = gsc.SemanticModel.Compilation is CSharpCompilation comp
-                  ? comp.LanguageVersion
-                  : throw new NotSupportedException("Frent source generation is only supported for C# projects.");
 
                 if (symbol is not null)
                 {
@@ -76,7 +74,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                             //TODO: avoid alloc?
                             return new ComponentUpdateItemModel(
-                                langVersion,
                                 initable,
                                 destroyable,
                                 symbol.ToString(),
@@ -90,12 +87,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     }
                 }
 
-                return new ComponentUpdateItemModel(default, false, false, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
+                return new ComponentUpdateItemModel(false, false, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
             });
 
         IncrementalValuesProvider<ComponentUpdateItemModel> types = models
             .Where(m => m.Type.Length != 0);
 
+#if UNITY
         //netstandard generation
         IncrementalValueProvider<(string? Name, string Source)> monolith = types
             .Collect()
@@ -106,23 +104,21 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             if (s.Name is not null)
                 ctx.AddSource(s.Name, s.Source);
         });
-
+#else
         //normal generation
         IncrementalValuesProvider<(string? Name, string Source)> files = types
             .Select(GenerateModuleInitalizerFiles);
-        
+
         context.RegisterImplementationSourceOutput(files, (ctx, s) =>
         {
             if (s.Name is not null)
                 ctx.AddSource(s.Name, s.Source);
         });
+#endif
     }
 
     private static (string? Name, string Source) GenerateMonolithicRegistrationFile(ImmutableArray<ComponentUpdateItemModel> models, CancellationToken ct)
     {
-        if (models.Length > 0 && AreModuleInitalizersSupported(models[0].Version))
-            return (null, string.Empty);
-
         StringBuilder sb = new StringBuilder();
 
 
@@ -153,24 +149,23 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         string source = sb.ToString();
         sb.Clear();
 
-        sb.AppendNamespace("ComponentRegistry.g.cs");
-
-        string name = sb.ToString();
-        sb.Clear();
-
-        return (name, source);
+        return ("ComponentRegistry.g.cs", source);
     }
 
-    private static bool AreModuleInitalizersSupported(LanguageVersion version)
+    private static bool AreModuleInitalizersSupported(ParseOptions options)
     {
-        return version >= LanguageVersion.CSharp9;
+        foreach(var e in options.PreprocessorSymbolNames)
+        {
+            if (e == "NET6_0_OR_GREATER")
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static (string? Name, string Source) GenerateModuleInitalizerFiles(ComponentUpdateItemModel model, CancellationToken ct)
     {
-        if (!AreModuleInitalizersSupported(model.Version))
-            return (null, string.Empty);
-
         StringBuilder sb = new StringBuilder();
 
 
@@ -305,5 +300,5 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         namedTypeSymbol.Interfaces.Length == 0 &&
         namedTypeSymbol.ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName;
 
-    internal record struct ComponentUpdateItemModel(LanguageVersion Version, bool Initable, bool Destroyable, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
+    internal record struct ComponentUpdateItemModel(bool Initable, bool Destroyable, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
 }
