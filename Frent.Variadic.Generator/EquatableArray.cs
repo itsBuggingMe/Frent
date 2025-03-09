@@ -44,10 +44,10 @@ internal struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnumerable<T
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => new EquatableArrayEnumerator(this);
+    public EquatableArrayEnumerator GetEnumerator() => new EquatableArrayEnumerator(this);
 
-    public IEnumerator<T> GetEnumerator() => new EquatableArrayEnumerator(this);
-
-    private struct EquatableArrayEnumerator : IEnumerator<T>
+    public struct EquatableArrayEnumerator : IEnumerator<T>
     {
         private readonly T[] _items;
         private int _index;
