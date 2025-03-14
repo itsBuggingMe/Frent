@@ -104,7 +104,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         IncrementalValuesProvider<ComponentUpdateItemModel> types = models
             .Where(m => m.Type.Length != 0);
 
-#if !UNITY
+#if UNITY
         //unity generation
         IncrementalValueProvider<(string? Name, string Source)> monolith = types
             .Collect()
