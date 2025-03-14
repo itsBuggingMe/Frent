@@ -7,7 +7,7 @@ Frent is on [Nuget](https://www.nuget.org/packages/Frent/)!
 > Frent is still in beta.
 
 ```pwsh
-dotnet add package Frent --version 0.5.1-beta
+dotnet add package Frent --version 0.5.2-beta
 ```
 
 *Note: Unity requires a [different package](https://itsbuggingme.github.io/Frent/docs/getting-started.html)*
