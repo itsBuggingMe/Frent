@@ -25,7 +25,9 @@ internal class WorldState
         (Component<S1>.ID, (rng) => ComponentHandle.Create(new S1(rng))), 
         (Component<S2>.ID, (rng) => ComponentHandle.Create(new S2(rng))), 
         (Component<S3>.ID, (rng) => ComponentHandle.Create(new S3(rng)))];
+
     private const int UnqiueComponentTypes = 6;
+
     public WorldState(int seed)
     {
         _syncedWorld = new();

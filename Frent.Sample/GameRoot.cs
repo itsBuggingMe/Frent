@@ -51,7 +51,7 @@ namespace Frent.Sample
                 .Where(c => c is not null)
                 .Select(c => c!.Value)
                 .ToArray();
-
+            
             for (int i = 0; i < _count; i++)
             {
                 entities.Add(_world.Create<Position, Velocity, Friction, Bounds, SinglePixel, MouseController>(
@@ -62,7 +62,7 @@ namespace Frent.Sample
                     colors[Random.Shared.Next(colors.Length)],
                     default));
             }
-
+            
             SpriteBatch = new SpriteBatch(GraphicsDevice);
 
             base.Initialize();

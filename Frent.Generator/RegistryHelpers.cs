@@ -1,4 +1,4 @@
-﻿
+﻿using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Frent.Generator;
@@ -12,6 +12,11 @@ public static class RegistryHelpers
         return sb.Append(@namespace).Append('.');
     }
 
+    public static StringBuilder AppendFullTypeName(this StringBuilder sb, string typeName)
+    {
+        return sb.Append("global::").Append(typeName);
+    }
+
     public const string UpdateTypeAttributeName = "Frent.Updating.UpdateTypeAttribute";
     public const string UpdateOrderInterfaceName = "Frent.Updating.IComponentUpdateOrderAttribute";
     public const string UpdateMethodName = "Update";
@@ -21,3 +26,4 @@ public static class RegistryHelpers
     public const string FullyQualifiedInitableInterfaceName = "Frent.Components.IInitable";
     public const string FullyQualifiedDestroyableInterfaceName = "Frent.Components.IDestroyable";
 }
+

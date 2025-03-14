@@ -59,3 +59,5 @@ dotnet nuget push ".\Frent\bin\Release\$package" --api-key $Env:NUGET_API_KEY --
 pause
 
 echo "DONE! Don't forget to update docs!!!!"
+
+pause
