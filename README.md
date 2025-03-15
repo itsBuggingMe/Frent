@@ -1,5 +1,5 @@
 # [Frent](https://itsbuggingme.github.io/Frent/) 
-[![NuGet](https://img.shields.io/nuget/v/Frent.svg)](https://www.nuget.org/packages/Frent/) [![NuGet](https://img.shields.io/nuget/dt/Frent.svg)](https://www.nuget.org/packages/Frent/) ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/w/itsBuggingMe/Frent/master) ![GitHub Repo stars](https://img.shields.io/github/stars/ItsBuggingMe/Frent)
+[![NuGet](https://img.shields.io/nuget/v/Frent.svg)](https://www.nuget.org/packages/Frent/) [![NuGet](https://img.shields.io/nuget/dt/Frent.svg)](https://www.nuget.org/packages/Frent/) ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/w/itsBuggingMe/Frent/master) ![Help](https://img.shields.io/discord/1341196126291759188) ![GitHub Repo stars](https://img.shields.io/github/stars/ItsBuggingMe/Frent)
 
 
 A high preformance, low memory usage, archetyped based **[ECF](https://itsbuggingme.github.io/Frent/docs/ecf.html)/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
