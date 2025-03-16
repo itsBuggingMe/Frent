@@ -38,7 +38,7 @@ record struct Velocity(Vector2 Delta) : IComponent<Position>
 
 Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs/getting-started.html)!
 
-There is also a [Monogame](https://github.com/itsBuggingMe/Frent/blob/master/Frent.Sample/Asteroids/AsteroidsGame.cs) and [Godot](https://github.com/itsBuggingMe/FrentGodotSample) sample.
+There is also samples for [Monogame](https://github.com/itsBuggingMe/Frent/blob/master/Frent.Sample/Asteroids/AsteroidsGame.cs), [Unity](https://github.com/itsBuggingMe/Frent.Unity.Sample) and [Godot](https://github.com/itsBuggingMe/FrentGodotSample).
 
 ## Preformance
 
