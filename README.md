@@ -17,6 +17,7 @@ Want to write systems anyways? Frent also has a Systems API that allows you to q
 
 ```csharp
 using Frent;
+using Frent.Systems;
 using Frent.Components;
 using System.Numerics;
 
@@ -28,6 +29,10 @@ world.Update();
 
 // Position is (1, 1)
 Console.WriteLine(entity.Get<Position>());
+
+// Alternatively, use a system
+world.Query<With<Position>, With<Velocity>>()
+    .Delegate((ref Position p, ref Velocity v) => p.Value += v.Delta);
 
 record struct Position(Vector2 Value);
 record struct Velocity(Vector2 Delta) : IComponent<Position>
