@@ -10,7 +10,7 @@ Frent is on [Nuget](https://www.nuget.org/packages/Frent/)!
 dotnet add package Frent --version 0.5.2-beta
 ```
 
-*Note: Unity requires a [different package](https://itsbuggingme.github.io/Frent/docs/getting-started.html)*
+*Note: Unity requires a [different package](https://itsbuggingme.github.io/Frent/docs/unity.html)*
 
 ## Creating a World
 Start by importing `Frent` and `Frent.Components` (for component interfaces).
