@@ -135,16 +135,30 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
 #if UNITY
         //unity generation
-        IncrementalValueProvider<(string? Name, string Source)> monolith = types
+        IncrementalValueProvider<SourceOutput> monolith = types
+            .Where(m => !m.Flagged(UpdateModelFlags.IsGeneric))
             .Collect()
             .Select(GenerateMonolithicRegistrationFile);
 
         context.RegisterImplementationSourceOutput(monolith, (ctx, s) =>
         {
+            if (s.Diagnostic is not null)
+                ctx.ReportDiagnostic(s.Diagnostic);
             if (s.Name is not null)
                 ctx.AddSource(s.Name, s.Source);
         });
-        
+
+        var partialDeclarations = types
+            .Where(m => m.Flagged(UpdateModelFlags.IsGeneric))
+            .Select((n, ct) => GenerateRegisterGenericType(n, ct));
+
+        context.RegisterImplementationSourceOutput(partialDeclarations, (ctx, s) =>
+        {
+            if (s.Diagnostic is not null)
+                ctx.ReportDiagnostic(s.Diagnostic);
+            if (s.Name is not null)
+                ctx.AddSource(s.Name, s.Source);
+        });
 #else
         //normal generation
         IncrementalValuesProvider<SourceOutput> files = types
@@ -160,10 +174,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 #endif
     }
 
-    private static (string? Name, string Source) GenerateMonolithicRegistrationFile(ImmutableArray<ComponentUpdateItemModel> models, CancellationToken ct)
+    private static SourceOutput GenerateMonolithicRegistrationFile(ImmutableArray<ComponentUpdateItemModel> models, CancellationToken ct)
     {
         if (models.Length == 0)
-            return (default, string.Empty);
+            return new(default, string.Empty, default);
 
         StringBuilder sb = new StringBuilder();
 
@@ -196,7 +210,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         string source = sb.ToString();
         sb.Clear();
 
-        return ("FrentComponentRegistry.g.cs", source);
+        return new("FrentComponentRegistry.g.cs", source, null);
     }
 
     private static bool AreModuleInitalizersSupported(ParseOptions options)
@@ -214,9 +228,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     private static SourceOutput GenerateModuleInitalizerFiles(in ComponentUpdateItemModel model, CancellationToken ct)
     {
         Debug.Assert(!model.Flagged(UpdateModelFlags.IsGeneric));
-
-        if (model.Diagnostic is not null)
-            return new(null, string.Empty, model.Diagnostic);
 
         StringBuilder sb = new StringBuilder();
 
@@ -311,26 +322,27 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
     private static SourceOutput GenerateRegisterGenericType(in ComponentUpdateItemModel model, CancellationToken ct)
     {
+        //NOTE:
+        //this needs to support older lang versions because unity
         Debug.Assert(model.Flagged(UpdateModelFlags.IsGeneric));
-
-        if (model.Diagnostic is not null)
-            return new(null, string.Empty, model.Diagnostic);
 
         StringBuilder sb = new();
 
+        string namespaceIndentation;
         string @namespace;
         string @name;
         int sep = model.FullName.LastIndexOf('.');
 
         if(sep == -1)
         {//global namespace
-            @namespace = string.Empty;
+            @namespace = namespaceIndentation = string.Empty;
             name = model.FullName;
         }
         else
         {
             @namespace = model.FullName.Substring(0, sep);
             @name = model.FullName.Substring(sep + 1);
+            namespaceIndentation = "    ";
         }
 
         sb
@@ -342,23 +354,26 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         if (@namespace != string.Empty)
             sb
-                .Append("namespace ").Append(@namespace).Append(';').AppendLine();
+                .Append("namespace ").Append(@namespace).AppendLine()
+                .AppendLine("{");
 
         sb
             .AppendLine()
-            .Append("partial ").Append(model.Flagged(UpdateModelFlags.IsStruct) ? "struct" : "class").Append(" ").AppendLine(@name)
-            .AppendLine("{")
+            .Append(namespaceIndentation).Append("partial ").Append(model.Flagged(UpdateModelFlags.IsStruct) ? "struct" : "class").Append(" ").AppendLine(@name)
+            .Append(namespaceIndentation).AppendLine("{")
                 //TODO: figure out a better way to have user static constructors
                 //.AppendLine("    static partial void StaticConstructor();")
-                .Append("    static ").Append(model.Type).AppendLine("()")
-                .AppendLine("    {");
+                .Append(namespaceIndentation).Append("    static ").Append(model.Type).AppendLine("()")
+                .Append(namespaceIndentation).AppendLine("    {");
 
         AppendInitalizationMethodBody(sb, model);
 
         sb
             //.AppendLine("        StaticConstructor();")
-            .AppendLine("    }")
-            .AppendLine("}");
+            .Append(namespaceIndentation).AppendLine("    }")
+            .Append(namespaceIndentation).AppendLine("}");
+
+        sb.AppendLine("}");
 
         string source = sb.ToString();
 
