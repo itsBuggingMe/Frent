@@ -4,6 +4,7 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
 
@@ -31,7 +32,7 @@ public static class Component<T>
         GeneralComponentStorage.Create(out var index) = component;
         return new ComponentHandle(index, _id);
     }
-
+    
     static Component()
     {
         (_id, GeneralComponentStorage, Initer, Destroyer) = Component.GetExistingOrSetupNewComponent<T>();
@@ -118,6 +119,8 @@ public static class Component
                 return (value, (IDTable<T>)ComponentTable[value.RawIndex].Storage, (ComponentDelegates<T>.InitDelegate?)ComponentTable[value.RawIndex].Initer, (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[value.RawIndex].Destroyer);
             }
 
+            EnsureTypeInit(type);
+
             int nextIDInt = ++NextComponentID;
 
             if (nextIDInt == ushort.MaxValue)
@@ -154,6 +157,8 @@ public static class Component
                 return value;
             }
 
+            EnsureTypeInit(t);
+
             int nextIDInt = ++NextComponentID;
 
             if (nextIDInt == ushort.MaxValue)
@@ -170,6 +175,20 @@ public static class Component
 
             return id;
         }
+    }
+
+    private static void EnsureTypeInit(Type t)
+    {
+        if (GenerationServices.UserGeneratedTypeMap.ContainsKey(t))
+            return;
+        if (!typeof(IComponentBase).IsAssignableFrom(t))
+            return;
+        //it needs init!!
+#if NETSTANDARD2_1
+        t.TypeInitializer?.Invoke(null, []);
+#else
+        RuntimeHelpers.RunClassConstructor(t.TypeHandle);
+#endif
     }
 
     private static IDTable GetComponentTable(Type type)

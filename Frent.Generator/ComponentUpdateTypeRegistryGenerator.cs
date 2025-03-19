@@ -29,16 +29,16 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         var models = context.SyntaxProvider.CreateSyntaxProvider(static (n, _) => n is TypeDeclarationSyntax typeDec && typeDec.BaseList is not null,
             static (gsc, ct) =>
             {
+                INamedTypeSymbol? componentTypeSymbol = gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) as INamedTypeSymbol;
 
-                INamedTypeSymbol? symbol = gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) as INamedTypeSymbol;
-
-                if (symbol is not null)
+                if (componentTypeSymbol is not null && 
+                    (componentTypeSymbol.TypeKind == TypeKind.Class || componentTypeSymbol.TypeKind == TypeKind.Struct))
                 {
-                    foreach (var @interface in symbol.AllInterfaces)
+                    foreach (var @interface in componentTypeSymbol.AllInterfaces)
                     {
                         if (InterfaceImplementsIComponent(@interface))
                         {
-                            string @namespace = symbol.ContainingNamespace.ToString();
+                            string @namespace = componentTypeSymbol.ContainingNamespace.ToString();
                             if (@namespace == "<global namespace>")
                                 @namespace = string.Empty;
                             int index = @namespace.IndexOf('.');
@@ -52,9 +52,38 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                             //stack allocate 6 slots
                             var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
-                            bool initable = ImplementsInterface(symbol, RegistryHelpers.FullyQualifiedInitableInterfaceName);
-                            bool destroyable = ImplementsInterface(symbol, RegistryHelpers.FullyQualifiedDestroyableInterfaceName);
-                            
+
+                            UpdateModelFlags flags = default;
+                            if (ImplementsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedInitableInterfaceName))
+                                flags |= UpdateModelFlags.Initable;
+                            if (ImplementsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedDestroyableInterfaceName))
+                                flags |= UpdateModelFlags.Destroyable;
+
+                            if (componentTypeSymbol.IsGenericType)
+                                flags |= UpdateModelFlags.IsGeneric;
+
+                            if (componentTypeSymbol.TypeKind == TypeKind.Class)
+                                flags |= UpdateModelFlags.IsClass;
+                            if (componentTypeSymbol.TypeKind == TypeKind.Struct)
+                                flags |= UpdateModelFlags.IsStruct;
+
+                            Diagnostic? diagnostic = null;
+
+                            if(componentTypeSymbol.IsGenericType && !IsPartial(componentTypeSymbol))
+                            {
+                                diagnostic = Diagnostic.Create(
+                                        new DiagnosticDescriptor(
+                                            id: "FR0000",
+                                            title: "Non-partial Generic Component Type",
+                                            messageFormat: "Generic Component \'{0}\' must be marked as partial.",
+                                            category: "Source Generation",
+                                            DiagnosticSeverity.Error,
+                                            isEnabledByDefault: true
+                                            ), 
+                                        componentTypeSymbol.Locations.First(), 
+                                        componentTypeSymbol.Name);
+                            }
+
                             foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
                             {
                                 if (item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
@@ -85,20 +114,20 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                             //TODO: avoid alloc?
                             return new ComponentUpdateItemModel(
-                                initable,
-                                destroyable,
-                                symbol.ToString(),
-                                symbol.Name,
+                                flags,
+                                componentTypeSymbol.ToString(),
+                                componentTypeSymbol.Name,
                                 @interface.Name,
                                 index == -1 ? @namespace : @namespace.Substring(0, index),
                                 index == -1 ? string.Empty : @namespace.Substring(index + 1),
                                 new EquatableArray<string>(genericArgs),
-                                new EquatableArray<string>(stackAttributes.ToArray()));
+                                new EquatableArray<string>(stackAttributes.ToArray()),
+                                diagnostic);
                         }
                     }
                 }
 
-                return new ComponentUpdateItemModel(false, false, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]));
+                return new ComponentUpdateItemModel(default, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]), null);
             });
 
         IncrementalValuesProvider<ComponentUpdateItemModel> types = models
@@ -118,11 +147,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         
 #else
         //normal generation
-        IncrementalValuesProvider<(string? Name, string Source)> files = types
-            .Select(GenerateModuleInitalizerFiles);
+        IncrementalValuesProvider<SourceOutput> files = types
+            .Select((t, ct) => t.Flagged(UpdateModelFlags.IsGeneric) ? GenerateRegisterGenericType(t, ct) : GenerateModuleInitalizerFiles(t, ct));
 
         context.RegisterImplementationSourceOutput(files, (ctx, s) =>
         {
+            if(s.Diagnostic is not null)
+                ctx.ReportDiagnostic(s.Diagnostic);
             if (s.Name is not null)
                 ctx.AddSource(s.Name, s.Source);
         });
@@ -180,8 +211,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static (string? Name, string Source) GenerateModuleInitalizerFiles(ComponentUpdateItemModel model, CancellationToken ct)
+    private static SourceOutput GenerateModuleInitalizerFiles(in ComponentUpdateItemModel model, CancellationToken ct)
     {
+        Debug.Assert(!model.Flagged(UpdateModelFlags.IsGeneric));
+
+        if (model.Diagnostic is not null)
+            return new(null, string.Empty, model.Diagnostic);
+
         StringBuilder sb = new StringBuilder();
 
         sb
@@ -223,7 +259,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         string name = sb.ToString();
         sb.Clear();
 
-        return (name, source);
+        return new(name, source, model.Diagnostic);
     }
 
     private static void AppendInitalizationMethodBody(StringBuilder sb, in ComponentUpdateItemModel model)
@@ -254,13 +290,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .AppendFullTypeName(model.FullName)
             .AppendLine("));");
         }
-        if (model.Initable)
+        if (model.Flagged(UpdateModelFlags.Initable))
         {
             sb.Append("        GenerationServices.RegisterInit<")
             .AppendFullTypeName(model.FullName)
             .AppendLine(">();");
         }
-        if (model.Destroyable)
+        if (model.Flagged(UpdateModelFlags.Destroyable))
         {
             sb.Append("        GenerationServices.RegisterDestroy<")
             .AppendFullTypeName(model.FullName)
@@ -272,6 +308,65 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             return (1, interfaceName.Length - "IComponent".Length);
         }
     }
+
+    private static SourceOutput GenerateRegisterGenericType(in ComponentUpdateItemModel model, CancellationToken ct)
+    {
+        Debug.Assert(model.Flagged(UpdateModelFlags.IsGeneric));
+
+        if (model.Diagnostic is not null)
+            return new(null, string.Empty, model.Diagnostic);
+
+        StringBuilder sb = new();
+
+        string @namespace;
+        string @name;
+        int sep = model.FullName.LastIndexOf('.');
+
+        if(sep == -1)
+        {//global namespace
+            @namespace = string.Empty;
+            name = model.FullName;
+        }
+        else
+        {
+            @namespace = model.FullName.Substring(0, sep);
+            @name = model.FullName.Substring(sep + 1);
+        }
+
+        sb
+            .AppendLine("// <auto-generated />")
+            .AppendLine("// This file was auto generated using Frent's source generator")
+            .AppendLine("using global::Frent.Updating;")
+            .AppendLine("using global::Frent.Updating.Runners;")
+            .AppendLine();
+
+        if (@namespace != string.Empty)
+            sb
+                .Append("namespace ").Append(@namespace).Append(';').AppendLine();
+
+        sb
+            .AppendLine()
+            .Append("partial ").Append(model.Flagged(UpdateModelFlags.IsStruct) ? "struct" : "class").Append(" ").AppendLine(@name)
+            .AppendLine("{")
+                //TODO: figure out a better way to have user static constructors
+                //.AppendLine("    static partial void StaticConstructor();")
+                .Append("    static ").Append(model.Type).AppendLine("()")
+                .AppendLine("    {");
+
+        AppendInitalizationMethodBody(sb, model);
+
+        sb
+            //.AppendLine("        StaticConstructor();")
+            .AppendLine("    }")
+            .AppendLine("}");
+
+        string source = sb.ToString();
+
+        sb.Clear().Append(model.Type).Append(".g.cs");
+
+        return new(sb.ToString(), source, model.Diagnostic);
+    }
+
     static bool Launched = false;
 
     [Conditional("DEBUG")]
@@ -308,11 +403,32 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         return false;
     }
 
+    public static bool IsPartial(INamedTypeSymbol namedTypeSymbol)
+    {
+        return namedTypeSymbol.DeclaringSyntaxReferences
+            .Select(syntaxRef => syntaxRef.GetSyntax() as TypeDeclarationSyntax)
+            .Any(syntax => syntax?.Modifiers.Any(SyntaxKind.PartialKeyword) ?? false);
+    }
+
     private static bool InterfaceImplementsIComponent(INamedTypeSymbol namedTypeSymbol) =>
         (namedTypeSymbol.Interfaces.Length == 1 &&
         namedTypeSymbol.Interfaces[0].ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName) ||
         namedTypeSymbol.Interfaces.Length == 0 &&
         namedTypeSymbol.ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName;
 
-    internal record struct ComponentUpdateItemModel(bool Initable, bool Destroyable, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes);
+    internal record struct ComponentUpdateItemModel(UpdateModelFlags Flags, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes, Diagnostic? Diagnostic)
+    {
+        public readonly bool Flagged(UpdateModelFlags updateModelFlags) => Flags.HasFlag(updateModelFlags);
+    }
+    internal record struct SourceOutput(string? Name, string Source, Diagnostic? Diagnostic);
+    
+    [Flags]
+    internal enum UpdateModelFlags
+    {
+        IsClass = 1 << 0,
+        IsStruct = 1 << 1,
+        IsGeneric = 1 << 2,
+        Initable = 1 << 3,
+        Destroyable = 1 << 4,
+    }
 }

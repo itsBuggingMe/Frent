@@ -30,3 +30,12 @@ internal class FilteredBehavior2(Action onUpdate) : IComponent
 
 internal class ChildClass : BaseClass;
 internal class BaseClass;
+
+partial struct GenericComponent<T>() : IComponent
+{
+    public static readonly int x;
+
+    public T? Value;
+    public int CalledCount;
+    public void Update() => CalledCount++;
+}
