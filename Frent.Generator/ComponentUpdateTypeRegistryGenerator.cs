@@ -15,7 +15,7 @@ using System.Threading;
 
 namespace Frent.Generator;
 
-[Generator(LanguageNames.CSharp)]
+[Generator(LanguageNames.CSharp)]//TODO: refactor into CodeBuilder
 public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 {
     private static SymbolDisplayFormat? _symbolDisplayFormat;
@@ -66,6 +66,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                                 flags |= UpdateModelFlags.IsClass;
                             if (componentTypeSymbol.TypeKind == TypeKind.Struct)
                                 flags |= UpdateModelFlags.IsStruct;
+
+                            if(componentTypeSymbol.IsRecord)
+                                flags |= UpdateModelFlags.IsRecord;
 
                             Diagnostic? diagnostic = null;
 
@@ -359,7 +362,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         sb
             .AppendLine()
-            .Append(namespaceIndentation).Append("partial ").Append(model.Flagged(UpdateModelFlags.IsStruct) ? "struct" : "class").Append(" ").AppendLine(@name)
+            .Append(namespaceIndentation).Append("partial ").Append(model.Flagged(UpdateModelFlags.IsRecord) ? "record " : string.Empty).Append(model.Flagged(UpdateModelFlags.IsStruct) ? "struct " : "class ").AppendLine(@name)
             .Append(namespaceIndentation).AppendLine("{")
                 //TODO: figure out a better way to have user static constructors
                 //.AppendLine("    static partial void StaticConstructor();")
@@ -373,7 +376,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .Append(namespaceIndentation).AppendLine("    }")
             .Append(namespaceIndentation).AppendLine("}");
 
-        sb.AppendLine("}");
+        if (@namespace != string.Empty)
+            sb.AppendLine("}");
 
         string source = sb.ToString();
 
@@ -445,5 +449,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         IsGeneric = 1 << 2,
         Initable = 1 << 3,
         Destroyable = 1 << 4,
+        IsRecord = 1 << 5,
     }
 }
