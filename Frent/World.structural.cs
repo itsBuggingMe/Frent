@@ -16,14 +16,6 @@ partial class World
      *  These functions take all the data it needs, with no validation that an entity is alive
      */
 
-
-#if NETSTANDARD2_1
-    [ThreadStatic]
-    private static readonly ComponentHandle[] _sharedOneElementComponentHandle = new ComponentHandle[1];
-    [ThreadStatic]
-    private static readonly ComponentStorageBase[] _sharedOneElementComponentStorage = new ComponentStorageBase[1];
-#endif
-
     internal void RemoveComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID)
     {
         Archetype destination = RemoveComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.RemoveComponent)
@@ -32,7 +24,7 @@ partial class World
 #if NETSTANDARD2_1
         //array is allocated
         //Span<ComponentHandle> tmpHandleSpan = [default!];
-        MoveEntityToArchetypeRemove(_sharedOneElementComponentHandle, entity, ref lookup, destination);
+        MoveEntityToArchetypeRemove(MemoryHelpers.SharedTempComponentHandleBuffer.AsSpan(0, 1), entity, ref lookup, destination);
 #else
         Unsafe.SkipInit(out ComponentHandle tmpHandle);
         MemoryHelpers.Poison(ref tmpHandle);
@@ -45,8 +37,8 @@ partial class World
         Archetype destination = AddComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.AddComponent)
             .Archetype(this);
 #if NETSTANDARD2_1
-        MoveEntityToArchetypeAdd(_sharedOneElementComponentStorage, entity, ref lookup, out entityLocation, destination);
-        runner = _sharedOneElementComponentStorage[0];
+        MoveEntityToArchetypeAdd(MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, 1), entity, ref lookup, out entityLocation, destination);
+        runner = MemoryHelpers.SharedTempComponentStorageBuffer[0];
 #else
         MoveEntityToArchetypeAdd(MemoryMarshal.CreateSpan(ref runner, 1), entity, ref lookup, out entityLocation, destination);
 #endif

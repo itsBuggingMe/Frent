@@ -10,14 +10,18 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[Variadic("[null!]", "[|null!, |]", 8)]
-[Variadic("        events.GenericEvent!.Invoke(entity, ref component);", "|        events.GenericEvent!.Invoke(entity, ref component$);\n|")]
+#if NETSTANDARD2_1
+[Variadic("[null!]", "MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, $)")]
+#else
+[Variadic("[null!]", "[|null!, |]")]
+#endif
+[Variadic("        events.GenericEvent!.Invoke(entity, ref component);", "|        events.GenericEvent!.Invoke(entity, ref component$);\n|", 8)]
 [Variadic("        events.NormalEvent.Invoke(entity, Component<T>.ID);", "|        events.NormalEvent.Invoke(entity, Component<T$>.ID);\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.AddComponent(this, c1);", "|            world.WorldUpdateCommandBuffer.AddComponent(this, c$);\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T>.ID);", "|            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T$>.ID);\n|")]
 [Variadic("ref T component", "|ref T$ component$, |")]
 [Variadic("in T c1", "|in T$ c$, |")]
-[Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[|1 + |0]")]
+[Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[$]")]
 [Variadic("        @event.InvokeInternal(entity, Component<T>.ID);", "|        @event.InvokeInternal(entity, Component<T$>.ID);\n|")]
 
 [Variadic("        @event.InvokeInternal(entity, Core.Tag<T>.ID);", "|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);\n|")]

@@ -61,10 +61,10 @@ namespace Frent.Variadic.Generator
                     .AppendLine()
                     .Loop(EnumerateUsings(kvp.Key.Item1.SyntaxTree.GetRoot(ct)), (c, s) => c.AppendLine(s.ToString()), ct)
                     .AppendLine()
-                    .Append("namespace ").Append(kvp.Key.Item2.ContainingNamespace).Append(';');
+                    .Append("namespace ").Append(kvp.Key.Item2.ContainingNamespace).AppendLine(';');
 
-
-                cb.Append(Regex.Replace(kvp.Key.Item1.ToFullString(), @"\[Variadic\(""\s*(.*?)\s*"",\s*""\|?(.*?)\|?""\)\]", ""));
+                cb.Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString());
+                //cb.Append(Regex.Replace(kvp.Key.Item1.ToFullString(), @"\[Variadic\(""\s*(.*?)\s*"",\s*""\|?(.*?)\|?""\)\]", ""));
 
                 var str = cb.ToString();
 
@@ -138,7 +138,13 @@ namespace Frent.Variadic.Generator
             replace ??= new();
             replace.Clear();
 
-            ExtractPattern(pattern.AsSpan(), out var prologue, out var epilogue);
+            bool hasRepeition = ExtractPattern(pattern.AsSpan(), out var prologue, out var epilogue);
+
+            if(!hasRepeition)
+            {
+                return cleanSource.Replace(from, pattern.Replace("$", arity.ToString()));
+            }
+
             replace.Append(prologue);
             pattern = pattern.Substring(prologue.Length + 1, pattern.Length - epilogue.Length - prologue.Length - 2);
 
@@ -156,10 +162,19 @@ namespace Frent.Variadic.Generator
             return cleanSource.Replace(from, replace.ToString());
         }
 
-        private static void ExtractPattern(ReadOnlySpan<char> pattern, out ReadOnlySpan<char> prologue, out ReadOnlySpan<char> epilogue)
+        private static bool ExtractPattern(ReadOnlySpan<char> pattern, out ReadOnlySpan<char> prologue, out ReadOnlySpan<char> epilogue)
         {
-            prologue = pattern.Slice(0, pattern.IndexOf('|'));
-            epilogue = pattern.Slice(pattern.LastIndexOf('|') + 1);
+            int firstIndex = pattern.IndexOf('|');
+            int lastIndex = pattern.LastIndexOf('|');
+            if(firstIndex == -1)
+            {
+                prologue = default;
+                epilogue = default;
+                return false;
+            }
+            prologue = pattern.Slice(0, firstIndex);
+            epilogue = pattern.Slice(lastIndex + 1);
+            return true;
         }
 
         static IEnumerable<UsingDirectiveSyntax> EnumerateUsings(SyntaxNode root)

@@ -1,4 +1,6 @@
 ﻿using Frent.Buffers;
+using Frent.Collections;
+using Frent.Updating;
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -11,6 +13,13 @@ namespace Frent.Core;
 internal static class MemoryHelpers
 {
     public const int MaxComponentCount = 127;
+
+#if NETSTANDARD2_1
+    [ThreadStatic]
+    internal static readonly ComponentHandle[] SharedTempComponentHandleBuffer = new ComponentHandle[8];
+    [ThreadStatic]
+    internal static readonly ComponentStorageBase[] SharedTempComponentStorageBuffer = new ComponentStorageBase[8];
+#endif
 
     public static uint RoundDownToPowerOfTwo(uint value) => BitOperations.RoundUpToPowerOf2((value >> 1) + 1);
 
