@@ -264,6 +264,16 @@ internal partial class Archetype
 
         Components.UnsafeArrayIndex(compIndex).Run(world, this);
     }
+    
+    internal void Update(World world, ReadOnlySpan<byte> indicies)
+    {
+        if (_nextComponentIndex == 0)
+            return;
+
+        var comprunners = Components;
+        foreach(var b in indicies)
+            comprunners.UnsafeArrayIndex(b).Run(world, this);
+    }
 
     internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
     {
