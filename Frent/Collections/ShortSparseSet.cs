@@ -40,7 +40,7 @@ internal class ShortSparseSet<T>
 
     public ShortSparseSet()
     {
-        const int InitalCapacity = 16;
+        const int InitalCapacity = 4;
         _dense = new T[InitalCapacity];
         _sparse = new ushort[InitalCapacity];
         _sparse.AsSpan().Fill(ushort.MaxValue);

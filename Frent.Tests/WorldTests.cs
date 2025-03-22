@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using Frent.Systems;
 using Frent.Tests.Helpers;
+using System.Runtime.CompilerServices;
 using static NUnit.Framework.Assert;
 
 namespace Frent.Tests;
@@ -101,36 +102,23 @@ internal class WorldTests
         query.AssertEntitiesNotDefault();
     }
 
-    //[Test]
-    //public void EnsureCapacityGeneric_Allocates()
-    //{
-    //    const int EntitiesToAllocate = 1000;
-    //
-    //    using World world = new();
-    //
-    //    Memory.Record();
-    //    world.EnsureCapacity<int, long>(EntitiesToAllocate);
-    //    Memory.AllocatedAtLeast(EntitiesToAllocate * (sizeof(int) + sizeof(long) + 10 /*size of entity table item*/));
-    //
-    //    Memory.Record();
-    //    for(int i = 0; i < EntitiesToAllocate; i++) 
-    //        world.Create<int, long>(default, default);
-    //    Memory.NotAllocated();
-    //}
+    [Test]
+    public void EnsureCapacityGeneric_Allocates()
+    {
+        const int EntitiesToAllocate = 1000;
+    
+        using World world = new();
+    
+        Memory.Record();
+        world.EnsureCapacity(EntityType.EntityTypeOf([Component<int>.ID, Component<long>.ID], []), EntitiesToAllocate);
+        world.Create<int, long>(default, default).Delete();
+        Memory.AllocatedAtLeast(EntitiesToAllocate * (sizeof(int) + sizeof(long) + Unsafe.SizeOf<EntityLocation>()));
 
-    //[Test]
-    //public void EnsureCapacity_Allocates()
-    //{
-    //    const int EntitiesToAllocate = 1000;
-    //
-    //    using World world = new();
-    //
-    //    Memory.Record();
-    //
-    //    world.EnsureCapacity([Component<int>.ID, Component<long>.ID], EntitiesToAllocate);
-    //
-    //    Memory.AllocatedAtLeast(EntitiesToAllocate * (sizeof(int) + sizeof(long)));
-    //}
+        Memory.Record();
+        for (int i = 0; i < EntitiesToAllocate - 1; i++) 
+            world.Create<int, long>(default, default);
+        Memory.NotAllocated();
+    }
 
     [Test]
     public void Query_IncludesComponents()
