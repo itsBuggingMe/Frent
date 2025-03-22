@@ -85,6 +85,22 @@ internal class WorldTests
         query.AssertEntitiesNotDefault();
     }
 
+    [Test]
+    public void CustomQuery_OverEmptyArchetype()
+    {
+        using World world = new();
+
+        Query query = world.CustomQuery(Rule.IncludeDisabledRule);
+
+        world.Create(1, new Class1(), new Struct1(1));
+        world.Create(1, new Class2(), new Struct2(1));
+        world.Create(1, new Class1());
+
+        That(query.EntityCount(), Is.EqualTo(3));
+
+        query.AssertEntitiesNotDefault();
+    }
+
     //[Test]
     //public void EnsureCapacityGeneric_Allocates()
     //{
