@@ -1,4 +1,8 @@
-﻿namespace Frent;
+﻿using CommunityToolkit.HighPerformance.Helpers;
+using Frent.Systems;
+using System.Runtime.CompilerServices;
+
+namespace Frent;
 
 /// <summary>
 /// The default uniform provider, using a dictionary.
