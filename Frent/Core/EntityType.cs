@@ -73,5 +73,15 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// <returns><see langword="true"/> if they represent different IDs, <see langword="false"/> otherwise</returns>
     public static bool operator !=(EntityType left, EntityType right) => !left.Equals(right);
 
-    internal readonly ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex);
+    /// <summary>
+    /// Gets an <see cref="EntityType"/> without needing an <see cref="Entity"/> of the specific type.
+    /// </summary>
+    /// <param name="components">The components the <see cref="EntityType"/> should have.</param>
+    /// <param name="tags">The tags the <see cref="EntityType"/> should have.</param>
+    public static EntityType EntityTypeOf(ReadOnlySpan<ComponentID> components, ReadOnlySpan<TagID> tags)
+    {
+        return Core.Archetype.GetArchetypeID(components, tags);
+    }
+
+    internal readonly ref Archetype? Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex);
 }

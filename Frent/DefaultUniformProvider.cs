@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.HighPerformance.Helpers;
-using Frent.Systems;
+﻿using Frent.Systems;
 using System.Runtime.CompilerServices;
 
 namespace Frent;

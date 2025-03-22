@@ -220,14 +220,14 @@ public partial class World : IDisposable
             {
                 foreach (var element in _enabledArchetypes.AsSpan())
                 {
-                    element.Archetype(this).MultiThreadedUpdate(_sharedCountdown, this);
+                    element.Archetype(this)!.MultiThreadedUpdate(_sharedCountdown, this);
                 }
             }
             else
             {
                 foreach (var element in _enabledArchetypes.AsSpan())
                 {
-                    element.Archetype(this).Update(this);
+                    element.Archetype(this)!.Update(this);
                 }
             }
         }
@@ -254,29 +254,8 @@ public partial class World : IDisposable
         try
         {
             if (!_updatesByAttributes.TryGetValue(attributeType, out WorldUpdateFilter? appliesTo))
-                _updatesByAttributes[attributeType] = appliesTo = new WorldUpdateFilter();
-
-            //fill up the table with the correct IDs
-            //works for initalization as well as updating it
-            if(GenerationServices.TypeAttributeCache.TryGetValue(attributeType, out var compSet))
-            {
-                for (ref int i = ref appliesTo.NextComponentIndex; i < Component.ComponentTable.Count; i++)
-                {
-                    var id = new ComponentID((ushort)i);
-                    if (compSet.Contains(id.Type))
-                    {
-                        appliesTo.Stack.Push(id);
-                    }
-                }
-            }
-
-            foreach (var compid in appliesTo.Stack.AsSpan())
-            {
-                foreach (var item in _enabledArchetypes.AsSpan())
-                {
-                    item.Archetype(this).Update(this, compid);
-                }
-            }
+                _updatesByAttributes[attributeType] = appliesTo = new WorldUpdateFilter(this, attributeType);
+            appliesTo.Update();
         }
         finally
         {
@@ -308,9 +287,9 @@ public partial class World : IDisposable
         if (!GlobalWorldTables.HasTag(archetype.ID, Tag<Disable>.ID))
             _enabledArchetypes.Push(archetype.ID);
         foreach (var qkvp in QueryCache)
-        {
             qkvp.Value.TryAttachArchetype(archetype);
-        }
+        foreach (var fkvp in _updatesByAttributes)
+            fkvp.Value.WorldArchetypeAdded(archetype);
     }
 
     internal Query CreateQuery(ImmutableArray<Rule> rules)
@@ -327,7 +306,7 @@ public partial class World : IDisposable
     internal void UpdateArchetypeTable(int newSize)
     {
         Debug.Assert(newSize > WorldArchetypeTable.Length);
-        FastStackArrayPool<Archetype>.ResizeArrayFromPool(ref WorldArchetypeTable, newSize);
+        FastStackArrayPool<Archetype>.ResizeArrayFromPool(ref WorldArchetypeTable!, newSize);
     }
 
     internal void EnterDisallowState()
