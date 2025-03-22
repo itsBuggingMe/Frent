@@ -16,13 +16,13 @@ internal static class Extensions
 
     public static void AssertEntitiesNotDefault(this Query query)
     {
-        //query.RunEntity(e =>
-        //{
-        //    foreach(var component in e.ComponentTypes)
-        //    {
-        //        AssertNotDefault(e.Get(component));
-        //    }
-        //});
+        foreach(var entity in query.EnumerateWithEntities())
+        {
+            foreach(var component in entity.ComponentTypes)
+            {
+                AssertNotDefault(entity.Get(component));
+            }
+        }
 
         static void AssertNotDefault(object value)
         {
