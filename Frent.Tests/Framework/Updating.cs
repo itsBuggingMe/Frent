@@ -1,4 +1,5 @@
-﻿using Frent.Tests.Helpers;
+﻿using Frent.Components;
+using Frent.Tests.Helpers;
 using static NUnit.Framework.Assert;
 
 namespace Frent.Tests.Framework;
@@ -38,4 +39,37 @@ internal class Updating
 
         That(count, Is.EqualTo(20));
     }
+
+    [Test]
+    public void Update_RegisterLate_FiltersComponents()
+    {
+        int count = 0;
+        using World world = new();
+
+        world.Update<FilterAttribute1>();
+
+        for(int i = 0; i < 10; i++)
+        {
+            world.Create(new LazyComponent<int>(() => count++));
+            world.Create(new FilteredBehavior2(() => count++));
+        }
+
+        world.Update<FilterAttribute1>();
+        That(count, Is.EqualTo(10));
+
+        for (int i = 0; i < 10; i++)
+        {
+            world.Create(new LazyComponent<double>(() => count++));
+            world.Create(new FilteredBehavior2(() => count++));
+        }
+
+        world.Update<FilterAttribute1>();
+        That(count, Is.EqualTo(30));
+    }
+}
+
+internal partial struct LazyComponent<T>(Action a) : IComponent
+{
+    [FilterAttribute1]
+    public void Update() => a();
 }

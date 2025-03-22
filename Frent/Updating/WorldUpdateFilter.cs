@@ -12,35 +12,38 @@ internal class WorldUpdateFilter
     //its entirely possible that the HashSet<Type> for this filter in GenerationServices.TypeAttributeCache doesn't even exist yet
     private readonly Type _attributeType;
     private int _lastRegisteredComponentID;
-
+    
+    //shared with the dictionary
     private HashSet<Type>? _filter;
-
+    
     //if we want, we can replace this with a byte[] array to save memory
-    //however, i want to prioitze iteration speed since archetype fragmentation
     private FastStack<ComponentStorageBase> _allComponents = FastStack<ComponentStorageBase>.Create(8);
-    private FastStack<(Archetype Archetype, int Length)> _archetypes = FastStack<(Archetype Archetype, int Length)>.Create(4);
+    
+    //enumerating from the start
+    private readonly ShortSparseSet<(Archetype Archetype, int Start, int Length)> _archetypes = new();
+    
+    //these components need to be updated
     private FastStack<ComponentID> _filteredComponents = FastStack<ComponentID>.Create(8);
-
+    
     public WorldUpdateFilter(World world, Type attributeType)
     {
         _attributeType = attributeType;
         _world = world;
-    }
 
+        foreach (var archetype in world.EnabledArchetypes.AsSpan())
+            WorldArchetypeAdded(archetype.Archetype(world)!);
+    }
+    
     public void Update()
     {
-        if (_lastRegisteredComponentID < Component.ComponentTable.Count)
-            RegisterNewComponents();
-
         World world = _world;
         Span<ComponentStorageBase> componentStorages = _allComponents.AsSpan();
-        Span<(Archetype Archetype, int Length)> archetypes = _archetypes.AsSpan();
+        Span<(Archetype Archetype, int Start, int Length)> archetypes = _archetypes.AsSpan();
 
         for (int i = 0; i < archetypes.Length; i++)
         {
-            (Archetype current, int count) = archetypes[i];
-            Span<ComponentStorageBase> storages = componentStorages[..count];
-            componentStorages = componentStorages[count..];
+            (Archetype current, int start, int count) = archetypes[i];
+            Span<ComponentStorageBase> storages = componentStorages.Slice(start, count);
             foreach(var item in storages)
             {
                 item.Run(world, current);
@@ -54,11 +57,11 @@ internal class WorldUpdateFilter
             _filter is null && 
             !GenerationServices.TypeAttributeCache.TryGetValue(_attributeType, out _filter))
             return;
-
+        
         for (ref int i = ref _lastRegisteredComponentID; i < Component.ComponentTable.Count; i++)
         {
-            ComponentID thisID = new ComponentID((ushort)i);
-
+            ComponentID thisID = new((ushort)i);
+            
             if(_filter.Contains(thisID.Type))
             {
                 _filteredComponents.Push(thisID);
@@ -68,6 +71,10 @@ internal class WorldUpdateFilter
 
     internal void WorldArchetypeAdded(Archetype archetype)
     {
+        if (_lastRegisteredComponentID < Component.ComponentTable.Count)
+            RegisterNewComponents();
+
+        int start = _allComponents.Count;
         int count = 0;
         foreach(var component in _filteredComponents.AsSpan())
         {
@@ -78,6 +85,8 @@ internal class WorldUpdateFilter
                 _allComponents.Push(archetype.Components[index]);
             }
         }
-        _archetypes.Push((archetype, count));
+
+        if(count > 0)
+            _archetypes[archetype.ID.RawIndex] = (archetype, start, count);
     }
 }

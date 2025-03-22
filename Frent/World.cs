@@ -45,7 +45,7 @@ public partial class World : IDisposable
 
     internal CountdownEvent SharedCountdown => _sharedCountdown;
     private CountdownEvent _sharedCountdown = new(0);
-    private FastStack<ArchetypeID> _enabledArchetypes = FastStack<ArchetypeID>.Create(16);
+    internal FastStack<ArchetypeID> EnabledArchetypes = FastStack<ArchetypeID>.Create(16);
 
     private int _allowStructuralChanges;
 
@@ -218,14 +218,14 @@ public partial class World : IDisposable
         {
             if (CurrentConfig.MultiThreadedUpdate)
             {
-                foreach (var element in _enabledArchetypes.AsSpan())
+                foreach (var element in EnabledArchetypes.AsSpan())
                 {
                     element.Archetype(this)!.MultiThreadedUpdate(_sharedCountdown, this);
                 }
             }
             else
             {
-                foreach (var element in _enabledArchetypes.AsSpan())
+                foreach (var element in EnabledArchetypes.AsSpan())
                 {
                     element.Archetype(this)!.Update(this);
                 }
@@ -285,7 +285,7 @@ public partial class World : IDisposable
     internal void ArchetypeAdded(Archetype archetype)
     {
         if (!GlobalWorldTables.HasTag(archetype.ID, Tag<Disable>.ID))
-            _enabledArchetypes.Push(archetype.ID);
+            EnabledArchetypes.Push(archetype.ID);
         foreach (var qkvp in QueryCache)
             qkvp.Value.TryAttachArchetype(archetype);
         foreach (var fkvp in _updatesByAttributes)
@@ -323,8 +323,7 @@ public partial class World : IDisposable
             foreach (var archetype in resolveArchetypes)
                 archetype.ResolveDeferredEntityCreations(this);
             DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
-
-            //i plan on adding events later, so even more command buffer events could be added during playback
+            
             while (WorldUpdateCommandBuffer.Playback()) ;
         }
     }
