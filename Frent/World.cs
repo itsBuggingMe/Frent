@@ -233,8 +233,8 @@ public partial class World : IDisposable
         }
         finally
         {
-            ExitDisallowState();
-        }
+            ExitDisallowState(null);
+        }   
     }
 
     /// <summary>
@@ -250,16 +250,16 @@ public partial class World : IDisposable
     public void Update(Type attributeType)
     {
         EnterDisallowState();
-
+        WorldUpdateFilter? appliesTo = default;
         try
         {
-            if (!_updatesByAttributes.TryGetValue(attributeType, out WorldUpdateFilter? appliesTo))
+            if (!_updatesByAttributes.TryGetValue(attributeType, out appliesTo))
                 _updatesByAttributes[attributeType] = appliesTo = new WorldUpdateFilter(this, attributeType);
             appliesTo.Update();
         }
         finally
         {
-            ExitDisallowState();
+            ExitDisallowState(appliesTo);
         }
     }
 
@@ -314,14 +314,14 @@ public partial class World : IDisposable
         Interlocked.Increment(ref _allowStructuralChanges);
     }
 
-    internal void ExitDisallowState()
+    internal void ExitDisallowState(WorldUpdateFilter? filterUsed)
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
             Span<Archetype> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
 
             foreach (var archetype in resolveArchetypes)
-                archetype.ResolveDeferredEntityCreations(this);
+                archetype.ResolveDeferredEntityCreations(this, filterUsed);
             DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
             
             while (WorldUpdateCommandBuffer.Playback()) ;

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using Frent.Collections;
 using Frent.Core;
@@ -17,8 +18,9 @@ internal class WorldUpdateFilter
     private HashSet<Type>? _filter;
     
     //if we want, we can replace this with a byte[] array to save memory
-    private FastStack<ComponentStorageBase> _allComponents = FastStack<ComponentStorageBase>.Create(8);
-    
+    private ComponentStorageBase[] _allComponents = new ComponentStorageBase[8];
+    private int _nextComponentStorageIndex;
+
     //enumerating from the start
     private readonly ShortSparseSet<(Archetype Archetype, int Start, int Length)> _archetypes = new();
     
@@ -33,28 +35,26 @@ internal class WorldUpdateFilter
         foreach (var archetype in world.EnabledArchetypes.AsSpan())
             WorldArchetypeAdded(archetype.Archetype(world)!);
     }
-    
+
     public void Update()
     {
         World world = _world;
-        Span<ComponentStorageBase> componentStorages = _allComponents.AsSpan();
+        Span<ComponentStorageBase> componentStorages = _allComponents.AsSpan(0, _nextComponentStorageIndex);
         Span<(Archetype Archetype, int Start, int Length)> archetypes = _archetypes.AsSpan();
-
         for (int i = 0; i < archetypes.Length; i++)
         {
             (Archetype current, int start, int count) = archetypes[i];
             Span<ComponentStorageBase> storages = componentStorages.Slice(start, count);
-            foreach(var item in storages)
+            foreach(var storage in storages)
             {
-                item.Run(world, current);
+                storage.Run(world, current);
             }
         }
     }
 
     private void RegisterNewComponents()
     {
-        if (
-            _filter is null && 
+        if (_filter is null && 
             !GenerationServices.TypeAttributeCache.TryGetValue(_attributeType, out _filter))
             return;
         
@@ -64,7 +64,7 @@ internal class WorldUpdateFilter
             
             if(_filter.Contains(thisID.Type))
             {
-                _filteredComponents.Push(thisID);
+                 _filteredComponents.Push(thisID);
             }
         }
     }
@@ -74,7 +74,7 @@ internal class WorldUpdateFilter
         if (_lastRegisteredComponentID < Component.ComponentTable.Count)
             RegisterNewComponents();
 
-        int start = _allComponents.Count;
+        int start = _nextComponentStorageIndex;
         int count = 0;
         foreach(var component in _filteredComponents.AsSpan())
         {
@@ -82,7 +82,10 @@ internal class WorldUpdateFilter
             if (index != 0) //archetype.Components[0] is always null; 0 tombstone value
             {
                 count++;
-                _allComponents.Push(archetype.Components[index]);
+                Debug.Assert(archetype.Components[index] is not null);
+                if(_nextComponentStorageIndex == _allComponents.Length)
+                    Array.Resize(ref _allComponents, _allComponents.Length * 2);
+                _allComponents[_nextComponentStorageIndex++] = archetype.Components[index];
             }
         }
 

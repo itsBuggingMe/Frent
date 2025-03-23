@@ -33,7 +33,7 @@ public ref struct ChunkQueryEnumerator<T>
     }
     public void Dispose()
     {
-        _world.ExitDisallowState();
+        _world.ExitDisallowState(null);
     }
 
     public bool MoveNext() => ++_archetypeIndex < _archetypes.Length;

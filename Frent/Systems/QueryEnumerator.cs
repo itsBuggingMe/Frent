@@ -31,7 +31,7 @@ public ref struct QueryEnumerator<T>
 
     public void Dispose()
     {
-        _world.ExitDisallowState();
+        _world.ExitDisallowState(null);
     }
 
     public bool MoveNext()

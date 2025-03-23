@@ -24,7 +24,7 @@ internal partial class Archetype
         int index = GetComponentIndex<T>();
         if (index == 0)
         {
-            FrentExceptions.Throw_ComponentNotFoundException(typeof(T));
+            FrentExceptions.Throw_ComponentNotFoundException<T>();
         }
         return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpanLength(_nextComponentIndex);
     }
@@ -85,7 +85,7 @@ internal partial class Archetype
         return ref _createComponentBufferEntities.UnsafeArrayIndex(physicalIndex);
     }
 
-    internal void ResolveDeferredEntityCreations(World world)
+    internal void ResolveDeferredEntityCreations(World world, WorldUpdateFilter? filterUsed)
     {
         Debug.Assert(_deferredEntityCount != 0);
         int deltaFromMaxDeferredInPlace = -(_entities.Length - (_nextComponentIndex + _deferredEntityCount));

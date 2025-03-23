@@ -33,7 +33,7 @@ public ref struct EntityQueryEnumerator<T>
 
     public void Dispose()
     {
-        _world.ExitDisallowState();
+        _world.ExitDisallowState(null);
     }
 
     public bool MoveNext()
@@ -88,7 +88,7 @@ public ref struct EntityQueryEnumerator
 
     public void Dispose()
     {
-        _world.ExitDisallowState();
+        _world.ExitDisallowState(null);
     }
 
     public bool MoveNext()
