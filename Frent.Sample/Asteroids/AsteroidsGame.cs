@@ -61,6 +61,8 @@ public partial class AsteroidsGame : Game
         Window.AllowUserResizing = true;
         _world.UniformProvider = _uniformProvider;
 
+        _deferredActions = new CommandBuffer(_world);
+
         Instance = this;
         _polygons = Enumerable.Range(3, 7).Select(GeneratePolygon).ToArray();
     }

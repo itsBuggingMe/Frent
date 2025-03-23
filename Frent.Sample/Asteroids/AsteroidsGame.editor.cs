@@ -23,6 +23,8 @@ partial class AsteroidsGame
         .Select(t => (IFieldModifer)Activator.CreateInstance(t)!)
         .ToFrozenDictionary(k => k.FieldType);
 
+    private CommandBuffer _deferredActions;
+
     private void ImGuiLayout()
     {
         ImGui.SetNextWindowSize(new SysVec2(300, 600), ImGuiCond.FirstUseEver);
@@ -88,7 +90,7 @@ partial class AsteroidsGame
                 ImGui.SameLine();
                 if (ImGui.SmallButton("Delete"))
                 {
-                    entity.Delete();
+                    _deferredActions.DeleteEntity(entity);
                 }
 
                 ImGui.SameLine();
@@ -153,5 +155,7 @@ partial class AsteroidsGame
 
             _notification.Decay--;
         }
+
+        _deferredActions.Playback();
     }
 }
