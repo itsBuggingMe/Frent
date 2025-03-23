@@ -48,7 +48,10 @@ public partial class World : IDisposable
     private CountdownEvent _sharedCountdown = new(0);
     internal FastStack<ArchetypeID> EnabledArchetypes = FastStack<ArchetypeID>.Create(16);
 
-    private int _allowStructuralChanges;
+    // -1: normal state
+    // 0: some kind of transition in End/Enter
+    // n: n systems/updates active
+    private int _allowStructuralChanges = -1;
 
     internal CommandBuffer WorldUpdateCommandBuffer;
 
@@ -70,6 +73,7 @@ public partial class World : IDisposable
     internal EntityFlags WorldEventFlags;
 
     internal FastStack<ArchetypeDeferredUpdateRecord> DeferredCreationArchetypes = FastStack<ArchetypeDeferredUpdateRecord>.Create(4);
+    internal FastStack<ArchetypeDeferredUpdateRecord> _altDeferredCreationArchetypes = FastStack<ArchetypeDeferredUpdateRecord>.Create(4);
 
     /// <summary>
     /// Invoked whenever an entity is created on this world.
@@ -312,37 +316,79 @@ public partial class World : IDisposable
 
     internal void EnterDisallowState()
     {
-        Interlocked.Increment(ref _allowStructuralChanges);
+        if(Interlocked.Increment(ref _allowStructuralChanges) == 0)
+        {
+            Interlocked.Increment(ref _allowStructuralChanges);
+        }
     }
+    
+    const int DeferredEntityOperationRecursionLimit = 200;
 
     internal void ExitDisallowState(WorldUpdateFilter? filterUsed, bool updateDeferredEntities = false)
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
-            Span<ArchetypeDeferredUpdateRecord> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
-            
-            foreach (var (archetype, _) in resolveArchetypes)
-                archetype.ResolveDeferredEntityCreations(this, filterUsed);
-            
-            if(updateDeferredEntities)
+            if(DeferredCreationArchetypes.Count > 0)
             {
-                if(filterUsed is not null)
+                if (updateDeferredEntities)
                 {
-                    filterUsed?.UpdateSubset(resolveArchetypes);
+                    UpdateDeferredCreationEntities(filterUsed);
                 }
                 else
                 {
-                    foreach (var (archetype, _) in resolveArchetypes)
-                    {
-                        archetype.Update(this);
-                    }
+                    foreach (var (archetype, _) in DeferredCreationArchetypes.AsSpan())
+                        archetype.ResolveDeferredEntityCreations(this, filterUsed);
                 }
             }
             
             DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
-            
-            while (WorldUpdateCommandBuffer.Playback()) ;
+
+            int count = 0;
+            while (WorldUpdateCommandBuffer.Playback())
+                if(++count > DeferredEntityOperationRecursionLimit)
+                    FrentExceptions.Throw_InvalidOperationException("Deferred entity creation recursion limit exceeded! Are your component events creating cmmand buffer items? (which create more command buffer items...)?");
+
+            Interlocked.Decrement(ref _allowStructuralChanges);
         }
+    }
+
+    private void UpdateDeferredCreationEntities(WorldUpdateFilter? filterUsed)
+    {
+        Span<ArchetypeDeferredUpdateRecord> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
+
+        Interlocked.Increment(ref _allowStructuralChanges);
+
+        int createRecursionCount = 0;
+        while (resolveArchetypes.Length != 0)
+        {
+            foreach (var (archetype, _) in resolveArchetypes)
+                archetype.ResolveDeferredEntityCreations(this, filterUsed);
+
+            (_altDeferredCreationArchetypes, DeferredCreationArchetypes) = (DeferredCreationArchetypes, _altDeferredCreationArchetypes);
+            DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
+
+            if (filterUsed is not null)
+            {
+                filterUsed?.UpdateSubset(resolveArchetypes);
+            }
+            else
+            {
+                foreach (var (archetype, start) in resolveArchetypes)
+                {
+                    archetype.Update(this, start, archetype.EntityCount - start);
+                }
+            }
+
+            resolveArchetypes = DeferredCreationArchetypes.AsSpan();
+
+            if (++createRecursionCount > DeferredEntityOperationRecursionLimit)
+            {
+                FrentExceptions.Throw_InvalidOperationException("Deferred entity creation recursion limit exceeded! Are your components creating entities (which create more entities...)?");
+            }
+        }
+
+        DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
+        Interlocked.Decrement(ref _allowStructuralChanges);
     }
 
 #if !NETSTANDARD2_1
@@ -361,7 +407,7 @@ public partial class World : IDisposable
     }
 #endif
 
-    internal bool AllowStructualChanges => _allowStructuralChanges == 0;
+    internal bool AllowStructualChanges => _allowStructuralChanges == -1;
 
     /// <summary>
     /// Disposes of the <see cref="World"/>.

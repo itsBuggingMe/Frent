@@ -252,27 +252,13 @@ internal partial class Archetype
             comprunners[i].Run(world, this);
     }
 
-    internal void Update(World world, ComponentID componentID)
+    internal void Update(World world, int start, int length)
     {
         if (_nextComponentIndex == 0)
             return;
-
-        int compIndex = GetComponentIndex(componentID);
-
-        if (compIndex == 0)
-            return;
-
-        Components.UnsafeArrayIndex(compIndex).Run(world, this);
-    }
-    
-    internal void Update(World world, ReadOnlySpan<byte> indicies)
-    {
-        if (_nextComponentIndex == 0)
-            return;
-
         var comprunners = Components;
-        foreach(var b in indicies)
-            comprunners.UnsafeArrayIndex(b).Run(world, this);
+        for (int i = 1; i < comprunners.Length; i++)
+            comprunners[i].Run(world, this, start, length);
     }
 
     internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
