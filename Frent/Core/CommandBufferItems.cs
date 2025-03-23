@@ -38,4 +38,5 @@ internal struct EntityIDOnly(int id, ushort version)
 }
 internal record struct DeleteComponent(EntityIDOnly Entity, ComponentID ComponentID);
 internal record struct AddComponent(EntityIDOnly Entity, ComponentHandle ComponentHandle);
+internal record struct TagCommand(EntityIDOnly Entity, TagID TagID);
 internal record struct CreateCommand(EntityIDOnly Entity, int BufferIndex, int BufferLength);

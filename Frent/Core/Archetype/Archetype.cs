@@ -183,8 +183,8 @@ internal partial class Archetype
     /// </summary>
     internal EntityIDOnly DeleteEntityFromStorage(int index, out int deletedIndex)
     {
+        Debug.Assert(_nextComponentIndex > 0);
         deletedIndex = --_nextComponentIndex;
-        Debug.Assert(_nextComponentIndex >= 0);
         return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_nextComponentIndex);
     }
 

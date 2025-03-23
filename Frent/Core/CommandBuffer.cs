@@ -11,11 +11,13 @@ namespace Frent.Core;
 /// </summary>
 public class CommandBuffer
 {
-    internal FastStack<EntityIDOnly> _deleteEntityBuffer = FastStack<EntityIDOnly>.Create(4);
-    internal FastStack<AddComponent> _addComponentBuffer = FastStack<AddComponent>.Create(4);
-    internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(4);
-    internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(4);
-    internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(4);
+    internal FastStack<EntityIDOnly> _deleteEntityBuffer = FastStack<EntityIDOnly>.Create(2);
+    internal FastStack<AddComponent> _addComponentBuffer = FastStack<AddComponent>.Create(2);
+    internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(2);
+    internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(2);
+    internal FastStack<TagCommand> _tagEntityBuffer = FastStack<TagCommand>.Create(2);
+    internal FastStack<TagCommand> _detachTagEntityBuffer = FastStack<TagCommand>.Create(2);
+    internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(2);
     private readonly ComponentStorageBase[] _componentRunnerBuffer = new ComponentStorageBase[MemoryHelpers.MaxComponentCount];
 
     internal World _world;
@@ -113,6 +115,22 @@ public class CommandBuffer
     /// <param name="entity">The entity to add to.</param>
     /// <param name="component">The component to add.</param>
     public void AddComponent(Entity entity, object component) => AddComponent(entity, component.GetType(), component);
+
+    #region Tags
+    public void Tag<T>(Entity entity) => Tag(entity, Core.Tag<T>.ID);
+    public void Tag(Entity entity, TagID tagID)
+    {
+        SetIsActive();
+        _tagEntityBuffer.Push(new(entity.EntityIDOnly, tagID));
+    }
+
+    public void Detach<T>(Entity entity) => Detach(entity, Core.Tag<T>.ID);
+    public void Detach(Entity entity, TagID tagID)
+    {
+        SetIsActive();
+        _detachTagEntityBuffer.Push(new(entity.EntityIDOnly, tagID));
+    }
+    #endregion
 
     #region Create
     /// <summary>
@@ -216,6 +234,13 @@ public class CommandBuffer
     /// <returns><see langword="true"/> when at least one change was made; <see langword="false"/> when this command buffer is empty and not active.</returns>
     public bool Playback()
     {
+        if (!_world.AllowStructualChanges)
+            FrentExceptions.Throw_InvalidOperationException("The world currently does not allow structural changes!");
+        return PlaybackInternal();
+    }
+
+    internal bool PlaybackInternal()
+    {
         bool hasItems = _deleteEntityBuffer.Count > 0 | _createEntityBuffer.Count > 0 | _removeComponentBuffer.Count > 0 | _addComponentBuffer.Count > 0;
 
         if (!hasItems)
@@ -237,7 +262,7 @@ public class CommandBuffer
                     id = _world.AddComponentLookup.FindAdjacentArchetypeID(handles[i].ComponentID, id, _world, ArchetypeEdgeType.AddComponent);
                 }
 
-                _world.MoveEntityToArchetypeAdd(runners, concrete, ref lookup, out EntityLocation location, id.Archetype(_world));
+                _world.MoveEntityToArchetypeAdd(runners, concrete, ref lookup, out EntityLocation location, id.Archetype(_world)!);
             }
 
             _world.InvokeEntityCreated(concrete);
@@ -288,6 +313,26 @@ public class CommandBuffer
                 }
 
                 command.ComponentHandle.Dispose();
+            }
+        }
+
+        while (_tagEntityBuffer.TryPop(out var command))
+        {
+            ref var record = ref _world.EntityTable[command.Entity.ID];
+            if (record.Version == command.Entity.Version)
+            {
+                _world.MoveEntityToArchetypeIso(command.Entity.ToEntity(_world), ref record,
+                    Archetype.GetAdjacentArchetypeLookup(_world, ArchetypeEdgeKey.Tag(command.TagID, record.Archetype.ID, ArchetypeEdgeType.AddTag)));
+            }
+        }
+
+        while (_detachTagEntityBuffer.TryPop(out var command))
+        {
+            ref var record = ref _world.EntityTable[command.Entity.ID];
+            if (record.Version == command.Entity.Version)
+            {
+                _world.MoveEntityToArchetypeIso(command.Entity.ToEntity(_world), ref record,
+                    Archetype.GetAdjacentArchetypeLookup(_world, ArchetypeEdgeKey.Tag(command.TagID, record.Archetype.ID, ArchetypeEdgeType.RemoveTag)));
             }
         }
 

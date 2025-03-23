@@ -89,11 +89,18 @@ partial class Archetype
         return archetype;
     }
 
+    internal static Archetype GetAdjacentArchetypeLookup(World world, ArchetypeEdgeKey edge)
+    {
+        if (world.ArchetypeGraphEdges.TryGetValue(edge, out var archetype))
+            return archetype;
+        return GetAdjacentArchetypeCold(world, edge);
+    }
+
     internal static Archetype GetAdjacentArchetypeCold(World world, ArchetypeEdgeKey edge)
     {
         //this world doesn't have the archetype, or it doesnt even exist
 
-        Archetype from = edge.ArchetypeFrom.Archetype(world);
+        Archetype from = edge.ArchetypeFrom.Archetype(world)!;
         ImmutableArray<ComponentID> fromComponents = edge.ArchetypeFrom.Types;
         ImmutableArray<TagID> fromTags = edge.ArchetypeFrom.Tags;
 

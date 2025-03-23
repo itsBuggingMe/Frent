@@ -332,7 +332,7 @@ public partial class World : IDisposable
             {
                 if (updateDeferredEntities)
                 {
-                    UpdateDeferredCreationEntities(filterUsed);
+                    ResolveUpdateDeferredCreationEntities(filterUsed);
                 }
                 else
                 {
@@ -340,19 +340,18 @@ public partial class World : IDisposable
                         archetype.ResolveDeferredEntityCreations(this, filterUsed);
                 }
             }
-            
+
             DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
+            Interlocked.Decrement(ref _allowStructuralChanges);
 
             int count = 0;
             while (WorldUpdateCommandBuffer.Playback())
                 if(++count > DeferredEntityOperationRecursionLimit)
-                    FrentExceptions.Throw_InvalidOperationException("Deferred entity creation recursion limit exceeded! Are your component events creating cmmand buffer items? (which create more command buffer items...)?");
-
-            Interlocked.Decrement(ref _allowStructuralChanges);
+                    FrentExceptions.Throw_InvalidOperationException("Deferred entity creation recursion limit exceeded! Are your component events creating command buffer items? (which create more command buffer items...)?");
         }
     }
 
-    private void UpdateDeferredCreationEntities(WorldUpdateFilter? filterUsed)
+    private void ResolveUpdateDeferredCreationEntities(WorldUpdateFilter? filterUsed)
     {
         Span<ArchetypeDeferredUpdateRecord> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
 

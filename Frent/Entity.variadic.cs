@@ -30,6 +30,8 @@ namespace Frent;
 [Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
 [Variadic("        ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;",
     "|        ref var c$ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(buff.UnsafeSpanIndex($ - 1))[nextLocation.Index]; c$ref = c$;\n|")]
+[Variadic("            world.WorldUpdateCommandBuffer.Tag<T>(this);", "|            world.WorldUpdateCommandBuffer.Tag<T$>(this);\n|")]
+[Variadic("            world.WorldUpdateCommandBuffer.Detach<T>(this);", "|            world.WorldUpdateCommandBuffer.Detach<T$>(this);\n|")]
 [Variadic("Core.Tag<T>.ID", "[|Core.Tag<T$>.ID, |]")]
 [Variadic("Component<T>.ID", "[|Component<T$>.ID, |]")]
 [Variadic("<T>", "<|T$, |>")]
@@ -122,6 +124,12 @@ partial struct Entity
     {
         ref EntityLocation thisLookup = ref AssertIsAlive(out World world);
 
+        if(!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.Tag<T>(this);
+            return;
+        }
+
         Archetype to = TraverseThroughCacheOrCreate<TagID, NeighborCache<T>>(
             world,
             ref NeighborCache<T>.Tag.Lookup,
@@ -156,6 +164,12 @@ partial struct Entity
     public void Detach<T>()
     {
         ref EntityLocation thisLookup = ref AssertIsAlive(out World world);
+
+        if (!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.Detach<T>(this);
+            return;
+        }
 
         Archetype to = TraverseThroughCacheOrCreate<TagID, NeighborCache<T>>(
             world,

@@ -19,7 +19,7 @@ internal struct Table<T>(int size)
         {
             var buffer = _buffer;
             if ((uint)index < (uint)buffer.Length)
-                return ref buffer.UnsafeArrayIndex(index);
+                return ref buffer[index];
             return ref ResizeGet(index);
         }
     }
