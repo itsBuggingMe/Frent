@@ -7,7 +7,7 @@ Frent is on [Nuget](https://www.nuget.org/packages/Frent/)!
 > Frent is still in beta.
 
 ```pwsh
-dotnet add package Frent --version 0.5.3.1-beta
+dotnet add package Frent --version 0.5.4-beta
 ```
 
 *Note: You will need to enable prerelease to see the package in many UIs.*
