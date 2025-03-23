@@ -28,6 +28,24 @@ internal class EntityUniformUpdate<TComp, TUniform>(int len) : ComponentStorage<
         }
     }
 
+    internal override void Run(World world, Archetype b, int start, int length)
+    {
+        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
+        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+
+        Entity entity = world.DefaultWorldEntity;
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+
+        for (int i = length - 1; i >= 0; i--)
+        {
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, uniform);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+        }
+    }
+
     internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
@@ -43,6 +61,7 @@ public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentStora
 
 /// <inheritdoc cref="IComponentStorageBaseFactory"/>
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
+[Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
@@ -61,6 +80,28 @@ internal class EntityUniformUpdate<TComp, TUniform, TArg>(int capacity) : Compon
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
         for (int i = b.EntityCount - 1; i >= 0; i--)
+        {
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, uniform, ref arg);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+
+            arg = ref Unsafe.Add(ref arg, 1);
+        }
+    }
+
+    internal override void Run(World world, Archetype b, int start, int length)
+    {
+        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
+        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+
+        ref TArg arg = ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+
+        Entity entity = world.DefaultWorldEntity;
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+
+        for (int i = length - 1; i >= 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity, uniform, ref arg);

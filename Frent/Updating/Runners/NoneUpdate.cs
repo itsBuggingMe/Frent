@@ -6,6 +6,7 @@ internal class NoneUpdate<TComp>(int cap) : ComponentStorage<TComp>(cap)
 {
     internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) { }
     internal override void Run(World world, Archetype b) { }
+    internal override void Run(World world, Archetype b, int start, int length) { }
 }
 
 /// <inheritdoc cref="IComponentStorageBaseFactory"/>

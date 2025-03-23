@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 
 [assembly: InternalsVisibleTo("Frent.Tests")]
 namespace Frent;
@@ -68,7 +69,7 @@ public partial class World : IDisposable
 
     internal EntityFlags WorldEventFlags;
 
-    internal FastStack<Archetype> DeferredCreationArchetypes = FastStack<Archetype>.Create(4);
+    internal FastStack<ArchetypeDeferredUpdateRecord> DeferredCreationArchetypes = FastStack<ArchetypeDeferredUpdateRecord>.Create(4);
 
     /// <summary>
     /// Invoked whenever an entity is created on this world.
@@ -233,7 +234,7 @@ public partial class World : IDisposable
         }
         finally
         {
-            ExitDisallowState(null);
+            ExitDisallowState(null, CurrentConfig.UpdateDeferredCreationEntities);
         }   
     }
 
@@ -259,7 +260,7 @@ public partial class World : IDisposable
         }
         finally
         {
-            ExitDisallowState(appliesTo);
+            ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
         }
     }
 
@@ -314,14 +315,30 @@ public partial class World : IDisposable
         Interlocked.Increment(ref _allowStructuralChanges);
     }
 
-    internal void ExitDisallowState(WorldUpdateFilter? filterUsed)
+    internal void ExitDisallowState(WorldUpdateFilter? filterUsed, bool updateDeferredEntities = false)
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
-            Span<Archetype> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
-
-            foreach (var archetype in resolveArchetypes)
+            Span<ArchetypeDeferredUpdateRecord> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
+            
+            foreach (var (archetype, _) in resolveArchetypes)
                 archetype.ResolveDeferredEntityCreations(this, filterUsed);
+            
+            if(updateDeferredEntities)
+            {
+                if(filterUsed is not null)
+                {
+                    filterUsed?.UpdateSubset(resolveArchetypes);
+                }
+                else
+                {
+                    foreach (var (archetype, _) in resolveArchetypes)
+                    {
+                        archetype.Update(this);
+                    }
+                }
+            }
+            
             DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
             
             while (WorldUpdateCommandBuffer.Playback()) ;

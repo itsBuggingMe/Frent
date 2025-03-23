@@ -60,7 +60,7 @@ internal partial class Archetype
     internal ref EntityIDOnly CreateDeferredEntityLocation(World world, scoped ref EntityLocation entityLocation, out int physicalIndex, out ComponentStorageBase[] writeStorage)
     {
         if (_deferredEntityCount == 0)
-            world.DeferredCreationArchetypes.Push(this);
+            world.DeferredCreationArchetypes.Push(new(this, EntityCount));
 
         int futureSlot = _nextComponentIndex + _deferredEntityCount++;
         entityLocation.Index = futureSlot;

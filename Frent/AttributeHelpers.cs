@@ -6,6 +6,9 @@ internal static class AttributeHelpers
     public const string GetComponentRefFrom = "        ref TArg arg = ref b.GetComponentDataReference<TArg>();";
     public const string GetComponentRefPattern = "|        ref TArg$ arg$ = ref b.GetComponentDataReference<TArg$>();\n|";
 
+    public const string GetComponentRefWithStartFrom = "        ref TArg arg = ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);";
+    public const string GetComponentRefWithStartPattern = "|        ref TArg$ arg$ = ref Unsafe.Add(ref b.GetComponentDataReference<TArg$>(), start);\n|";
+
     public const string IncRefFrom = "            arg = ref Unsafe.Add(ref arg, 1);";
     public const string IncRefPattern = "|            arg$ = ref Unsafe.Add(ref arg$, 1);\n|";
 

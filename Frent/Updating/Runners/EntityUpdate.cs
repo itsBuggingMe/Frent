@@ -27,6 +27,23 @@ internal class EntityUpdate<TComp>(int capacity) : ComponentStorage<TComp>(capac
         }
     }
 
+    internal override void Run(World world, Archetype b, int start, int length)
+    {
+        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
+        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+
+        Entity entity = world.DefaultWorldEntity;
+
+        for (int i = length - 1; i >= 0; i--)
+        {
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+        }
+    }
+
     internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
@@ -41,6 +58,7 @@ public class EntityUpdateRunnerFactory<TComp> : IComponentStorageBaseFactory, IC
 }
 
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
+[Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
@@ -57,6 +75,27 @@ internal class EntityUpdate<TComp, TArg>(int capacity) : ComponentStorage<TComp>
         Entity entity = world.DefaultWorldEntity;
 
         for (int i = b.EntityCount - 1; i >= 0; i--)
+        {
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, ref arg);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+
+            arg = ref Unsafe.Add(ref arg, 1);
+        }
+    }
+
+    internal override void Run(World world, Archetype b, int start, int length)
+    {
+        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
+        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+
+        ref TArg arg = ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+
+        Entity entity = world.DefaultWorldEntity;
+
+        for (int i = length - 1; i >= 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity, ref arg);

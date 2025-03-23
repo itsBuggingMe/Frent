@@ -14,14 +14,12 @@ internal class WorldUpdateFilter
     private readonly Type _attributeType;
     private int _lastRegisteredComponentID;
     
-    //shared with the dictionary
     private HashSet<Type>? _filter;
     
     //if we want, we can replace this with a byte[] array to save memory
     private ComponentStorageBase[] _allComponents = new ComponentStorageBase[8];
     private int _nextComponentStorageIndex;
 
-    //enumerating from the start
     private readonly ShortSparseSet<(Archetype Archetype, int Start, int Length)> _archetypes = new();
     
     //these components need to be updated
@@ -91,5 +89,19 @@ internal class WorldUpdateFilter
 
         if(count > 0)
             _archetypes[archetype.ID.RawIndex] = (archetype, start, count);
+    }
+
+    internal void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes)
+    {
+        Span<ComponentStorageBase> componentStorages = _allComponents.AsSpan(0, _nextComponentStorageIndex);
+        foreach (var (archetype, count) in archetypes)
+        {
+            (Archetype current, int start, int end) = _archetypes[archetype.ID.RawIndex];
+
+            foreach(var storage in componentStorages.Slice(start, end))
+            {
+                storage.Run(_world, current, count, current.EntityCount - count);
+            }
+        }
     }
 }

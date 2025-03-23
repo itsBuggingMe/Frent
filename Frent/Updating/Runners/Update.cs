@@ -22,6 +22,18 @@ internal class Update<TComp>(int cap) : ComponentStorage<TComp>(cap)
         }
     }
 
+    internal override void Run(World world, Archetype b, int start, int length)
+    {
+        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+
+        for (int i = length - 1; i >= 0; i--)
+        {
+            comp.Update();
+
+            comp = ref Unsafe.Add(ref comp, 1);
+        }
+    }
+
     internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
         throw new NotImplementedException();
 }
@@ -36,6 +48,7 @@ public class UpdateRunnerFactory<TComp> : IComponentStorageBaseFactory, ICompone
 }
 
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
+[Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
@@ -54,6 +67,21 @@ internal class Update<TComp, TArg>(int cap) : ComponentStorage<TComp>(cap)
 
             comp = ref Unsafe.Add(ref comp, 1);
 
+            arg = ref Unsafe.Add(ref arg, 1);
+        }
+    }
+
+    internal override void Run(World world, Archetype b, int start, int length)
+    {
+        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+
+        ref TArg arg = ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+
+        for (int i = length - 1; i >= 0; i--)
+        {
+            comp.Update(ref arg);
+
+            comp = ref Unsafe.Add(ref comp, 1);
             arg = ref Unsafe.Add(ref arg, 1);
         }
     }

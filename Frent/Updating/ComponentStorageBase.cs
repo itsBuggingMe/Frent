@@ -11,6 +11,7 @@ internal abstract class ComponentStorageBase(Array initalBuffer)
     protected Array _buffer = initalBuffer;
     public Array Buffer => _buffer;
     internal abstract void Run(World world, Archetype b);
+    internal abstract void Run(World world, Archetype b, int start, int length);
     internal abstract void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
     internal abstract void Delete(DeleteComponentData deleteComponentData);
     internal abstract void Trim(int chunkIndex);
