@@ -285,7 +285,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .AppendFullTypeName(model.FullName)
             .Append("), new ");
 
-        (model.ImplInterface == RegistryHelpers.TargetInterfaceName ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count))
+        (IsSpecialInterface(model.ImplInterface) ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count))
             .Append("UpdateRunnerFactory")
             .Append('<')
             .AppendFullTypeName(model.FullName);
@@ -320,6 +320,16 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         static (int Start, int Count) ExtractUpdaterName(string interfaceName)
         {
             return (1, interfaceName.Length - "IComponent".Length);
+        }
+
+        static bool IsSpecialInterface(string @interface)
+        {
+            bool isSpecial =
+                @interface == RegistryHelpers.TargetInterfaceName ||
+                RegistryHelpers.FullyQualifiedInitableInterfaceName.EndsWith(@interface) ||
+                RegistryHelpers.FullyQualifiedDestroyableInterfaceName.EndsWith(@interface)
+                ;
+            return isSpecial;
         }
     }
 

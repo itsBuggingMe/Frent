@@ -1,4 +1,6 @@
-﻿using Frent.Tests.Helpers;
+﻿using Frent.Components;
+using Frent.Tests.Helpers;
+using NUnit.Framework.Constraints;
 using static NUnit.Framework.Assert;
 
 namespace Frent.Tests.Framework;
@@ -41,5 +43,48 @@ internal class Lifetime
 
             That(e1, Is.EqualTo(entity));
         }
+    }
+
+    [Test]
+    public void LifetimeCalled_AddRemove()
+    {
+        using World world = new();
+
+        TestForLifetimeInvocation(world, (w, c) =>
+        {
+            Entity e = w.Create();
+            e.Add(c);
+            e.Remove<LifetimeComponent>();
+        });
+    }
+
+    [Test]
+    public void LifetimeCalled_CreateDelete()
+    {
+        using World world = new();
+
+        TestForLifetimeInvocation(world, (w, c) =>
+        {
+            Entity e = w.Create(c);
+            e.Delete();
+        });
+    }
+
+    private void TestForLifetimeInvocation(World world, Action<World, LifetimeComponent> action)
+    {
+        bool initFlag = false;
+        bool destroyFlag = false;
+        
+        action(world, new LifetimeComponent(e => initFlag = true, e => destroyFlag = true));
+
+        That(initFlag, Is.True);
+        That(destroyFlag, Is.True);
+    }
+
+    internal struct LifetimeComponent(Action<Entity>? init, Action<Entity>? destroy) : IInitable, IDestroyable
+    {
+        private Entity _self;
+        public void Init(Entity self) => init?.Invoke(_self = self);
+        public void Destroy() => destroy?.Invoke(_self);
     }
 }
