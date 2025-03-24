@@ -6,6 +6,7 @@ namespace Frent.Components;
 /// <summary>
 /// Indicates a component should be updated with zero arguments
 /// </summary>
+/// <remarks>Components should only implement one "Update" method.</remarks>
 public interface IComponent : IComponentBase
 {
     /// <summary>
@@ -17,6 +18,7 @@ public interface IComponent : IComponentBase
 /// <summary>
 /// Indicates a component should be updated with the specified components
 /// </summary>
+/// <remarks>Components should only implement one "Update" method.</remarks>
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IComponent<TArg> : IComponentBase

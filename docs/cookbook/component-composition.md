@@ -30,9 +30,13 @@ struct ConsoleTextWithColor(ConsoleColor Color) : IComponent<string>
     }
 }
 ```
+
 #### Output:
 ```csharp
 Hello World #1
 Hello World #2
 Hello World #3
 ```
+
+> [!WARNING]
+> A component type should only implement one `Update` method. For example, a component that implements `IComponent<string>` should not implement `IEntityComponent<int>`

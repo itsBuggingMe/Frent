@@ -6,6 +6,7 @@ namespace Frent.Components;
 /// <summary>
 /// Indicates a component should be updated with itself as an argument and a uniform of type <typeparamref name="TUniform"/>
 /// </summary>
+/// <remarks>Components should only implement one "Update" method.</remarks>
 public interface IEntityUniformComponent<TUniform> : IComponentBase
 {
     /// <inheritdoc cref="IComponent.Update"/>
@@ -15,6 +16,7 @@ public interface IEntityUniformComponent<TUniform> : IComponentBase
 /// <summary>
 /// Indicates a component should be updated with itself as an argument and a uniform of type <typeparamref name="TUniform"/>, along with the specified components
 /// </summary>
+/// <remarks>Components should only implement one "Update" method.</remarks>
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IEntityUniformComponent<TUniform, TArg> : IComponentBase
