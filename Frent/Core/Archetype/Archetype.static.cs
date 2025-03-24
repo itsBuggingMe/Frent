@@ -23,9 +23,9 @@ internal static class Archetype<T>
     internal static Archetype CreateNewOrGetExistingArchetype(World world)
     {
         var index = ID.RawIndex;
-        ref Archetype archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
+        ref Archetype? archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
         archetype ??= CreateArchetype(world);
-        return archetype!;
+        return archetype;
 
         //this method is literally only called once per world
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -69,7 +69,7 @@ partial class Archetype
 
     internal static Archetype CreateOrGetExistingArchetype(ArchetypeID id, World world)
     {
-        ref Archetype archetype = ref world.WorldArchetypeTable[id.RawIndex];
+        ref Archetype? archetype = ref world.WorldArchetypeTable[id.RawIndex];
         if (archetype is not null)
             return archetype;
 

@@ -1,5 +1,6 @@
 ﻿using Frent.Core;
 using Frent.Updating.Runners;
+using System.Dynamic;
 
 namespace Frent.Marshalling;
 
@@ -9,18 +10,31 @@ namespace Frent.Marshalling;
 /// <remarks>The APIs in this class are less stable, as many depend on implementation details.</remarks>
 public static class WorldMarshal
 {
-    public static ref T GetComponent<T>(World world, Entity entity)
-    {
-        EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID);
-        return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(location.Archetype.Components.UnsafeArrayIndex(location.Archetype.GetComponentIndex<T>()))[location.Index];
-    }
+    /// <summary>
+    /// Gets a component of an entity, without checking if the entity has the component or if the world belongs to the entity.
+    /// </summary>
+    /// <returns>A reference to the component in memory.</returns>
+    public static ref T GetComponent<T>(World world, Entity entity) => ref Get<T>(world, entity.EntityID);
 
-    public static Span<T> GetRawBuffer<T>(World world, Entity entity)
+    /// <summary>
+    /// Gets raw span over the entire buffer of a component type for an archetype.
+    /// </summary>
+    /// <typeparam name="T">The type of component to get.</typeparam>
+    /// <param name="world">The world that the entity belongs to.</param>
+    /// <param name="entity">The entity whose component buffer to get.</param>
+    /// <param name="index">The index of the entity's component.</param>
+    /// <returns>The entire sliced raw buffer. May be larger than the number of entities in an archetype.</returns>
+    public static Span<T> GetRawBuffer<T>(World world, Entity entity, out int index)
     {
         EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID);
+        index = location.Index;
         return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(location.Archetype.Components.UnsafeArrayIndex(location.Archetype.GetComponentIndex<T>())).AsSpan();
     }
 
+    /// <summary>
+    /// Gets a component of an entity from a raw entityID.
+    /// </summary>
+    /// <returns>A reference to the component in memory.</returns>
     public static ref T Get<T>(World world, int entityID)
     {
 

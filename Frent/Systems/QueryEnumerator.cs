@@ -3,6 +3,9 @@ using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
 
+/// <summary>
+/// Enumerates all component references of the specified types for each <see cref="Entity"/> a query.
+/// </summary>
 [Variadic("    private Span<T> _currentSpan1;", "|    private Span<T$> _currentSpan$;\n|")]
 [Variadic("        Item1 = new Ref<T>(_currentSpan1, _componentIndex),",
     "|        Item$ = new Ref<T$>(_currentSpan$,  _componentIndex),\n|")]
@@ -24,16 +27,27 @@ public ref struct QueryEnumerator<T>
         _archetypeIndex = -1;
     }
 
+    /// <summary>
+    /// The current tuple of component references.
+    /// </summary>
     public RefTuple<T> Current => new()
     {
         Item1 = new Ref<T>(_currentSpan1, _componentIndex),
     };
 
+    /// <summary>
+    /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
+    /// </summary>
+    /// <remarks>This MUST be called when finished with the enumerator!</remarks>
     public void Dispose()
     {
         _world.ExitDisallowState(null);
     }
 
+    /// <summary>
+    /// Moves to the entity set of entity references.
+    /// </summary>
+    /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()
     {
         if (++_componentIndex < _currentSpan1.Length)
@@ -54,8 +68,15 @@ public ref struct QueryEnumerator<T>
         return false;
     }
 
+    /// <summary>
+    /// Proxy type for foreach syntax
+    /// </summary>
+    /// <param name="query"></param>
     public struct QueryEnumerable(Query query)
     {
+        /// <summary>
+        /// Gets the enumerator over a query.
+        /// </summary>
         public QueryEnumerator<T> GetEnumerator() => new QueryEnumerator<T>(query);
     }
 }

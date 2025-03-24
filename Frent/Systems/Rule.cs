@@ -129,5 +129,8 @@ public struct Rule : IEquatable<Rule>
         IncludeDisabled,
     }
 
+    /// <summary>
+    /// Using this rule will include disabled entities in a query.
+    /// </summary>
     public static readonly Rule IncludeDisabledRule = new Rule() { _ruleState = RuleState.IncludeDisabled };
 }

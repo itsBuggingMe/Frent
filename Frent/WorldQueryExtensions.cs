@@ -5,6 +5,9 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
+/// <summary>
+/// Extensions to use query the world.
+/// </summary>
 [Variadic("<T>", "<|T$, |>")]
 [Variadic("default(T).Rule", "|default(T$).Rule, |")]
 [Variadic("        where T : struct, IRuleProvider", "|        where T$ : struct, IRuleProvider\n|")]

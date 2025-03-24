@@ -82,6 +82,7 @@ public partial struct Entity : IEquatable<Entity>
         return entityLocation.Version == EntityVersion;
     }
 
+    /// <exception cref="InvalidOperationException">This <see cref="Entity"/> has been deleted.</exception>
     internal ref EntityLocation AssertIsAlive(out World world)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);

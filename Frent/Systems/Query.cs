@@ -54,12 +54,24 @@ public partial class Query
 [Variadic("<T>", "<|T$, |>")]
 partial class Query
 {
+    /// <summary>
+    /// Enumerates component references for all entities in this query. Intended for use in foreach loops.
+    /// </summary>
     public QueryEnumerator<T>.QueryEnumerable Enumerate<T>() => new(this);
+    /// <summary>
+    /// Enumerates component references and <see cref="Entity"/> instances for all entities in this query. Intended for use in foreach loops.
+    /// </summary>
     public EntityQueryEnumerator<T>.QueryEnumerable EnumerateWithEntities<T>() => new(this);
+    /// <summary>
+    /// Enumerates component chunks for all entities in this query. Intended for use in foreach loops.
+    /// </summary>
     public ChunkQueryEnumerator<T>.QueryEnumerable EnumerateChunks<T>() => new(this);
 }
 
 partial class Query
 {
+    /// <summary>
+    /// Enumerates <see cref="Entity"/> instances for all entities in this query. Intended for use in foreach loops.
+    /// </summary>
     public EntityQueryEnumerator.QueryEnumerable EnumerateWithEntities() => new(this);
 }

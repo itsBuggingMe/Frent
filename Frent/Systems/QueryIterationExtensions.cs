@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Frent.Systems;
 
+/// <summary>
+/// Extensions to execute behavior on queries.
+/// </summary>
 [Variadic("            ref T c1 = ref archetype.GetComponentDataReference<T>();",
     "|            ref T$ c$ = ref archetype.GetComponentDataReference<T$>();\n|")]
 [Variadic("                c1 = ref Unsafe.Add(ref c1, 1);",
@@ -11,6 +14,11 @@ namespace Frent.Systems;
 [Variadic("ref c1)", "|ref c$, |)")]
 public static partial class QueryIterationExtensions
 {
+    /// <summary>
+    /// Executes a delegate for every entity in a query, using the specified component types.
+    /// </summary>
+    /// <param name="query">The query to iterate over.</param>
+    /// <param name="action">The behavior to execute on every component set.</param>
     public static void Delegate<T>(this Query query, QueryDelegates.Query<T> action)
     {
         foreach (var archetype in query.AsSpan())
@@ -19,7 +27,7 @@ public static partial class QueryIterationExtensions
             ref T c1 = ref archetype.GetComponentDataReference<T>();
 
             //downcounting is faster
-            for (int i = archetype.EntityCount; i >= 0; i--)
+            for (nint i = archetype.EntityCount - 1; i >= 0; i--)
             {
                 action(ref c1);
 
@@ -28,6 +36,11 @@ public static partial class QueryIterationExtensions
         }
     }
 
+    /// <summary>
+    /// Executes a inlinable struct instance method for every entity in a query, using the specified component types.
+    /// </summary>
+    /// <param name="query">The query to iterate over.</param>
+    /// <param name="action">The struct behavior to execute on every component set.</param>
     public static void Inline<TAction, T>(this Query query, TAction action)
         where TAction : IAction<T>
     {

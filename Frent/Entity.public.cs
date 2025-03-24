@@ -69,7 +69,7 @@ partial struct Entity
     /// </summary>
     /// <typeparam name="T">The type of component.</typeparam>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
+    /// <exception cref="NullReferenceException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
     /// <returns>A reference to the component in memory.</returns>
     [SkipLocalsInit]
     public ref T Get<T>()
@@ -96,13 +96,16 @@ partial struct Entity
     /// </summary>
     /// <param name="id">The ID of the type of component to get</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
+    /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="id"/>.</exception>
     /// <returns>The boxed component.</returns>
     public object Get(ComponentID id)
     {
         ref var lookup = ref AssertIsAlive(out _);
 
         int compIndex = lookup.Archetype.GetComponentIndex(id);
+
+        if (compIndex == 0)
+            FrentExceptions.Throw_ComponentNotFoundException(id.Type);
 
         return lookup.Archetype.Components[compIndex].GetAt(lookup.Index);
     }
@@ -156,7 +159,7 @@ partial struct Entity
     /// <returns><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public bool TryGet<T>(out Ref<T> value)
     {
-        value = TryGetCore<T>(out bool exists)!;
+        value = TryGetCore<T>(out bool exists);
         return exists;
     }
 
