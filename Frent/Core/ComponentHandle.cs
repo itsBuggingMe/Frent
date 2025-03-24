@@ -113,11 +113,11 @@ public readonly struct ComponentHandle : IEquatable<ComponentHandle>, IDisposabl
     public static bool operator !=(ComponentHandle left, ComponentHandle right) => !left.Equals(right);
 
     /// <summary>
-    /// The type of component represented by this <see cref="ComponentHandle"/>
+    /// The type of component represented by this <see cref="ComponentHandle"/>.
     /// </summary>
     public Type Type => _componentType.Type;
     /// <summary>
-    /// The <see cref="Core.ComponentID"/> of the component represented by this <see cref="ComponentHandle"/>
+    /// The <see cref="Core.ComponentID"/> of the component represented by this <see cref="ComponentHandle"/>.
     /// </summary>
     public ComponentID ComponentID => _componentType;
     /// <summary>
