@@ -6,11 +6,13 @@ Frent is on [Nuget](https://www.nuget.org/packages/Frent/)!
 > [!CAUTION]
 > Frent is still in beta.
 
+> [!WARNING]
+> You will need to enable prerelease to see the package in many UIs.
+
 ```pwsh
 dotnet add package Frent --version 0.5.4-beta
 ```
 
-*Note: You will need to enable prerelease to see the package in many UIs.*
 *Note: Unity requires a [different package](https://itsbuggingme.github.io/Frent/docs/unity.html)*
 
 ## Creating a World
