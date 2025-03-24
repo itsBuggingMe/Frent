@@ -3,6 +3,9 @@ using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
 
+/// <summary>
+/// Enumerates all component references of the specified types and the <see cref="Entity"/> instance for each <see cref="Entity"/> in a query.
+/// </summary>
 [Variadic("    private Span<T> _currentSpan1;", "|    private Span<T$> _currentSpan$;\n|")]
 [Variadic("        Item1 = new Ref<T>(_currentSpan1, _componentIndex),",
     "|        Item$ = new Ref<T$>(_currentSpan$, _componentIndex),\n|")]
@@ -25,17 +28,27 @@ public ref struct EntityQueryEnumerator<T>
         _archetypeIndex = -1;
     }
 
+    /// <summary>
+    /// The current tuple of component references and the <see cref="Entity"/> instance.
+    /// </summary>
     public EntityRefTuple<T> Current => new()
     {
         Entity = _entityIds[_componentIndex].ToEntity(_world),
         Item1 = new Ref<T>(_currentSpan1, _componentIndex),
     };
 
+    /// <summary>
+    /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
+    /// </summary>
     public void Dispose()
     {
         _world.ExitDisallowState(null);
     }
 
+    /// <summary>
+    /// Moves to the next entity and its components in this enumeration.
+    /// </summary>
+    /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()
     {
         if (++_componentIndex < _currentSpan1.Length)
@@ -63,12 +76,22 @@ public ref struct EntityQueryEnumerator<T>
         return true;
     }
 
+    /// <summary>
+    /// Proxy type for foreach syntax
+    /// </summary>
+    /// <param name="query">The query to wrap.</param>
     public struct QueryEnumerable(Query query)
     {
+        /// <summary>
+        /// Gets the enumerator over a query.
+        /// </summary>
         public EntityQueryEnumerator<T> GetEnumerator() => new EntityQueryEnumerator<T>(query);
     }
 }
 
+/// <summary>
+/// An enumerator that can be used to enumerate all <see cref="Entity"/> instances in a <see cref="Query"/>.
+/// </summary>
 public ref struct EntityQueryEnumerator
 {
     private int _archetypeIndex;
@@ -84,13 +107,23 @@ public ref struct EntityQueryEnumerator
         _archetypeIndex = -1;
     }
 
+    /// <summary>
+    /// The current <see cref="Entity"/> instance.
+    /// </summary>
     public Entity Current => _entityIds[_componentIndex].ToEntity(_world);
 
+    /// <summary>
+    /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
+    /// </summary>
     public void Dispose()
     {
         _world.ExitDisallowState(null);
     }
 
+    /// <summary>
+    /// Moves to the next entity.
+    /// </summary>
+    /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()
     {
         if (++_componentIndex < _entityIds.Length)
@@ -114,8 +147,15 @@ public ref struct EntityQueryEnumerator
         return false;
     }
 
+    /// <summary>
+    /// Proxy type for foreach syntax
+    /// </summary>
+    /// <param name="query"></param>
     public struct QueryEnumerable(Query query)
     {
+        /// <summary>
+        /// Gets the enumerator over a query.
+        /// </summary>
         public EntityQueryEnumerator GetEnumerator() => new EntityQueryEnumerator(query);
     }
 }

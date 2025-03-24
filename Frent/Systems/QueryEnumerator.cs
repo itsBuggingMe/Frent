@@ -4,7 +4,7 @@ using Frent.Variadic.Generator;
 namespace Frent.Systems;
 
 /// <summary>
-/// Enumerates all component references of the specified types for each <see cref="Entity"/> a query.
+/// Enumerates all component references of the specified types for each <see cref="Entity"/> in a query.
 /// </summary>
 [Variadic("    private Span<T> _currentSpan1;", "|    private Span<T$> _currentSpan$;\n|")]
 [Variadic("        Item1 = new Ref<T>(_currentSpan1, _componentIndex),",
@@ -45,7 +45,7 @@ public ref struct QueryEnumerator<T>
     }
 
     /// <summary>
-    /// Moves to the entity set of entity references.
+    /// Moves to the next entity set of entity references.
     /// </summary>
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()

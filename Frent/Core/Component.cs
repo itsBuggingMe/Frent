@@ -27,6 +27,10 @@ public static class Component<T>
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
 
+    /// <summary>
+    /// Use ComponentHandle.Create instead.
+    /// </summary>
+    [Obsolete("Use ComponentHandle.Create instead")]
     public static ComponentHandle StoreComponent(in T component)
     {
         GeneralComponentStorage.Create(out var index) = component;

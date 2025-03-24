@@ -117,14 +117,35 @@ public class CommandBuffer
     public void AddComponent(Entity entity, object component) => AddComponent(entity, component.GetType(), component);
 
     #region Tags
+    /// <summary>
+    /// Tags an entity with a tag when <see cref="Playback"/> is called.
+    /// </summary>
+    /// <typeparam name="T">The type to tag the entity with.</typeparam>
+    /// <param name="entity">The entity to tag.</param>
+
     public void Tag<T>(Entity entity) => Tag(entity, Core.Tag<T>.ID);
+    /// <summary>
+    /// Tags an entity with a tag when <see cref="Playback"/> is called.
+    /// </summary>
+    /// <param name="tagID">The ID of the tag type to tag.</param>
+    /// <param name="entity">The entity to tag.</param>
     public void Tag(Entity entity, TagID tagID)
     {
         SetIsActive();
         _tagEntityBuffer.Push(new(entity.EntityIDOnly, tagID));
     }
 
+    /// <summary>
+    /// Detaches a tag from an entity when <see cref="Playback"/> is called.
+    /// </summary>
+    /// <typeparam name="T">The type of tag to detach.</typeparam>
+    /// <param name="entity">The entity to detach from.</param>
     public void Detach<T>(Entity entity) => Detach(entity, Core.Tag<T>.ID);
+    /// <summary>
+    /// Detaches a tag from an entity when <see cref="Playback"/> is called.
+    /// </summary>
+    /// <param name="entity">The entity to detach from.</param>
+    /// <param name="tagID">The ID of the tag type to detach from the entity.</param>
     public void Detach(Entity entity, TagID tagID)
     {
         SetIsActive();
@@ -157,7 +178,7 @@ public class CommandBuffer
     public CommandBuffer With<T>(T component)
     {
         AssertCreatingEntity();
-        _createEntityComponents.Push(Component<T>.StoreComponent(in component));
+        _createEntityComponents.Push(ComponentHandle.Create(in component));
         return this;
     }
 

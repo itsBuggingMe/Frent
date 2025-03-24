@@ -1,9 +1,15 @@
 ﻿using Frent.Collections;
 using Frent.Core.Events;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
 
 namespace Frent.Core;
 
+/// <summary>
+/// A handle to a component of any type. Useful to avoid boxing.
+/// </summary>
+/// <remarks>Must be disposed. The handle must also not be used afterwards.</remarks>
 public readonly struct ComponentHandle : IEquatable<ComponentHandle>, IDisposable
 {
     private readonly int _index;
@@ -16,17 +22,36 @@ public readonly struct ComponentHandle : IEquatable<ComponentHandle>, IDisposabl
         _componentType = componentID;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="ComponentHandle"/> from a component.
+    /// </summary>
+    /// <typeparam name="T">The type of component to store.</typeparam>
+    /// <param name="comp">The component to store.</param>
+    /// <returns>A <see cref="ComponentHandle"/> instance that can be used to retrieve <paramref name="comp"/>.</returns>
     public static ComponentHandle Create<T>(in T comp)
     {
-        return Component<T>.StoreComponent(comp);
+        Component<T>.GeneralComponentStorage.Create(out var index) = comp;
+        return new ComponentHandle(index, Component<T>.ID);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="ComponentHandle"/> from a potentially boxed component.
+    /// </summary>
+    /// <param name="typeAs">The type to store the component as.</param>
+    /// <param name="object">The potentially boxed component to store.</param>
+    /// <exception cref="InvalidCastException"><paramref name="object"/> is not of <paramref name="typeAs.Type"/></exception>
+    /// <returns>A <see cref="ComponentHandle"/> instance that can be used to retrieve <paramref name="object"/>.</returns>
     public static ComponentHandle CreateFromBoxed(ComponentID typeAs, object @object)
     {
         var index = Component.ComponentTable[typeAs.RawIndex].Storage.CreateBoxed(@object);
         return new ComponentHandle(index, typeAs);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="ComponentHandle"/> from a potentially boxed component.
+    /// </summary>
+    /// <param name="object">The potentially boxed component to store.</param>
+    /// <returns>A <see cref="ComponentHandle"/> instance that can be used to retrieve <paramref name="object"/>.</returns>
     public static ComponentHandle CreateFromBoxed(object @object) => CreateFromBoxed(Component.GetComponentID(@object.GetType()), @object);
 
     /// <summary>
