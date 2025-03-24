@@ -27,111 +27,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var models = context.SyntaxProvider.CreateSyntaxProvider(static (n, _) => n is TypeDeclarationSyntax typeDec && typeDec.BaseList is not null,
-            static (gsc, ct) =>
-            {
-                INamedTypeSymbol? componentTypeSymbol = gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) as INamedTypeSymbol;
-
-                if (componentTypeSymbol is not null && 
-                    (componentTypeSymbol.TypeKind == TypeKind.Class || componentTypeSymbol.TypeKind == TypeKind.Struct))
-                {
-                    foreach (var @interface in componentTypeSymbol.AllInterfaces)
-                    {
-                        if (InterfaceImplementsIComponent(@interface))
-                        {
-                            string @namespace = componentTypeSymbol.ContainingNamespace.ToString();
-                            if (@namespace == "<global namespace>")
-                                @namespace = string.Empty;
-                            int index = @namespace.IndexOf('.');
-                            var genericArgs = @interface.TypeArguments.Length == 0 ? [] : new string[@interface.TypeArguments.Length];
-
-                            for (int i = 0; i < @interface.TypeArguments.Length; i++)
-                            {
-                                ITypeSymbol namedTypeSymbol = @interface.TypeArguments[i];
-                                genericArgs[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
-                            }
-
-                            //stack allocate 6 slots
-                            var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
-
-                            UpdateModelFlags flags = default;
-                            if (ImplementsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedInitableInterfaceName))
-                                flags |= UpdateModelFlags.Initable;
-                            if (ImplementsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedDestroyableInterfaceName))
-                                flags |= UpdateModelFlags.Destroyable;
-
-                            if (componentTypeSymbol.IsGenericType)
-                                flags |= UpdateModelFlags.IsGeneric;
-
-                            if (componentTypeSymbol.TypeKind == TypeKind.Class)
-                                flags |= UpdateModelFlags.IsClass;
-                            if (componentTypeSymbol.TypeKind == TypeKind.Struct)
-                                flags |= UpdateModelFlags.IsStruct;
-
-                            if(componentTypeSymbol.IsRecord)
-                                flags |= UpdateModelFlags.IsRecord;
-
-                            Diagnostic? diagnostic = null;
-
-                            if(componentTypeSymbol.IsGenericType && !IsPartial(componentTypeSymbol))
-                            {
-                                diagnostic = Diagnostic.Create(
-                                        new DiagnosticDescriptor(
-                                            id: "FR0000",
-                                            title: "Non-partial Generic Component Type",
-                                            messageFormat: "Generic Component \'{0}\' must be marked as partial.",
-                                            category: "Source Generation",
-                                            DiagnosticSeverity.Error,
-                                            isEnabledByDefault: true
-                                            ), 
-                                        componentTypeSymbol.Locations.First(), 
-                                        componentTypeSymbol.Name);
-                            }
-
-                            foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
-                            {
-                                if (item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
-                                {
-                                    foreach (var attrList in method.AttributeLists)
-                                    {
-                                        foreach (var attr in attrList.Attributes)
-                                        {
-                                            if (gsc.SemanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor)
-                                            {
-                                                if(InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
-                                                {
-                                                    stackAttributes.Push(attrCtor.ContainingType.ToString());
-                                                }
-
-                                                //if(ImplementsInterface(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName) && attrCtor.Parameters.Length > 0)
-                                                //{
-                                                //    if(attrCtor.Parameters[0].ExplicitDefaultValue is int updateorder)
-                                                //    {
-                                                //        order = updateorder;
-                                                //    }
-                                                //}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            //TODO: avoid alloc?
-                            return new ComponentUpdateItemModel(
-                                flags,
-                                componentTypeSymbol.ToString(),
-                                componentTypeSymbol.Name,
-                                @interface.Name,
-                                index == -1 ? @namespace : @namespace.Substring(0, index),
-                                index == -1 ? string.Empty : @namespace.Substring(index + 1),
-                                new EquatableArray<string>(genericArgs),
-                                new EquatableArray<string>(stackAttributes.ToArray()),
-                                diagnostic);
-                        }
-                    }
-                }
-
-                return new ComponentUpdateItemModel(default, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]), null);
-            });
+            GenerateComponentUpdateModel);
 
         IncrementalValuesProvider<ComponentUpdateItemModel> types = models
             .Where(m => m.Type.Length != 0);
@@ -175,6 +71,112 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 ctx.AddSource(s.Name, s.Source);
         });
 #endif
+    }
+
+    private static ComponentUpdateItemModel GenerateComponentUpdateModel(GeneratorSyntaxContext gsc, CancellationToken ct)
+    {
+        INamedTypeSymbol? componentTypeSymbol = gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) as INamedTypeSymbol;
+
+        if (componentTypeSymbol is not null &&
+            (componentTypeSymbol.TypeKind == TypeKind.Class || componentTypeSymbol.TypeKind == TypeKind.Struct))
+        {
+            foreach (var @interface in componentTypeSymbol.AllInterfaces)
+            {
+                if (InterfaceIsInterface(@interface, RegistryHelpers.FullyQualifiedTargetInterfaceName))
+                {
+                    string @namespace = componentTypeSymbol.ContainingNamespace.ToString();
+                    if (@namespace == "<global namespace>")
+                        @namespace = string.Empty;
+                    int index = @namespace.IndexOf('.');
+                    var genericArgs = @interface.TypeArguments.Length == 0 ? [] : new string[@interface.TypeArguments.Length];
+
+                    for (int i = 0; i < @interface.TypeArguments.Length; i++)
+                    {
+                        ITypeSymbol namedTypeSymbol = @interface.TypeArguments[i];
+                        genericArgs[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
+                    }
+
+                    //stack allocate 6 slots
+                    var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
+
+                    UpdateModelFlags flags = default;
+                    if (InterfaceIsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedInitableInterfaceName))
+                        flags |= UpdateModelFlags.Initable;
+                    if (InterfaceIsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedDestroyableInterfaceName))
+                        flags |= UpdateModelFlags.Destroyable;
+
+                    if (componentTypeSymbol.IsGenericType)
+                        flags |= UpdateModelFlags.IsGeneric;
+
+                    if (componentTypeSymbol.TypeKind == TypeKind.Class)
+                        flags |= UpdateModelFlags.IsClass;
+                    if (componentTypeSymbol.TypeKind == TypeKind.Struct)
+                        flags |= UpdateModelFlags.IsStruct;
+
+                    if (componentTypeSymbol.IsRecord)
+                        flags |= UpdateModelFlags.IsRecord;
+
+                    Diagnostic? diagnostic = null;
+
+                    if (componentTypeSymbol.IsGenericType && !IsPartial(componentTypeSymbol))
+                    {
+                        diagnostic = Diagnostic.Create(
+                                new DiagnosticDescriptor(
+                                    id: "FR0000",
+                                    title: "Non-partial Generic Component Type",
+                                    messageFormat: "Generic Component \'{0}\' must be marked as partial.",
+                                    category: "Source Generation",
+                                    DiagnosticSeverity.Error,
+                                    isEnabledByDefault: true
+                                    ),
+                                componentTypeSymbol.Locations.First(),
+                                componentTypeSymbol.Name);
+                    }
+
+                    foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
+                    {
+                        if (item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
+                        {
+                            foreach (var attrList in method.AttributeLists)
+                            {
+                                foreach (var attr in attrList.Attributes)
+                                {
+                                    if (gsc.SemanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor)
+                                    {
+                                        if (InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
+                                        {
+                                            stackAttributes.Push(attrCtor.ContainingType.ToString());
+                                        }
+
+                                        //if(ImplementsInterface(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName) && attrCtor.Parameters.Length > 0)
+                                        //{
+                                        //    if(attrCtor.Parameters[0].ExplicitDefaultValue is int updateorder)
+                                        //    {
+                                        //        order = updateorder;
+                                        //    }
+                                        //}
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    //TODO: avoid alloc?
+                    return new ComponentUpdateItemModel(
+                        flags,
+                        componentTypeSymbol.ToString(),
+                        componentTypeSymbol.Name,
+                        (componentTypeSymbol.AllInterfaces.FirstOrDefault(i => !IsSpecialInterface(i.Name) && InterfaceIsInterface(i, RegistryHelpers.FullyQualifiedTargetInterfaceName)) ?? @interface).Name,
+                        index == -1 ? @namespace : @namespace.Substring(0, index),
+                        index == -1 ? string.Empty : @namespace.Substring(index + 1),
+                        new EquatableArray<string>(genericArgs),
+                        new EquatableArray<string>(stackAttributes.ToArray()),
+                        diagnostic);
+                }
+            }
+        }
+
+        return new ComponentUpdateItemModel(default, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]), null);
     }
 
     private static SourceOutput GenerateMonolithicRegistrationFile(ImmutableArray<ComponentUpdateItemModel> models, CancellationToken ct)
@@ -321,16 +323,16 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         {
             return (1, interfaceName.Length - "IComponent".Length);
         }
+    }
 
-        static bool IsSpecialInterface(string @interface)
-        {
-            bool isSpecial =
-                @interface == RegistryHelpers.TargetInterfaceName ||
-                RegistryHelpers.FullyQualifiedInitableInterfaceName.EndsWith(@interface) ||
-                RegistryHelpers.FullyQualifiedDestroyableInterfaceName.EndsWith(@interface)
-                ;
-            return isSpecial;
-        }
+    static bool IsSpecialInterface(string @interface)
+    {
+        bool isSpecial =
+            @interface == RegistryHelpers.TargetInterfaceName ||
+            RegistryHelpers.FullyQualifiedInitableInterfaceName.EndsWith(@interface) ||
+            RegistryHelpers.FullyQualifiedDestroyableInterfaceName.EndsWith(@interface)
+            ;
+        return isSpecial;
     }
 
     private static SourceOutput GenerateRegisterGenericType(in ComponentUpdateItemModel model, CancellationToken ct)
@@ -419,11 +421,16 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static bool ImplementsInterface(INamedTypeSymbol typeSymbol, string interfaceName)
+    private static bool InterfaceIsInterface(INamedTypeSymbol typeSymbol, string fullyQualifiedInterfaceName)
     {
+        if(typeSymbol.ToString() == fullyQualifiedInterfaceName)
+        {
+            return true;
+        }
+
         foreach(var i in typeSymbol.AllInterfaces)
         {
-            if(i.ToString() == interfaceName)
+            if(i.ToString() == fullyQualifiedInterfaceName)
             {
                 return true;
             }
@@ -438,12 +445,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .Select(syntaxRef => syntaxRef.GetSyntax() as TypeDeclarationSyntax)
             .Any(syntax => syntax?.Modifiers.Any(SyntaxKind.PartialKeyword) ?? false);
     }
-
-    private static bool InterfaceImplementsIComponent(INamedTypeSymbol namedTypeSymbol) =>
-        (namedTypeSymbol.Interfaces.Length == 1 &&
-        namedTypeSymbol.Interfaces[0].ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName) ||
-        namedTypeSymbol.Interfaces.Length == 0 &&
-        namedTypeSymbol.ConstructedFrom.ToString() == RegistryHelpers.FullyQualifiedTargetInterfaceName;
 
     internal record struct ComponentUpdateItemModel(UpdateModelFlags Flags, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes, Diagnostic? Diagnostic)
     {
