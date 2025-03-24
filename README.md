@@ -58,7 +58,7 @@ Frent is a lot faster than most C# ECS implementations - [Benchmark](https://git
 - [x]  Structs as components
 - [x]  Deconstructing entities
 - [x]  Component memory stored contiguously (when using structs)
-- [x]  Get/Has/TryGet O(1) and highly optimised
+- [x]  Get/Has/TryGet O(1) and highly optimized
 - [x]  Pass in uniform data e.g., `deltaTime`
 - [x]  Deconstructing entities
 - [x]  Zero reflection
