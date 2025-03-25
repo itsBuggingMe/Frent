@@ -80,10 +80,12 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         if (componentTypeSymbol is not null &&
             (componentTypeSymbol.TypeKind == TypeKind.Class || componentTypeSymbol.TypeKind == TypeKind.Struct))
         {
-            foreach (var @interface in componentTypeSymbol.AllInterfaces)
+            foreach (var potentialInterface in componentTypeSymbol.AllInterfaces)
             {
-                if (InterfaceIsInterface(@interface, RegistryHelpers.FullyQualifiedTargetInterfaceName))
+                if (ImplementsOrIsInterface(potentialInterface, RegistryHelpers.FullyQualifiedTargetInterfaceName))
                 {
+                    var @interface = (componentTypeSymbol.AllInterfaces.FirstOrDefault(i => !IsSpecialInterface(i.Name) && ImplementsOrIsInterface(i, RegistryHelpers.FullyQualifiedTargetInterfaceName)) ?? potentialInterface);
+
                     string @namespace = componentTypeSymbol.ContainingNamespace.ToString();
                     if (@namespace == "<global namespace>")
                         @namespace = string.Empty;
@@ -100,9 +102,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
 
                     UpdateModelFlags flags = default;
-                    if (InterfaceIsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedInitableInterfaceName))
+                    if (ImplementsOrIsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedInitableInterfaceName))
                         flags |= UpdateModelFlags.Initable;
-                    if (InterfaceIsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedDestroyableInterfaceName))
+                    if (ImplementsOrIsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedDestroyableInterfaceName))
                         flags |= UpdateModelFlags.Destroyable;
 
                     if (componentTypeSymbol.IsGenericType)
@@ -166,7 +168,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                         flags,
                         componentTypeSymbol.ToString(),
                         componentTypeSymbol.Name,
-                        (componentTypeSymbol.AllInterfaces.FirstOrDefault(i => !IsSpecialInterface(i.Name) && InterfaceIsInterface(i, RegistryHelpers.FullyQualifiedTargetInterfaceName)) ?? @interface).Name,
+                        @interface.Name,
                         index == -1 ? @namespace : @namespace.Substring(0, index),
                         index == -1 ? string.Empty : @namespace.Substring(index + 1),
                         new EquatableArray<string>(genericArgs),
@@ -421,7 +423,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static bool InterfaceIsInterface(INamedTypeSymbol typeSymbol, string fullyQualifiedInterfaceName)
+    private static bool ImplementsOrIsInterface(INamedTypeSymbol typeSymbol, string fullyQualifiedInterfaceName)
     {
         if(typeSymbol.ToString() == fullyQualifiedInterfaceName)
         {
