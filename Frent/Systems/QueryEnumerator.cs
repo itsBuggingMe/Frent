@@ -58,11 +58,16 @@ public ref struct QueryEnumerator<T>
         _componentIndex = 0;
         _archetypeIndex++;
 
-        if ((uint)_archetypeIndex < (uint)_archetypes.Length)
+        while ((uint)_archetypeIndex < (uint)_archetypes.Length)
         {
+
             var cur = _archetypes[_archetypeIndex];
             _currentSpan1 = cur.GetComponentSpan<T>();
-            return true;
+
+            if (!_currentSpan1.IsEmpty)
+                return true;
+
+            _archetypeIndex++;
         }
 
         return false;
