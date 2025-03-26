@@ -10,3 +10,5 @@
   href: component-lifetimes.md
 - name: Unity
   href: unity.md
+- name: Structural Changes
+  href: structural-changes.md
