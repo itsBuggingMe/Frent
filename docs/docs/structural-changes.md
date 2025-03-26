@@ -25,7 +25,7 @@ foreach(_ in world.Query<With<int>>()
     //It does not have its components and tags until the end of the world update.
 
     Debug.Assert(deferred.Tagged<DeferredCreate>());
-    Debug.Assert(deferred.Tagged<Disabled>());
+    Debug.Assert(deferred.Tagged<Disable>());
 
     //int component is added after enumerator is disposed.
     Debug.Assert(!deferred.Has<int>());
