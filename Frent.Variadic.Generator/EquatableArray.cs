@@ -27,6 +27,12 @@ internal struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnumerable<T
         => obj is EquatableArray<T> n && n == this;
     public bool Equals(EquatableArray<T> other)
     {
+        if(other.Items is null)
+            return Items is null;
+
+        if (Items is null)
+            return false;
+
         if (Items.Length != other.Items.Length)
             return false;
         Items.AsSpan().SequenceEqual(other.Items);

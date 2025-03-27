@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <!-- yoink -->
-    <Compile Include="..\Frent.Variadic.Generator\EquatableArray.cs"></Compile>
+    <Compile Include="..\Frent.Variadic.Generator\EquatableArray.cs" Link="Structures\EquatableArray.cs"></Compile>
   </ItemGroup>
   
 </Project>

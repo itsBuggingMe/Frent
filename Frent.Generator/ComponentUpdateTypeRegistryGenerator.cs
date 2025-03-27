@@ -1,23 +1,22 @@
-﻿using Frent.Variadic.Generator;
+﻿using Frent.Generator.Model;
+using Frent.Generator.Structures;
+using Frent.Variadic.Generator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 
 namespace Frent.Generator;
 
-[Generator(LanguageNames.CSharp)]//TODO: refactor into CodeBuilder
+[Generator(LanguageNames.CSharp)]
 public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 {
+    public const string Version = "0.5.4.3";
+    private const string GlobalNamespace = "<global namespace>";
+
     private static SymbolDisplayFormat? _symbolDisplayFormat;
     private static SymbolDisplayFormat FullyQualifiedTypeNameFormat => _symbolDisplayFormat ??= new(
         genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
@@ -26,159 +25,194 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var models = context.SyntaxProvider.CreateSyntaxProvider(static (n, _) => n is TypeDeclarationSyntax typeDec && typeDec.BaseList is not null,
+        var models = context.SyntaxProvider.CreateSyntaxProvider(
+            static (n, _) => n is TypeDeclarationSyntax typeDec && typeDec.BaseList is not null,
             GenerateComponentUpdateModel);
 
-        IncrementalValuesProvider<ComponentUpdateItemModel> types = models
-            .Where(m => m.Type.Length != 0);
+        IncrementalValueProvider<ImmutableArray<ComponentUpdateItemModel>> allModels = models.Where(m => !m.IsDefault).Collect();
 
-#if UNITY
-        //unity generation
-        IncrementalValueProvider<SourceOutput> monolith = types
-            .Where(m => !m.Flagged(UpdateModelFlags.IsGeneric))
-            .Collect()
-            .Select(GenerateMonolithicRegistrationFile);
+        var mainRegistrationFile = allModels.Select(
+            (im, ct) => 
+                GenerateMonolithicRegistrationFile(im.Where(c => !c.HasFlag(UpdateModelFlags.IsGeneric)).ToImmutableArray(), ct)
+            );
 
-        context.RegisterImplementationSourceOutput(monolith, (ctx, s) =>
+        context.RegisterImplementationSourceOutput(mainRegistrationFile, RegisterSource);
+
+        var genericComponentFiles = models
+            .Where(c => c.HasFlag(UpdateModelFlags.IsGeneric))
+            .Select(GenerateRegisterGenericType);
+        
+        context.RegisterImplementationSourceOutput(genericComponentFiles, RegisterSource);
+
+        static void RegisterSource(SourceProductionContext context, SourceOutput output)
         {
-            if (s.Diagnostic is not null)
-                ctx.ReportDiagnostic(s.Diagnostic);
-            if (s.Name is not null)
-                ctx.AddSource(s.Name, s.Source);
-        });
-
-        var partialDeclarations = types
-            .Where(m => m.Flagged(UpdateModelFlags.IsGeneric))
-            .Select((n, ct) => GenerateRegisterGenericType(n, ct));
-
-        context.RegisterImplementationSourceOutput(partialDeclarations, (ctx, s) =>
-        {
-            if (s.Diagnostic is not null)
-                ctx.ReportDiagnostic(s.Diagnostic);
-            if (s.Name is not null)
-                ctx.AddSource(s.Name, s.Source);
-        });
-#else
-        //normal generation
-        IncrementalValuesProvider<SourceOutput> files = types
-            .Select((t, ct) => t.Flagged(UpdateModelFlags.IsGeneric) ? GenerateRegisterGenericType(t, ct) : GenerateModuleInitalizerFiles(t, ct));
-
-        context.RegisterImplementationSourceOutput(files, (ctx, s) =>
-        {
-            if(s.Diagnostic is not null)
-                ctx.ReportDiagnostic(s.Diagnostic);
-            if (s.Name is not null)
-                ctx.AddSource(s.Name, s.Source);
-        });
-#endif
+            if (output.Name is not null)
+                context.AddSource(output.Name, output.Source);
+            if(output.Diagnostic is not null)
+                context.ReportDiagnostic(output.Diagnostic);
+        }
     }
-
+    
     private static ComponentUpdateItemModel GenerateComponentUpdateModel(GeneratorSyntaxContext gsc, CancellationToken ct)
     {
-        INamedTypeSymbol? componentTypeSymbol = gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) as INamedTypeSymbol;
+        if (gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) is not INamedTypeSymbol componentTypeSymbol)
+            return ComponentUpdateItemModel.Default;
+        if (componentTypeSymbol.TypeKind != TypeKind.Class && componentTypeSymbol.TypeKind != TypeKind.Struct)
+            return ComponentUpdateItemModel.Default;
 
-        if (componentTypeSymbol is not null &&
-            (componentTypeSymbol.TypeKind == TypeKind.Class || componentTypeSymbol.TypeKind == TypeKind.Struct))
+        UpdateModelFlags flags = UpdateModelFlags.None;
+        Diagnostic? diagnostic = null;
+        INamedTypeSymbol? @interface = null;
+        string[]? genericArguments = null;
+
+        foreach (var potentialInterface in componentTypeSymbol.AllInterfaces)
         {
-            foreach (var potentialInterface in componentTypeSymbol.AllInterfaces)
+            ct.ThrowIfCancellationRequested();
+
+            if (!ImplementsOrIsInterface(potentialInterface, RegistryHelpers.FullyQualifiedTargetInterfaceName))
+                continue;
+            //potentialInterface is some kind of IComponentBase
+
+            string name = potentialInterface.ToString();
+
+            if (IsSpecialInterface(name))
             {
-                if (ImplementsOrIsInterface(potentialInterface, RegistryHelpers.FullyQualifiedTargetInterfaceName))
+                flags |= name switch
                 {
-                    var @interface = (componentTypeSymbol.AllInterfaces.FirstOrDefault(i => !IsSpecialInterface(i.Name) && ImplementsOrIsInterface(i, RegistryHelpers.FullyQualifiedTargetInterfaceName)) ?? potentialInterface);
+                    RegistryHelpers.FullyQualifiedInitableInterfaceName => UpdateModelFlags.Initable,
+                    RegistryHelpers.FullyQualifiedDestroyableInterfaceName => UpdateModelFlags.Destroyable,
+                    _ => UpdateModelFlags.None,
+                };
+            }
+            else
+            {
+                @interface = potentialInterface;
 
-                    string @namespace = componentTypeSymbol.ContainingNamespace.ToString();
-                    if (@namespace == "<global namespace>")
-                        @namespace = string.Empty;
-                    int index = @namespace.IndexOf('.');
-                    var genericArgs = @interface.TypeArguments.Length == 0 ? [] : new string[@interface.TypeArguments.Length];
+                genericArguments = @interface.TypeArguments.Length == 0 ? [] : new string[@interface.TypeArguments.Length];
 
-                    for (int i = 0; i < @interface.TypeArguments.Length; i++)
-                    {
-                        ITypeSymbol namedTypeSymbol = @interface.TypeArguments[i];
-                        genericArgs[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
-                    }
-
-                    //stack allocate 6 slots
-                    var stackAttributes = new StackStack<string>([null!, null!, null!, null!, null!, null!]);
-
-                    UpdateModelFlags flags = default;
-                    if (ImplementsOrIsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedInitableInterfaceName))
-                        flags |= UpdateModelFlags.Initable;
-                    if (ImplementsOrIsInterface(componentTypeSymbol, RegistryHelpers.FullyQualifiedDestroyableInterfaceName))
-                        flags |= UpdateModelFlags.Destroyable;
-
-                    if (componentTypeSymbol.IsGenericType)
-                        flags |= UpdateModelFlags.IsGeneric;
-
-                    if (componentTypeSymbol.TypeKind == TypeKind.Class)
-                        flags |= UpdateModelFlags.IsClass;
-                    if (componentTypeSymbol.TypeKind == TypeKind.Struct)
-                        flags |= UpdateModelFlags.IsStruct;
-
-                    if (componentTypeSymbol.IsRecord)
-                        flags |= UpdateModelFlags.IsRecord;
-
-                    Diagnostic? diagnostic = null;
-
-                    if (componentTypeSymbol.IsGenericType && !IsPartial(componentTypeSymbol))
-                    {
-                        diagnostic = Diagnostic.Create(
-                                new DiagnosticDescriptor(
-                                    id: "FR0000",
-                                    title: "Non-partial Generic Component Type",
-                                    messageFormat: "Generic Component \'{0}\' must be marked as partial.",
-                                    category: "Source Generation",
-                                    DiagnosticSeverity.Error,
-                                    isEnabledByDefault: true
-                                    ),
-                                componentTypeSymbol.Locations.First(),
-                                componentTypeSymbol.Name);
-                    }
-
-                    foreach (var item in ((TypeDeclarationSyntax)gsc.Node).Members)
-                    {
-                        if (item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
-                        {
-                            foreach (var attrList in method.AttributeLists)
-                            {
-                                foreach (var attr in attrList.Attributes)
-                                {
-                                    if (gsc.SemanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor)
-                                    {
-                                        if (InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
-                                        {
-                                            stackAttributes.Push(attrCtor.ContainingType.ToString());
-                                        }
-
-                                        //if(ImplementsInterface(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName) && attrCtor.Parameters.Length > 0)
-                                        //{
-                                        //    if(attrCtor.Parameters[0].ExplicitDefaultValue is int updateorder)
-                                        //    {
-                                        //        order = updateorder;
-                                        //    }
-                                        //}
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    //TODO: avoid alloc?
-                    return new ComponentUpdateItemModel(
-                        flags,
-                        componentTypeSymbol.ToString(),
-                        componentTypeSymbol.Name,
-                        @interface.Name,
-                        index == -1 ? @namespace : @namespace.Substring(0, index),
-                        index == -1 ? string.Empty : @namespace.Substring(index + 1),
-                        new EquatableArray<string>(genericArgs),
-                        new EquatableArray<string>(stackAttributes.ToArray()),
-                        diagnostic);
+                for (int i = 0; i < @interface.TypeArguments.Length; i++)
+                {
+                    ITypeSymbol namedTypeSymbol = @interface.TypeArguments[i];
+                    genericArguments[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
                 }
             }
         }
 
-        return new ComponentUpdateItemModel(default, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new([]), new([]), null);
+        //this path is still hot!
+        if (@interface is null)
+            return ComponentUpdateItemModel.Default;
+
+        //only components here
+
+        //since inline array doesn't exist, [null!, ...] allocates -_-
+        Stack<string> attributes = new Stack<string>(1);
+        PushUpdateTypeAttributes(ref attributes, gsc.Node, gsc.SemanticModel);
+
+        AddMiscFlags();
+
+        if (flags.HasFlag(UpdateModelFlags.IsGeneric) && !IsPartial(componentTypeSymbol))
+            diagnostic = CreateNeedPartialDiag(componentTypeSymbol);
+
+        Debug.Assert(genericArguments is not null);
+
+        string? @namespace = componentTypeSymbol.ContainingNamespace?.ToString();
+
+        if (@namespace == GlobalNamespace)
+            @namespace = null;
+
+        return new ComponentUpdateItemModel(
+
+            Flags: flags,
+            FullName: componentTypeSymbol.ToString(),
+            Namespace: @namespace,
+            ImplInterface:  @interface.Name,
+            HintName: componentTypeSymbol.Name,
+
+            NestedTypes: new EquatableArray<string>(GetContainingTypes()),
+            GenericArguments: new EquatableArray<string>(genericArguments!),
+            Attributes: new EquatableArray<string>(attributes.ToArray()),
+
+            diagnostic
+            );
+
+        void AddMiscFlags()
+        {
+            if (componentTypeSymbol.IsGenericType)
+                flags |= UpdateModelFlags.IsGeneric;
+
+            if (componentTypeSymbol.TypeKind == TypeKind.Class)
+                flags |= UpdateModelFlags.IsClass;
+            else if (componentTypeSymbol.TypeKind == TypeKind.Struct)
+                flags |= UpdateModelFlags.IsStruct;
+
+            if (componentTypeSymbol.IsRecord)
+                flags |= UpdateModelFlags.IsRecord;
+        }
+
+        string[] GetContainingTypes()
+        {
+            int nestedTypeCount = 0;
+            INamedTypeSymbol current = componentTypeSymbol;
+            while (current.ContainingType is not null)
+            {
+                current = current.ContainingType;
+                nestedTypeCount++;
+            }
+            string[] nestedTypeSymbols = new string[nestedTypeCount];
+            current = componentTypeSymbol;
+            while (current.ContainingType is not null)
+            {
+                current = current.ContainingType;
+                nestedTypeSymbols[nestedTypeCount++] = current.Name;
+            }
+            return nestedTypeSymbols;
+        }
+    }
+
+    private static void PushUpdateTypeAttributes(ref Stack<string> attributes,  SyntaxNode node, SemanticModel semanticModel)
+    {
+        foreach (var item in ((TypeDeclarationSyntax)node).Members)
+        {
+            if (item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
+            {
+                foreach (var attrList in method.AttributeLists)
+                {
+                    foreach (var attr in attrList.Attributes)
+                    {
+                        if (semanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor)
+                        {
+                            if (InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
+                            {
+                                attributes.Push(attrCtor.ContainingType.ToString());
+                            }
+
+                            //if(ImplementsInterface(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName) && attrCtor.Parameters.Length > 0)
+                            //{
+                            //    if(attrCtor.Parameters[0].ExplicitDefaultValue is int updateorder)
+                            //    {
+                            //        order = updateorder;
+                            //    }
+                            //}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static Diagnostic CreateNeedPartialDiag(INamedTypeSymbol componentTypeSymbol)
+    {
+        return Diagnostic.Create(
+            new DiagnosticDescriptor(
+                id: "FR0000",
+                title: "Non-partial Generic Component Type",
+                messageFormat: "Generic Component '{0}' must be marked as partial.",
+                category: "Source Generation",
+                DiagnosticSeverity.Error,
+                isEnabledByDefault: true
+                ),
+            componentTypeSymbol.Locations.First(),
+            componentTypeSymbol.Name);
     }
 
     private static SourceOutput GenerateMonolithicRegistrationFile(ImmutableArray<ComponentUpdateItemModel> models, CancellationToken ct)
@@ -186,140 +220,87 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         if (models.Length == 0)
             return new(default, string.Empty, default);
 
-        StringBuilder sb = new StringBuilder();
+        CodeBuilder cb = CodeBuilder.ThreadShared;
 
-
-        sb
+        cb
             .AppendLine("// <auto-generated />")
             .AppendLine("// This file was auto generated using Frent's source generator")
             .AppendLine("using global::Frent.Updating;")
             .AppendLine("using global::Frent.Updating.Runners;")
             .AppendLine("using global::System.Runtime.CompilerServices;")
-            .AppendLine();
-
-        sb
             .AppendLine()
-            .AppendLine("public static class FrentComponentRegistry")
-            .AppendLine("{")
-                .AppendLine("    [UnityEngine.RuntimeInitializeOnLoadMethod]")
-                .AppendLine("    public static void RegisterAll()")
-                .AppendLine("    {");
+            .AppendLine("namespace Frent.Generator")
+            .Scope()
+                .AppendLine()
+                .Append("[global::System.CodeDom.Compiler.GeneratedCode(\"Frent.Generator\", \"").Append(Version).AppendLine("\")]")
+                .AppendLine("[global::System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]")
+                .AppendLine("internal static class FrentComponentRegistry")
+                .Scope()
+#if UNITY
+                    .AppendLine("[global::UnityEngine.RuntimeInitializeOnLoadMethod]")
+#else
+                    .AppendLine("[global::System.Runtime.CompilerServices.ModuleInitializer]")
+#endif
+                    .AppendLine("[global::System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]")
+                    .AppendLine("internal static void RegisterAll()")
+                    .Scope()
+                        .AppendMany(models, ct, static (in ComponentUpdateItemModel model, CodeBuilder builder, CancellationToken ct) =>
+                        {
+                            AppendInitalizationMethodBody(builder, in model);
+                            ct.ThrowIfCancellationRequested();
+                        })
+                    .Unscope()
+                .Unscope()
+            .Unscope();
 
-        foreach(ref readonly var model in models.AsSpan())
-        {
-            AppendInitalizationMethodBody(sb, in model);
-            ct.ThrowIfCancellationRequested();
-        }
-
-        sb.AppendLine("    }");
-        sb.AppendLine("}");
-
-        string source = sb.ToString();
-        sb.Clear();
+        string source = cb.ToString();
+        cb.Clear();
 
         return new("FrentComponentRegistry.g.cs", source, null);
     }
-
-    private static bool AreModuleInitalizersSupported(ParseOptions options)
-    {
-        foreach(var e in options.PreprocessorSymbolNames)
-        {
-            if (e == "NET6_0_OR_GREATER")
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static SourceOutput GenerateModuleInitalizerFiles(in ComponentUpdateItemModel model, CancellationToken ct)
-    {
-        Debug.Assert(!model.Flagged(UpdateModelFlags.IsGeneric));
-
-        StringBuilder sb = new StringBuilder();
-
-        sb
-            .AppendLine("// <auto-generated />")
-            .AppendLine("// This file was auto generated using Frent's source generator")
-            .AppendLine("using global::Frent.Updating;")
-            .AppendLine("using global::Frent.Updating.Runners;")
-            .AppendLine();
-
-        if (model.BaseNamespace != string.Empty)
-            sb
-                .Append("namespace ").Append(model.BaseNamespace).Append(';').AppendLine();
-
-        sb
-            .AppendLine()
-            .AppendLine("[global::System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]")
-            .Append("internal static partial class ").Append(model.Type).AppendLine("ComponentUpdateInitalizer_")
-            .AppendLine("{")
-                .AppendLine("    [global::System.Runtime.CompilerServices.ModuleInitializer]")
-                .AppendLine("    [global::System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]")
-                .Append("    internal static void Initalize").Append(model.FullName.Replace('.', '_')).AppendLine("()")
-                .AppendLine("    {");
-
-        ct.ThrowIfCancellationRequested();
-
-        AppendInitalizationMethodBody(sb, in model);
-
-        ct.ThrowIfCancellationRequested();
-
-        //end method ^& class
-        sb.AppendLine("    }");
-        sb.AppendLine("}");
-
-        string source = sb.ToString();
-        sb.Clear();
-
-        sb.AppendNamespace(model.SubNamespace).Append(model.Type).Append("ComponentUpdateInitalizer").Append(".g.cs");
-
-        string name = sb.ToString();
-        sb.Clear();
-
-        return new(name, source, model.Diagnostic);
-    }
-
-    private static void AppendInitalizationMethodBody(StringBuilder sb, in ComponentUpdateItemModel model)
+    
+    private static void AppendInitalizationMethodBody(CodeBuilder cb, in ComponentUpdateItemModel model)
     {
         var span = ExtractUpdaterName(model.ImplInterface);
         
-        sb
-            .Append("        GenerationServices.RegisterType(typeof(")
-            .AppendFullTypeName(model.FullName)
+        cb
+            .Append("GenerationServices.RegisterType(typeof(")
+            .Append("global::").Append(model.FullName)
             .Append("), new ");
 
-        (IsSpecialInterface(model.ImplInterface) ? sb.Append("None") : sb.Append(model.ImplInterface, span.Start, span.Count))
+        (IsSpecialInterface(model.ImplInterface) ? cb.Append("None") : cb.Append(model.ImplInterface, span.Start, span.Count))
             .Append("UpdateRunnerFactory")
             .Append('<')
-            .AppendFullTypeName(model.FullName);
+            .Append("global::").Append(model.FullName);
 
         foreach (var item in model.GenericArguments)
-            sb.Append(", ").AppendFullTypeName(item);
+            cb.Append(", ").Append("global::").Append(item);
 
         //sb.Append(">(), ").Append(model.UpdateOrder).AppendLine(");");
-        sb.AppendLine(">());");
+        cb.AppendLine(">());");
         foreach (var attrType in model.Attributes)
         {
-            sb.Append("        GenerationServices.RegisterUpdateMethodAttribute(")
+            cb.Append("GenerationServices.RegisterUpdateMethodAttribute(")
             .Append("typeof(")
-            .AppendFullTypeName(attrType)
+            .Append("global::").Append(attrType)
             .Append("), typeof(")
-            .AppendFullTypeName(model.FullName)
+            .Append("global::").Append(model.FullName)
             .AppendLine("));");
         }
-        if (model.Flagged(UpdateModelFlags.Initable))
+        if (model.HasFlag(UpdateModelFlags.Initable))
         {
-            sb.Append("        GenerationServices.RegisterInit<")
-            .AppendFullTypeName(model.FullName)
+            cb.Append("GenerationServices.RegisterInit<")
+            .Append("global::").Append(model.FullName)
             .AppendLine(">();");
         }
-        if (model.Flagged(UpdateModelFlags.Destroyable))
+        if (model.HasFlag(UpdateModelFlags.Destroyable))
         {
-            sb.Append("        GenerationServices.RegisterDestroy<")
-            .AppendFullTypeName(model.FullName)
+            cb.Append("GenerationServices.RegisterDestroy<")
+            .Append("global::").Append(model.FullName)
             .AppendLine(">();");
         }
+
+        cb.AppendLine();
 
         static (int Start, int Count) ExtractUpdaterName(string interfaceName)
         {
@@ -327,89 +308,44 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
     }
 
-    static bool IsSpecialInterface(string @interface)
+    static bool IsSpecialInterface(string @fullyQualifiedName)
     {
         bool isSpecial =
-            @interface == RegistryHelpers.TargetInterfaceName ||
-            RegistryHelpers.FullyQualifiedInitableInterfaceName.EndsWith(@interface) ||
-            RegistryHelpers.FullyQualifiedDestroyableInterfaceName.EndsWith(@interface)
+            @fullyQualifiedName == RegistryHelpers.FullyQualifiedTargetInterfaceName ||
+            RegistryHelpers.FullyQualifiedInitableInterfaceName == @fullyQualifiedName ||
+            RegistryHelpers.FullyQualifiedDestroyableInterfaceName == @fullyQualifiedName
             ;
         return isSpecial;
     }
 
-    private static SourceOutput GenerateRegisterGenericType(in ComponentUpdateItemModel model, CancellationToken ct)
+    private static SourceOutput GenerateRegisterGenericType(ComponentUpdateItemModel model, CancellationToken ct)
     {
         //NOTE:
         //this needs to support older lang versions because unity
-        Debug.Assert(model.Flagged(UpdateModelFlags.IsGeneric));
+        Debug.Assert(model.HasFlag(UpdateModelFlags.IsGeneric));
 
-        StringBuilder sb = new();
+        CodeBuilder cb = CodeBuilder.ThreadShared;
 
-        string namespaceIndentation;
-        string @namespace;
-        string @name;
-        int sep = model.FullName.LastIndexOf('.');
+        string? @namespace = model.Namespace;
 
-        if(sep == -1)
-        {//global namespace
-            @namespace = namespaceIndentation = string.Empty;
-            name = model.FullName;
-        }
-        else
-        {
-            @namespace = model.FullName.Substring(0, sep);
-            @name = model.FullName.Substring(sep + 1);
-            namespaceIndentation = "    ";
-        }
-
-        sb
+        cb
             .AppendLine("// <auto-generated />")
             .AppendLine("// This file was auto generated using Frent's source generator")
             .AppendLine("using global::Frent.Updating;")
             .AppendLine("using global::Frent.Updating.Runners;")
-            .AppendLine();
-
-        if (@namespace != string.Empty)
-            sb
-                .Append("namespace ").Append(@namespace).AppendLine()
-                .AppendLine("{");
-
-        sb
+            .AppendLine("using global::System.Runtime.CompilerServices;")
             .AppendLine()
-            .Append(namespaceIndentation).Append("partial ").Append(model.Flagged(UpdateModelFlags.IsRecord) ? "record " : string.Empty).Append(model.Flagged(UpdateModelFlags.IsStruct) ? "struct " : "class ").AppendLine(@name)
-            .Append(namespaceIndentation).AppendLine("{")
-                //TODO: figure out a better way to have user static constructors
-                //.AppendLine("    static partial void StaticConstructor();")
-                .Append(namespaceIndentation).Append("    static ").Append(model.Type).AppendLine("()")
-                .Append(namespaceIndentation).AppendLine("    {");
+            .If(@namespace is not null, @namespace, (ns, c) => c.Append("namespace ").AppendLine(ns).Scope())
+                .Append("partial ").If(model.IsRecord, c => c.Append("record ")).Append(model.IsStruct ? "struct " : "class ").Append(model.Name).AppendLine()
+                .Scope()
+                    .Append("static ").Append(model.HintName).AppendLine("()")
+                    .Scope()
+                        .Execute(in model, ct, (in ComponentUpdateItemModel model, CodeBuilder builder, CancellationToken ct) => AppendInitalizationMethodBody(cb, in model))
+                    .Unscope()
+                .Unscope()
+            .If(@namespace is not null, c => c.Unscope());
 
-        AppendInitalizationMethodBody(sb, model);
-
-        sb
-            //.AppendLine("        StaticConstructor();")
-            .Append(namespaceIndentation).AppendLine("    }")
-            .Append(namespaceIndentation).AppendLine("}");
-
-        if (@namespace != string.Empty)
-            sb.AppendLine("}");
-
-        string source = sb.ToString();
-
-        sb.Clear().Append(model.Type).Append(".g.cs");
-
-        return new(sb.ToString(), source, model.Diagnostic);
-    }
-
-    static bool Launched = false;
-
-    [Conditional("DEBUG")]
-    [DebuggerStepThrough]
-    [DebuggerHidden]
-    internal static void LaunchDebugger()
-    {
-        if (!Debugger.IsAttached && !Launched)
-            Debugger.Launch();
-        Launched = true;
+        return new($"{model.HintName}.g.cs", cb.ToString(), model.Diagnostic);
     }
 
     private static bool InheritsFromBase(INamedTypeSymbol? typeSymbol, string baseTypeName)
@@ -441,27 +377,21 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         return false;
     }
 
-    public static bool IsPartial(INamedTypeSymbol namedTypeSymbol)
+    private static bool IsPartial(INamedTypeSymbol namedTypeSymbol)
     {
         return namedTypeSymbol.DeclaringSyntaxReferences
             .Select(syntaxRef => syntaxRef.GetSyntax() as TypeDeclarationSyntax)
             .Any(syntax => syntax?.Modifiers.Any(SyntaxKind.PartialKeyword) ?? false);
     }
 
-    internal record struct ComponentUpdateItemModel(UpdateModelFlags Flags, string FullName, string Type, string ImplInterface, string BaseNamespace, string SubNamespace, EquatableArray<string> GenericArguments, EquatableArray<string> Attributes, Diagnostic? Diagnostic)
+    [Conditional("DEBUG")]
+    [DebuggerStepThrough]
+    [DebuggerHidden]
+    internal static void LaunchDebugger()
     {
-        public readonly bool Flagged(UpdateModelFlags updateModelFlags) => Flags.HasFlag(updateModelFlags);
+        if (!Debugger.IsAttached && !Launched)
+            Debugger.Launch();
+        Launched = true;
     }
-    internal record struct SourceOutput(string? Name, string Source, Diagnostic? Diagnostic);
-    
-    [Flags]
-    internal enum UpdateModelFlags
-    {
-        IsClass = 1 << 0,
-        IsStruct = 1 << 1,
-        IsGeneric = 1 << 2,
-        Initable = 1 << 3,
-        Destroyable = 1 << 4,
-        IsRecord = 1 << 5,
-    }
+    static bool Launched = false;
 }
