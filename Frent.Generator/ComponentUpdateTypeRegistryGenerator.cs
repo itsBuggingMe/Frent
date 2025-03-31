@@ -63,7 +63,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         UpdateModelFlags flags = UpdateModelFlags.None;
         Diagnostic? diagnostic = null;
         INamedTypeSymbol? @interface = null;
-        string[]? genericArguments = null;
+        string[] genericArguments = [];
+        bool needsRegistering = false;
 
         foreach (var potentialInterface in componentTypeSymbol.AllInterfaces)
         {
@@ -75,31 +76,43 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
             string name = potentialInterface.ToString();
 
+            needsRegistering = true;
+
             if (IsSpecialInterface(name))
             {
-                flags |= name switch
+                if(name != RegistryHelpers.FullyQualifiedTargetInterfaceName)
                 {
-                    RegistryHelpers.FullyQualifiedInitableInterfaceName => UpdateModelFlags.Initable,
-                    RegistryHelpers.FullyQualifiedDestroyableInterfaceName => UpdateModelFlags.Destroyable,
-                    _ => UpdateModelFlags.None,
-                };
+                    flags |= name switch
+                    {
+                        RegistryHelpers.FullyQualifiedInitableInterfaceName => UpdateModelFlags.Initable,
+                        RegistryHelpers.FullyQualifiedDestroyableInterfaceName => UpdateModelFlags.Destroyable,
+                        _ => UpdateModelFlags.None,
+                    };
+                }
+                else
+                {
+                    @interface ??= potentialInterface;
+                }
             }
             else
             {
                 @interface = potentialInterface;
 
-                genericArguments = @interface.TypeArguments.Length == 0 ? [] : new string[@interface.TypeArguments.Length];
-
-                for (int i = 0; i < @interface.TypeArguments.Length; i++)
+                if(@interface.TypeArguments.Length != 0)
                 {
-                    ITypeSymbol namedTypeSymbol = @interface.TypeArguments[i];
-                    genericArguments[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
+                    genericArguments = new string[@interface.TypeArguments.Length];
+
+                    for (int i = 0; i < @interface.TypeArguments.Length; i++)
+                    {
+                        ITypeSymbol namedTypeSymbol = @interface.TypeArguments[i];
+                        genericArguments[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
+                    }
                 }
             }
         }
 
         //this path is still hot!
-        if (@interface is null)
+        if (!needsRegistering || @interface is null)
             return ComponentUpdateItemModel.Default;
 
         //only components here
@@ -160,10 +173,11 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             }
             string[] nestedTypeSymbols = new string[nestedTypeCount];
             current = componentTypeSymbol;
+            int index = 0;
             while (current.ContainingType is not null)
             {
                 current = current.ContainingType;
-                nestedTypeSymbols[nestedTypeCount++] = current.Name;
+                nestedTypeSymbols[index++] = current.Name;
             }
             return nestedTypeSymbols;
         }
@@ -268,7 +282,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .Append("global::").Append(model.FullName)
             .Append("), new ");
 
-        (IsSpecialInterface(model.ImplInterface) ? cb.Append("None") : cb.Append(model.ImplInterface, span.Start, span.Count))
+        (model.ImplInterface == RegistryHelpers.TargetInterfaceName ? cb.Append("None") : cb.Append(model.ImplInterface, span.Start, span.Count))
             .Append("UpdateRunnerFactory")
             .Append('<')
             .Append("global::").Append(model.FullName);
@@ -323,6 +337,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         //NOTE:
         //this needs to support older lang versions because unity
         Debug.Assert(model.HasFlag(UpdateModelFlags.IsGeneric));
+
 
         CodeBuilder cb = CodeBuilder.ThreadShared;
 
