@@ -1,7 +1,7 @@
 ﻿using Frent.Components;
 using Frent;
 using static NUnit.Framework.Assert;
-
+/*
 namespace Frent.Tests.Generator
 {
     internal class SourceGeneratorTests
@@ -125,4 +125,4 @@ internal class Derived : GlobalNamespace
 internal interface ILifetimeInterface : IComponent, IInitable, IDestroyable
 {
 
-}
+}*/

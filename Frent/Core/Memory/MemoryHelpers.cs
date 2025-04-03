@@ -108,14 +108,14 @@ internal static class MemoryHelpers
 #endif
     }
 
-    public static ref T GetValueOrResize<T>(T[] arr, int index)
+    public static ref T GetValueOrResize<T>(ref T[] arr, int index)
     {
         if((uint)index < (uint)arr.Length)
             return ref arr[index];
-        return ref ResizeAndGet(arr, index);
+        return ref ResizeAndGet(ref arr, index);
     }
 
-    private static ref T ResizeAndGet<T>(T[] arr, int index)
+    private static ref T ResizeAndGet<T>(ref T[] arr, int index)
     {
         int newSize = (int)BitOperations.RoundUpToPowerOf2((uint)(index + 1));
         Array.Resize(ref arr, newSize);
