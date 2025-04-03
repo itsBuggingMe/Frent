@@ -37,7 +37,7 @@ namespace Frent;
 [Variadic("<T>", "<|T$, |>")]
 partial struct Entity
 {
-    //traversing archetype graph strategy:
+    // traversing archetype graph strategy:
     //1. hit small & fast static per type cache - 1 branch
     //2. dictionary lookup
     //3. find existing archetype

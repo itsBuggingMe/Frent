@@ -144,7 +144,7 @@ internal static class MemoryHelpers
     internal struct Block16;
 
 
-    // catch bugs with Unsafe.SkitInit
+    // catch bugs with Unsafe.SkipInit
     [Conditional("DEBUG")]
     public static void Poison<T>(ref T item)
     {

@@ -4,9 +4,11 @@ using Frent.Variadic.Generator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Frent.Generator;
@@ -360,7 +362,24 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Unscope()
             .If(@namespace is not null, c => c.Unscope());
 
-        return new($"{model.HintName}.g.cs", cb.ToString(), model.Diagnostic);
+        return new(SanitizeNameForFile(model.FullName), cb.ToString(), model.Diagnostic);
+
+        static string SanitizeNameForFile(string name)
+        {
+            const string FileEnd = ".g.cs";
+            Span<char> newName = stackalloc char[name.Length + FileEnd.Length];
+            for(int i = 0; i < name.Length; i++)
+            {
+                newName[i] = name[i] switch
+                {
+                    '<' or '>' => '_',
+                    _ => name[i],
+                };
+            }
+            FileEnd.AsSpan().CopyTo(newName.Slice(name.Length));
+            string res = newName.ToString();
+            return res;
+        }
     }
 
     private static bool InheritsFromBase(INamedTypeSymbol? typeSymbol, string baseTypeName)
