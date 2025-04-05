@@ -25,5 +25,6 @@ public static class RegistryHelpers
     public const string FullyQualifiedTargetInterfaceName = "Frent.Components.IComponentBase";
     public const string FullyQualifiedInitableInterfaceName = "Frent.Components.IInitable";
     public const string FullyQualifiedDestroyableInterfaceName = "Frent.Components.IDestroyable";
+    public const string FrentComponentNamespace = "Frent.Components";
 }
 

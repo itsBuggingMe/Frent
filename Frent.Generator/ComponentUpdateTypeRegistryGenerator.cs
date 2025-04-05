@@ -100,7 +100,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     @interface ??= potentialInterface;
                 }
             }
-            else
+            else if(IsFrentComponentInterface(name))
             {
                 if(@interface is not null && !IsSpecialInterface(@interface.ToString()))
                 {
@@ -384,6 +384,11 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             RegistryHelpers.FullyQualifiedDestroyableInterfaceName == @fullyQualifiedName
             ;
         return isSpecial;
+    }
+
+    static bool IsFrentComponentInterface(string @fullyQualifiedName)
+    {
+        return fullyQualifiedName.StartsWith(RegistryHelpers.FrentComponentNamespace);
     }
 
     private static SourceOutput GenerateRegisterGenericType(ComponentUpdateItemModel model, CancellationToken ct)
