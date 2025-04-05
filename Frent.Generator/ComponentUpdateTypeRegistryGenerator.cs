@@ -104,7 +104,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             {
                 if(@interface is not null && !IsSpecialInterface(@interface.ToString()))
                 {
-                    diagnostics.Push(CreateDiagnostic(@interface, 3, "Multiple Component Interface Implementations", "Components should only implement one update component interface.", DiagnosticSeverity.Warning));
+                    diagnostics.Push(CreateDiagnostic(componentTypeSymbol, 3, "Multiple Component Interface Implementations", "Components should only implement one update component interface.", DiagnosticSeverity.Warning));
                 }
 
                 @interface = potentialInterface;
