@@ -70,4 +70,6 @@ internal struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnumerable<T
         public void Reset() => _index = -1;
         public void Dispose() { }
     }
+
+    public static implicit operator ReadOnlySpan<T>(EquatableArray<T> values) => values.Items;
 }

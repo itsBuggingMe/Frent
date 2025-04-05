@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Immutable;
 using System.Text;
 using System.Threading;
@@ -57,9 +58,9 @@ internal class CodeBuilder
         return this;
     }
 
-    public CodeBuilder AppendMany<T>(ImmutableArray<T> items, CancellationToken ct, CodeBuilderDelegate<T> onEach)
+    public CodeBuilder Foreach<T>(ReadOnlySpan<T> items, CancellationToken ct, CodeBuilderDelegate<T> onEach)
     {
-        foreach(ref readonly var i in items.AsSpan())
+        foreach(ref readonly var i in items)
         {
             onEach(in i, this, ct);
         }

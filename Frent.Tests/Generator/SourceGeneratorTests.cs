@@ -1,10 +1,10 @@
 ﻿using Frent.Components;
 using Frent;
 using static NUnit.Framework.Assert;
-/*
+
 namespace Frent.Tests.Generator
 {
-    internal class SourceGeneratorTests
+    internal partial class SourceGeneratorTests
     {
         //TODO: Cases to test for
         //N deep class/struct nesting
@@ -29,7 +29,7 @@ namespace Frent.Tests.Generator
 
 
 
-        public class Nest<T>
+        public partial class Nest<T>
         {
             private partial struct Inner<T1> : IInitable
             {
@@ -45,18 +45,10 @@ namespace Frent.Tests.Generator
                 {
                     throw new NotImplementedException();
                 }
-
-                internal partial class InnerConflict<T> : IComponent
-                {
-                    public void Update()
-                    {
-                        throw new NotImplementedException();
-                    }
-                }
             }
         }
 
-        private struct IndirectInterface : ILifetimeInterface
+        private partial struct IndirectInterface : ILifetimeInterface
         {
             public void Destroy()
             {
@@ -78,7 +70,7 @@ namespace Frent.Tests.Generator
 
 // Global Namespace
 
-internal class GlobalNamespace : IComponent
+internal partial class InGlobalNamespace : IComponent
 {
     public void Update()
     {
@@ -88,7 +80,7 @@ internal class GlobalNamespace : IComponent
     private partial struct Inner<T> : IComponentBase
     {
 
-        internal struct Unbound<T1> : IUniformComponent<T1>
+        internal partial struct Unbound<T1> : IUniformComponent<T1>
         {
             public void Update(T1 uniform)
             {
@@ -98,9 +90,9 @@ internal class GlobalNamespace : IComponent
     }
 }
 
-internal class Derived : GlobalNamespace
+internal partial class Derived : InGlobalNamespace
 {
-    private class DerivedInner : Derived, IInitable
+    private partial class DerivedInner : Derived, IInitable
     {
         public void Init(Entity self)
         {
@@ -109,7 +101,7 @@ internal class Derived : GlobalNamespace
     }
 
     //this should produce a warning
-    protected class Warning : IComponent, IUniformComponent<int>
+    protected partial class Warning : IComponent, IUniformComponent<int>
     {
         public void Update()
         {
@@ -125,4 +117,4 @@ internal class Derived : GlobalNamespace
 internal interface ILifetimeInterface : IComponent, IInitable, IDestroyable
 {
 
-}*/
+}
