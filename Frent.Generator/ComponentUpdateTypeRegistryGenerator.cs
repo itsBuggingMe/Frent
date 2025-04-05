@@ -1,5 +1,4 @@
-﻿using Frent.Generator.Model;
-using Frent.Generator.Models;
+﻿using Frent.Generator.Models;
 using Frent.Generator.Structures;
 using Frent.Variadic.Generator;
 using Microsoft.CodeAnalysis;
@@ -9,8 +8,6 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Frent.Generator;
@@ -19,7 +16,6 @@ namespace Frent.Generator;
 public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 {
     public const string Version = "0.5.4.3";
-    private const string GlobalNamespace = "<global namespace>";
 
     private static SymbolDisplayFormat? _symbolDisplayFormat;
     private static SymbolDisplayFormat FullyQualifiedTypeNameFormat => _symbolDisplayFormat ??= new(
@@ -30,7 +26,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var models = context.SyntaxProvider.CreateSyntaxProvider(
-            static (n, _) => n is TypeDeclarationSyntax typeDec && typeDec.BaseList is not null,
+            static (n, _) => n is TypeDeclarationSyntax { BaseList: { } } typeDec,
             GenerateComponentUpdateModel);
 
         IncrementalValueProvider<ImmutableArray<ComponentUpdateItemModel>> allModels = models.Where(m => !m.IsDefault).Collect();
@@ -52,9 +48,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         {
             if (output.Name is not null)
                 context.AddSource(output.Name, output.Source);
-            if(output.Diagnostics is { } diags)
-                foreach(var e in diags)
-                    context.ReportDiagnostic(e);
         }
     }
     
@@ -62,7 +55,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     {
         if (gsc.SemanticModel.GetDeclaredSymbol(gsc.Node, ct) is not INamedTypeSymbol componentTypeSymbol)
             return ComponentUpdateItemModel.Default;
-        if (componentTypeSymbol.TypeKind != TypeKind.Class && componentTypeSymbol.TypeKind != TypeKind.Struct)
+        if (componentTypeSymbol.TypeKind is not (TypeKind.Class or TypeKind.Struct))
             return ComponentUpdateItemModel.Default;
 
         UpdateModelFlags flags = UpdateModelFlags.None;
@@ -76,7 +69,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         {
             ct.ThrowIfCancellationRequested();
 
-            if (!ImplementsOrIsInterface(potentialInterface, RegistryHelpers.FullyQualifiedTargetInterfaceName))
+            if (!potentialInterface.IsOrExtendsIComponentBase())
                 continue;
             //potentialInterface is some kind of IComponentBase
 
@@ -84,7 +77,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
             needsRegistering = true;
 
-            if (IsSpecialInterface(name))
+            if (potentialInterface.IsSpecialComponentInterface())
             {
                 if(name != RegistryHelpers.FullyQualifiedTargetInterfaceName)
                 {
@@ -100,13 +93,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     @interface ??= potentialInterface;
                 }
             }
-            else if(IsFrentComponentInterface(name))
+            else if(potentialInterface.IsFrentComponentInterface())
             {
-                if(@interface is not null && !IsSpecialInterface(@interface.ToString()))
-                {
-                    diagnostics.Push(CreateDiagnostic(componentTypeSymbol, 3, "Multiple Component Interface Implementations", "Components should only implement one update component interface.", DiagnosticSeverity.Warning));
-                }
-
                 @interface = potentialInterface;
 
                 if(@interface.TypeArguments.Length != 0)
@@ -136,28 +124,18 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         Debug.Assert(genericArguments is not null);
 
-        string? @namespace = componentTypeSymbol.ContainingNamespace?.ToString();
+        string? @namespace = null;
 
-        if (@namespace == GlobalNamespace)
-            @namespace = null;
+        if(!componentTypeSymbol.ContainingNamespace.IsGlobalNamespace)
+            @namespace = componentTypeSymbol.ContainingNamespace.ToString();
 
-        var nestTypes = GetContainingTypes(ref diagnostics, out bool isAcc);
+        var nestTypes = GetContainingTypes(ref diagnostics);
 
+        bool isAcc =
+                    componentTypeSymbol.DeclaredAccessibility == Accessibility.Public ||
+                    componentTypeSymbol.DeclaredAccessibility == Accessibility.Internal;
         if ((nestTypes.Length != 0 && !isAcc) || flags.HasFlag(UpdateModelFlags.IsGeneric))
             flags |= UpdateModelFlags.IsSelfInit;
-
-        //self init component must be partial
-        if (flags.HasFlag(UpdateModelFlags.IsSelfInit) && !IsPartial(componentTypeSymbol))
-        {
-            if(flags.HasFlag(UpdateModelFlags.IsGeneric))
-            {
-                diagnostics.Push(CreateDiagnostic(componentTypeSymbol, 0, "Non-partial Generic Component Type", $"Generic Component '{componentTypeSymbol.Name}' must be marked as partial."));
-            }
-            else
-            {
-                diagnostics.Push(CreateDiagnostic(componentTypeSymbol, 2, "Non-partial Nested Inaccessible Component Type", $"Inaccessible Nested Component Type '{componentTypeSymbol.Name}' must be marked as partial."));
-            }
-        }
 
         return new ComponentUpdateItemModel(
 
@@ -170,9 +148,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
             NestedTypes: new EquatableArray<TypeDeclarationModel>(nestTypes),
             GenericArguments: new EquatableArray<string>(genericArguments!),
-            Attributes: new EquatableArray<string>(attributes.ToArray()),
-
-            Diagnostics: new EquatableArray<Diagnostic>(diagnostics.ToArray())
+            Attributes: new EquatableArray<string>(attributes.ToArray())
             );
 
         void AddMiscFlags()
@@ -189,21 +165,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 flags |= UpdateModelFlags.IsRecord;
         }
 
-        TypeDeclarationModel[] GetContainingTypes(ref Stack<Diagnostic> diags, out bool componentTypeIsAcsessableFromModule)
+        TypeDeclarationModel[] GetContainingTypes(ref Stack<Diagnostic> diags)
         {
-            componentTypeIsAcsessableFromModule =
-                componentTypeSymbol.DeclaredAccessibility == Accessibility.Public ||
-                componentTypeSymbol.DeclaredAccessibility == Accessibility.Internal;
-
             int nestedTypeCount = 0;
             INamedTypeSymbol current = componentTypeSymbol;
             while (current.ContainingType is not null)
             {
                 current = current.ContainingType;
-
-                if (!componentTypeIsAcsessableFromModule && !IsPartial(current))
-                    diags.Push(CreateDiagnostic(componentTypeSymbol, 1, "Non-partial Outer Inaccessible Type", $"Outer type of inaccessible nested component type '{current.Name}' must be marked as partial."));
-
                 nestedTypeCount++;
             }
             TypeDeclarationModel[] nestedTypeSymbols = new TypeDeclarationModel[nestedTypeCount];
@@ -254,39 +222,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
     }
 
-    private static Diagnostic CreateNeedPartialDiag(INamedTypeSymbol componentTypeSymbol)
-    {
-        return Diagnostic.Create(
-            new DiagnosticDescriptor(
-                id: "FR0000",
-                title: "Non-partial Generic Component Type",
-                messageFormat: "Generic Component '{0}' must be marked as partial.",
-                category: "Source Generation",
-                DiagnosticSeverity.Error,
-                isEnabledByDefault: true
-                ),
-            componentTypeSymbol.Locations.First(),
-            componentTypeSymbol.Name);
-    }
-
-    private static Diagnostic CreateDiagnostic(ISymbol symbol, int id, string title, string message, DiagnosticSeverity severity = DiagnosticSeverity.Error)
-    {
-        return Diagnostic.Create(
-            new DiagnosticDescriptor(
-                id: $"FR{id:D4}",
-                title: title,
-                messageFormat: message,
-                category: "Source Generation",
-                severity,
-                isEnabledByDefault: true
-                ),
-            symbol.Locations.First());
-    }
-
     private static SourceOutput GenerateMonolithicRegistrationFile(ImmutableArray<ComponentUpdateItemModel> models, CancellationToken ct)
     {
         if (models.Length == 0)
-            return new(default, string.Empty, default);
+            return new(default, string.Empty);
 
         CodeBuilder cb = CodeBuilder.ThreadShared;
 
@@ -324,7 +263,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         string source = cb.ToString();
         cb.Clear();
 
-        return new("FrentComponentRegistry.g.cs", source, null);
+        return new("FrentComponentRegistry.g.cs", source);
     }
     
     private static void AppendInitalizationMethodBody(CodeBuilder cb, in ComponentUpdateItemModel model)
@@ -376,21 +315,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
     }
 
-    static bool IsSpecialInterface(string @fullyQualifiedName)
-    {
-        bool isSpecial =
-            @fullyQualifiedName == RegistryHelpers.FullyQualifiedTargetInterfaceName ||
-            RegistryHelpers.FullyQualifiedInitableInterfaceName == @fullyQualifiedName ||
-            RegistryHelpers.FullyQualifiedDestroyableInterfaceName == @fullyQualifiedName
-            ;
-        return isSpecial;
-    }
-
-    static bool IsFrentComponentInterface(string @fullyQualifiedName)
-    {
-        return fullyQualifiedName.StartsWith(RegistryHelpers.FrentComponentNamespace);
-    }
-
     private static SourceOutput GenerateRegisterGenericType(ComponentUpdateItemModel model, CancellationToken ct)
     {
         //NOTE:
@@ -431,7 +355,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
             .If(@namespace is not null, c => c.Unscope());
 
-        return new(SanitizeNameForFile(model.FullName), cb.ToString(), model.Diagnostics);
+        return new(SanitizeNameForFile(model.FullName), cb.ToString());
 
         static string SanitizeNameForFile(string name)
         {
@@ -461,40 +385,4 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
         return false;
     }
-
-    private static bool ImplementsOrIsInterface(INamedTypeSymbol typeSymbol, string fullyQualifiedInterfaceName)
-    {
-        if(typeSymbol.ToString() == fullyQualifiedInterfaceName)
-        {
-            return true;
-        }
-
-        foreach(var i in typeSymbol.AllInterfaces)
-        {
-            if(i.ToString() == fullyQualifiedInterfaceName)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsPartial(INamedTypeSymbol namedTypeSymbol)
-    {
-        return namedTypeSymbol.DeclaringSyntaxReferences
-            .Select(syntaxRef => syntaxRef.GetSyntax() as TypeDeclarationSyntax)
-            .Any(syntax => syntax?.Modifiers.Any(SyntaxKind.PartialKeyword) ?? false);
-    }
-
-    [Conditional("DEBUG")]
-    [DebuggerStepThrough]
-    [DebuggerHidden]
-    internal static void LaunchDebugger()
-    {
-        if (!Debugger.IsAttached && !Launched)
-            Debugger.Launch();
-        Launched = true;
-    }
-    static bool Launched = false;
 }

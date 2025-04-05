@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Frent.Generator.Model;
+namespace Frent.Generator.Models;
 
 [Flags]
 internal enum UpdateModelFlags

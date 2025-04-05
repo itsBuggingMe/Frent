@@ -1,9 +1,7 @@
-﻿using Microsoft.CodeAnalysis;
-using Frent.Variadic.Generator;
+﻿using Frent.Variadic.Generator;
 using System;
-using Frent.Generator.Models;
 
-namespace Frent.Generator.Model;
+namespace Frent.Generator.Models;
 
 internal record struct ComponentUpdateItemModel(
     UpdateModelFlags Flags,
@@ -14,10 +12,9 @@ internal record struct ComponentUpdateItemModel(
     string MinimallyQualifiedName, // ComponentUpdateItemModel
     EquatableArray<TypeDeclarationModel> NestedTypes,
     EquatableArray<string> GenericArguments,
-    EquatableArray<string> Attributes,
-    EquatableArray<Diagnostic>? Diagnostics)
+    EquatableArray<string> Attributes)
 {
-    public static readonly ComponentUpdateItemModel Default = new(default, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, [], [], [], null);
+    public static readonly ComponentUpdateItemModel Default = new(default, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, [], [], []);
     public readonly bool HasFlag(UpdateModelFlags updateModelFlags) => Flags.HasFlag(updateModelFlags);
 
     public readonly bool IsDefault => Flags == UpdateModelFlags.None;
