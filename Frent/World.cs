@@ -35,7 +35,7 @@ public partial class World : IDisposable
     internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
     
     private Dictionary<Type, WorldUpdateFilter> _updatesByAttributes = [];
-    
+    private Dictionary<Type, SingleComponentUpdateFilter> _singleComponentUpdates = [];
     internal int NextEntityID;
 
     internal readonly ushort ID;
@@ -266,6 +266,18 @@ public partial class World : IDisposable
         {
             ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
         }
+    }
+
+    public void UpdateComponent(ComponentID componentType)
+    {
+        SingleComponentUpdateFilter singleComponent;
+#if NETSTANDARD2_1
+
+#else
+        CollectionsMarshal.GetV(_singleComponentUpdates, ) ??= new(componentType);
+#endif
+
+        singleComponent.
     }
 
     /// <summary>
