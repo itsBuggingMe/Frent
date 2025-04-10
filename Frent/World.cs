@@ -35,7 +35,7 @@ public partial class World : IDisposable
     internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
     
     private Dictionary<Type, WorldUpdateFilter> _updatesByAttributes = [];
-    private Dictionary<Type, SingleComponentUpdateFilter> _singleComponentUpdates = [];
+    private Dictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = [];
     internal int NextEntityID;
 
     internal readonly ushort ID;
@@ -268,16 +268,21 @@ public partial class World : IDisposable
         }
     }
 
+    /// <summary>
+    /// Updates a specific
+    /// </summary>
+    /// <param name="componentType"></param>
     public void UpdateComponent(ComponentID componentType)
     {
         SingleComponentUpdateFilter singleComponent;
 #if NETSTANDARD2_1
-
+        if(!_singleComponentUpdates.TryGetValue(componentType, out singleComponent))
+            _singleComponentUpdates[componentType] = singleComponent = new(componentType);
 #else
-        CollectionsMarshal.GetV(_singleComponentUpdates, ) ??= new(componentType);
+        singleComponent = CollectionsMarshal.GetValueRefOrAddDefault(_singleComponentUpdates, componentType, out _) ??= new(componentType);
 #endif
 
-        singleComponent.
+        singleComponent.Update(this);  
     }
 
     /// <summary>
@@ -307,6 +312,8 @@ public partial class World : IDisposable
             qkvp.Value.TryAttachArchetype(archetype);
         foreach (var fkvp in _updatesByAttributes)
             fkvp.Value.WorldArchetypeAdded(archetype);
+        foreach(var fkvp in _singleComponentUpdates)
+            fkvp.Value.ArchetypeAdded(archetype);
     }
 
     internal Query CreateQuery(ImmutableArray<Rule> rules)
