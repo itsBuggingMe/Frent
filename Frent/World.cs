@@ -73,7 +73,31 @@ public partial class World : IDisposable
     internal EntityFlags WorldEventFlags;
 
     internal FastStack<ArchetypeDeferredUpdateRecord> DeferredCreationArchetypes = FastStack<ArchetypeDeferredUpdateRecord>.Create(4);
-    internal FastStack<ArchetypeDeferredUpdateRecord> _altDeferredCreationArchetypes = FastStack<ArchetypeDeferredUpdateRecord>.Create(4);
+    private FastStack<ArchetypeDeferredUpdateRecord> _altDeferredCreationArchetypes = FastStack<ArchetypeDeferredUpdateRecord>.Create(4);
+
+    /// <summary>
+    /// The current uniform provider used when updating components/queries with uniforms.
+    /// </summary>
+    public IUniformProvider UniformProvider
+    {
+        get => _uniformProvider;
+        set => _uniformProvider = value ?? NullUniformProvider.Instance;
+    }
+    private IUniformProvider _uniformProvider;
+
+    /// <summary>
+    /// Gets the current number of entities managed by the world.
+    /// </summary>
+    public int EntityCount => NextEntityID - RecycledEntityIds.Count;
+
+    /// <summary>
+    /// The current world config.
+    /// </summary>
+    public Config CurrentConfig { get; set; }
+
+    internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
+    internal readonly Archetype DefaultArchetype;
+    internal readonly Archetype DeferredCreateArchetype;
 
     /// <summary>
     /// Invoked whenever an entity is created on this world.
@@ -158,31 +182,6 @@ public partial class World : IDisposable
         if (!@event.HasListeners)
             WorldEventFlags &= ~flag;
     }
-
-    internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
-
-    /// <summary>
-    /// The current uniform provider used when updating components/queries with uniforms.
-    /// </summary>
-    public IUniformProvider UniformProvider
-    {
-        get => _uniformProvider;
-        set => _uniformProvider = value ?? NullUniformProvider.Instance;
-    }
-    private IUniformProvider _uniformProvider;
-
-    /// <summary>
-    /// Gets the current number of entities managed by the world.
-    /// </summary>
-    public int EntityCount => NextEntityID - RecycledEntityIds.Count;
-
-    /// <summary>
-    /// The current world config.
-    /// </summary>
-    public Config CurrentConfig { get; set; }
-
-    internal readonly Archetype DefaultArchetype;
-    internal readonly Archetype DeferredCreateArchetype;
 
     /// <summary>
     /// Creates a world with zero entities and a uniform provider.
