@@ -212,6 +212,60 @@ internal class WorldTests
         Fail();
     }
 
+    [Test]
+    public void EntityCreated_DuringUpdate_AcsessComponents()
+    {
+        using World world = new();
+
+        world.Create(new DelegateBehavior(() =>
+        {
+            bool has = Enumerable.Range(0, 100).Select(n => (n, Entity: world.Create(n))).ToArray().All(e => e.Entity.Get<int>() == e.n);
+
+            That(has);
+
+            int called = 0;
+
+            var e = world.Create(new DelegateBehavior(() => called++));
+
+            e.Get<DelegateBehavior>().Update();
+
+            That(called, Is.EqualTo(1));
+        }));
+
+        world.Update();
+    }
+
+    [Test]
+    public void EntityCreate_DuringSystem_AcsessComponents()
+    {
+        using World world = new();
+
+        foreach (var entity in Enumerable.Range(0, 100).Select(i => world.Create(i, (float)(i * 2))).ToArray().Where(c => c.Get<int>() % 2 == 0))
+        {//introduce a more complex internal state
+            entity.Delete();
+        }
+
+        List<Entity> newEntities = [];
+
+        foreach(Entity _ in world.Query<With<int>, With<float>>().EnumerateWithEntities())
+        {
+            var e1 = world.Create(42, 42f);
+            var e2 = world.Create(42);
+
+            That(e1.Get<int>(), Is.EqualTo(42));
+            That(e1.Get<float>(), Is.EqualTo(42f));
+            That(e1.ComponentTypes, Is.EquivalentTo((ComponentID[])[Component<int>.ID, Component<float>.ID]));
+
+            That(e2.Get<int>(), Is.EqualTo(42));
+            That(e2.ComponentTypes, Is.EquivalentTo((ComponentID[])[Component<int>.ID]));
+
+            newEntities.Add(e1);
+        }
+
+        That(newEntities.All(e => e.Get<int>() == 42 && e.Get<float>() == 42));
+    }
+
+
     #region Helpers
     private static void CreateEntityTest(Func<World, Entity> create)
     {

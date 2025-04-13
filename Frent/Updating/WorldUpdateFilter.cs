@@ -7,7 +7,7 @@ using Frent.Updating.Runners;
 
 namespace Frent.Updating;
 
-internal class WorldUpdateFilter
+internal class WorldUpdateFilter : IComponentUpdateFilter
 {
     private readonly World _world;
     //its entirely possible that the HashSet<Type> for this filter in GenerationServices.TypeAttributeCache doesn't even exist yet
@@ -31,7 +31,7 @@ internal class WorldUpdateFilter
         _world = world;
 
         foreach (var archetype in world.EnabledArchetypes.AsSpan())
-            WorldArchetypeAdded(archetype.Archetype(world)!);
+            ArchetypeAdded(archetype.Archetype(world)!);
     }
 
     public void Update()
@@ -67,7 +67,7 @@ internal class WorldUpdateFilter
         }
     }
 
-    internal void WorldArchetypeAdded(Archetype archetype)
+    internal void ArchetypeAdded(Archetype archetype)
     {
         if (_lastRegisteredComponentID < Component.ComponentTable.Count)
             RegisterNewComponents();
@@ -91,10 +91,10 @@ internal class WorldUpdateFilter
             _archetypes[archetype.ID.RawIndex] = (archetype, start, count);
     }
 
-    internal void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes)
+    public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes)
     {
         Span<ComponentStorageBase> componentStorages = _allComponents.AsSpan(0, _nextComponentStorageIndex);
-        foreach (var (archetype, count) in archetypes)
+        foreach (var (archetype, _, count) in archetypes)
         {
             (Archetype current, int start, int end) = _archetypes[archetype.ID.RawIndex];
 

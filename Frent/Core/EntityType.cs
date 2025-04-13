@@ -83,5 +83,5 @@ public struct EntityType : IEquatable<ArchetypeID>
         return Core.Archetype.GetArchetypeID(components, tags);
     }
 
-    internal readonly ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex)!;
+    internal readonly ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex).Archetype!;
 }

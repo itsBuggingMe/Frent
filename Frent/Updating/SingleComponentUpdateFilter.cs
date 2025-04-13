@@ -2,22 +2,28 @@ using Frent.Core;
 
 namespace Frent.Updating;
 
-internal class SingleComponentUpdateFilter
+internal class SingleComponentUpdateFilter : IComponentUpdateFilter
 {
     private (Archetype Archetype, ComponentStorageBase Storage)[] _archetypes = [];
     private int _count;
-    private ComponentID _componentID;
+    private readonly ComponentID _componentID;
+    private readonly World _world;
 
-    public SingleComponentUpdateFilter(ComponentID component)
+    public SingleComponentUpdateFilter(World world, ComponentID component)
     {
+        _world = world;
         _componentID = component;
+
+        foreach (var archetype in world.EnabledArchetypes.AsSpan())
+            ArchetypeAdded(archetype.Archetype(world)!);
     }
 
 
-    public void Update(World world)
+    public void Update()
     {
+        var world = _world;
         foreach(var (archetype, storage) in _archetypes)
-            storage.Run(world,archetype);
+            storage.Run(world, archetype);
     }
 
     public void ArchetypeAdded(Archetype archetype)
@@ -26,6 +32,19 @@ internal class SingleComponentUpdateFilter
         if(index != 0)
         {
             MemoryHelpers.GetValueOrResize(ref _archetypes, _count++) = (archetype, archetype.Components[index]);
+        }
+    }
+
+    public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes)
+    {
+        var world = _world;
+        foreach ((var archetype, _, int initalEntityCount) in archetypes)
+        {
+            int componentIndex = archetype.GetComponentIndex(_componentID);
+            if(componentIndex != 0)
+            {//this archetype has this component type
+                archetype.Components[componentIndex].Run(world, archetype, initalEntityCount, archetype.EntityCount - initalEntityCount);
+            }
         }
     }
 }

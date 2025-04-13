@@ -1,4 +1,5 @@
 ﻿using Frent.Collections;
+using System.Security.AccessControl;
 
 namespace Frent.Core.Structures;
 
@@ -41,9 +42,14 @@ internal static class GlobalWorldTables
                 //update world archetypes
                 foreach (var world in worlds)
                 {
-                    if (world is not null && world.WorldArchetypeTable[i] is Archetype archetype)
+                    if (world is not null)
                     {
-                        archetype.ComponentTagTable = componentsForArchetype;
+                        ref var tableItem = ref world.WorldArchetypeTable[i];
+                        if(tableItem.Archetype is not null)
+                        {
+                            tableItem.Archetype.ComponentTagTable = componentsForArchetype;
+                            tableItem.DeferredCreationArchetype.ComponentTagTable = componentsForArchetype;
+                        }
                     }
                 }
             }

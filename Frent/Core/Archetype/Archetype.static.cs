@@ -20,16 +20,19 @@ internal static class Archetype<T>
     //ArchetypeTypes init first, then ID
     public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeComponentIDs.AsSpan(), [], ArchetypeComponentIDs, ImmutableArray<TagID>.Empty);
 
-    internal static Archetype CreateNewOrGetExistingArchetype(World world)
+    internal static World.WorldArchetypeTableItem CreateNewOrGetExistingArchetypes(World world)
     {
         var index = ID.RawIndex;
-        ref Archetype? archetype = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
-        archetype ??= CreateArchetype(world);
-        return archetype;
+        ref World.WorldArchetypeTableItem archetypes = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
+        if(archetypes.Archetype is null)
+        {
+            archetypes = CreateArchetypes(world);
+        }
+        return archetypes;
 
         //this method is literally only called once per world
         [MethodImpl(MethodImplOptions.NoInlining)]
-        static Archetype CreateArchetype(World world)
+        static World.WorldArchetypeTableItem CreateArchetypes(World world)
         {
             ComponentStorageBase[] runners = new ComponentStorageBase[ArchetypeComponentIDs.Length + 1];
             ComponentStorageBase[] tmpStorages = new ComponentStorageBase[runners.Length];
@@ -39,10 +42,11 @@ internal static class Archetype<T>
 
             i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0);
 
-            Archetype archetype = new Archetype(ID, runners, tmpStorages);
+            Archetype archetype = new Archetype(ID, runners, false);
+            Archetype tempCreateArchetype = new Archetype(ID, tmpStorages, true);
 
-            world.ArchetypeAdded(archetype);
-            return archetype;
+            world.ArchetypeAdded(archetype, tempCreateArchetype);
+            return new World.WorldArchetypeTableItem(archetype, tempCreateArchetype);
         }
     }
 
@@ -69,9 +73,9 @@ partial class Archetype
 
     internal static Archetype CreateOrGetExistingArchetype(ArchetypeID id, World world)
     {
-        ref Archetype? archetype = ref world.WorldArchetypeTable[id.RawIndex];
-        if (archetype is not null)
-            return archetype;
+        ref World.WorldArchetypeTableItem archetype = ref world.WorldArchetypeTable[id.RawIndex];
+        if (archetype.Archetype is not null)
+            return archetype.Archetype;
 
         var types = id.Types;
         ComponentStorageBase[] componentRunners = new ComponentStorageBase[types.Length + 1];
@@ -83,10 +87,13 @@ partial class Archetype
             tmpRunners[i] = fact.Create(0);
         }
 
-        archetype = new Archetype(id, componentRunners, tmpRunners);
-        world.ArchetypeAdded(archetype);
+        Archetype normal = new Archetype(id, componentRunners, false);
+        Archetype tmpCreateArchetype = new Archetype(id, tmpRunners, true);
 
-        return archetype;
+        archetype = new World.WorldArchetypeTableItem(normal, tmpCreateArchetype);
+        world.ArchetypeAdded(normal, tmpCreateArchetype);
+
+        return archetype.Archetype;
     }
 
     internal static Archetype GetAdjacentArchetypeLookup(World world, ArchetypeEdgeKey edge)

@@ -17,7 +17,7 @@ internal partial class Archetype
     internal ImmutableArray<ComponentID> ArchetypeTypeArray => _archetypeID.Types;
     internal ImmutableArray<TagID> ArchetypeTagArray => _archetypeID.Tags;
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
-    internal int EntityCount => _nextComponentIndex;
+    internal int EntityCount => NextComponentIndex;
     internal Span<T> GetComponentSpan<T>()
     {
         var components = Components;
@@ -26,7 +26,7 @@ internal partial class Archetype
         {
             FrentExceptions.Throw_ComponentNotFoundException<T>();
         }
-        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpanLength(_nextComponentIndex);
+        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpanLength(NextComponentIndex);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -36,95 +36,103 @@ internal partial class Archetype
         return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
     }
 
-    /// <summary>
-    /// Note! Entity location version is not set!
-    /// </summary>
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EntityIDOnly CreateEntityLocation(EntityFlags flags, out EntityLocation entityLocation)
     {
-        if (_entities.Length == _nextComponentIndex)
+        if (_entities.Length == NextComponentIndex)
             Resize(_entities.Length * 2);
 
         entityLocation.Archetype = this;
-        entityLocation.Index = _nextComponentIndex;
+        entityLocation.Index = NextComponentIndex;
         entityLocation.Flags = flags;
         Unsafe.SkipInit(out entityLocation.Version);
         MemoryHelpers.Poison(ref entityLocation.Version);
-        return ref _entities.UnsafeArrayIndex(_nextComponentIndex++);
+        return ref _entities.UnsafeArrayIndex(NextComponentIndex++);
     }
 
     /// <summary>
-    /// Caller needs write archetype field
+    /// Note! Entity location version is not set! 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, scoped ref EntityLocation entityLocation, out int physicalIndex, out ComponentStorageBase[] writeStorage)
+    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, out ComponentStorageBase[] writeStorage)
     {
-        if (_deferredEntityCount == 0)
-            world.DeferredCreationArchetypes.Push(new(this, EntityCount));
+        if (deferredCreationArchetype.DeferredEntityCount == 0)
+            world.DeferredCreationArchetypes.Push(new(this, deferredCreationArchetype, EntityCount));
 
-        int futureSlot = _nextComponentIndex + _deferredEntityCount++;
-        entityLocation.Index = futureSlot;
+        int futureSlot = NextComponentIndex + deferredCreationArchetype.DeferredEntityCount++;
 
         if (futureSlot < _entities.Length)
         {//hot path: we have space and can directly place into existing array
             writeStorage = Components;
-            physicalIndex = futureSlot;
-            return ref _entities.UnsafeArrayIndex(physicalIndex);
+            entityLocation.Index = futureSlot;
+            entityLocation.Archetype = this;
+            return ref _entities.UnsafeArrayIndex(futureSlot);
         }
 
-        //we need to place into temp buffers
-        physicalIndex = futureSlot - _entities.Length;
-        Debug.Assert(physicalIndex >= 0);
-        if (physicalIndex >= _createComponentBufferEntities.Length)
-        {
-            ResizeCreateComponentBuffers();
-        }
-
-        writeStorage = CreateComponentBuffers;
-
-        return ref _createComponentBufferEntities.UnsafeArrayIndex(physicalIndex);
+        return ref CreateDeferredEntityLocationTempBuffers(deferredCreationArchetype, futureSlot, ref entityLocation, out writeStorage);
     }
 
-    internal void ResolveDeferredEntityCreations(World world, WorldUpdateFilter? filterUsed)
+    // Only to be called by CreateDeferredEntityLocation
+    // Allow the jit to inline that method more easily
+    private ref EntityIDOnly CreateDeferredEntityLocationTempBuffers(Archetype deferredCreationArchetype, int futureSlot, scoped ref EntityLocation entityLocation, out ComponentStorageBase[] writeStorage)
     {
-        Debug.Assert(_deferredEntityCount != 0);
-        int deltaFromMaxDeferredInPlace = -(_entities.Length - (_nextComponentIndex + _deferredEntityCount));
-        int previousComponentCount = _nextComponentIndex;
+        //we need to place into temp buffers
+        entityLocation.Index = futureSlot - _entities.Length;
+        entityLocation.Archetype = deferredCreationArchetype;
+
+        Debug.Assert(entityLocation.Index >= 0);
+        if (entityLocation.Index >= deferredCreationArchetype._entities.Length)
+        {
+            deferredCreationArchetype.ResizeCreateComponentBuffers();
+        }
+
+        writeStorage = deferredCreationArchetype.Components;
+
+        return ref deferredCreationArchetype._entities.UnsafeArrayIndex(entityLocation.Index);
+    }
+
+    internal void ResolveDeferredEntityCreations(World world, Archetype deferredCreationArchetype)
+    {
+        Debug.Assert(deferredCreationArchetype._archetypeID == _archetypeID);
+        Debug.Assert(deferredCreationArchetype.DeferredEntityCount != 0);
+        int deltaFromMaxDeferredInPlace = -(_entities.Length - (NextComponentIndex + deferredCreationArchetype.DeferredEntityCount));
+        int previousComponentCount = NextComponentIndex;
 
         if (!(deltaFromMaxDeferredInPlace <= 0))
         {//components overflowed into temp storage
 
             int oldEntitiesLen = _entities.Length;
-            int totalCapacityRequired = previousComponentCount + _deferredEntityCount;
+            int totalCapacityRequired = previousComponentCount + deferredCreationArchetype.DeferredEntityCount;
             Debug.Assert(totalCapacityRequired >= oldEntitiesLen);
 
             //we should always have to resize here - after all, no space is left
             Resize((int)BitOperations.RoundUpToPowerOf2((uint)totalCapacityRequired));
             var destination = Components;
-            var source = CreateComponentBuffers;
+            var source = deferredCreationArchetype.Components;
             for (int i = 1; i < destination.Length; i++)
                 Array.Copy(source[i].Buffer, 0, destination[i].Buffer, oldEntitiesLen, deltaFromMaxDeferredInPlace);
-            Array.Copy(_createComponentBufferEntities, 0, _entities, oldEntitiesLen, deltaFromMaxDeferredInPlace);
+            Array.Copy(deferredCreationArchetype._entities, 0, _entities, oldEntitiesLen, deltaFromMaxDeferredInPlace);
         }
 
-        _nextComponentIndex += _deferredEntityCount;
+        NextComponentIndex += deferredCreationArchetype.DeferredEntityCount;
 
         var entities = _entities;
         var table = world.EntityTable._buffer;
-        for (int i = previousComponentCount; i < entities.Length && i < _nextComponentIndex; i++)
+        for (int i = previousComponentCount; i < entities.Length && i < NextComponentIndex; i++)
             table.UnsafeArrayIndex(entities[i].ID).Archetype = this;
 
-        _deferredEntityCount = 0;
+        deferredCreationArchetype.DeferredEntityCount = 0;
     }
 
     internal Span<EntityIDOnly> CreateEntityLocations(int count, World world)
     {
-        int newLen = _nextComponentIndex + count;
+        int newLen = NextComponentIndex + count;
         EnsureCapacity(newLen);
 
-        Span<EntityIDOnly> entitySpan = _entities.AsSpan(_nextComponentIndex, count);
+        Span<EntityIDOnly> entitySpan = _entities.AsSpan(NextComponentIndex, count);
 
-        int componentIndex = _nextComponentIndex;
+        int componentIndex = NextComponentIndex;
         ref var recycled = ref world.RecycledEntityIds;
         for (int i = 0; i < entitySpan.Length; i++)
         {
@@ -140,7 +148,7 @@ internal partial class Archetype
             lookup.Flags = EntityFlags.None;
         }
 
-        _nextComponentIndex = componentIndex;
+        NextComponentIndex = componentIndex;
 
         return entitySpan;
     }
@@ -155,10 +163,13 @@ internal partial class Archetype
 
     private void ResizeCreateComponentBuffers()
     {
-        int newLen = checked(Math.Max(1, _createComponentBufferEntities.Length) * 2);
+#if DEBUG
+        Debug.Assert(_isTempCreationArchetype);
+#endif
+        int newLen = checked(Math.Max(1, _entities.Length) * 2);
         //we only need to resize the EntityIDOnly array when future total entity count is greater than capacity
-        Array.Resize(ref _createComponentBufferEntities, newLen);
-        var runners = CreateComponentBuffers;
+        Array.Resize(ref _entities, newLen);
+        var runners = Components;
         for (int i = 1; i < runners.Length; i++)
             runners[i].ResizeBuffer(newLen);
     }
@@ -183,18 +194,18 @@ internal partial class Archetype
     /// </summary>
     internal EntityIDOnly DeleteEntityFromStorage(int index, out int deletedIndex)
     {
-        Debug.Assert(_nextComponentIndex > 0);
-        deletedIndex = --_nextComponentIndex;
-        return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(_nextComponentIndex);
+        Debug.Assert(NextComponentIndex > 0);
+        deletedIndex = --NextComponentIndex;
+        return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(NextComponentIndex);
     }
 
     internal EntityIDOnly DeleteEntity(int index)
     {
-        _nextComponentIndex--;
-        Debug.Assert(_nextComponentIndex >= 0);
+        NextComponentIndex--;
+        Debug.Assert(NextComponentIndex >= 0);
         //TODO: args
         #region Unroll
-        DeleteComponentData args = new(index, _nextComponentIndex);
+        DeleteComponentData args = new(index, NextComponentIndex);
 
         ref ComponentStorageBase first = ref MemoryMarshal.GetArrayDataReference(Components);
 
@@ -245,7 +256,7 @@ internal partial class Archetype
 
     internal void Update(World world)
     {
-        if (_nextComponentIndex == 0)
+        if (NextComponentIndex == 0)
             return;
         var comprunners = Components;
         for (int i = 1; i < comprunners.Length; i++)
@@ -254,7 +265,7 @@ internal partial class Archetype
 
     internal void Update(World world, int start, int length)
     {
-        if (_nextComponentIndex == 0)
+        if (NextComponentIndex == 0)
             return;
         var comprunners = Components;
         for (int i = 1; i < comprunners.Length; i++)
@@ -263,7 +274,7 @@ internal partial class Archetype
 
     internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
     {
-        if (_nextComponentIndex == 0)
+        if (NextComponentIndex == 0)
             return;
         foreach (var comprunner in Components)
             comprunner.MultithreadedRun(countdown, world, this);
@@ -309,11 +320,11 @@ internal partial class Archetype
 
     internal Span<EntityIDOnly> GetEntitySpan()
     {
-        Debug.Assert(_nextComponentIndex <= _entities.Length);
+        Debug.Assert(NextComponentIndex <= _entities.Length);
 #if NETSTANDARD2_1
-        return _entities.AsSpan(0, _nextComponentIndex);
+        return _entities.AsSpan(0, NextComponentIndex);
 #else
-        return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_entities), _nextComponentIndex);
+        return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_entities), NextComponentIndex);
 #endif
     }
 

@@ -7,11 +7,11 @@ using System.Runtime.CompilerServices;
 
 namespace Frent;
 
-[Variadic("        ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[index]; ref1 = comp;",
-    "|        ref T$ ref$ = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index))[index]; ref$ = comp$;\n|")]
+[Variadic("        ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index]; ref1 = comp;",
+    "|        ref T$ ref$ = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index))[eloc.Index]; ref$ = comp$;\n|")]
 [Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
     "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
-[Variadic("            Span = archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
+[Variadic("            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("y<T>", "y<|T$, |>")]
 [Variadic("in T comp", "|in T$ comp$, |")]
@@ -25,25 +25,22 @@ partial class World
     [SkipLocalsInit]
     public Entity Create<T>(in T comp)
     {
-        Archetype archetype = Archetype<T>.CreateNewOrGetExistingArchetype(this);
+        var archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
 
         ref var entity = ref Unsafe.NullRef<EntityIDOnly>();
         EntityLocation eloc = default;
 
         ComponentStorageBase[] components;
-        Unsafe.SkipInit(out int index);
-        MemoryHelpers.Poison(ref index);
 
         if (AllowStructualChanges)
         {
-            components = archetype.Components;
-            entity = ref archetype.CreateEntityLocation(EntityFlags.None, out eloc);
-            index = eloc.Index;
+            components = archetypes.Archetype.Components;
+            entity = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
         }
         else
         {
-            entity = ref archetype.CreateDeferredEntityLocation(this, ref eloc, out index, out components);
-            eloc.Archetype = DeferredCreateArchetype;
+            // we don't need to manually set flags, they are already zeroed
+            entity = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
         }
 
         //manually inlined from World.CreateEntityFromLocation
@@ -54,7 +51,7 @@ partial class World
         EntityTable[id] = eloc;
 
         //1x array lookup per component
-        ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[index]; ref1 = comp;
+        ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index]; ref1 = comp;
 
         Entity concreteEntity = new Entity(ID, version, id);
         
@@ -73,26 +70,28 @@ partial class World
     {
         if (count < 0)
             FrentExceptions.Throw_ArgumentOutOfRangeException("Must create at least 1 entity!");
+        if (!AllowStructualChanges)
+            FrentExceptions.Throw_InvalidOperationException("Cannot bulk create during world updates!");
 
-        Archetype archetype = Archetype<T>.CreateNewOrGetExistingArchetype(this);
-        int initalEntityCount = archetype.EntityCount;
-
+        var archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
+        int initalEntityCount = archetypes.Archetype.EntityCount;
+        
         EntityTable.EnsureCapacity(EntityCount + count);
-
-        Span<EntityIDOnly> entities = archetype.CreateEntityLocations(count, this);
-
+        
+        Span<EntityIDOnly> entities = archetypes.Archetype.CreateEntityLocations(count, this);
+        
         if (EntityCreatedEvent.HasListeners)
         {
             foreach (var entity in entities)
                 EntityCreatedEvent.Invoke(entity.ToEntity(this));
         }
-
+        
         var chunks = new ChunkTuple<T>()
         {
             Entities = new EntityEnumerator.EntityEnumerable(this, entities),
-            Span = archetype.GetComponentSpan<T>()[initalEntityCount..],
+            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],
         };
-
+        
         return chunks;
     }
 }

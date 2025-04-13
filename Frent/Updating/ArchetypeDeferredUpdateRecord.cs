@@ -1,3 +1,3 @@
 ﻿using Frent.Core;
 namespace Frent.Updating;
-internal record struct ArchetypeDeferredUpdateRecord(Archetype Archetype, int InitalEntityCount);
+internal record struct ArchetypeDeferredUpdateRecord(Archetype Archetype, Archetype TemporaryBuffers, int InitalEntityCount);

@@ -28,8 +28,14 @@ public partial class World : IDisposable
     //entityID -> entity metadata
     internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
     //archetype ID -> Archetype?
-    internal Archetype?[] WorldArchetypeTable;
+    internal WorldArchetypeTableItem[] WorldArchetypeTable;
     
+    internal struct WorldArchetypeTableItem(Archetype archetype, Archetype temp)
+    {
+        public Archetype Archetype = archetype;
+        public Archetype DeferredCreationArchetype = temp;
+    }
+
     internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
 
     internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
@@ -196,7 +202,7 @@ public partial class World : IDisposable
 
         GlobalWorldTables.Worlds[ID] = this;
 
-        WorldArchetypeTable = new Archetype[GlobalWorldTables.ComponentTagLocationTable.Length];
+        WorldArchetypeTable = new WorldArchetypeTableItem[GlobalWorldTables.ComponentTagLocationTable.Length];
 
         WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultWorldEntity = new Entity(ID, default, default);
@@ -268,20 +274,29 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    /// Updates a specific
+    /// Updates all instances of a specific component type.
     /// </summary>
     /// <param name="componentType"></param>
     public void UpdateComponent(ComponentID componentType)
     {
-        SingleComponentUpdateFilter singleComponent;
+        EnterDisallowState();
+        SingleComponentUpdateFilter? singleComponent = null;
+
+        try
+        {
 #if NETSTANDARD2_1
         if(!_singleComponentUpdates.TryGetValue(componentType, out singleComponent))
-            _singleComponentUpdates[componentType] = singleComponent = new(componentType);
+            _singleComponentUpdates[componentType] = singleComponent = new(this, componentType);
 #else
-        singleComponent = CollectionsMarshal.GetValueRefOrAddDefault(_singleComponentUpdates, componentType, out _) ??= new(componentType);
+            singleComponent = CollectionsMarshal.GetValueRefOrAddDefault(_singleComponentUpdates, componentType, out _) ??= new(this, componentType);
 #endif
 
-        singleComponent.Update(this);  
+            singleComponent.Update();  
+        }
+        finally
+        {
+            ExitDisallowState(singleComponent, CurrentConfig.UpdateDeferredCreationEntities);
+        }
     }
 
     /// <summary>
@@ -303,14 +318,14 @@ public partial class World : IDisposable
         return query;
     }
 
-    internal void ArchetypeAdded(Archetype archetype)
+    internal void ArchetypeAdded(Archetype archetype, Archetype temporaryCreationArchetype)
     {
         if (!GlobalWorldTables.HasTag(archetype.ID, Tag<Disable>.ID))
             EnabledArchetypes.Push(archetype.ID);
         foreach (var qkvp in QueryCache)
             qkvp.Value.TryAttachArchetype(archetype);
         foreach (var fkvp in _updatesByAttributes)
-            fkvp.Value.WorldArchetypeAdded(archetype);
+            fkvp.Value.ArchetypeAdded(archetype);
         foreach(var fkvp in _singleComponentUpdates)
             fkvp.Value.ArchetypeAdded(archetype);
     }
@@ -319,8 +334,8 @@ public partial class World : IDisposable
     {
         Query q = new Query(this, rules);
         foreach (ref var element in WorldArchetypeTable.AsSpan())
-            if (element is not null)
-                q.TryAttachArchetype(element);
+            if (element.Archetype is not null)
+                q.TryAttachArchetype(element.Archetype);
         return q;
     }
 
@@ -329,7 +344,7 @@ public partial class World : IDisposable
     internal void UpdateArchetypeTable(int newSize)
     {
         Debug.Assert(newSize > WorldArchetypeTable.Length);
-        FastStackArrayPool<Archetype>.ResizeArrayFromPool(ref WorldArchetypeTable!, newSize);
+        Array.Resize(ref WorldArchetypeTable, newSize);
     }
 
     internal void EnterDisallowState()
@@ -342,7 +357,7 @@ public partial class World : IDisposable
     
     const int DeferredEntityOperationRecursionLimit = 200;
 
-    internal void ExitDisallowState(WorldUpdateFilter? filterUsed, bool updateDeferredEntities = false)
+    internal void ExitDisallowState(IComponentUpdateFilter? filterUsed, bool updateDeferredEntities = false)
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
@@ -354,8 +369,8 @@ public partial class World : IDisposable
                 }
                 else
                 {
-                    foreach (var (archetype, _) in DeferredCreationArchetypes.AsSpan())
-                        archetype.ResolveDeferredEntityCreations(this, filterUsed);
+                    foreach (var (archetype, tmp, _) in DeferredCreationArchetypes.AsSpan())
+                        archetype.ResolveDeferredEntityCreations(this, tmp);
                 }
             }
 
@@ -369,7 +384,7 @@ public partial class World : IDisposable
         }
     }
 
-    private void ResolveUpdateDeferredCreationEntities(WorldUpdateFilter? filterUsed)
+    private void ResolveUpdateDeferredCreationEntities(IComponentUpdateFilter? filterUsed)
     {
         Span<ArchetypeDeferredUpdateRecord> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
 
@@ -378,8 +393,8 @@ public partial class World : IDisposable
         int createRecursionCount = 0;
         while (resolveArchetypes.Length != 0)
         {
-            foreach (var (archetype, _) in resolveArchetypes)
-                archetype.ResolveDeferredEntityCreations(this, filterUsed);
+            foreach (var (archetype, tmp, _) in resolveArchetypes)
+                archetype.ResolveDeferredEntityCreations(this, tmp);
 
             (_altDeferredCreationArchetypes, DeferredCreationArchetypes) = (DeferredCreationArchetypes, _altDeferredCreationArchetypes);
             DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
@@ -390,7 +405,7 @@ public partial class World : IDisposable
             }
             else
             {
-                foreach (var (archetype, start) in resolveArchetypes)
+                foreach (var (archetype, _, start) in resolveArchetypes)
                 {
                     archetype.Update(this, start, archetype.EntityCount - start);
                 }
@@ -437,8 +452,13 @@ public partial class World : IDisposable
         GlobalWorldTables.Worlds[ID] = null!;
 
         foreach (ref var item in WorldArchetypeTable.AsSpan())
-            if (item is not null)
-                item.ReleaseArrays();
+        {
+            if(item.Archetype is not null)
+            {
+                item.Archetype.ReleaseArrays();
+                item.DeferredCreationArchetype.ReleaseArrays();
+            }
+        }
 
         _sharedCountdown.Dispose();
 

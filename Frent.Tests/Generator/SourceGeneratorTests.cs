@@ -25,17 +25,74 @@ namespace Frent.Tests.Generator
         //TODO: source generator refactor
         // [x] code builder
         // [x] merge generators
-        // [ ] write tests
+        // [x] write tests
 
+        [Test]
+        public void RegisteredProperly_Inner() =>
+            TestTypeRegistration<Nest<int>.Inner<float>>(TypeRegistrationFlags.Initable);
 
+        [Test]
+        public void RegisteredProperly_IndirectInterface() =>
+            TestTypeRegistration<IndirectInterface>(TypeRegistrationFlags.Initable | TypeRegistrationFlags.Destroyable | TypeRegistrationFlags.Updateable);
+
+        [Test]
+        public void RegisteredProperly_InGlobalNamespace() =>
+            TestTypeRegistration<InGlobalNamespace>(TypeRegistrationFlags.Updateable);
+
+        [Test]
+        public void RegisteredProperly_InGlobalNamespaceInner() =>
+            TestTypeRegistration<InGlobalNamespace.Inner<object>>(default);
+
+        [Test]
+        public void RegisteredProperly_InGlobalNamespaceInnerUnbound() =>
+            TestTypeRegistration<InGlobalNamespace.Inner<object>.Unbound<float>>(TypeRegistrationFlags.Updateable);
+
+        [Test]
+        public void RegisteredProperly_Derived() =>
+            TestTypeRegistration<Derived>(TypeRegistrationFlags.Updateable);
+
+        [Test]
+        public void RegisteredProperly_DerivedInner() =>
+            TestTypeRegistration<Derived.DerivedInner>(TypeRegistrationFlags.Initable | TypeRegistrationFlags.Updateable);
+
+        private static void TestTypeRegistration<T>(TypeRegistrationFlags typeFlags)
+            where T : new()
+        {
+            using World world = new(new DefaultUniformProvider()
+                .Add<float>(0));
+
+            Entity test = world.Create();
+            if (typeFlags.HasFlag(TypeRegistrationFlags.Initable))
+                Throws<InitalizeException>(() => test.Add(new T()));
+            else
+                test.Add(new T());
+
+            if (typeFlags.HasFlag(TypeRegistrationFlags.Updateable))
+                Throws<UpdateException>(world.Update);
+            else
+                world.Update();
+
+            if (typeFlags.HasFlag(TypeRegistrationFlags.Destroyable))
+                Throws<DestroyException>(test.Remove<T>);
+            else
+                test.Remove<T>();
+        }
+
+        [Flags]
+        internal enum TypeRegistrationFlags
+        {
+            Initable = 1 << 0,
+            Destroyable = 1 << 1,
+            Updateable = 1 << 2,
+        }
 
         public partial class Nest<T>
         {
-            private partial struct Inner<T1> : IInitable
+            internal partial struct Inner<T1> : IInitable
             {
                 public void Init(Entity self)
                 {
-                    throw new NotImplementedException();
+                    throw new InitalizeException();
                 }
             }
 
@@ -43,7 +100,7 @@ namespace Frent.Tests.Generator
             {
                 public void Update()
                 {
-                    throw new NotImplementedException();
+                    throw new UpdateException();
                 }
             }
         }
@@ -52,17 +109,17 @@ namespace Frent.Tests.Generator
         {
             public void Destroy()
             {
-                throw new NotImplementedException();
+                throw new DestroyException();
             }
 
             public void Init(Entity self)
             {
-                throw new NotImplementedException();
+                throw new InitalizeException();
             }
 
             public void Update()
             {
-                throw new NotImplementedException();
+                throw new UpdateException();
             }
         }
     }
@@ -74,17 +131,17 @@ internal partial class InGlobalNamespace : IComponent
 {
     public void Update()
     {
-        throw new NotImplementedException();
+        throw new UpdateException();
     }
 
-    private partial struct Inner<T> : IComponentBase
+    internal partial struct Inner<T> : IComponentBase
     {
 
         internal partial struct Unbound<T1> : IUniformComponent<T1>
         {
             public void Update(T1 uniform)
             {
-                throw new NotImplementedException();
+                throw new UpdateException();
             }
         }
     }
@@ -92,11 +149,11 @@ internal partial class InGlobalNamespace : IComponent
 
 internal partial class Derived : InGlobalNamespace
 {
-    private partial class DerivedInner : Derived, IInitable
+    internal partial class DerivedInner : Derived, IInitable
     {
         public void Init(Entity self)
         {
-            throw new NotImplementedException();
+            throw new InitalizeException();
         }
     }
 
@@ -105,12 +162,12 @@ internal partial class Derived : InGlobalNamespace
     {
         public void Update()
         {
-            throw new NotImplementedException();
+            throw new UpdateException();
         }
 
         public void Update(int uniform)
         {
-            throw new NotImplementedException();
+            throw new UpdateException();
         }
     }
 }
@@ -118,3 +175,10 @@ internal interface ILifetimeInterface : IComponent, IInitable, IDestroyable
 {
 
 }
+
+
+internal class InitalizeException : Exception;
+
+internal class DestroyException : Exception;
+
+internal class UpdateException : Exception;
