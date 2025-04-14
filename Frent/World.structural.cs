@@ -81,13 +81,18 @@ partial class World
             }
         }
 
-        EntityTable.UnsafeIndexNoResize(movedDown.ID) = currentLookup;
-        currentLookup = nextLocation;
+        ref var displacedEntityLocation = ref EntityTable.UnsafeIndexNoResize(movedDown.ID);
+        displacedEntityLocation.Archetype = currentLookup.Archetype;
+        displacedEntityLocation.Index = currentLookup.Index;
+
+        currentLookup.Archetype = nextLocation.Archetype;
+        currentLookup.Index = nextLocation.Index;
     }
 
     [SkipLocalsInit]
     internal void MoveEntityToArchetypeRemove(Span<ComponentHandle> componentHandles, Entity entity, ref EntityLocation currentLookup, Archetype destination)
     {
+        //NOTE: when moving EntityLocation between archetypes, version and flags cannot change
         Archetype from = currentLookup.Archetype;
 
         Debug.Assert(from.Components.Length > destination.Components.Length);
@@ -132,8 +137,13 @@ partial class World
             }
         }
 
-        EntityTable.UnsafeIndexNoResize(movedDown.ID) = currentLookup;
-        currentLookup = nextLocation;
+        //copy everything but 
+        ref var displacedEntityLocation = ref EntityTable.UnsafeIndexNoResize(movedDown.ID);
+        displacedEntityLocation.Archetype = currentLookup.Archetype;
+        displacedEntityLocation.Index = currentLookup.Index;
+
+        currentLookup.Archetype = nextLocation.Archetype;
+        currentLookup.Index = nextLocation.Index;
 
         if (EntityLocation.HasEventFlag(currentLookup.Flags | WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
         {
@@ -200,8 +210,12 @@ partial class World
             destRunners[toIndex].PullComponentFromAndClearTryDevirt(fromRunners[i], nextLocation.Index, currentLookup.Index, deletedIndex);
         }
 
-        EntityTable.UnsafeIndexNoResize(movedDown.ID) = currentLookup;
-        currentLookup = nextLocation;
+        ref var displacedEntityLocation = ref EntityTable.UnsafeIndexNoResize(movedDown.ID);
+        displacedEntityLocation.Archetype = currentLookup.Archetype;
+        displacedEntityLocation.Index = currentLookup.Index;
+
+        currentLookup.Archetype = nextLocation.Archetype;
+        currentLookup.Index = nextLocation.Index;
     }
 
     #region Delete

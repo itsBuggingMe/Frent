@@ -73,8 +73,6 @@ internal class WorldState : IDisposable
             default: throw new NotImplementedException();
         }
 
-        if (_actions.Count == 341)
-            ;
         EnsureStateConsisstent();
     }
 
