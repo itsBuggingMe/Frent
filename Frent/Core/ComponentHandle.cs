@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core.Events;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 
@@ -10,8 +11,11 @@ namespace Frent.Core;
 /// A handle to a component of any type. Useful to avoid boxing.
 /// </summary>
 /// <remarks>Must be disposed. The handle must also not be used afterwards.</remarks>
+[DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 public readonly struct ComponentHandle : IEquatable<ComponentHandle>, IDisposable
 {
+    internal string DebuggerDisplayString => RetrieveBoxed()?.ToString() ?? "null";
+
     private readonly int _index;
     private readonly ComponentID _componentType;
 

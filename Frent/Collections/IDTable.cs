@@ -9,7 +9,7 @@ internal abstract class IDTable
     protected int _nextIndex;
     private bool _hasGCReferences;
 
-    public IDTable(Array empty, bool gcRefs)
+    protected IDTable(Array empty, bool gcRefs)
     {
         _buffer = empty;
         _hasGCReferences = gcRefs;
@@ -39,7 +39,6 @@ internal abstract class IDTable
 
     public object TakeBoxed(int index)
     {
-        _recycled.Push() = index;
         return GetValue(index);
     }
 
