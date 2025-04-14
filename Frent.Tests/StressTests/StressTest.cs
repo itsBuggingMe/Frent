@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
+using System.Reflection.Metadata;
 using Frent.Core;
+using Frent.Systems;
 using Frent.Tests.Helpers;
 using static NUnit.Framework.Assert;
 
@@ -7,16 +9,35 @@ namespace Frent.Tests.StressTests;
 
 internal class StressTest
 {
-    
+    [Test]
+    public void Test([Range(0, 10)] int seed)
+    {
+        const int Steps = 10_000;
+        using WorldState state = new WorldState(seed);
+
+        for(int i = 0; i < Steps; i++)
+        {
+            state.Advance();
+        }
+    }
 }
 
-internal class WorldState
+internal class WorldState : IDisposable
 {
+    // Actions:
+    // [x] Create
+    // [x] Delete
+    // [x] Add
+    // [x] Remove
+    // [ ] Tag
+    // [ ] Detach
+
     private readonly List<Entity> _allDeletedEntities = [];
     private readonly Dictionary<Entity, List<ComponentHandle>> _componentValues = [];
     private readonly World _syncedWorld;
     private readonly Random _random;
     private readonly MethodInfo[] _create;
+    private readonly Query _everythingQuery;
     private readonly int[] _shared = Enumerable.Range(0, 6).ToArray();
     private readonly (ComponentID ID, Func<Random, ComponentHandle> Factory)[] _sharedIDs = [
         (Component<C1>.ID, (rng) => ComponentHandle.Create(new C1(rng))), 
@@ -26,18 +47,40 @@ internal class WorldState
         (Component<S2>.ID, (rng) => ComponentHandle.Create(new S2(rng))), 
         (Component<S3>.ID, (rng) => ComponentHandle.Create(new S3(rng)))];
 
+    private readonly List<StressTestAction> _actions = [];
+
     private const int UnqiueComponentTypes = 6;
 
     public WorldState(int seed)
     {
         _syncedWorld = new();
+        _everythingQuery = _syncedWorld.CustomQuery();
         _random = new Random(seed);
-        _create = typeof(World).GetMethods().Where(m => m.Name == "Create").ToArray();
+        _create = typeof(World).GetMethods().Where(m => m.Name == "Create").Where(m => m.IsGenericMethod).ToArray();
+    }
+
+    public void Advance()
+    {
+        switch(_random.Next(6))
+        {
+            case 0: CreateEntity(); break;
+            case 1: DeleteEntity(); break;
+            case 2: AddComponent(); break;
+            case 3: RemoveComponent(); break;
+            case 4: break;
+            case 5: break;
+
+            default: throw new NotImplementedException();
+        }
+
+        if (_actions.Count == 341)
+            ;
+        EnsureStateConsisstent();
     }
 
     public void DeleteEntity()
     {
-        if(_componentValues.Count >= 0)
+        if(_componentValues.Count > 0)
         {
             (Entity entity, List<ComponentHandle> handles) = GetRandomExistingEntity();
 
@@ -45,6 +88,10 @@ internal class WorldState
             _allDeletedEntities.Add(entity);
             foreach(var handle in handles)
                 handle.Dispose();
+
+            _componentValues.Remove(entity);
+
+            _actions.Add(new StressTestAction(StressTestActionType.Delete, entity));
         }
     }
 
@@ -60,25 +107,32 @@ internal class WorldState
             componentParams[i] = handle.RetrieveBoxed();
         }
         
-        _ = (_random.Next() & 1) == 0 ? CreateGeneric(componentParams) : CreateBoxed(componentParams);
+        var entity = (_random.Next() & 1) == 0 ? CreateGeneric(componentParams) : CreateBoxed(componentParams);
 
-        EnsureStateConsisstent();
+        Type[] componentTypes = componentParams.Select(p => p.GetType()).ToArray();
+
+        _actions.Add(new StressTestAction(StressTestActionType.Create, entity, componentTypes));
     }
 
     public void RemoveComponent()
     {
+        if (_componentValues.Count == 0)
+            return;
         (Entity entity, List<ComponentHandle> handles) = GetRandomExistingEntity();
         if(handles.Count == 0)
             return;
 
         using var compHandleToRemove = handles[_random.Next(handles.Count)];
         entity.Remove(compHandleToRemove.ComponentID);
+        handles.Remove(compHandleToRemove);
 
-        EnsureStateConsisstent();
+        _actions.Add(new StressTestAction(StressTestActionType.Remove, entity, compHandleToRemove.Type));
     }
 
     public void AddComponent()
     {
+        if (_componentValues.Count == 0)
+            return;
         (Entity entity, List<ComponentHandle> handles) = GetRandomExistingEntity();
         if(handles.Count == UnqiueComponentTypes)
             return;
@@ -88,17 +142,17 @@ internal class WorldState
             if(!entity.Has(id))
             {
                 var handle = fac(_random);
-                entity.Add(handle.Type, handle.RetrieveBoxed());
+                entity.AddAs(handle.Type, handle.RetrieveBoxed());
                 handles.Add(handle);
+                _actions.Add(new StressTestAction(StressTestActionType.Add, entity, handle.Type));
                 break;
             }
         }
 
-        EnsureStateConsisstent();
     }
 
-    #region  Helpers
-    
+    #region Helpers
+
     private (Entity Entity, List<ComponentHandle> Handles) GetRandomExistingEntity()
     {
         var kvp = _componentValues.ElementAt(_random.Next(_componentValues.Count));
@@ -116,7 +170,7 @@ internal class WorldState
         List<ComponentHandle> handles = new(objects.Length);
 
         foreach(var comp in objects)
-            handles.Add(ComponentHandle.CreateFromBoxed(handles));
+            handles.Add(ComponentHandle.CreateFromBoxed(comp));
         
         _componentValues.Add(entity, handles);
 
@@ -129,7 +183,7 @@ internal class WorldState
         List<ComponentHandle> handles = new(objects.Length);
 
         foreach(var comp in objects)
-            handles.Add(ComponentHandle.CreateFromBoxed(handles));
+            handles.Add(ComponentHandle.CreateFromBoxed(comp));
         
         _componentValues.Add(entity, handles);
         return entity;
@@ -137,45 +191,76 @@ internal class WorldState
     
     private void EnsureStateConsisstent()
     {
-        That(!_allDeletedEntities.All(e => !e.IsAlive));
+        That(_allDeletedEntities.All(e => !e.IsAlive));
         foreach((Entity entity, List<ComponentHandle> components) in _componentValues)
         {
             That(entity.IsAlive);
             That(!entity.IsNull);
             foreach(var comp in components)
             {
-                That(comp.RetrieveBoxed(), Is.EqualTo(entity.Get(comp.ComponentID)));
+                var exp = comp.RetrieveBoxed();
+                var res = entity.Get(comp.ComponentID);
+                if (res is null)
+                    ;
+                That(exp, Is.EqualTo(res));
                 That(entity.Has(comp.ComponentID));
             }
         }
+
+        int entityCount = _everythingQuery 
+            .EntityCount();
+        That(entityCount, Is.EqualTo(_componentValues.Count));
+    }
+
+    public void Dispose()
+    {
+        _syncedWorld.Dispose();
     }
     #endregion Helpers
 
     #region Components
-    internal record struct S1(Random Random)
+    internal struct S1(Random Random)
     {
         public int Value = Random.Next();
+        public override string ToString() => Value.ToString();
     }
-    internal record struct S2(Random Random)
+    internal struct S2(Random Random)
     {
         public int Value = Random.Next();
+        public override string ToString() => Value.ToString();
     }
-    internal record struct S3(Random Random)
+    internal struct S3(Random Random)
     {
         public int Value = Random.Next();
+        public override string ToString() => Value.ToString();
     }
 
-    internal record class C1(Random Random)
+    internal class C1(Random Random)
     {
         public int Value = Random.Next();
+        public override string ToString() => Value.ToString();
     }
-    internal record class C2(Random Random)
+    internal class C2(Random Random)
     {
         public int Value = Random.Next();
+        public override string ToString() => Value.ToString();
     }
-    internal record class C3(Random Random)
+    internal class C3(Random Random)
     {
         public int Value = Random.Next();
+        public override string ToString() => Value.ToString();
     }
     #endregion Components
+
+    internal record struct StressTestAction(StressTestActionType Type, Entity Entity, params Type[] ComponentType);
+
+    internal enum StressTestActionType
+    {
+        Create,
+        Delete,
+        Add,
+        Remove,
+        Tag,
+        Detach,
+    }
 }
