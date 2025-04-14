@@ -22,7 +22,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
     public void Update()
     {
         var world = _world;
-        foreach(var (archetype, storage) in _archetypes)
+        foreach(var (archetype, storage) in _archetypes.AsSpan(0, _count))
             storage.Run(world, archetype);
     }
 

@@ -1,11 +1,41 @@
 ﻿using Frent.Components;
+using Frent.Core;
 using Frent.Tests.Helpers;
+using System.Runtime.CompilerServices;
 using static NUnit.Framework.Assert;
 
 namespace Frent.Tests.Framework;
 
 internal class Updating
 {
+    [Test]
+    public void ComponentFilter_UpdatesSingleComponent()
+    {
+        using World world = new();
+
+        int count = 0;
+
+        world.Create(0f, 0, new DelegateBehavior(() => count++));
+        world.Create(0f, 0, new DelegateBehavior(() => count++));
+        world.Create(new DelegateBehavior(() => count++));
+
+        world.Create(new DelegateBehavior(() => count++), new FilteredBehavior1(() => count++));
+
+        world.Create(0, new FilteredBehavior1(() => count++));
+
+        world.UpdateComponent(Component<DelegateBehavior>.ID);
+
+        That(count, Is.EqualTo(4));
+
+        world.UpdateComponent(Component<DelegateBehavior>.ID);
+
+        That(count, Is.EqualTo(8));
+
+        world.UpdateComponent(Component<FilteredBehavior1>.ID);
+
+        That(count, Is.EqualTo(10));
+    }
+
     [Test]
     public void Update_UpdatesComponents()
     {
