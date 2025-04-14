@@ -116,18 +116,12 @@ public partial struct Entity : IEquatable<Entity>
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void M()
-    {
-
-    }
-
     private static void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
     internal string DebuggerDisplayString => IsNull ? "Null" : InternalIsAlive(out _, out _) ? $"World: {WorldID}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
-    internal const string EntityIsDeadMessage = "Entity is Dead";
-    internal const string DoesNotHaveTagMessage = "This Entity does not have this tag";
+    internal const string EntityIsDeadMessage = "Entity is dead.";
+    internal const string DoesNotHaveTagMessage = "This entity does not have this tag";
 
     private class EntityDebugView(Entity target)
     {

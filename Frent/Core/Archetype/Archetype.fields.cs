@@ -57,7 +57,7 @@ partial class Archetype(ArchetypeID archetypeID, ComponentStorageBase[] componen
 
     private readonly bool _isTempCreationArchetype = isTempCreateArchetype;
 #else
-    private ref int NextComponentIndex => ref NextComponentIndexOrDeferredEntityCount;
-    private ref int DeferredEntityCount => ref NextComponentIndexOrDeferredEntityCount;
+    private ref int NextComponentIndex => ref _nextComponentIndexOrDeferredEntityCount;
+    private ref int DeferredEntityCount => ref _nextComponentIndexOrDeferredEntityCount;
 #endif
 }

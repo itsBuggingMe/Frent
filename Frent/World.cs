@@ -103,7 +103,6 @@ public partial class World : IDisposable
 
     internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
     internal readonly Archetype DefaultArchetype;
-    internal readonly Archetype DeferredCreateArchetype;
 
     /// <summary>
     /// Invoked whenever an entity is created on this world.
@@ -207,7 +206,6 @@ public partial class World : IDisposable
         WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultWorldEntity = new Entity(ID, default, default);
         DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
-        DeferredCreateArchetype = Archetype.CreateOrGetExistingArchetype(Archetype.DeferredCreate, this);
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)

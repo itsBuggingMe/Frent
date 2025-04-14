@@ -120,7 +120,11 @@ internal partial class Archetype
         var entities = _entities;
         var table = world.EntityTable._buffer;
         for (int i = previousComponentCount; i < entities.Length && i < NextComponentIndex; i++)
-            table.UnsafeArrayIndex(entities[i].ID).Archetype = this;
+        {
+            ref var entityLocationToResolve = ref table.UnsafeArrayIndex(entities[i].ID);
+            entityLocationToResolve.Archetype = this;
+            entityLocationToResolve.Index = i;
+        }
 
         deferredCreationArchetype.DeferredEntityCount = 0;
     }
@@ -291,7 +295,8 @@ internal partial class Archetype
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetComponentIndex<T>()
     {
-        return ComponentTagTable.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+        var index = Component<T>.ID.RawIndex;
+        return ComponentTagTable.UnsafeArrayIndex(index) & GlobalWorldTables.IndexBits;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -303,7 +308,8 @@ internal partial class Archetype
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool HasTag<T>()
     {
-        return (ComponentTagTable.UnsafeArrayIndex(Tag<T>.ID.RawValue) << 7) != 0;
+        var index = Tag<T>.ID.RawValue;
+        return (ComponentTagTable.UnsafeArrayIndex(index) << 7) != 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
