@@ -70,10 +70,10 @@ public partial class World : IDisposable
 
     //these lookups exists for programmical api optimization
     //normal <T1, T2...> methods use a shared global static cache
-    internal FastLookup AddComponentLookup;
-    internal FastLookup RemoveComponentLookup;
-    internal FastLookup AddTagLookup;
-    internal FastLookup RemoveTagLookup;
+    internal FastLookup AddComponentLookup = new();
+    internal FastLookup RemoveComponentLookup = new();
+    internal FastLookup AddTagLookup = new();
+    internal FastLookup RemoveTagLookup = new();
 
 
     internal EntityFlags WorldEventFlags;
@@ -487,7 +487,7 @@ public partial class World : IDisposable
         entityID.ID = entity.EntityID;
         entityID.Version = entity.EntityVersion;
 
-        Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan()[..components.Length];
+        Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan();
         for (int i = 1; i < archetypeComponents.Length; i++)
         {
             archetypeComponents[i].SetAt(components[i - 1], loc.Index);

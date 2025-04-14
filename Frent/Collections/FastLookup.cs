@@ -32,6 +32,7 @@ internal struct FastLookup()
             ArchetypeEdgeKey.Tag(new(id.Value), archetype, edgeType), out var destination))
         {
             //warm/cool depending on number of times they add/remove
+            SetArchetype(id.Value, archetype, destination);
             return destination.ID;
         }
         //cold path
