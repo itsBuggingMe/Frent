@@ -54,5 +54,5 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
     /// <returns><see langword="true"/> if they represent different IDs, <see langword="false"/> otherwise.</returns>
     public static bool operator !=(ComponentID left, ComponentID right) => !left.Equals(right);
 
-    internal string DebuggerDisplayString => $"Types: {Type.ToString()} ID: {RawIndex}";
+    internal string DebuggerDisplayString => $"Types: {Type} ID: {RawIndex}";
 }

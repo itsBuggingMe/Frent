@@ -24,7 +24,7 @@ internal class SparseSet<T>
         {
             ref var index = ref EnsureSparseCapacityAndGetIndex(id);
 
-            if (index == int.MaxValue)
+            if (index == -1)
                 index = _nextIndex++;
 
             return ref MemoryHelpers.GetValueOrResize(ref _dense, index);
@@ -36,7 +36,7 @@ internal class SparseSet<T>
         const int InitialCapacity = 4;
         _dense = new T[InitialCapacity];
         _sparse = new int[InitialCapacity];
-        _sparse.AsSpan().Fill(int.MaxValue);
+        _sparse.AsSpan().Fill(-1);
     }
 
     private ref int EnsureSparseCapacityAndGetIndex(int id)
@@ -51,7 +51,7 @@ internal class SparseSet<T>
         {
             int prevLen = arr.Length;
             Array.Resize(ref arr, (int)BitOperations.RoundUpToPowerOf2((uint)index + 1));
-            arr.AsSpan(prevLen).Fill(int.MaxValue);
+            arr.AsSpan(prevLen).Fill(-1);
             return ref arr[index];
         }
     }

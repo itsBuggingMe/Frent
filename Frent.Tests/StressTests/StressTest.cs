@@ -10,9 +10,9 @@ namespace Frent.Tests.StressTests;
 internal class StressTest
 {
     [Test]
-    public void Test([Range(0, 10)] int seed)
+    public void Test([Range(0, 100)] int seed)
     {
-        const int Steps = 10_000;
+        const int Steps = 1000;
         using WorldState state = new WorldState(seed);
 
         for(int i = 0; i < Steps; i++)
@@ -39,6 +39,15 @@ internal class WorldState : IDisposable
     private readonly MethodInfo[] _create;
     private readonly Query _everythingQuery;
     private readonly int[] _shared = Enumerable.Range(0, 6).ToArray();
+    private readonly TagID[] _tags = 
+    [
+        Tag<C1>.ID,
+        Tag<C2>.ID,
+        Tag<C3>.ID,
+        Tag<S1>.ID,
+        Tag<S2>.ID,
+        Tag<S3>.ID,
+    ];
     private readonly (ComponentID ID, Func<Random, ComponentHandle> Factory)[] _sharedIDs = [
         (Component<C1>.ID, (rng) => ComponentHandle.Create(new C1(rng))), 
         (Component<C2>.ID, (rng) => ComponentHandle.Create(new C2(rng))), 
@@ -67,8 +76,8 @@ internal class WorldState : IDisposable
             case 1: DeleteEntity(); break;
             case 2: AddComponent(); break;
             case 3: RemoveComponent(); break;
-            case 4: break;
-            case 5: break;
+            case 4: Tag(); break;
+            case 5: Detach(); break;
 
             default: throw new NotImplementedException();
         }
@@ -146,7 +155,42 @@ internal class WorldState : IDisposable
                 break;
             }
         }
+    }
 
+    public void Tag()
+    {
+        if (_componentValues.Count == 0)
+            return;
+        (Entity entity, List<ComponentHandle> handles) = GetRandomExistingEntity();
+
+        _random.Shuffle(_tags);
+
+        TagID tag = _tags[0];
+
+        if(!entity.Tagged(tag))
+        {
+            entity.Tag(tag);
+
+            _actions.Add(new StressTestAction(StressTestActionType.Tag, entity, tag.Type));
+        }
+    }
+
+    public void Detach()
+    {
+        if (_componentValues.Count == 0)
+            return;
+        (Entity entity, List<ComponentHandle> handles) = GetRandomExistingEntity();
+
+        _random.Shuffle(_tags);
+
+        TagID tag = _tags[0];
+
+        if (entity.Tagged(tag))
+        {
+            entity.Detach(tag);
+
+            _actions.Add(new StressTestAction(StressTestActionType.Detach, entity, tag.Type));
+        }
     }
 
     #region Helpers
