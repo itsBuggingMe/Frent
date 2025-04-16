@@ -10,6 +10,7 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
 {
     internal ComponentID(ushort id) => RawIndex = id;
     internal readonly ushort RawIndex;
+    internal readonly bool IsSparseComponent => Component.ComponentTable[RawIndex].IsSparseComponent;
 
     /// <summary>
     /// The type of component this <see cref="ComponentID"/> represents.

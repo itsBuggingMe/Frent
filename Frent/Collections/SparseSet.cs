@@ -12,7 +12,7 @@ using Frent.Core;
 
 namespace Frent.Collections;
 
-internal class SparseSet<T>
+internal sealed class SparseSet<T>
 {
     private int _nextIndex;
     private T[] _dense;
@@ -55,4 +55,14 @@ internal class SparseSet<T>
             return ref arr[index];
         }
     }
+}
+
+internal abstract class SparseSetBase
+{
+    public abstract object Get(int id);
+    public abstract void Set(int id, object value);
+    public abstract void Add(int id, object value);
+    public abstract void Remove(int id);
+    public abstract bool Has(int id);
+    public abstract bool TryGet(int id, out object value);
 }

@@ -1,4 +1,5 @@
-﻿using Frent.Core;
+﻿using Frent.Collections;
+using Frent.Core;
 using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Updating;
@@ -6,7 +7,6 @@ using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -22,7 +22,9 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public bool Has(ComponentID componentID)
     {
-        ref EntityLocation entityLocation = ref AssertIsAlive(out _);
+        ref EntityLocation entityLocation = ref AssertIsAlive(out World world);
+        if (componentID.IsSparseComponent)
+            return world.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Has(EntityID);
         return entityLocation.Archetype.GetComponentIndex(componentID) != 0;
     }
 
@@ -31,7 +33,13 @@ partial struct Entity
     /// </summary>
     /// <typeparam name="T">The type of component to check.</typeparam>
     /// <returns><see langword="true"/> if the entity has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
-    public bool Has<T>() => Has(Component<T>.ID);
+    public bool Has<T>()
+    {
+        ref EntityLocation entityLocation = ref AssertIsAlive(out World world);
+        if(Component<T>.IsSparseComponent)
+            return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.RawIndex).Has(EntityID);
+        return entityLocation.Archetype.GetComponentIndex<T>() != 0;
+    }
 
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> has a component of Type <paramref name="type"/>.
@@ -45,16 +53,44 @@ partial struct Entity
     /// </summary>
     /// <param name="componentID">The component ID of the component type to check.</param>
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryHas(ComponentID componentID) =>
-        InternalIsAlive(out _, out EntityLocation entityLocation) &&
-        entityLocation.Archetype.GetComponentIndex(componentID) != 0;
+    public bool TryHas(ComponentID componentID)
+    {
+        if(InternalIsAlive(out World world, out EntityLocation entityLocation))
+        {
+            if(componentID.IsSparseComponent)
+            {
+                return world.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Has(EntityID);
+            }
+            else
+            {
+                return entityLocation.Archetype.GetComponentIndex(componentID) != 0;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Checks of this <see cref="Entity"/> has a component specified by <typeparamref name="T"/> without throwing when dead.
     /// </summary>
     /// <typeparam name="T">The type of component to check.</typeparam>
     /// <returns><see langword="true"/> if the entity is alive and has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryHas<T>() => TryHas(Component<T>.ID);
+    public bool TryHas<T>()
+    {
+        if (InternalIsAlive(out World world, out EntityLocation entityLocation))
+        {
+            if (Component<T>.IsSparseComponent)
+            {
+                return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.RawIndex).Has(EntityID);
+            }
+            else
+            {
+                return entityLocation.Archetype.GetComponentIndex(Component<T>.ID) != 0;
+            }
+        }
+
+        return false;
+    }
     /// <summary>
     /// Checks of this <see cref="Entity"/> has a component specified by <paramref name="type"/> without throwing when dead.
     /// </summary>
@@ -76,11 +112,15 @@ partial struct Entity
     {
         //Total: 4x lookup
 
-        //1x
+        //2x
         ref var lookup = ref AssertIsAlive(out var world);
 
-        //1x
-        //other lookup is optimized into indirect pointer addressing
+        if(Component<T>.IsSparseComponent)
+        {
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.RawIndex);
+            return ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(set)[EntityID];
+        }
+
         Archetype archetype = lookup.Archetype;
 
         int compIndex = archetype.GetComponentIndex<T>();
@@ -100,7 +140,13 @@ partial struct Entity
     /// <returns>The boxed component.</returns>
     public object Get(ComponentID id)
     {
-        ref var lookup = ref AssertIsAlive(out _);
+        ref var lookup = ref AssertIsAlive(out var world);
+
+        if(id.IsSparseComponent)
+        {
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.RawIndex);
+            return set.Get(EntityID);
+        }
 
         int compIndex = lookup.Archetype.GetComponentIndex(id);
 
@@ -128,7 +174,14 @@ partial struct Entity
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="id"/>.</exception>
     public void Set(ComponentID id, object obj)
     {
-        ref var lookup = ref AssertIsAlive(out _);
+        ref var lookup = ref AssertIsAlive(out World world);
+
+        if (id.IsSparseComponent)
+        {
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.RawIndex);
+            set.Set(EntityID, obj);
+            return;
+        }
 
         //2x
         int compIndex = lookup.Archetype.GetComponentIndex(id);
@@ -171,9 +224,17 @@ partial struct Entity
     /// <returns><see langword="true"/> if this entity has a component of type <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
     public bool TryGet(Type type, [NotNullWhen(true)] out object? value)
     {
-        ref var lookup = ref AssertIsAlive(out _);
+        ref var lookup = ref AssertIsAlive(out World world);
 
         ComponentID componentId = Component.GetComponentID(type);
+
+        if(componentId.IsSparseComponent)
+        {
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(componentId.RawIndex);
+            return set.TryGet(EntityID, out value);
+        }
+
+        //archetype path
         int compIndex = GlobalWorldTables.ComponentIndex(lookup.ArchetypeID, componentId);
 
         if (compIndex == 0)
@@ -212,9 +273,16 @@ partial struct Entity
         ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            ComponentStorageBase componentRunner = null!;
-            w.AddComponent(this, ref lookup, componentID, ref componentRunner, out EntityLocation entityLocation);
-            componentRunner.SetAt(component, entityLocation.Index);
+            if (componentID.IsSparseComponent)
+            {
+                w.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Add(EntityID, component);
+            }
+            else
+            {
+                ComponentStorageBase componentRunner = null!;
+                w.AddComponent(this, ref lookup, componentID, ref componentRunner, out EntityLocation entityLocation);
+                componentRunner.SetAt(component, entityLocation.Index);
+            }
         }
         else
         {
@@ -233,7 +301,14 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            w.RemoveComponent(this, ref lookup, componentID);
+            if(componentID.IsSparseComponent)
+            {
+                w.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Remove(EntityID);
+            }
+            else
+            {
+                w.RemoveComponent(this, ref lookup, componentID);
+            }
         }
         else
         {
@@ -261,7 +336,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
     public bool Tagged(TagID tagID)
     {
-        ref var lookup = ref AssertIsAlive(out var w);
+        ref var lookup = ref AssertIsAlive(out _);
         return lookup.Archetype.HasTag(tagID);
     }
 

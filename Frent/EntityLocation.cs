@@ -7,7 +7,10 @@ namespace Frent;
 [StructLayout(LayoutKind.Sequential, Pack = 2)]
 internal struct EntityLocation
 {
-    //128 bits
+    // 128 bits
+
+    // When sparse set:
+
     internal Archetype Archetype;
     internal int Index;
     internal EntityFlags Flags;

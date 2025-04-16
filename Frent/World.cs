@@ -27,9 +27,10 @@ public partial class World : IDisposable
 
     //entityID -> entity metadata
     internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
-    //archetype ID -> Archetype?
+    //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
-    
+    internal SparseSetBase[] WorldSparseSetTable;
+
     internal struct WorldArchetypeTableItem(Archetype archetype, Archetype temp)
     {
         public Archetype Archetype = archetype;

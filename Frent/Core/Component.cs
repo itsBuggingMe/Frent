@@ -3,6 +3,7 @@ using Frent.Components;
 using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -24,6 +25,21 @@ public static class Component<T>
     internal static readonly IDTable<T> GeneralComponentStorage;
     internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
     internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
+    private static readonly bool _isSparseComponentAndReference;
+
+    internal static bool IsSparseComponent
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            if(typeof(T).IsValueType)
+            {
+                return default(T) is ISparseComponent;
+            }
+
+            return _isSparseComponentAndReference;
+        }
+    }
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
 
@@ -39,6 +55,13 @@ public static class Component<T>
     
     static Component()
     {
+        if (!typeof(T).IsValueType)
+        {
+            //this field is used in Component.GetExistingOrSetupNewComponent<T>()
+            _isSparseComponentAndReference = typeof(ISparseComponent).IsAssignableFrom(typeof(T));
+        }
+
+
         (_id, GeneralComponentStorage, Initer, Destroyer) = Component.GetExistingOrSetupNewComponent<T>();
 
         if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
@@ -141,7 +164,7 @@ public static class Component
             IDTable<T> stack = new IDTable<T>();
             ComponentTable.Push(new ComponentData(type, stack,
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null));
+                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null, Component<T>.IsSparseComponent));
 
             return (id, stack, initDelegate, destroyDelegate);
         }
@@ -173,9 +196,12 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            ComponentTable.Push(new ComponentData(t, GetComponentTable(t),
+            ComponentTable.Push(new ComponentData(t, 
+                GetComponentTable(t),
                 GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
-                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null));
+                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null, 
+                typeof(ISparseComponent).IsAssignableFrom(t)
+                ));
 
             return id;
         }
