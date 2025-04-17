@@ -35,8 +35,10 @@ world.Query<With<Position>, With<Velocity>>()
     .Delegate((ref Position p, ref Velocity v) => p.Value += v.Delta);
 
 record struct Position(Vector2 Value);
-record struct Velocity(Vector2 Delta) : IComponent<Position>
+record struct Velocity(Vector2 Delta) : IInitable, IComponent<Position>
 {
+    // There is also IDestroyable
+    public void Init(Entity self) { }
     public void Update(ref Position position) => position.Value += Delta;
 }
 ```
