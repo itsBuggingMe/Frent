@@ -9,8 +9,17 @@ namespace Frent.Updating.Runners;
 
 internal abstract partial class ComponentStorage<TComponent> : ComponentStorageBase
 {
-    //TODO: improve
-    internal override void Trim(int index) => Resize((int)BitOperations.RoundUpToPowerOf2((uint)index));
+    internal override void Release(Archetype archetype, bool isDeferredCreate)
+    {
+        if(!isDeferredCreate && Component<TComponent>.Destroyer is { } destroyer)
+        {
+            foreach(ref var component in AsSpanLength(archetype.EntityCount))
+            {
+                destroyer.Invoke(ref component);
+            }
+        }
+        //TODO: return to pool here
+    }
     //TODO: pool
     internal override void ResizeBuffer(int size) => Resize(size);
     //Note - no unsafe here
@@ -18,7 +27,6 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
     internal override object GetAt(int index) => this[index]!;
     internal override void InvokeGenericActionWith(GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref this[index]);
     internal override void InvokeGenericActionWith(IGenericAction action, int index) => action?.Invoke(ref this[index]);
-    internal override ComponentID ComponentID => Component<TComponent>.ID;
     internal override void PullComponentFromAndClear(ComponentStorageBase otherRunner, int me, int other, int otherRemoveIndex)
     {
         ComponentStorage<TComponent> componentRunner = UnsafeExtensions.UnsafeCast<ComponentStorage<TComponent>>(otherRunner);

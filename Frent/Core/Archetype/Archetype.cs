@@ -286,12 +286,12 @@ internal partial class Archetype
             comprunner.MultithreadedRun(countdown, world, this);
     }
 
-    internal void ReleaseArrays()
+    internal void ReleaseArrays(bool isDeferredCreate)
     {
         _entities = [];
         var comprunners = Components;
         for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Trim(0);
+            comprunners[i].Release(this, isDeferredCreate);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

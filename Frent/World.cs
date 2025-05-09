@@ -453,8 +453,8 @@ public partial class World : IDisposable
         {
             if(item.Archetype is not null)
             {
-                item.Archetype.ReleaseArrays();
-                item.DeferredCreationArchetype.ReleaseArrays();
+                item.Archetype.ReleaseArrays(false);
+                item.DeferredCreationArchetype.ReleaseArrays(true);
             }
         }
 

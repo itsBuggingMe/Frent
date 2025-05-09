@@ -10,11 +10,26 @@ internal abstract class ComponentStorageBase(Array initalBuffer)
 {
     protected Array _buffer = initalBuffer;
     public Array Buffer => _buffer;
+    /// <summary>
+    /// Calls the Update function on every component.
+    /// </summary>
     internal abstract void Run(World world, Archetype b);
+    /// <summary>
+    /// Calls the Update function on the subsection of components.
+    /// </summary>
     internal abstract void Run(World world, Archetype b, int start, int length);
     internal abstract void MultithreadedRun(CountdownEvent countdown, World world, Archetype b);
+    /// <summary>
+    /// Deletes a component from the storage.
+    /// </summary>
     internal abstract void Delete(DeleteComponentData deleteComponentData);
-    internal abstract void Trim(int chunkIndex);
+    /// <summary>
+    /// Resizes internal buffer to 0 and calls the destroyer on every component.
+    /// </summary>
+    internal abstract void Release(Archetype archetype, bool isDeferredCreate);
+    /// <summary>
+    /// Resizes internal buffer to the specified size. Does not call the destroyer.
+    /// </summary>
     internal abstract void ResizeBuffer(int size);
     internal abstract void PullComponentFromAndClear(ComponentStorageBase otherRunner, int me, int other, int otherRemove);
     internal abstract void PullComponentFrom(IDTable storage, int me, int other);
@@ -23,8 +38,6 @@ internal abstract class ComponentStorageBase(Array initalBuffer)
     internal abstract ComponentHandle Store(int index);
     internal abstract void SetAt(object component, int index);
     internal abstract object GetAt(int index);
-    internal abstract ComponentID ComponentID { get; }
-
 
     /// <summary>
     /// Implementation should mirror <see cref="ComponentStorage{T}.PullComponentFromAndClear(ComponentStorageBase, int, int, int)"/>
