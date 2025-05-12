@@ -2,6 +2,7 @@
 using Frent.Core;
 using Frent.Core.Events;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -23,7 +24,30 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
     //TODO: pool
     internal override void ResizeBuffer(int size) => Resize(size);
     //Note - no unsafe here
-    internal override void SetAt(object component, int index) => this[index] = (TComponent)component;
+    internal override void SetAt(Entity? parent, object component, int index)
+    {
+        ref TComponent slot = ref this[index];
+        if (!typeof(TComponent).IsValueType)
+        {
+            if(ReferenceEquals(slot, component))
+            {
+                return;
+            }
+
+            // for reference types, if we know its a new class we process lifetime
+            if(parent is { } entity)
+            {
+                Component<TComponent>.Destroyer?.Invoke(ref slot);
+                slot = (TComponent)component;
+                Component<TComponent>.Initer?.Invoke(entity, ref slot);
+                return;
+            }
+        }
+
+        // for value types (or when parent is null, so we dumbly set), treat modifications like writing a byref
+        slot = (TComponent)component;
+    }
+    internal override void CallIniter(Entity parent, int index) => Component<TComponent>.Initer?.Invoke(parent, ref this[index]);
     internal override object GetAt(int index) => this[index]!;
     internal override void InvokeGenericActionWith(GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref this[index]);
     internal override void InvokeGenericActionWith(IGenericAction action, int index) => action?.Invoke(ref this[index]);
@@ -43,13 +67,11 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
             downItem = default;
         }
     }
+
     internal override void PullComponentFrom(IDTable storage, int me, int other)
     {
         ref var item = ref ((IDTable<TComponent>)storage).Buffer[other];
         this[me] = item;
-
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
-            item = default;
     }
 
     internal override void Delete(DeleteComponentData data)
@@ -71,8 +93,12 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
         //it is stored
         Component<TComponent>.Destroyer?.Invoke(ref item);
 
-        Component<TComponent>.GeneralComponentStorage.Create(out var stackIndex) = item;
-        return new ComponentHandle(stackIndex, Component<TComponent>.ID);
+        var handle = ComponentHandle.Create(item);
+
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
+            item = default;
+
+        return handle;
     }
 }
 

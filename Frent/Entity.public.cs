@@ -136,7 +136,7 @@ partial struct Entity
         if (compIndex == 0)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
-        lookup.Archetype.Components[compIndex].SetAt(obj, lookup.Index);
+        lookup.Archetype.Components[compIndex].SetAt(this, obj, lookup.Index);
     }
 
     /// <summary>
@@ -214,7 +214,25 @@ partial struct Entity
         {
             ComponentStorageBase componentRunner = null!;
             w.AddComponent(this, ref lookup, componentID, ref componentRunner, out EntityLocation entityLocation);
-            componentRunner.SetAt(component, entityLocation.Index);
+            componentRunner.SetAt(this, component, entityLocation.Index);
+
+            if(EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+            {
+                if (w.ComponentAddedEvent.HasListeners)
+                    w.ComponentAddedEvent.Invoke(this, componentID);
+
+                if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+                {
+#if NETSTANDARD2_1
+                    EventRecord events = w.EventLookup[EntityIDOnly];
+#else
+                    ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(w.EventLookup, EntityIDOnly);
+#endif
+
+                    events.Add.NormalEvent.Invoke(this, componentID);
+                    componentRunner.InvokeGenericActionWith(events.Add.GenericEvent, this, entityLocation.Index);
+                }
+            }
         }
         else
         {

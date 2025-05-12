@@ -490,7 +490,11 @@ public partial class World : IDisposable
         Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan();
         for (int i = 1; i < archetypeComponents.Length; i++)
         {
-            archetypeComponents[i].SetAt(components[i - 1], loc.Index);
+            archetypeComponents[i].SetAt(null, components[i - 1], loc.Index);
+        }
+        for (int i = 1; i < archetypeComponents.Length; i++)
+        {
+            archetypeComponents[i].CallIniter(entity, loc.Index);
         }
 
         EntityCreatedEvent.Invoke(entity);

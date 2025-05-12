@@ -31,14 +31,41 @@ internal abstract class ComponentStorageBase(Array initalBuffer)
     /// Resizes internal buffer to the specified size. Does not call the destroyer.
     /// </summary>
     internal abstract void ResizeBuffer(int size);
+    /// <summary>
+    /// Only copies component. Initer and Destroyer not called.
+    /// </summary>
     internal abstract void PullComponentFromAndClear(ComponentStorageBase otherRunner, int me, int other, int otherRemove);
+    /// <summary>
+    /// Copies component from storage without disposing component handle - just copies. Initer called.
+    /// </summary>
     internal abstract void PullComponentFrom(IDTable storage, int me, int other);
+    /// <summary>
+    /// Invokes generic event if not null.
+    /// </summary>
     internal abstract void InvokeGenericActionWith(GenericEvent? action, Entity entity, int index);
+    /// <summary>
+    /// Invokes the generic action if not null.
+    /// </summary>
     internal abstract void InvokeGenericActionWith(IGenericAction action, int index);
+    /// <summary>
+    /// Note: this method is pretty specialized. It creates a component handle and calls the destroyer.
+    /// </summary>
     internal abstract ComponentHandle Store(int index);
-    internal abstract void SetAt(object component, int index);
+    /// <summary>
+    /// Sets the component at the index. Invokes lifetime if component type isn't a struct, the new component is different, and parent is not null.
+    /// </summary>
+    internal abstract void SetAt(Entity? parent, object component, int index);
+    /// <summary>
+    /// Gets the component at the index.
+    /// </summary>
     internal abstract object GetAt(int index);
 
+    /// <summary>
+    /// Calls the initer at the location.
+    /// </summary>
+    /// <param name="parent"></param>
+    /// <param name="index"></param>
+    internal abstract void CallIniter(Entity parent, int index);
     /// <summary>
     /// Implementation should mirror <see cref="ComponentStorage{T}.PullComponentFromAndClear(ComponentStorageBase, int, int, int)"/>
     /// </summary>

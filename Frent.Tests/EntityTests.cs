@@ -30,6 +30,24 @@ internal class EntityTests
         Fail();
     }
 
+
+    [Test]
+    public void OnComponentAddedGeneric_Invoked_AddAs()
+    {
+        using World world = new();
+
+        var entity = world.Create();
+        entity.OnComponentAddedGeneric += new GenericAction((t, o) =>
+        {
+            That(o, Is.EqualTo(1));
+            if (t == typeof(int))
+                Pass();
+        });
+
+        entity.AddAs(Component<int>.ID, 1);
+        Fail();
+    }
+
     [Test]
     public void OnComponentRemovedGeneric_Invoked()
     {
@@ -62,6 +80,23 @@ internal class EntityTests
         };
 
         entity.Add(1);
+        Fail();
+    }
+
+    [Test]
+    public void OnComponentAdded_Invoked_AddAs()
+    {
+        using World world = new();
+
+        var entity = world.Create();
+        entity.OnComponentAdded += (t, o) =>
+        {
+            That(t.Get<int>(), Is.EqualTo(1));
+            if (o.Type == typeof(int))
+                Pass();
+        };
+
+        entity.AddAs(Component<int>.ID, 1);
         Fail();
     }
 
