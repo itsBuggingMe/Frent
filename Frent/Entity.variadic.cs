@@ -11,9 +11,9 @@ using System.Runtime.InteropServices;
 namespace Frent;
 
 #if NETSTANDARD2_1
-[Variadic("[null!]", "MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, $)")]
+[Variadic("[null!]", "MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, $)", 8)]
 #else
-[Variadic("[null!]", "[|null!, |]")]
+[Variadic("[null!]", "[|null!, |]", 8)]
 #endif
 [Variadic("        events.GenericEvent!.Invoke(entity, ref component);", "|        events.GenericEvent!.Invoke(entity, ref component$);\n|", 8)]
 [Variadic("        events.NormalEvent.Invoke(entity, Component<T>.ID);", "|        events.NormalEvent.Invoke(entity, Component<T$>.ID);\n|")]
@@ -28,8 +28,7 @@ namespace Frent;
 [Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
 
 [Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
-[Variadic("        ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;",
-    "|        ref var c$ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(buff.UnsafeSpanIndex($ - 1))[nextLocation.Index]; c$ref = c$;\n|")]
+[Variadic("        ref var c1ref = ref to.GetComponentStorage<T>()[nextLocation.Index]; c1ref = c1;", "|        ref var c$ref = ref to.GetComponentStorage<T$>()[nextLocation.Index]; c$ref = c$;\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.Tag<T>(this);", "|            world.WorldUpdateCommandBuffer.Tag<T$>(this);\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.Detach<T>(this);", "|            world.WorldUpdateCommandBuffer.Detach<T$>(this);\n|")]
 [Variadic("Core.Tag<T>.ID", "[|Core.Tag<T$>.ID, |]")]
