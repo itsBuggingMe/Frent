@@ -274,8 +274,6 @@ public class CommandBuffer
 
             if (createCommand.BufferLength > 0)
             {
-                Span<ComponentStorageBase> runners = _componentRunnerBuffer.AsSpan(0, createCommand.BufferLength);
-
                 ArchetypeID id = _world.DefaultArchetype.ID;
                 Span<ComponentHandle> handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
                 for (int i = 0; i < handles.Length; i++)
@@ -283,7 +281,7 @@ public class CommandBuffer
                     id = _world.AddComponentLookup.FindAdjacentArchetypeID(handles[i].ComponentID, id, _world, ArchetypeEdgeType.AddComponent);
                 }
 
-                _world.MoveEntityToArchetypeAdd(runners, concrete, ref lookup, out EntityLocation location, id.Archetype(_world)!);
+                _world.MoveEntityToArchetypeAdd(concrete, ref lookup, out EntityLocation location, id.Archetype(_world)!);
             }
 
             _world.InvokeEntityCreated(concrete);
@@ -317,9 +315,9 @@ public class CommandBuffer
             {
                 Entity concrete = command.Entity.ToEntity(_world);
 
-                ComponentStorageBase runner = null!;
-                _world.AddComponent(concrete, ref record, command.ComponentHandle.ComponentID, ref runner, out var location);
+                _world.AddComponent(concrete, ref record, command.ComponentHandle.ComponentID, out var location, out var destination);
 
+                var runner = destination.Components[destination.GetComponentIndex(command.ComponentHandle.ComponentID)];
                 runner.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
 
                 if (record.HasEvent(EntityFlags.AddComp))

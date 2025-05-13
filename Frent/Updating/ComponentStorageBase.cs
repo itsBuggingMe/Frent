@@ -56,6 +56,10 @@ internal abstract class ComponentStorageBase(Array initalBuffer)
     /// </summary>
     internal abstract void SetAt(Entity? parent, object component, int index);
     /// <summary>
+    /// Sets the component at the index. Invokes lifetime if component type isn't a struct, the new component is different, and parent is not null.
+    /// </summary>
+    internal abstract void SetAt(Entity? parent, ComponentHandle component, int index);
+    /// <summary>
     /// Gets the component at the index.
     /// </summary>
     internal abstract object GetAt(int index);

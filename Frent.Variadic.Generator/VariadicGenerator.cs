@@ -38,17 +38,17 @@ namespace Frent.Variadic.Generator
             _classTable ??= new();
             var table = _classTable;
 
-            foreach (var item in variadics)
+            foreach (var (Symbol, Node, Model) in variadics)
             {
-                if (item.Node is null)
+                if (Node is null)
                     continue;
-                var parentType = item.Node?.FirstAncestorOrSelf<TypeDeclarationSyntax>();
-                if (parentType is null || item.Symbol is null)
+                var parentType = Node?.FirstAncestorOrSelf<TypeDeclarationSyntax>();
+                if (parentType is null || Symbol is null)
                     continue;
 
-                if (!table.TryGetValue((parentType, item.Symbol), out var stack))
+                if (!table.TryGetValue((parentType, Symbol), out var stack))
                 {
-                    table[(parentType, item.Symbol)] = ExtractArguments(item.Symbol);
+                    table[(parentType, Symbol)] = ExtractArguments(Symbol);
                 }
             }
 

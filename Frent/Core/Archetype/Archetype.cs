@@ -13,6 +13,7 @@ namespace Frent.Core;
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 internal partial class Archetype
 {
+    internal int ComponentTypeCount => Components.Length - 1;//0 is null for hardware trap
     internal ArchetypeID ID => _archetypeID;
     internal ImmutableArray<ComponentID> ArchetypeTypeArray => _archetypeID.Types;
     internal ImmutableArray<TagID> ArchetypeTagArray => _archetypeID.Tags;
@@ -299,6 +300,12 @@ internal partial class Archetype
     {
         var index = Component<T>.ID.RawIndex;
         return ComponentTagTable.UnsafeArrayIndex(index) & GlobalWorldTables.IndexBits;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ComponentStorage<T> GetComponentStorage<T>()
+    {
+        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(GetComponentIndex<T>()));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

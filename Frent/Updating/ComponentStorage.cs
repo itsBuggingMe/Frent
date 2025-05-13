@@ -47,6 +47,32 @@ internal abstract partial class ComponentStorage<TComponent> : ComponentStorageB
         // for value types (or when parent is null, so we dumbly set), treat modifications like writing a byref
         slot = (TComponent)component;
     }
+
+    // copy behavior above
+    internal override void SetAt(Entity? parent, ComponentHandle component, int index)
+    {
+        ref TComponent slot = ref this[index];
+        if (!typeof(TComponent).IsValueType)
+        {
+            TComponent value = component.Retrieve<TComponent>();
+
+            if (ReferenceEquals(slot, value))
+            {
+                return;
+            }
+
+            if (parent is { } entity)
+            {
+                Component<TComponent>.Destroyer?.Invoke(ref slot);
+                slot = value;
+                Component<TComponent>.Initer?.Invoke(entity, ref slot);
+                return;
+            }
+        }
+
+        slot = component.Retrieve<TComponent>();
+    }
+
     internal override void CallIniter(Entity parent, int index) => Component<TComponent>.Initer?.Invoke(parent, ref this[index]);
     internal override object GetAt(int index) => this[index]!;
     internal override void InvokeGenericActionWith(GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref this[index]);

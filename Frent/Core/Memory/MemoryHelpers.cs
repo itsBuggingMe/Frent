@@ -17,9 +17,17 @@ internal static class MemoryHelpers
 #if NETSTANDARD2_1
     [ThreadStatic]
     internal static readonly ComponentHandle[] SharedTempComponentHandleBuffer = new ComponentHandle[8];
-    [ThreadStatic]
-    internal static readonly ComponentStorageBase[] SharedTempComponentStorageBuffer = new ComponentStorageBase[8];
 #endif
+
+    [ThreadStatic]
+    private static ComponentStorageBase[] s_sharedTempComponentStorageBuffer = [];
+
+    public static Span<ComponentStorageBase> GetSharedTempComponentStorageBuffer(int minimumLength)
+    {
+        if(minimumLength > s_sharedTempComponentStorageBuffer.Length)
+            s_sharedTempComponentStorageBuffer = new ComponentStorageBase[minimumLength];
+        return s_sharedTempComponentStorageBuffer.AsSpan(0, minimumLength);
+    }
 
     public static uint RoundDownToPowerOfTwo(uint value) => BitOperations.RoundUpToPowerOf2((value >> 1) + 1);
 

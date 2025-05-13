@@ -188,6 +188,36 @@ partial struct Entity
     #endregion
 
     #region Add
+    public void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out var world);
+        
+        if (componentHandles.Length + eloc.Archetype.ComponentTypeCount > MemoryHelpers.MaxComponentCount)
+            throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
+        
+        ArchetypeID finalArchetype = eloc.ArchetypeID;
+        foreach (var componentHandle in componentHandles)
+            finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddTag);
+        
+        Archetype destinationArchetype = finalArchetype.Archetype(world);
+        
+        world.MoveEntityToArchetypeAdd(this, ref eloc, out EntityLocation nextLocation, destinationArchetype);
+        
+        Span<ComponentStorageBase> buffer = MemoryHelpers.GetSharedTempComponentStorageBuffer(componentHandles.Length);
+
+        for(int i = 0; i < componentHandles.Length; i++)
+        {
+            var storage = destinationArchetype.Components[destinationArchetype.GetComponentIndex(componentHandles[i].ComponentID)];
+            storage.SetAt(null, componentHandles[i], nextLocation.Index);
+            buffer[i] = storage;
+        }
+
+        for(int i = 0; i < componentHandles.Length; i++)
+        {
+            buffer[i].CallIniter(this, nextLocation.Index);
+        }
+    }
+
     /// <summary>
     /// Adds a component to this <see cref="Entity"/> as its own type
     /// </summary>
@@ -213,7 +243,7 @@ partial struct Entity
         if (w.AllowStructualChanges)
         {
             ComponentStorageBase componentRunner = null!;
-            w.AddComponent(this, ref lookup, componentID, ref componentRunner, out EntityLocation entityLocation);
+            w.AddComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out _);
             componentRunner.SetAt(this, component, entityLocation.Index);
 
             if(EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))

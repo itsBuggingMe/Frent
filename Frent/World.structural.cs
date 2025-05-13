@@ -32,20 +32,16 @@ partial class World
 #endif
     }
 
-    internal void AddComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID, ref ComponentStorageBase runner, out EntityLocation entityLocation)
+    internal void AddComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID, out EntityLocation entityLocation, out Archetype destination)
     {
-        Archetype destination = AddComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.AddComponent)
+        destination = AddComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.AddComponent)
             .Archetype(this);
-#if NETSTANDARD2_1
-        MoveEntityToArchetypeAdd(MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, 1), entity, ref lookup, out entityLocation, destination);
-        runner = MemoryHelpers.SharedTempComponentStorageBuffer[0];
-#else
-        MoveEntityToArchetypeAdd(MemoryMarshal.CreateSpan(ref runner, 1), entity, ref lookup, out entityLocation, destination);
-#endif
+
+        MoveEntityToArchetypeAdd(entity, ref lookup, out entityLocation, destination);
     }
 
     [SkipLocalsInit]
-    internal void MoveEntityToArchetypeAdd(Span<ComponentStorageBase> writeTo, Entity entity, ref EntityLocation currentLookup, out EntityLocation nextLocation, Archetype destination)
+    internal void MoveEntityToArchetypeAdd(Entity entity, ref EntityLocation currentLookup, out EntityLocation nextLocation, Archetype destination)
     {
         Archetype from = currentLookup.Archetype;
 
@@ -73,7 +69,7 @@ partial class World
 
             if (fromIndex == 0)
             {
-                writeTo.UnsafeSpanIndex(writeToIndex++) = destRunners[i];
+                //writeTo.UnsafeSpanIndex(writeToIndex++) = destRunners[i];
             }
             else
             {

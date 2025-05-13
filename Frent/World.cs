@@ -467,14 +467,15 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    /// Creates an <see cref="Entity"/>
+    /// Creates an <see cref="Entity"/>.
     /// </summary>
-    /// <param name="components">The components to use</param>
-    /// <returns>The created entity</returns>
+    /// <param name="components">The components to use.</param>
+    /// <returns>The created entity.</returns>
     public Entity CreateFromObjects(ReadOnlySpan<object> components)
     {
         if (components.Length > MemoryHelpers.MaxComponentCount)
             throw new ArgumentException("Max 127 components on an entity", nameof(components));
+
         Span<ComponentID> types = stackalloc ComponentID[components.Length];
 
         for (int i = 0; i < components.Length; i++)
@@ -484,8 +485,7 @@ public partial class World : IDisposable
 
         ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation loc);
         Entity entity = CreateEntityFromLocation(loc);
-        entityID.ID = entity.EntityID;
-        entityID.Version = entity.EntityVersion;
+        entityID.Init(entity);
 
         Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan();
         for (int i = 1; i < archetypeComponents.Length; i++)
@@ -498,6 +498,42 @@ public partial class World : IDisposable
         }
 
         EntityCreatedEvent.Invoke(entity);
+        return entity;
+    }
+
+    /// <summary>
+    /// Creates an <see cref="Entity"/> from a set of component handles. The handles are not disposed.
+    /// </summary>
+    /// <returns>The created entity.</returns>
+    public Entity CreateFromHandles(ReadOnlySpan<ComponentHandle> componentHandles, ReadOnlySpan<TagID> tags = default)
+    {
+        if (componentHandles.Length > MemoryHelpers.MaxComponentCount)
+            throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
+
+        Span<ComponentID> componentIDs = stackalloc ComponentID[componentHandles.Length];
+
+        for (int i = 0; i < componentHandles.Length; i++)
+            componentIDs[i] = componentHandles[i].ComponentID;
+
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentIDs, tags, this);
+
+        ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation entityLocation);
+
+        Entity entity = CreateEntityFromLocation(entityLocation);
+        entityID.Init(entity);
+
+        Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan();
+        for (int i = 1; i < archetypeComponents.Length; i++)
+        {
+            archetypeComponents[i].SetAt(null, componentHandles[i - 1], entityLocation.Index);
+        }
+        for (int i = 1; i < archetypeComponents.Length; i++)
+        {
+            archetypeComponents[i].CallIniter(entity, entityLocation.Index);
+        }
+
+        EntityCreatedEvent.Invoke(entity);
+
         return entity;
     }
 
@@ -515,12 +551,9 @@ public partial class World : IDisposable
     internal Entity CreateEntityWithoutEvent()
     {
         ref var entity = ref DefaultArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
-
-        var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new EntityIDOnly(NextEntityID++, 0);
-        eloc.Version = version;
-        EntityTable[id] = eloc;
-
-        return new Entity(ID, version, id);
+        Entity result = CreateEntityFromLocation(eloc);
+        entity.Init(result);
+        return result;
     }
 
     internal void InvokeEntityCreated(Entity entity)
