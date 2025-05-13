@@ -242,8 +242,9 @@ partial struct Entity
         ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            ComponentStorageBase componentRunner = null!;
-            w.AddComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out _);
+            w.AddComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
+            
+            ComponentStorageBase componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
             componentRunner.SetAt(this, component, entityLocation.Index);
 
             if(EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
