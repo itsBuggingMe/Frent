@@ -2,7 +2,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Frent.svg)](https://www.nuget.org/packages/Frent/) [![NuGet](https://img.shields.io/nuget/dt/Frent.svg)](https://www.nuget.org/packages/Frent/) ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/m/itsBuggingMe/Frent/master) [![Help](https://img.shields.io/discord/1341196126291759188?label=help&color=5865F2&logo=discord)](https://discord.gg/TPWQQEvtg4) ![GitHub Repo stars](https://img.shields.io/github/stars/ItsBuggingMe/Frent)
 
 
-A high preformance, low memory usage, archetyped based **[ECF](https://itsbuggingme.github.io/Frent/docs/ecf.html)/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
+A high performance, low memory usage, archetyped based **[ECF](https://itsbuggingme.github.io/Frent/docs/ecf.html)/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
 
 *Whaaaat?! Aren't there enough ECS libraries out there!*
 
@@ -47,7 +47,7 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 
 There is also samples for [Monogame](https://github.com/itsBuggingMe/Frent/blob/master/Frent.Sample/Asteroids/AsteroidsGame.cs), [Unity](https://github.com/itsBuggingMe/Frent.Unity.Sample) and [Godot](https://github.com/itsBuggingMe/FrentGodotSample).
 
-## Preformance
+## Performance
 
 Frent is a lot faster than most C# ECS implementations - [Benchmark](https://github.com/Doraku/Ecs.CSharp.Benchmark).
 
