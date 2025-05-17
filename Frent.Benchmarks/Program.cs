@@ -12,7 +12,7 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MicroBenchmark>(m => m.Equals(null));
+    static void Main(string[] args) => RunBenchmark<AOTComparison>(m => m.Equals(null));
     
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)

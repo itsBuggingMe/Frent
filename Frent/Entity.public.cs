@@ -188,6 +188,11 @@ partial struct Entity
     #endregion
 
     #region Add
+    /// <summary>
+    /// Adds a range of components to an <see cref="Entity"/>, copied from component handles.
+    /// </summary>
+    /// <param name="componentHandles">The components to add to this entity.</param>
+    /// <exception cref="ArgumentException">The additional components would exceed the archetype component limit.</exception>
     public void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out var world);

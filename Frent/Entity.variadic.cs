@@ -23,10 +23,8 @@ namespace Frent;
 [Variadic("in T c1", "|in T$ c$, |")]
 [Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[$]")]
 [Variadic("        @event.InvokeInternal(entity, Component<T>.ID);", "|        @event.InvokeInternal(entity, Component<T$>.ID);\n|")]
-
 [Variadic("        @event.InvokeInternal(entity, Core.Tag<T>.ID);", "|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);\n|")]
 [Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
-
 [Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
 [Variadic("        ref var c1ref = ref to.GetComponentStorage<T>()[nextLocation.Index]; c1ref = c1;", "|        ref var c$ref = ref to.GetComponentStorage<T$>()[nextLocation.Index]; c$ref = c$;\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.Tag<T>(this);", "|            world.WorldUpdateCommandBuffer.Tag<T$>(this);\n|")]
