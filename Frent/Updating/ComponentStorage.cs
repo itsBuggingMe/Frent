@@ -1,6 +1,8 @@
-﻿using Frent.Collections;
+﻿using Frent.Buffers;
+using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
+using System.Buffers;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -10,16 +12,18 @@ namespace Frent.Updating.Runners;
 
 internal abstract partial class ComponentStorage<TComponent> : ComponentStorageBase
 {
-    internal override void Release(Archetype archetype, bool isDeferredCreate)
+    internal override void Release(Archetype archetype, bool supressDestroyerInvokation)
     {
-        if(!isDeferredCreate && Component<TComponent>.Destroyer is { } destroyer)
+        if(!supressDestroyerInvokation && Component<TComponent>.Destroyer is { } destroyer)
         {
             foreach(ref var component in AsSpanLength(archetype.EntityCount))
             {
                 destroyer.Invoke(ref component);
             }
         }
-        //TODO: return to pool here
+
+        //ComponentArrayPool<TComponent>.Shared.Return(TypedBuffer);
+        //TypedBuffer = [];
     }
     //TODO: pool
     internal override void ResizeBuffer(int size) => Resize(size);

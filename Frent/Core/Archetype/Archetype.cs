@@ -130,6 +130,9 @@ internal partial class Archetype
         }
 
         deferredCreationArchetype.DeferredEntityCount = 0;
+        var releaseComponents = deferredCreationArchetype.Components;
+        for (int i = 1; i < deferredCreationArchetype.Components.Length; i++)
+            releaseComponents[i].Release(deferredCreationArchetype, true);
     }
 
     internal Span<EntityIDOnly> CreateEntityLocations(int count, World world)
