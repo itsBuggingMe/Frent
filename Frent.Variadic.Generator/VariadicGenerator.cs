@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
@@ -62,8 +63,9 @@ namespace Frent.Variadic.Generator
                     .Loop(EnumerateUsings(kvp.Key.Item1.SyntaxTree.GetRoot(ct)), (c, s) => c.AppendLine(s.ToString()), ct)
                     .AppendLine()
                     .Append("namespace ").Append(kvp.Key.Item2.ContainingNamespace).AppendLine(';');
+                const string Exclude = "/// <exclude />";
 
-                cb.Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString().Replace("/// <variadic />", "/// <exclude />"));
+                cb.AppendLine(Exclude).Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString().Replace("/// <variadic />", Exclude));
                 //cb.Append(Regex.Replace(kvp.Key.Item1.ToFullString(), @"\[Variadic\(""\s*(.*?)\s*"",\s*""\|?(.*?)\|?""\)\]", ""));
 
                 var str = cb.ToString();
