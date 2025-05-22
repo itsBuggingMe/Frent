@@ -7,6 +7,7 @@ namespace Frent.Systems;
 /// An arbitary function that operates over a range of components
 /// </summary>
 /// <remarks>Used for SIMD</remarks>
+/// <variadic />
 [Variadic(SpanArgFrom, SpanArgPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 public interface IChunkAction<TArg>
@@ -21,7 +22,7 @@ public interface IChunkAction<TArg>
 /// An arbitary function that operates over a range of components
 /// </summary>
 /// <remarks>Used for SIMD</remarks>
-
+/// <variadic />
 [Variadic(SpanArgFrom, SpanArgPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 public interface IEntityChunkAction<TArg>

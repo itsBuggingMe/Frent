@@ -44,6 +44,7 @@ partial struct Entity
     /// Adds a component to this <see cref="Entity"/>.
     /// </summary>
     /// <remarks>If the world is being updated, changed are deffered to the end of the world update.</remarks>
+    /// <variadic />
     [SkipLocalsInit]
     public void Add<T>(in T c1)
     {
@@ -89,6 +90,7 @@ partial struct Entity
     /// Removes a component from this <see cref="Entity"/>
     /// </summary>
     /// <inheritdoc cref="Add{T}(in T)"/>
+    /// <variadic /> 
     [SkipLocalsInit]
     public void Remove<T>()
     {
@@ -115,6 +117,7 @@ partial struct Entity
     /// Adds a tag to this <see cref="Entity"/>
     /// </summary>
     /// <inheritdoc cref="Add{T}(in T)"/>
+    /// <variadic />
     [SkipLocalsInit]
     public void Tag<T>()
     {
@@ -156,6 +159,7 @@ partial struct Entity
     /// Removes a tag from this <see cref="Entity"/>
     /// </summary>
     /// <inheritdoc cref="Add{T}(in T)"/>
+    /// <variadic />
     [SkipLocalsInit]
     public void Detach<T>()
     {

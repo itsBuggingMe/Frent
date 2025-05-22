@@ -17,6 +17,7 @@ public interface IEntityComponent : IComponentBase
 /// Indicates a component should be updated with itself as an argument and the specified components
 /// </summary>
 /// <remarks>Components should only implement one "Update" method.</remarks>
+/// <variadic />
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IEntityComponent<TArg> : IComponentBase

@@ -17,6 +17,7 @@ public interface IEntityUniformComponent<TUniform> : IComponentBase
 /// Indicates a component should be updated with itself as an argument and a uniform of type <typeparamref name="TUniform"/>, along with the specified components
 /// </summary>
 /// <remarks>Components should only implement one "Update" method.</remarks>
+/// <variadic />
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IEntityUniformComponent<TUniform, TArg> : IComponentBase
