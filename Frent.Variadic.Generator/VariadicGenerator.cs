@@ -63,7 +63,7 @@ namespace Frent.Variadic.Generator
                     .AppendLine()
                     .Append("namespace ").Append(kvp.Key.Item2.ContainingNamespace).AppendLine(';');
 
-                cb.Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString());
+                cb.Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString().Replace("/// <variadic />", "/// <exclude />"));
                 //cb.Append(Regex.Replace(kvp.Key.Item1.ToFullString(), @"\[Variadic\(""\s*(.*?)\s*"",\s*""\|?(.*?)\|?""\)\]", ""));
 
                 var str = cb.ToString();
