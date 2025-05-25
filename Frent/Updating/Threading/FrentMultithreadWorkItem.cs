@@ -1,6 +1,5 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using System.Diagnostics.Metrics;
 using System.IO.Pipes;
 using System.Runtime.CompilerServices;
 

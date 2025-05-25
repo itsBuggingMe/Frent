@@ -40,7 +40,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
     public WorldUpdateFilter(World world, Type attributeType)
     {
-        _multithread = GenerationServices.MulthreadedAttributeTypes.Contains(attributeType);
+        _multithread = typeof(MultithreadUpdateTypeAttribute).IsAssignableFrom(attributeType);
         if(_multithread)
         {
             _updateCount = new StrongBox<int>(0);
@@ -87,17 +87,20 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         Span<ArchetypeUpdateRecord> archetypes = _archetypes.AsSpan();
 
         int largeCount = 0;
-        
+        int smallCount = 0;
+
         for (int i = 0; i < archetypes.Length; i++)
         {
             var record = archetypes[i];
             if(record.Archetype.EntityCount > _largeArchetypeThreshold)
             {
                 _largeArchetypeRecords!.Push(record);
+                largeCount += record.Archetype.EntityCount;
             }
             else
             {
                 _smallArchetypeUpdateRecords!.Push(record);
+                smallCount += record.Archetype.EntityCount;
             }
         }
 
@@ -116,6 +119,18 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
                     start: i, 
                     count: Math.Min(maxChunkSize, entityCount - i));
             }
+        }
+
+        // this thread has some time here to do busy work
+        if(smallCount == 0)
+        {
+            
+        }
+        
+        
+        while (_updateCount!.Value > 0)
+        {
+            Thread.Yield();
         }
     }
 

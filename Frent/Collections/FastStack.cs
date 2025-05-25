@@ -58,9 +58,6 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
     [DebuggerStepThrough]
     public bool TryPop([NotNullWhen(true)] out T? value)
     {
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            throw new NotImplementedException();
-
         if (_nextIndex == 0)
         {
             value = default;
@@ -69,7 +66,10 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
 
         //we can ignore - as the as the user doesn't push null onto the stack
         //they won't get null from the stack
-        value = _buffer.UnsafeArrayIndex(--_nextIndex)!;
+        ref var slot = ref _buffer.UnsafeArrayIndex(--_nextIndex)!;
+        value = slot;
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            slot = default;
         return true;
     }
 

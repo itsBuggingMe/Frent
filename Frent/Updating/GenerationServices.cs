@@ -14,7 +14,6 @@ public static class GenerationServices
     internal static readonly Dictionary<Type, HashSet<Type>> TypeAttributeCache = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
-    internal static readonly HashSet<Type> MulthreadedAttributeTypes = new();
 
     /// <summary>
     /// Used only for source generation
@@ -32,12 +31,6 @@ public static class GenerationServices
         where T : IDestroyable
     {
         TypeDestroyers[typeof(T)] = (ComponentDelegates<T>.DestroyDelegate)([method: DebuggerHidden, DebuggerStepThrough] static (ref T c) => c.Destroy());
-    }
-
-    public static void RegisterMultithreadedAttribute<T>()
-        where T : MultithreadUpdateTypeAttribute
-    {
-        MulthreadedAttributeTypes.Add(typeof(T));
     }
 
     /// <summary>
