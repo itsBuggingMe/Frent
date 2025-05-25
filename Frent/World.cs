@@ -48,6 +48,20 @@ public partial class World : IDisposable
     internal readonly Entity DefaultWorldEntity;
     private bool _isDisposed = false;
 
+    internal volatile bool _worldUpdateMethodCalled;
+
+    internal void EnterWorldUpdateMethod()
+    {
+        if(_worldUpdateMethodCalled)
+            FrentExceptions.Throw_InvalidOperationException("Nested World.Update calls are not supported!");
+        _worldUpdateMethodCalled = true;
+    }
+
+    internal void ExitWorldUpdateMethod()
+    {
+        _worldUpdateMethodCalled = false;
+    }
+
     internal Dictionary<int, Query> QueryCache = [];
 
     internal CountdownEvent SharedCountdown => _sharedCountdown;
@@ -222,6 +236,7 @@ public partial class World : IDisposable
     public void Update()
     {
         EnterDisallowState();
+        EnterWorldUpdateMethod();
         try
         {
             if (CurrentConfig.MultiThreadedUpdate)
@@ -241,6 +256,7 @@ public partial class World : IDisposable
         }
         finally
         {
+            ExitWorldUpdateMethod();
             ExitDisallowState(null, CurrentConfig.UpdateDeferredCreationEntities);
         }   
     }
@@ -258,6 +274,7 @@ public partial class World : IDisposable
     public void Update(Type attributeType)
     {
         EnterDisallowState();
+        EnterWorldUpdateMethod();
         WorldUpdateFilter? appliesTo = default;
         try
         {
@@ -267,6 +284,7 @@ public partial class World : IDisposable
         }
         finally
         {
+            ExitWorldUpdateMethod();
             ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
         }
     }
@@ -278,6 +296,7 @@ public partial class World : IDisposable
     public void UpdateComponent(ComponentID componentType)
     {
         EnterDisallowState();
+        EnterWorldUpdateMethod();
         SingleComponentUpdateFilter? singleComponent = null;
 
         try
@@ -293,6 +312,7 @@ public partial class World : IDisposable
         }
         finally
         {
+            ExitWorldUpdateMethod();
             ExitDisallowState(singleComponent, CurrentConfig.UpdateDeferredCreationEntities);
         }
     }

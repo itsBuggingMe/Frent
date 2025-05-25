@@ -1,9 +1,12 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using Frent.Collections;
 using Frent.Core;
 using Frent.Updating.Runners;
+using Frent.Updating.Threading;
 
 namespace Frent.Updating;
 
@@ -20,13 +23,30 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     private ComponentStorageBase[] _allComponents = new ComponentStorageBase[8];
     private int _nextComponentStorageIndex;
 
-    private readonly ShortSparseSet<(Archetype Archetype, int Start, int Length)> _archetypes = new();
+    private readonly ShortSparseSet<ArchetypeUpdateRecord> _archetypes = new();
     
     //these components need to be updated
     private FastStack<ComponentID> _filteredComponents = FastStack<ComponentID>.Create(8);
-    
+
+    private readonly bool _multithread;
+
+    // The following fields are only used in multithreaded mode
+    #region Multi
+    private readonly StrongBox<int>? _updateCount;
+    private readonly Stack<ArchetypeUpdateRecord>? _smallArchetypeUpdateRecords;
+    private readonly Stack<ArchetypeUpdateRecord>? _largeArchetypeRecords;
+    private int _largeArchetypeThreshold = 16; // this is dynamic
+    #endregion
+
     public WorldUpdateFilter(World world, Type attributeType)
     {
+        _multithread = GenerationServices.MulthreadedAttributeTypes.Contains(attributeType);
+        if(_multithread)
+        {
+            _updateCount = new StrongBox<int>(0);
+            _smallArchetypeUpdateRecords = [];
+            _largeArchetypeRecords = [];
+        }    
         _attributeType = attributeType;
         _world = world;
 
@@ -36,16 +56,65 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
     public void Update()
     {
+        if (_multithread)
+        {
+            MultithreadedUpdate();
+        }
+        else
+        {
+            SinglethreadedUpdate();
+        }
+    }
+
+    private void SinglethreadedUpdate()
+    {
         World world = _world;
         Span<ComponentStorageBase> componentStorages = _allComponents.AsSpan(0, _nextComponentStorageIndex);
-        Span<(Archetype Archetype, int Start, int Length)> archetypes = _archetypes.AsSpan();
+        Span<ArchetypeUpdateRecord> archetypes = _archetypes.AsSpan();
         for (int i = 0; i < archetypes.Length; i++)
         {
             (Archetype current, int start, int count) = archetypes[i];
             Span<ComponentStorageBase> storages = componentStorages.Slice(start, count);
-            foreach(var storage in storages)
+            foreach (var storage in storages)
             {
                 storage.Run(world, current);
+            }
+        }
+    }
+
+    private void MultithreadedUpdate()
+    {
+        Span<ArchetypeUpdateRecord> archetypes = _archetypes.AsSpan();
+
+        int largeCount = 0;
+        
+        for (int i = 0; i < archetypes.Length; i++)
+        {
+            var record = archetypes[i];
+            if(record.Archetype.EntityCount > _largeArchetypeThreshold)
+            {
+                _largeArchetypeRecords!.Push(record);
+            }
+            else
+            {
+                _smallArchetypeUpdateRecords!.Push(record);
+            }
+        }
+
+        FrentMultithread.MultipleArchetypeWorkItem.UnsafeQueueWork(
+            _world, _smallArchetypeUpdateRecords!, _allComponents, _updateCount!);
+
+        int maxChunkSize = largeCount / Environment.ProcessorCount;
+
+        while (_largeArchetypeRecords!.TryPop(out var archetypeRecord))
+        {
+            int entityCount = archetypeRecord.Archetype.EntityCount;
+            for (int i = 0; i < entityCount; i += maxChunkSize)
+            {
+                FrentMultithread.SingleArchetypeWorkItem.UnsafeQueueWork(
+                    _world, archetypeRecord, _allComponents, _updateCount!, 
+                    start: i, 
+                    count: Math.Min(maxChunkSize, entityCount - i));
             }
         }
     }
@@ -88,7 +157,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         }
 
         if(count > 0)
-            _archetypes[archetype.ID.RawIndex] = (archetype, start, count);
+            _archetypes[archetype.ID.RawIndex] = new(archetype, start, count);
     }
 
     public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes)
