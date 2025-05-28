@@ -58,7 +58,7 @@ internal partial class Archetype
     /// Note! Entity location version is not set! 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, out ComponentStorageBase[] writeStorage)
+    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, out ComponentStorageRecord[] writeStorage)
     {
         if (deferredCreationArchetype.DeferredEntityCount == 0)
             world.DeferredCreationArchetypes.Push(new(this, deferredCreationArchetype, EntityCount));
@@ -78,7 +78,7 @@ internal partial class Archetype
 
     // Only to be called by CreateDeferredEntityLocation
     // Allow the jit to inline that method more easily
-    private ref EntityIDOnly CreateDeferredEntityLocationTempBuffers(Archetype deferredCreationArchetype, int futureSlot, scoped ref EntityLocation entityLocation, out ComponentStorageBase[] writeStorage)
+    private ref EntityIDOnly CreateDeferredEntityLocationTempBuffers(Archetype deferredCreationArchetype, int futureSlot, scoped ref EntityLocation entityLocation, out ComponentStorageRecord[] writeStorage)
     {
         //we need to place into temp buffers
         entityLocation.Index = futureSlot - _entities.Length;
@@ -130,9 +130,6 @@ internal partial class Archetype
         }
 
         deferredCreationArchetype.DeferredEntityCount = 0;
-        var releaseComponents = deferredCreationArchetype.Components;
-        for (int i = 1; i < deferredCreationArchetype.Components.Length; i++)
-            releaseComponents[i].Release(deferredCreationArchetype, true);
     }
 
     internal Span<EntityIDOnly> CreateEntityLocations(int count, World world)
@@ -217,7 +214,7 @@ internal partial class Archetype
         #region Unroll
         DeleteComponentData args = new(index, NextComponentIndex);
 
-        ref ComponentStorageBase first = ref MemoryMarshal.GetArrayDataReference(Components);
+        ref ComponentStorageRecord first = ref MemoryMarshal.GetArrayDataReference(Components);
 
         switch (Components.Length)
         {
@@ -351,7 +348,7 @@ internal partial class Archetype
     internal struct Fields
     {
         internal byte[] Map;
-        internal ComponentStorageBase[] Components;
+        internal ComponentStorageRecord[] Components;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ref T GetComponentDataReference<T>()

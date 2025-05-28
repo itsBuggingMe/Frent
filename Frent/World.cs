@@ -507,7 +507,7 @@ public partial class World : IDisposable
         Entity entity = CreateEntityFromLocation(loc);
         entityID.Init(entity);
 
-        Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan();
+        Span<ComponentStorageRecord> archetypeComponents = archetype.Components.AsSpan();
         for (int i = 1; i < archetypeComponents.Length; i++)
         {
             archetypeComponents[i].SetAt(null, components[i - 1], loc.Index);
@@ -542,7 +542,7 @@ public partial class World : IDisposable
         Entity entity = CreateEntityFromLocation(entityLocation);
         entityID.Init(entity);
 
-        Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan();
+        Span<ComponentStorageRecord> archetypeComponents = archetype.Components.AsSpan();
         for (int i = 1; i < archetypeComponents.Length; i++)
         {
             archetypeComponents[i].SetAt(null, componentHandles[i - 1], entityLocation.Index);

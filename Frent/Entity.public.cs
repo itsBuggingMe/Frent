@@ -188,11 +188,6 @@ partial struct Entity
     #endregion
 
     #region Add
-    /// <summary>
-    /// Adds a range of components to an <see cref="Entity"/>, copied from component handles.
-    /// </summary>
-    /// <param name="componentHandles">The components to add to this entity.</param>
-    /// <exception cref="ArgumentException">The additional components would exceed the archetype component limit.</exception>
     public void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out var world);
@@ -208,7 +203,7 @@ partial struct Entity
         
         world.MoveEntityToArchetypeAdd(this, ref eloc, out EntityLocation nextLocation, destinationArchetype);
         
-        Span<ComponentStorageBase> buffer = MemoryHelpers.GetSharedTempComponentStorageBuffer(componentHandles.Length);
+        Span<ComponentStorageRecord> buffer = MemoryHelpers.GetSharedTempComponentStorageBuffer(componentHandles.Length);
 
         for(int i = 0; i < componentHandles.Length; i++)
         {
@@ -249,7 +244,7 @@ partial struct Entity
         {
             w.AddComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
             
-            ComponentStorageBase componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
+            ComponentStorageRecord componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
             componentRunner.SetAt(this, component, entityLocation.Index);
 
             if(EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
@@ -646,7 +641,7 @@ partial struct Entity
     public void EnumerateComponents(IGenericAction onEach)
     {
         ref var lookup = ref AssertIsAlive(out var _);
-        ComponentStorageBase[] runners = lookup.Archetype.Components;
+        ComponentStorageRecord[] runners = lookup.Archetype.Components;
         for (int i = 1; i < runners.Length; i++)
         {
             runners[i].InvokeGenericActionWith(onEach, lookup.Index);

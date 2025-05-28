@@ -20,12 +20,12 @@ internal static class MemoryHelpers
 #endif
 
     [ThreadStatic]
-    private static ComponentStorageBase[] s_sharedTempComponentStorageBuffer = [];
+    private static ComponentStorageRecord[] s_sharedTempComponentStorageBuffer = [];
 
-    public static Span<ComponentStorageBase> GetSharedTempComponentStorageBuffer(int minimumLength)
+    public static Span<ComponentStorageRecord> GetSharedTempComponentStorageBuffer(int minimumLength)
     {
         if(minimumLength > s_sharedTempComponentStorageBuffer.Length)
-            s_sharedTempComponentStorageBuffer = new ComponentStorageBase[minimumLength];
+            s_sharedTempComponentStorageBuffer = new ComponentStorageRecord[minimumLength];
         return s_sharedTempComponentStorageBuffer.AsSpan(0, minimumLength);
     }
 

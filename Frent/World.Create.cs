@@ -30,7 +30,7 @@ partial class World
         ref var entity = ref Unsafe.NullRef<EntityIDOnly>();
         EntityLocation eloc = default;
 
-        ComponentStorageBase[] components;
+        ComponentStorageRecord[] components;
 
         if (AllowStructualChanges)
         {

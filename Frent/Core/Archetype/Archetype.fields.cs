@@ -6,10 +6,10 @@ using System.Runtime.CompilerServices;
 namespace Frent.Core;
 
 //46 bytes total - 16 header + mt, 8 comps, 8 entities, 8 table, 6 ids and tracking
-partial class Archetype(ArchetypeID archetypeID, ComponentStorageBase[] components, bool isTempCreateArchetype)
+partial class Archetype(ArchetypeID archetypeID, ComponentStorageRecord[] components, bool isTempCreateArchetype)
 {
     //8
-    internal readonly ComponentStorageBase[] Components = components;
+    internal readonly ComponentStorageRecord[] Components = components;
 
     //8
     //we include version

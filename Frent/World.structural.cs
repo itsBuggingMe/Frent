@@ -52,12 +52,13 @@ partial class World
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Index, out int deletedIndex);
 
-        ComponentStorageBase[] fromRunners = from.Components;
-        ComponentStorageBase[] destRunners = destination.Components;
+        ComponentStorageRecord[] fromRunners = from.Components;
+        ComponentStorageRecord[] destRunners = destination.Components;
         byte[] fromMap = from.ComponentTagTable;
 
         ImmutableArray<ComponentID> destinationComponents = destination.ArchetypeTypeArray;
 
+        int writeToIndex = 0;
         for (int i = 0; i < destinationComponents.Length;)
         {
             ComponentID componentToMove = destinationComponents[i];
@@ -97,8 +98,8 @@ partial class World
 
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Index, out int deletedIndex);
 
-        ComponentStorageBase[] fromRunners = from.Components;
-        ComponentStorageBase[] destRunners = destination.Components;
+        ComponentStorageRecord[] fromRunners = from.Components;
+        ComponentStorageRecord[] destRunners = destination.Components;
         byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
@@ -190,8 +191,8 @@ partial class World
         EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Index, out int deletedIndex);
 
 
-        ComponentStorageBase[] fromRunners = from.Components;
-        ComponentStorageBase[] destRunners = destination.Components;
+        ComponentStorageRecord[] fromRunners = from.Components;
+        ComponentStorageRecord[] destRunners = destination.Components;
         byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;

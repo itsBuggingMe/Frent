@@ -34,8 +34,8 @@ internal static class Archetype<T>
         [MethodImpl(MethodImplOptions.NoInlining)]
         static World.WorldArchetypeTableItem CreateArchetypes(World world)
         {
-            ComponentStorageBase[] runners = new ComponentStorageBase[ArchetypeComponentIDs.Length + 1];
-            ComponentStorageBase[] tmpStorages = new ComponentStorageBase[runners.Length];
+            ComponentStorageRecord[] runners = new ComponentStorageRecord[ArchetypeComponentIDs.Length + 1];
+            ComponentStorageRecord[] tmpStorages = new ComponentStorageRecord[runners.Length];
             byte[] map = GlobalWorldTables.ComponentTagLocationTable[ID.RawIndex];
 
             int i;
@@ -77,8 +77,8 @@ partial class Archetype
             return archetype.Archetype;
 
         var types = id.Types;
-        ComponentStorageBase[] componentRunners = new ComponentStorageBase[types.Length + 1];
-        ComponentStorageBase[] tmpRunners = new ComponentStorageBase[types.Length + 1];
+        ComponentStorageRecord[] componentRunners = new ComponentStorageRecord[types.Length + 1];
+        ComponentStorageRecord[] tmpRunners = new ComponentStorageRecord[types.Length + 1];
         for (int i = 1; i < componentRunners.Length; i++)
         {
             var fact = Component.GetComponentFactoryFromType(types[i - 1].Type);

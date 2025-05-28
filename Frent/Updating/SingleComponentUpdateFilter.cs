@@ -4,7 +4,7 @@ namespace Frent.Updating;
 
 internal class SingleComponentUpdateFilter : IComponentUpdateFilter
 {
-    private (Archetype Archetype, ComponentStorageBase Storage)[] _archetypes = [];
+    private (Archetype Archetype, ComponentStorageRecord Storage)[] _archetypes = [];
     private int _count;
     private readonly ComponentID _componentID;
     private readonly World _world;

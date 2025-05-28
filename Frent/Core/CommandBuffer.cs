@@ -18,7 +18,7 @@ public class CommandBuffer
     internal FastStack<TagCommand> _tagEntityBuffer = FastStack<TagCommand>.Create(2);
     internal FastStack<TagCommand> _detachTagEntityBuffer = FastStack<TagCommand>.Create(2);
     internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(2);
-    private readonly ComponentStorageBase[] _componentRunnerBuffer = new ComponentStorageBase[MemoryHelpers.MaxComponentCount];
+    private readonly ComponentStorageRecord[] _componentRunnerBuffer = new ComponentStorageRecord[MemoryHelpers.MaxComponentCount];
 
     internal World _world;
     //-1 indicates normal state

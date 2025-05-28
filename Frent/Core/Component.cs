@@ -14,6 +14,8 @@ namespace Frent.Core;
 /// <typeparam name="T">The type of component</typeparam>
 public static class Component<T>
 {
+    internal static ComponentStorageRecord CreateInstance() => new ComponentStorageRecord(Array.Empty<T>(), ComponentBufferManager);
+
     /// <summary>
     /// The component ID for <typeparamref name="T"/>
     /// </summary>
@@ -31,6 +33,7 @@ public static class Component<T>
     internal static readonly IRunner? s_r2;
     internal static readonly IRunner? s_r3;
     internal static readonly IRunner[]? _overflow;
+    internal static readonly ComponentBufferManager BufferManagerInstance;
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
     

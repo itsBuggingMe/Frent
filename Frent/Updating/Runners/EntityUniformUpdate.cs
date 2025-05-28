@@ -7,31 +7,13 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUniformUpdate<TComp, TUniform> : IRunner
+internal class EntityUniformUpdate<TComp, TUniform>(int len) : ComponentStorage<TComp>(len)
     where TComp : IEntityUniformComponent<TUniform>
 {
-    void IRunner.Run(Array buffer, Archetype b, World world, int start, int length)
-    {
-        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
-        ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(buffer), start);
-
-        Entity entity = world.DefaultWorldEntity;
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-
-        for (int i = length - 1; i >= 0; i--)
-        {
-            entityIds.SetEntity(ref entity);
-            comp.Update(entity, uniform);
-
-            entityIds = ref Unsafe.Add(ref entityIds, 1);
-            comp = ref Unsafe.Add(ref comp, 1);
-        }
-    }
-
-    void IRunner.Run(Array buffer, Archetype b, World world)
+    internal override void Run(World world, Archetype b)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
-        ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(buffer);
+        ref TComp comp = ref GetComponentStorageDataReference();
 
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
@@ -45,6 +27,36 @@ internal class EntityUniformUpdate<TComp, TUniform> : IRunner
             comp = ref Unsafe.Add(ref comp, 1);
         }
     }
+
+    internal override void Run(World world, Archetype b, int start, int length)
+    {
+        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
+        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+
+        Entity entity = world.DefaultWorldEntity;
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+
+        for (int i = length - 1; i >= 0; i--)
+        {
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, uniform);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+        }
+    }
+
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
+        throw new NotImplementedException();
+}
+
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+public class EntityUniformUpdateRunnerFactory<TComp, TUniform> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
+    where TComp : IEntityUniformComponent<TUniform>
+{
+    ComponentStorageRecord IComponentStorageBaseFactory.Create(int capacity) => new EntityUniformUpdate<TComp, TUniform>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new EntityUniformUpdate<TComp, TUniform>(capacity);
 }
 
 /// <inheritdoc cref="IComponentStorageBaseFactory"/>
@@ -53,13 +65,37 @@ internal class EntityUniformUpdate<TComp, TUniform> : IRunner
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-public class EntityUniformUpdate<TComp, TUniform, TArg> : IRunner
+internal class EntityUniformUpdate<TComp, TUniform, TArg>(int capacity) : ComponentStorage<TComp>(capacity)
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
-    void IRunner.Run(Array buffer, Archetype b, World world, int start, int length)
+    //maybe field acsesses can be optimzed???
+    internal override void Run(World world, Archetype b)
+    {
+        ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
+        ref TComp comp = ref GetComponentStorageDataReference();
+
+        ref TArg arg = ref b.GetComponentDataReference<TArg>();
+
+        Entity entity = world.DefaultWorldEntity;
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+
+        for (int i = b.EntityCount - 1; i >= 0; i--)
+        {
+            entityIds.SetEntity(ref entity);
+            comp.Update(entity, uniform, ref arg);
+
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
+            comp = ref Unsafe.Add(ref comp, 1);
+
+            arg = ref Unsafe.Add(ref arg, 1);
+        }
+    }
+
+    internal override void Run(World world, Archetype b, int start, int length)
     {
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
-        ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(buffer), start);
+        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+
         ref TArg arg = ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
 
         Entity entity = world.DefaultWorldEntity;
@@ -72,14 +108,18 @@ public class EntityUniformUpdate<TComp, TUniform, TArg> : IRunner
 
             entityIds = ref Unsafe.Add(ref entityIds, 1);
             comp = ref Unsafe.Add(ref comp, 1);
+
             arg = ref Unsafe.Add(ref arg, 1);
         }
     }
 
-    void IRunner.Run(Array buffer, Archetype b, World world)
-    {
-        ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
-        ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(buffer);
+    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b)
+        => throw new NotImplementedException();
+}
+
+/*
+         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
+        ref TComp comp = ref GetComponentStorageDataReference();
         ref TArg arg = ref b.GetComponentDataReference<TArg>();
 
         Entity entity = world.DefaultWorldEntity;
@@ -94,5 +134,14 @@ public class EntityUniformUpdate<TComp, TUniform, TArg> : IRunner
             comp = ref Unsafe.Add(ref comp, 1);
             arg = ref Unsafe.Add(ref arg, 1);
         }
-    }
+ */
+
+/// <inheritdoc cref="IComponentStorageBaseFactory"/>
+[Variadic(TArgFrom, TArgPattern)]
+public class EntityUniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
+    where TComp : IEntityUniformComponent<TUniform, TArg>
+{
+    ComponentStorageRecord IComponentStorageBaseFactory.Create(int capacity) => new EntityUniformUpdate<TComp, TUniform, TArg>(capacity);
+    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
+    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new EntityUniformUpdate<TComp, TUniform, TArg>(capacity);
 }
