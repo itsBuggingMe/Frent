@@ -7,19 +7,21 @@ namespace Frent.Updating;
 /// Defines an object for creating component runners
 /// </summary>
 /// <remarks>Used only in source generation</remarks>
-internal interface IComponentStorageBaseFactory
+internal interface IComponentBufferManager
 {
     /// <summary>
     /// Used only in source generation
     /// </summary>
-    internal ComponentStorageBase Create(int capacity);
+    internal Array Create(int capacity);
     /// <summary>
     /// Used only in source generation
     /// </summary>
-    internal IDTable CreateStack();
+    internal IDTable CreateTable();
 }
 
-internal interface IComponentStorageBaseFactory<T>
+internal class ComponentUpdateFactory<T> : IComponentBufferManager
 {
-    internal ComponentStorage<T> CreateStronglyTyped(int capacity);
+    public Array Create(int capacity) => new T[capacity];
+
+    public IDTable CreateTable() => new IDTable<T>();
 }

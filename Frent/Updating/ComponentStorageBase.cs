@@ -131,25 +131,6 @@ internal abstract class ComponentStorageBase(Array initalBuffer)
 
         PullComponentFromAndClear(otherRunner, me, other, otherRemove);
     }
-
-    internal static int GetComponentSize<T>()
-    {
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            return -1;
-        int size = Unsafe.SizeOf<T>();
-
-        if ((size & (size - 1)) != 0)
-        {//is not power of two
-            return -1;
-        }
-
-        if (size > 16 || size < 2)
-        {//we have block sizes 2, 4, 8, 16
-            return -1;
-        }
-
-        return size;
-    }
 }
 
 internal record struct DeleteComponentData(int ToIndex, int FromIndex);

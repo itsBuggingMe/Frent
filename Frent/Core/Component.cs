@@ -20,44 +20,123 @@ public static class Component<T>
     public static ComponentID ID => _id;
 
     private static readonly ComponentID _id;
-    private static readonly IComponentStorageBaseFactory<T> RunnerInstance;
     internal static readonly IDTable<T> GeneralComponentStorage;
     internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
     internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
 
-    internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
+    //unroll + devirt until > 4 components
+    internal static readonly int UpdateMethodCount;
+    internal static readonly IRunner? s_r0;
+    internal static readonly IRunner? s_r1;
+    internal static readonly IRunner? s_r2;
+    internal static readonly IRunner? s_r3;
+    internal static readonly IRunner[]? _overflow;
 
-    /// <summary>
-    /// Use ComponentHandle.Create instead.
-    /// </summary>
-    [Obsolete("Use ComponentHandle.Create instead")]
-    public static ComponentHandle StoreComponent(in T component)
-    {
-        GeneralComponentStorage.Create(out var index) = component;
-        return new ComponentHandle(index, _id);
-    }
+    internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
     
+    internal static void UpdateComponentBuffer(Array array, Archetype archetype, World world)
+    {
+        if (UpdateMethodCount <= 4)
+        {
+            switch(UpdateMethodCount)
+            {
+                case 0: break;
+                case 1: 
+                    s_r0!.Run(array, archetype, world);
+                    break;
+                case 2:
+                    s_r0!.Run(array, archetype, world);
+                    s_r1!.Run(array, archetype, world);
+                    break;
+                case 3:
+                    s_r0!.Run(array, archetype, world);
+                    s_r1!.Run(array, archetype, world);
+                    s_r2!.Run(array, archetype, world);
+                    break;
+                case 4:
+                    s_r0!.Run(array, archetype, world);
+                    s_r1!.Run(array, archetype, world);
+                    s_r2!.Run(array, archetype, world);
+                    s_r3!.Run(array, archetype, world);
+                    break;
+            }
+        }
+        else
+        {
+            foreach (var runner in _overflow!)
+            {
+                runner.Run(array, archetype, world);
+            }
+        }
+    }
+
+    internal static void UpdateComponentBuffer(Array array, Archetype archetype, World world, int start, int count)
+    {
+        if (UpdateMethodCount <= 4)
+        {
+            switch (UpdateMethodCount)
+            {
+                case 0: break;
+                case 1:
+                    s_r0!.Run(array, archetype, world, start, count);
+                    break;
+                case 2:
+                    s_r0!.Run(array, archetype, world, start, count);
+                    s_r1!.Run(array, archetype, world, start, count);
+                    break;
+                case 3:
+                    s_r0!.Run(array, archetype, world, start, count);
+                    s_r1!.Run(array, archetype, world, start, count);
+                    s_r2!.Run(array, archetype, world, start, count);
+                    break;
+                case 4:
+                    s_r0!.Run(array, archetype, world, start, count);
+                    s_r1!.Run(array, archetype, world, start, count);
+                    s_r2!.Run(array, archetype, world, start, count);
+                    s_r3!.Run(array, archetype, world, start, count);
+                    break;
+            }
+        }
+        else
+        {
+            foreach (var runner in _overflow!)
+            {
+                runner.Run(array, archetype, world, start, count);
+            }
+        }
+    }
+
     static Component()
     {
         (_id, GeneralComponentStorage, Initer, Destroyer) = Component.GetExistingOrSetupNewComponent<T>();
 
-        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var type))
+        if(GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var runners))
         {
-            if (type.Factory is IComponentStorageBaseFactory<T> casted)
+            UpdateMethodCount = runners.Length;
+            if(runners.Length <= 4)
             {
-                RunnerInstance = casted;
-                return;
+                for(int i = 0; i < runners.Length; i++)
+                {
+                    switch(i)
+                    {
+                        case 0: s_r0 = runners[0]; break;
+                        case 1: s_r1 = runners[1]; break;
+                        case 2: s_r2 = runners[2]; break;
+                        case 3: s_r3 = runners[3]; break;
+                        default: throw new Exception("???");
+                    }
+                }
             }
-
-            throw new InvalidOperationException($"{typeof(T).FullName} is not initalized correctly. (Is the source generator working?)");
+            else
+            {
+                _overflow = runners;
+            }
         }
-
-        var fac = new NoneUpdateRunnerFactory<T>();
-        Component.NoneComponentRunnerTable[typeof(T)] = fac;
-        RunnerInstance = fac;
+        else
+        {
+            UpdateMethodCount = 0;
+        }
     }
-
-    internal static ComponentStorage<T> CreateInstance(int cap) => RunnerInstance.CreateStronglyTyped(cap);
 }
 
 /// <summary>
@@ -82,25 +161,16 @@ public static class Component
 {
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
 
-    internal static Dictionary<Type, IComponentStorageBaseFactory> NoneComponentRunnerTable = [];
-
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
 
     private static int NextComponentID = -1;
 
-    internal static IComponentStorageBaseFactory GetComponentFactoryFromType(Type t)
+    internal static IComponentBufferManager GetComponentFactoryFromType(Type t)
     {
-        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var type))
-        {
-            return type.Factory;
-        }
-        if (NoneComponentRunnerTable.TryGetValue(t, out var t1))
-        {
-            return t1;
-        }
+        if (!GenerationServices.ComponentFactories.TryGetValue(t, out var factory))
+            Throw_ComponentTypeNotInit(t);
 
-        Throw_ComponentTypeNotInit(t);
-        return null!;
+        return factory;
     }
 
     /// <summary>
@@ -109,8 +179,7 @@ public static class Component
     /// <typeparam name="T">The type of component to implement</typeparam>
     public static void RegisterComponent<T>()
     {
-        if (!GenerationServices.UserGeneratedTypeMap.ContainsKey(typeof(T)))
-            NoneComponentRunnerTable[typeof(T)] = new NoneUpdateRunnerFactory<T>();
+        GenerationServices.RegisterComponent<T>();
     }
 
     internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer) GetExistingOrSetupNewComponent<T>()
@@ -173,7 +242,7 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            ComponentTable.Push(new ComponentData(t, GetComponentTable(t),
+            ComponentTable.Push(new ComponentData(t, CreateComponentTable(t),
                 GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
                 GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null));
 
@@ -195,12 +264,10 @@ public static class Component
 #endif
     }
 
-    private static IDTable GetComponentTable(Type type)
+    private static IDTable CreateComponentTable(Type type)
     {
-        if (NoneComponentRunnerTable.TryGetValue(type, out var fac))
-            return (IDTable)fac.CreateStack();
-        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var data))
-            return (IDTable)data.Factory.CreateStack();
+        if (GenerationServices.ComponentFactories.TryGetValue(type, out IComponentBufferManager? factory))
+            return factory.CreateTable();
         if (type == typeof(void))
             return null!;
         Throw_ComponentTypeNotInit(type);
