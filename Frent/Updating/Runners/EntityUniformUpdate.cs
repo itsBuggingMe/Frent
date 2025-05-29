@@ -7,7 +7,7 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUniformUpdate<TComp, TUniform> : IRunner
+internal class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
     where TComp : IEntityUniformComponent<TUniform>
 {
     public void Run(Array array, Archetype b, World world)
@@ -53,7 +53,7 @@ internal class EntityUniformUpdate<TComp, TUniform> : IRunner
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class EntityUniformUpdate<TComp, TUniform, TArg> : IRunner
+internal class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
     //maybe field acsesses can be optimzed???

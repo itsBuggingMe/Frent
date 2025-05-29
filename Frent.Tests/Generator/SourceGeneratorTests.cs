@@ -2,6 +2,7 @@
 using Frent;
 using static NUnit.Framework.Assert;
 
+
 namespace Frent.Tests.Generator
 {
     internal partial class SourceGeneratorTests

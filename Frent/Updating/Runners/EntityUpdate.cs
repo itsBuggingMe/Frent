@@ -7,7 +7,7 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUpdate<TComp> : IRunner
+internal class EntityUpdateRunner<TComp> : IRunner
     where TComp : IEntityComponent
 {
     public void Run(Array array, Archetype b, World world)
@@ -50,7 +50,7 @@ internal class EntityUpdate<TComp> : IRunner
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class EntityUpdate<TComp, TArg> : IRunner
+internal class EntityUpdateRunner<TComp, TArg> : IRunner
     where TComp : IEntityComponent<TArg>
 {
     public void Run(Array array, Archetype b, World world)

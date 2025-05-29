@@ -7,7 +7,7 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class UniformUpdate<TComp, TUniform> : IRunner
+internal class UniformUpdateRunner<TComp, TUniform> : IRunner
     where TComp : IUniformComponent<TUniform>
 {
     public void Run(Array array, Archetype b, World world)
@@ -44,7 +44,7 @@ internal class UniformUpdate<TComp, TUniform> : IRunner
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class UniformUpdate<TComp, TUniform, TArg> : IRunner
+internal class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
     where TComp : IUniformComponent<TUniform, TArg>
 {
     public void Run(Array array, Archetype b, World world)

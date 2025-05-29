@@ -13,8 +13,10 @@ namespace Frent.Updating;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class GenerationServices
 {
+    // Component Type -> Runner methods
     internal static readonly Dictionary<Type, IRunner[]> UserGeneratedTypeMap = new();
-    internal static readonly Dictionary<Type, HashSet<Type>> TypeAttributeCache = new();
+    // Runner -> Attributes
+    internal static readonly Dictionary<IRunner, Type[]> MethodAttributes = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
     internal static readonly Dictionary<Type, ComponentBufferManager> ComponentFactories = [];
@@ -40,34 +42,25 @@ public static class GenerationServices
     }
 
     /// <inheritdoc cref="GenerationServices"/>
-    public static void RegisterUpdateType(Type type, params object[] runners)
+    public static void RegisterUpdateType(Type type, params UpdateMethod[] methods)
     {
         if (!UserGeneratedTypeMap.TryGetValue(type, out var val))
         {
-            IRunner[] runnerArray = new IRunner[runners.Length];
-            for (int i = 0; i < runners.Length; i++)
+            IRunner[] runnerArray = new IRunner[methods.Length];
+            for (int i = 0; i < methods.Length; i++)
             {
-                if (runners[i] is not IRunner runner)
+                if (methods[i].Runner is not IRunner runner)
                     throw new InvalidOperationException($"Object given that is not a runner. Source generation may be broken. This method should not be called from user code!");
 
                 runnerArray[i] = runner;
+                MethodAttributes.Add(runner, methods[i].Attributes);
             }
             UserGeneratedTypeMap.Add(type, runnerArray);
-
             return;
         }
         throw new InvalidOperationException("Source generation appears to be broken. This method should not be called from user code!");
     }
-
-    /// <inheritdoc cref="GenerationServices"/>
-    public static void RegisterUpdateMethodAttribute(Type attributeType, Type componentType)
-    {
-#if NETSTANDARD2_1
-        if (!TypeAttributeCache.TryGetValue(attributeType, out var set))
-            set = TypeAttributeCache[attributeType] = [];
-        set.Add(componentType);
-#else
-        (CollectionsMarshal.GetValueRefOrAddDefault(TypeAttributeCache, attributeType, out _) ??= []).Add(componentType);
-#endif
-    }
 }
+
+/// <inheritdoc cref="GenerationServices"/>
+public readonly record struct UpdateMethod(object Runner, Type[] Attributes);

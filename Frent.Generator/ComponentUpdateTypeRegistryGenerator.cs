@@ -273,13 +273,20 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         cb
             .Append("GenerationServices.RegisterUpdateType(typeof(")
             .Append("global::").Append(model.FullName)
-            .Append("), new ");
+            .Append(")");
 
         foreach(var updateMethodModel in model.UpdateMethods)
         {
             var span = ExtractUpdaterName(updateMethodModel.ImplInterface);
 
-            cb.Append(", new");
+            if(updateMethodModel.ImplInterface == RegistryHelpers.TargetInterfaceName)
+            {
+                continue;
+            }
+
+
+
+            cb.Append(", new UpdateMethod");
             (updateMethodModel.ImplInterface == RegistryHelpers.TargetInterfaceName ? cb.Append("None") : cb.Append(updateMethodModel.ImplInterface, span.Start, span.Count))
                 .Append("UpdateRunner")
                 .Append('<')
