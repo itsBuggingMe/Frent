@@ -26,7 +26,7 @@ namespace Frent;
 [Variadic("        @event.InvokeInternal(entity, Core.Tag<T>.ID);", "|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);\n|")]
 [Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
 [Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
-[Variadic("        ref var c1ref = ref to.GetComponentStorage<T>()[nextLocation.Index]; c1ref = c1;", "|        ref var c$ref = ref to.GetComponentStorage<T$>()[nextLocation.Index]; c$ref = c$;\n|")]
+[Variadic("        ref var c1ref = ref to.GetComponentStorage<T>().UnsafeIndex<T>(nextLocation.Index); c1ref = c1;", "|        ref var c$ref = ref to.GetComponentStorage<T$>().UnsafeIndex<T$>(nextLocation.Index); c$ref = c$;|")]
 [Variadic("            world.WorldUpdateCommandBuffer.Tag<T>(this);", "|            world.WorldUpdateCommandBuffer.Tag<T$>(this);\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.Detach<T>(this);", "|            world.WorldUpdateCommandBuffer.Detach<T$>(this);\n|")]
 [Variadic("Core.Tag<T>.ID", "[|Core.Tag<T$>.ID, |]")]
@@ -64,7 +64,7 @@ partial struct Entity
 
         world.MoveEntityToArchetypeAdd(this, ref thisLookup, out EntityLocation nextLocation, to);
 
-        ref var c1ref = ref to.GetComponentStorage<T>()[nextLocation.Index]; c1ref = c1;
+        ref var c1ref = ref to.GetComponentStorage<T>().UnsafeIndex<T>(nextLocation.Index); c1ref = c1;
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
 

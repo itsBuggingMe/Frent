@@ -11,6 +11,11 @@ internal struct ComponentStorageRecord
     public Array Buffer;
     public readonly ComponentBufferManager BufferManager;
 
+    public ref T UnsafeIndex<T>(int index)
+    {
+        return ref UnsafeExtensions.UnsafeCast<T[]>(Buffer).UnsafeArrayIndex(index);
+    }
+
     public ComponentStorageRecord(Array array, ComponentBufferManager bufferManager)
     {
         Buffer = array;
@@ -18,8 +23,8 @@ internal struct ComponentStorageRecord
     }
 
     internal void ResizeBuffer(int size) => BufferManager.ResizeBuffer(ref Buffer, size);
-    internal readonly void Run(World world, Archetype b) => BufferManager.Run(Buffer, world, b);
-    internal readonly void Run(World world, Archetype b, int start, int length) => BufferManager.Run(Buffer, world, b, start, length);
+    internal readonly void Run(Archetype b, World world) => BufferManager.Run(Buffer, b, world);
+    internal readonly void Run(Archetype b, World world, int start, int length) => BufferManager.Run(Buffer, b, world, start, length);
     internal readonly void Delete(DeleteComponentData deleteComponentData) => BufferManager.Delete(Buffer, deleteComponentData);
     internal readonly void Release(Archetype archetype, bool isDeferredCreate) => BufferManager.Release(Buffer, archetype, isDeferredCreate);
     internal readonly void PullComponentFromAndClear(Array otherRunner, int me, int other, int otherRemove) => BufferManager.PullComponentFromAndClear(Buffer, otherRunner, me, other, otherRemove);

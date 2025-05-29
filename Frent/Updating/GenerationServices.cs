@@ -17,7 +17,7 @@ public static class GenerationServices
     internal static readonly Dictionary<Type, HashSet<Type>> TypeAttributeCache = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
-    internal static readonly Dictionary<Type, IComponentBufferManager> ComponentFactories = [];
+    internal static readonly Dictionary<Type, ComponentBufferManager> ComponentFactories = [];
 
     /// <inheritdoc cref="GenerationServices"/>
     public static void RegisterInit<T>()
@@ -36,7 +36,7 @@ public static class GenerationServices
     /// <inheritdoc cref="GenerationServices"/>
     public static void RegisterComponent<T>()
     {
-        ComponentFactories[typeof(T)] = new ComponentUpdateFactory<T>();
+        ComponentFactories[typeof(T)] = new ComponentBufferManager<T>();
     }
 
     /// <inheritdoc cref="GenerationServices"/>

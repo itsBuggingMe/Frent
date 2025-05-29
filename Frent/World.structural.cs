@@ -73,7 +73,7 @@ partial class World
             }
             else
             {
-                destRunners.UnsafeArrayIndex(i).PullComponentFromAndClearTryDevirt(fromRunners.UnsafeArrayIndex(fromIndex), nextLocation.Index, currentLookup.Index, deletedIndex);
+                destRunners.UnsafeArrayIndex(i).PullComponentFromAndClear(fromRunners.UnsafeArrayIndex(fromIndex).Buffer, nextLocation.Index, currentLookup.Index, deletedIndex);
             }
         }
 
@@ -129,7 +129,7 @@ partial class World
             }
             else
             {
-                destRunners.UnsafeArrayIndex(toIndex).PullComponentFromAndClearTryDevirt(fromRunners.UnsafeArrayIndex(i), nextLocation.Index, currentLookup.Index, deletedIndex);
+                destRunners.UnsafeArrayIndex(toIndex).PullComponentFromAndClear(fromRunners.UnsafeArrayIndex(i), nextLocation.Index, currentLookup.Index, deletedIndex);
             }
         }
 
@@ -203,7 +203,7 @@ partial class World
 
             i++;
 
-            destRunners[toIndex].PullComponentFromAndClearTryDevirt(fromRunners[i], nextLocation.Index, currentLookup.Index, deletedIndex);
+            destRunners[toIndex].PullComponentFromAndClear(fromRunners[i].Buffer, nextLocation.Index, currentLookup.Index, deletedIndex);
         }
 
         ref var displacedEntityLocation = ref EntityTable.UnsafeIndexNoResize(movedDown.ID);

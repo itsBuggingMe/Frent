@@ -14,7 +14,7 @@ namespace Frent.Core;
 /// <typeparam name="T">The type of component</typeparam>
 public static class Component<T>
 {
-    internal static ComponentStorageRecord CreateInstance() => new ComponentStorageRecord(Array.Empty<T>(), ComponentBufferManager);
+    internal static ComponentStorageRecord CreateInstance() => new ComponentStorageRecord(Array.Empty<T>(), BufferManagerInstance);
 
     /// <summary>
     /// The component ID for <typeparamref name="T"/>
@@ -111,7 +111,7 @@ public static class Component<T>
 
     static Component()
     {
-        (_id, GeneralComponentStorage, Initer, Destroyer) = Component.GetExistingOrSetupNewComponent<T>();
+        (_id, GeneralComponentStorage, Initer, Destroyer, BufferManagerInstance) = Component.GetExistingOrSetupNewComponent<T>();
 
         if(GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var runners))
         {
@@ -168,7 +168,7 @@ public static class Component
 
     private static int NextComponentID = -1;
 
-    internal static IComponentBufferManager GetComponentFactoryFromType(Type t)
+    internal static ComponentBufferManager GetComponentFactoryFromType(Type t)
     {
         if (!GenerationServices.ComponentFactories.TryGetValue(t, out var factory))
             Throw_ComponentTypeNotInit(t);
@@ -185,14 +185,21 @@ public static class Component
         GenerationServices.RegisterComponent<T>();
     }
 
-    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer) GetExistingOrSetupNewComponent<T>()
+    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer, ComponentBufferManager BufferManager) GetExistingOrSetupNewComponent<T>()
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
             var type = typeof(T);
-            if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
+            if (ExistingComponentIDs.TryGetValue(type, out ComponentID componentID))
             {
-                return (value, (IDTable<T>)ComponentTable[value.RawIndex].Storage, (ComponentDelegates<T>.InitDelegate?)ComponentTable[value.RawIndex].Initer, (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[value.RawIndex].Destroyer);
+                return 
+                    (
+                        componentID, 
+                        (IDTable<T>)ComponentTable[componentID.RawIndex].Storage, 
+                        (ComponentDelegates<T>.InitDelegate?)ComponentTable[componentID.RawIndex].Initer, 
+                        (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[componentID.RawIndex].Destroyer, 
+                        GetComponentFactoryFromType(typeof(T))
+                    );
             }
 
             EnsureTypeInit(type);
@@ -215,7 +222,7 @@ public static class Component
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
                 GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null));
 
-            return (id, stack, initDelegate, destroyDelegate);
+            return (id, stack, initDelegate, destroyDelegate, GetComponentFactoryFromType(typeof(T)));
         }
     }
 
@@ -269,7 +276,7 @@ public static class Component
 
     private static IDTable CreateComponentTable(Type type)
     {
-        if (GenerationServices.ComponentFactories.TryGetValue(type, out IComponentBufferManager? factory))
+        if (GenerationServices.ComponentFactories.TryGetValue(type, out ComponentBufferManager? factory))
             return factory.CreateTable();
         if (type == typeof(void))
             return null!;

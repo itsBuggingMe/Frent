@@ -241,10 +241,7 @@ public partial class World : IDisposable
         {
             if (CurrentConfig.MultiThreadedUpdate)
             {
-                foreach (var element in EnabledArchetypes.AsSpan())
-                {
-                    element.Archetype(this)!.MultiThreadedUpdate(_sharedCountdown, this);
-                }
+                throw new NotSupportedException();
             }
             else
             {

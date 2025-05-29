@@ -27,14 +27,19 @@ internal partial class Archetype
         {
             FrentExceptions.Throw_ComponentNotFoundException<T>();
         }
-        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpanLength(NextComponentIndex);
+        var arr = UnsafeExtensions.UnsafeCast<T[]>(components.UnsafeArrayIndex(index).Buffer);
+#if NETSTANDARD
+        return arr.AsSpan(0, NextComponentIndex);
+#else
+        return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(arr), NextComponentIndex);
+#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref T GetComponentDataReference<T>()
     {
         int index = GetComponentIndex<T>();
-        return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
+        return ref MemoryMarshal.GetArrayDataReference(UnsafeExtensions.UnsafeCast<T[]>(Components.UnsafeArrayIndex(index).Buffer));
     }
 
 
@@ -267,7 +272,7 @@ internal partial class Archetype
             return;
         var comprunners = Components;
         for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Run(world, this);
+            comprunners[i].Run(this, world);
     }
 
     internal void Update(World world, int start, int length)
@@ -276,15 +281,7 @@ internal partial class Archetype
             return;
         var comprunners = Components;
         for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Run(world, this, start, length);
-    }
-
-    internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
-    {
-        if (NextComponentIndex == 0)
-            return;
-        foreach (var comprunner in Components)
-            comprunner.MultithreadedRun(countdown, world, this);
+            comprunners[i].Run(this, world, start, length);
     }
 
     internal void ReleaseArrays(bool isDeferredCreate)
@@ -303,9 +300,9 @@ internal partial class Archetype
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ComponentStorage<T> GetComponentStorage<T>()
+    internal ComponentStorageRecord GetComponentStorage<T>()
     {
-        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(GetComponentIndex<T>()));
+        return Components.UnsafeArrayIndex(GetComponentIndex<T>());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -327,12 +324,6 @@ internal partial class Archetype
         return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) << 7) != 0;
     }
 
-    internal Fields Data => new Fields()
-    {
-        Map = ComponentTagTable,
-        Components = Components,
-    };
-
     internal Span<EntityIDOnly> GetEntitySpan()
     {
         Debug.Assert(NextComponentIndex <= _entities.Length);
@@ -344,17 +335,4 @@ internal partial class Archetype
     }
 
     internal ref EntityIDOnly GetEntityDataReference() => ref MemoryMarshal.GetArrayDataReference(_entities);
-
-    internal struct Fields
-    {
-        internal byte[] Map;
-        internal ComponentStorageRecord[] Components;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal ref T GetComponentDataReference<T>()
-        {
-            int index = Map.UnsafeArrayIndex(Component<T>.ID.RawIndex);
-            return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
-        }
-    }
 }

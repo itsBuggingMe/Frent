@@ -45,7 +45,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
             Span<ComponentStorageRecord> storages = componentStorages.Slice(start, count);
             foreach(var storage in storages)
             {
-                storage.Run(world, current);
+                storage.Run(current, world);
             }
         }
     }
@@ -80,7 +80,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
             if (index != 0) //archetype.Components[0] is always null; 0 tombstone value
             {
                 count++;
-                Debug.Assert(archetype.Components[index] is not null);
+                Debug.Assert(archetype.Components[index].Buffer is not null);
                 if(_nextComponentStorageIndex == _allComponents.Length)
                     Array.Resize(ref _allComponents, _allComponents.Length * 2);
                 _allComponents[_nextComponentStorageIndex++] = archetype.Components[index];
@@ -100,7 +100,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
             foreach(var storage in componentStorages.Slice(start, end))
             {
-                storage.Run(_world, current, count, current.EntityCount - count);
+                storage.Run(current, _world, count, current.EntityCount - count);
             }
         }
     }

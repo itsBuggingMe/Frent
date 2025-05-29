@@ -53,7 +53,7 @@ Lock s_poolLock = new();
 
                     foreach (var storage in storages)
                     {
-                        storage.Run(world, archetype);
+                        storage.Run(archetype, world);
                     }
                 }
 
@@ -127,7 +127,7 @@ Lock s_poolLock = new();
 
                 foreach (var storage in storages)
                 {
-                    storage.Run(world, current, archetypeStart, archetypeCount);
+                    storage.Run(current, world, archetypeStart, archetypeCount);
                 }
 
                 Interlocked.Decrement(ref frentMultithreadWorkItem._counter!.Value);

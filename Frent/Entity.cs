@@ -105,8 +105,8 @@ public partial struct Entity : IEquatable<Entity>
             goto doesntExist;
 
         exists = true;
-        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(
-            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex));
+        T[] storage = UnsafeExtensions.UnsafeCast<T[]>(
+            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex).Buffer);
 
         return new Ref<T>(storage, entityLocation.Index);
 

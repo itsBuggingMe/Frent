@@ -5,8 +5,9 @@ namespace Frent.Updating.Runners;
 
 internal interface IRunner
 {
-    void Run(Array buffer, Archetype b, World world, int start, int length);
-    void Run(Array buffer, Archetype b, World world);
+    internal void Run(Array buffer, Archetype b, World world, int start, int length);
+    internal void Run(Array buffer, Archetype b, World world);
+
     public static ref T GetComponentStorageDataReference<T>(Array array)
     {
         return ref MemoryMarshal.GetArrayDataReference(UnsafeExtensions.UnsafeCast<T[]>(array));

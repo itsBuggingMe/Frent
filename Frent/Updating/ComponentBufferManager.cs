@@ -5,8 +5,13 @@ using Frent.Core.Events;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System;
+using System.Net.Security;
 
 namespace Frent.Updating;
+
+// Updating strategy
+// Use ComponentBufferManager class as a kind of vtable
+// Individual update methods are called 
 
 /// <summary>
 /// Defines an object for creating component runners
@@ -20,7 +25,7 @@ internal abstract class ComponentBufferManager
     /// <summary>
     /// Used only in source generation
     /// </summary>
-    internal abstract Array Create(int capacity);
+    internal abstract ComponentStorageRecord Create(int capacity);
     /// <summary>
     /// Used only in source generation
     /// </summary>
@@ -28,16 +33,15 @@ internal abstract class ComponentBufferManager
 
     #endregion
 
-
     #region Things That Need More Type Info
     /// <summary>
     /// Calls the Update function on every component.
     /// </summary>
-    internal abstract void Run(Array buffer, World world, Archetype b);
+    internal abstract void Run(Array buffer, Archetype b, World world);
     /// <summary>
     /// Calls the Update function on the subsection of components.
     /// </summary>
-    internal abstract void Run(Array buffer, World world, Archetype b, int start, int length);
+    internal abstract void Run(Array buffer, Archetype b, World world, int start, int length);
     #endregion
 
     #region Things That Need Buffer & <T>
@@ -88,9 +92,9 @@ internal abstract class ComponentBufferManager
     #endregion
 }
 
-internal abstract class ComponentBufferManager<TComponent> : ComponentBufferManager
+internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManager
 {
-    internal sealed override Array Create(int capacity) => new TComponent[capacity];
+    internal sealed override ComponentStorageRecord Create(int capacity) => new(new TComponent[capacity], this);
 
     internal sealed override IDTable CreateTable() => new IDTable<TComponent>();
 
@@ -171,9 +175,9 @@ internal abstract class ComponentBufferManager<TComponent> : ComponentBufferMana
     internal sealed override void CallIniter(Array buffer, Entity parent, int index) => Component<TComponent>.Initer?.Invoke(parent, ref Index(buffer, index));
     internal sealed override void InvokeGenericActionWith(Array buffer, GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref Index(buffer, index));
     internal sealed override void InvokeGenericActionWith(Array buffer, IGenericAction action, int index) => action?.Invoke(ref Index(buffer, index));
-    internal sealed override void PullComponentFromAndClear(Array buffer, ComponentStorageRecord otherRunner, int me, int other, int otherRemoveIndex)
+    internal sealed override void PullComponentFromAndClear(Array buffer, Array otherRunnerBuffer, int me, int other, int otherRemoveIndex)
     {
-        TComponent[] componentRunner = UnsafeExtensions.UnsafeCast<TComponent[]>(otherRunner.Buffer);
+        TComponent[] componentRunner = UnsafeExtensions.UnsafeCast<TComponent[]>(otherRunnerBuffer);
 
         ref var item = ref componentRunner.UnsafeArrayIndex(other);
         Index(buffer, me) = item;
@@ -224,4 +228,7 @@ internal abstract class ComponentBufferManager<TComponent> : ComponentBufferMana
     {
         return ref UnsafeExtensions.UnsafeCast<TComponent[]>(buffer).UnsafeArrayIndex(componentIndex);
     }
+
+    internal override void Run(Array buffer, Archetype b, World world) => Component<TComponent>.UpdateComponentBuffer(buffer, b, world);
+    internal override void Run(Array buffer, Archetype b, World world, int start, int length) => Component<TComponent>.UpdateComponentBuffer(buffer, b, world);
 }
