@@ -129,7 +129,7 @@ partial class World
             }
             else
             {
-                destRunners.UnsafeArrayIndex(toIndex).PullComponentFromAndClear(fromRunners.UnsafeArrayIndex(i), nextLocation.Index, currentLookup.Index, deletedIndex);
+                destRunners.UnsafeArrayIndex(toIndex).PullComponentFromAndClear(fromRunners.UnsafeArrayIndex(i).Buffer, nextLocation.Index, currentLookup.Index, deletedIndex);
             }
         }
 

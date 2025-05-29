@@ -40,14 +40,14 @@ public static class GenerationServices
     }
 
     /// <inheritdoc cref="GenerationServices"/>
-    public static void RegisterUpdateType(Type type, params object[] fact)
+    public static void RegisterUpdateType(Type type, params object[] runners)
     {
         if (!UserGeneratedTypeMap.TryGetValue(type, out var val))
         {
-            IRunner[] runnerArray = new IRunner[fact.Length];
-            for (int i = 0; i < fact.Length; i++)
+            IRunner[] runnerArray = new IRunner[runners.Length];
+            for (int i = 0; i < runners.Length; i++)
             {
-                if (fact[i] is not IRunner runner)
+                if (runners[i] is not IRunner runner)
                     throw new InvalidOperationException($"Object given that is not a runner. Source generation may be broken. This method should not be called from user code!");
 
                 runnerArray[i] = runner;

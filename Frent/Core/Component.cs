@@ -14,7 +14,7 @@ namespace Frent.Core;
 /// <typeparam name="T">The type of component</typeparam>
 public static class Component<T>
 {
-    internal static ComponentStorageRecord CreateInstance() => new ComponentStorageRecord(Array.Empty<T>(), BufferManagerInstance);
+    internal static ComponentStorageRecord CreateInstance(int capacity) => new ComponentStorageRecord(capacity == 0 ? [] : new T[capacity], BufferManagerInstance);
 
     /// <summary>
     /// The component ID for <typeparamref name="T"/>

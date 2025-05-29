@@ -87,8 +87,8 @@ partial struct Entity
 
         //2x
         //hardware trap
-        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
-        return ref storage[lookup.Index];
+        ComponentStorageRecord storage = archetype.Components.UnsafeArrayIndex(compIndex);
+        return ref storage.UnsafeIndex<T>(lookup.Index);
     }//2, 0
 
     /// <summary>

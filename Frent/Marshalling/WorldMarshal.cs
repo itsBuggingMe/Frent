@@ -1,4 +1,5 @@
 ﻿using Frent.Core;
+using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Dynamic;
 
@@ -28,7 +29,7 @@ public static class WorldMarshal
     {
         EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID);
         index = location.Index;
-        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(location.Archetype.Components.UnsafeArrayIndex(location.Archetype.GetComponentIndex<T>())).AsSpan();
+        return UnsafeExtensions.UnsafeCast<T[]>(location.Archetype.GetComponentStorage<T>().Buffer).AsSpan();
     }
 
     /// <summary>
@@ -45,7 +46,7 @@ public static class WorldMarshal
         int compIndex = archetype.GetComponentIndex<T>();
 
         //Components[0] null; trap
-        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
-        return ref storage[location.Index];
+        ComponentStorageRecord storage = archetype.Components.UnsafeArrayIndex(compIndex);
+        return ref storage.UnsafeIndex<T>(location.Index);
     }
 }

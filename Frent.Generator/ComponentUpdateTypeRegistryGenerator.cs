@@ -142,13 +142,15 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             Flags: flags,
             FullName: componentTypeSymbol.ToString(),
             Namespace: @namespace,
-            ImplInterface:  @interface.Name,
             HintName: componentTypeSymbol.Name,
             MinimallyQualifiedName: componentTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
 
             NestedTypes: new EquatableArray<TypeDeclarationModel>(nestTypes),
             GenericArguments: new EquatableArray<string>(genericArguments!),
-            Attributes: new EquatableArray<string>(attributes.ToArray())
+
+            UpdateMethods: new EquatableArray<UpdateMethodModel>(
+                [new UpdateMethodModel(new(attributes.ToArray()), @interface.Name)]
+                )
             );
 
         void AddMiscFlags()
@@ -268,32 +270,38 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     
     private static void AppendInitalizationMethodBody(CodeBuilder cb, in ComponentUpdateItemModel model)
     {
-        var span = ExtractUpdaterName(model.ImplInterface);
-        
         cb
-            .Append("GenerationServices.RegisterType(typeof(")
+            .Append("GenerationServices.RegisterUpdateType(typeof(")
             .Append("global::").Append(model.FullName)
             .Append("), new ");
 
-        (model.ImplInterface == RegistryHelpers.TargetInterfaceName ? cb.Append("None") : cb.Append(model.ImplInterface, span.Start, span.Count))
-            .Append("UpdateRunnerFactory")
-            .Append('<')
-            .Append("global::").Append(model.FullName);
-
-        foreach (var item in model.GenericArguments)
-            cb.Append(", ").Append(item);
-
-        //sb.Append(">(), ").Append(model.UpdateOrder).AppendLine(");");
-        cb.AppendLine(">());");
-        foreach (var attrType in model.Attributes)
+        foreach(var updateMethodModel in model.UpdateMethods)
         {
-            cb.Append("GenerationServices.RegisterUpdateMethodAttribute(")
-            .Append("typeof(")
-            .Append("global::").Append(attrType)
-            .Append("), typeof(")
-            .Append("global::").Append(model.FullName)
-            .AppendLine("));");
+            var span = ExtractUpdaterName(updateMethodModel.ImplInterface);
+
+            cb.Append(", new");
+            (updateMethodModel.ImplInterface == RegistryHelpers.TargetInterfaceName ? cb.Append("None") : cb.Append(updateMethodModel.ImplInterface, span.Start, span.Count))
+                .Append("UpdateRunner")
+                .Append('<')
+                .Append("global::").Append(model.FullName);
+
+            foreach (var item in model.GenericArguments)
+                cb.Append(", ").Append(item);
+
+            //sb.Append(">(), ").Append(model.UpdateOrder).AppendLine(");");
+            cb.AppendLine(">());");
+
+            foreach (var attrType in updateMethodModel.Attributes)
+            {
+                cb.Append("GenerationServices.RegisterUpdateMethodAttribute(")
+                .Append("typeof(")
+                .Append("global::").Append(attrType)
+                .Append("), typeof(")
+                .Append("global::").Append(model.FullName)
+                .AppendLine("));");
+            }
         }
+
         if (model.HasFlag(UpdateModelFlags.Initable))
         {
             cb.Append("GenerationServices.RegisterInit<")

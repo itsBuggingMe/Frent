@@ -38,6 +38,6 @@ partial class EntityExtensions
     private static Ref<TC> GetComp<TC>(byte[] archetypeTable, ComponentStorageRecord[] comps, int index)
     {
         int compIndex = archetypeTable.UnsafeArrayIndex(Component<TC>.ID.RawIndex) & GlobalWorldTables.IndexBits;
-        return new Ref<TC>(UnsafeExtensions.UnsafeCast<ComponentStorage<TC>>(comps.UnsafeArrayIndex(compIndex)), index);
+        return new Ref<TC>(UnsafeExtensions.UnsafeCast<TC[]>(comps.UnsafeArrayIndex(compIndex)), index);
     }
 }
