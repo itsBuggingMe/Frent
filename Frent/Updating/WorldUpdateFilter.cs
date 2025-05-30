@@ -20,10 +20,12 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     private int _nextComponentStorageIndex;
 
     private readonly ShortSparseSet<(Archetype Archetype, int Start, int Length)> _archetypes = new();
-    
+
     //these components need to be updated
-    private FastStack<ComponentID> _filteredComponents = FastStack<ComponentID>.Create(8);
-    
+    private ComponentSet _components = new();
+
+
+
     public WorldUpdateFilter(World world, Type attributeType)
     {
         _attributeType = attributeType;
@@ -57,16 +59,16 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
             ComponentID thisID = new((ushort)i);
             Type type = thisID.Type;
 
-            if (GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var arr) 
-                && ContainsComponent(arr, type))
+            if (GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var componentUpdateMethods) 
+                && ContainsComponent(componentUpdateMethods, type))
             {
-                 _filteredComponents.Push(thisID);
+                _components.Set(thisID);
             }
         }
 
         // optimize with 64 bit bloom filter?
         // 99% of cases there will not be more than 64 update types so bloom filter
-        // will literally just become a bitset check
+        // will literally just become a bit check
         static bool ContainsComponent(UpdateMethodData[] updateMethodData, Type type)
         {
             foreach (var methodData in updateMethodData)
@@ -85,16 +87,11 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
         int start = _nextComponentStorageIndex;
         int count = 0;
-        foreach(var component in _filteredComponents.AsSpan())
+        foreach(var component in archetype.ArchetypeTypeArray)
         {
-            int index = archetype.GetComponentIndex(component);
-            if (index != 0) //archetype.Components[0] is always null; 0 tombstone value
+            if(_components.Contains(component))
             {
-                count++;    
-                // now, each component may have more than 1 runner
-
-                Debug.Assert(archetype.Components[index].Buffer is not null);
-
+                // this archetype has a 
 
             }
         }
@@ -106,7 +103,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         {
             if (_nextComponentStorageIndex == _componentRunnerIndices.Length)
                 Array.Resize(ref _componentRunnerIndices, _componentRunnerIndices.Length * 2);
-            _componentRunnerIndices[_nextComponentStorageIndex++] = inde;
+            //_componentRunnerIndices[_nextComponentStorageIndex++] = inde;
         }
     }
 
@@ -122,6 +119,39 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
                 var storage = current.Components.UnsafeArrayIndex(index);
                 storage.Run(current, _world, count, current.EntityCount - count);
             }
+        }
+    }
+
+    /// <summary>
+    /// Tiny optimized set of <see cref="ComponentID"/>.
+    /// </summary>
+    private struct ComponentSet()
+    {
+        private HashSet<ComponentID> _components = new();
+        private ulong _bloomFilter;
+
+        public void Set(ComponentID componentID)
+        {
+            _components.Add(componentID);
+            _bloomFilter |= 1UL >> (componentID.RawIndex & 63);
+        }
+
+        public bool Contains(ComponentID componentID)
+        {
+            ulong flag = 1UL >> (componentID.RawIndex & 63);
+
+            if ((_bloomFilter & flag) == 0)// flag not set
+            {
+                return false;
+            }
+
+            //flag is set, could be a false positive
+            if (Component.ComponentTable.Count < sizeof(ulong) * 8)// if there are less than 64 components nothing wraps
+            {
+                return true;
+            }
+
+            return _components.Contains(componentID);
         }
     }
 }
