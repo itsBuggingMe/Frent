@@ -3,7 +3,6 @@ using Frent.Core;
 using Frent.Updating.Runners;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
 
@@ -14,12 +13,9 @@ namespace Frent.Updating;
 public static class GenerationServices
 {
     // Component Type -> Runner methods
-    internal static readonly Dictionary<Type, IRunner[]> UserGeneratedTypeMap = new();
-    // Runner -> Attributes
-    internal static readonly Dictionary<IRunner, Type[]> MethodAttributes = new();
+    internal static readonly Dictionary<Type, UpdateMethodData[]> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
-    internal static readonly Dictionary<Type, ComponentBufferManager> ComponentFactories = [];
 
     /// <inheritdoc cref="GenerationServices"/>
     public static void RegisterInit<T>()
@@ -38,24 +34,15 @@ public static class GenerationServices
     /// <inheritdoc cref="GenerationServices"/>
     public static void RegisterComponent<T>()
     {
-        ComponentFactories[typeof(T)] = new ComponentBufferManager<T>();
+        Core.Component.CachedComponentFactories.TryAdd(typeof(T), new ComponentBufferManager<T>());
     }
 
     /// <inheritdoc cref="GenerationServices"/>
-    public static void RegisterUpdateType(Type type, params UpdateMethod[] methods)
+    public static void RegisterUpdateType(Type type, params UpdateMethodData[] methods)
     {
         if (!UserGeneratedTypeMap.TryGetValue(type, out var val))
         {
-            IRunner[] runnerArray = new IRunner[methods.Length];
-            for (int i = 0; i < methods.Length; i++)
-            {
-                if (methods[i].Runner is not IRunner runner)
-                    throw new InvalidOperationException($"Object given that is not a runner. Source generation may be broken. This method should not be called from user code!");
-
-                runnerArray[i] = runner;
-                MethodAttributes.Add(runner, methods[i].Attributes);
-            }
-            UserGeneratedTypeMap.Add(type, runnerArray);
+            UserGeneratedTypeMap.Add(type, methods);
             return;
         }
         throw new InvalidOperationException("Source generation appears to be broken. This method should not be called from user code!");
@@ -63,4 +50,4 @@ public static class GenerationServices
 }
 
 /// <inheritdoc cref="GenerationServices"/>
-public readonly record struct UpdateMethod(object Runner, Type[] Attributes);
+public readonly record struct UpdateMethodData(IRunner Runner, Type[] Attributes);

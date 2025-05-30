@@ -7,10 +7,11 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUpdateRunner<TComp> : IRunner
+/// <inheritdoc cref="GenerationServices"/>
+public class EntityUpdateRunner<TComp> : IRunner
     where TComp : IEntityComponent
 {
-    public void Run(Array array, Archetype b, World world)
+    void IRunner.Run(Array array, Archetype b, World world)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
@@ -27,7 +28,7 @@ internal class EntityUpdateRunner<TComp> : IRunner
         }
     }
 
-    public void Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner.Run(Array array, Archetype b, World world, int start, int length)
     {
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
@@ -45,15 +46,16 @@ internal class EntityUpdateRunner<TComp> : IRunner
     }
 }
 
+/// <inheritdoc cref="GenerationServices"/>
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
 [Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class EntityUpdateRunner<TComp, TArg> : IRunner
+public class EntityUpdateRunner<TComp, TArg> : IRunner
     where TComp : IEntityComponent<TArg>
 {
-    public void Run(Array array, Archetype b, World world)
+    void IRunner.Run(Array array, Archetype b, World world)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
@@ -74,7 +76,7 @@ internal class EntityUpdateRunner<TComp, TArg> : IRunner
         }
     }
 
-    public void Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner.Run(Array array, Archetype b, World world, int start, int length)
     {
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);

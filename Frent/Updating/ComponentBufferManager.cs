@@ -230,5 +230,5 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     }
 
     internal override void Run(Array buffer, Archetype b, World world) => Component<TComponent>.UpdateComponentBuffer(buffer, b, world);
-    internal override void Run(Array buffer, Archetype b, World world, int start, int length) => Component<TComponent>.UpdateComponentBuffer(buffer, b, world);
+    internal override void Run(Array buffer, Archetype b, World world, int start, int length) => Component<TComponent>.UpdateComponentBuffer(buffer, b, world, start, length);
 }

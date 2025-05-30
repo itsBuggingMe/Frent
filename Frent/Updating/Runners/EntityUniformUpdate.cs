@@ -7,10 +7,11 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
+/// <inheritdoc cref="GenerationServices"/>
+public class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
     where TComp : IEntityUniformComponent<TUniform>
 {
-    public void Run(Array array, Archetype b, World world)
+    void IRunner.Run(Array array, Archetype b, World world)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
@@ -28,7 +29,7 @@ internal class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
         }
     }
 
-    public void Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner.Run(Array array, Archetype b, World world, int start, int length)
     {
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
@@ -48,16 +49,17 @@ internal class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
 }
 
 
+/// <inheritdoc cref="GenerationServices"/>
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
 [Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
+public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
     //maybe field acsesses can be optimzed???
-    public void Run(Array array, Archetype b, World world)
+    void IRunner.Run(Array array, Archetype b, World world)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
@@ -79,7 +81,7 @@ internal class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
         }
     }
 
-    public void Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner.Run(Array array, Archetype b, World world, int start, int length)
     {
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);

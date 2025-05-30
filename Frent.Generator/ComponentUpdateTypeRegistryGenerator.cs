@@ -273,7 +273,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         cb
             .Append("GenerationServices.RegisterUpdateType(typeof(")
             .Append("global::").Append(model.FullName)
-            .Append(")");
+            .Append("), ");
 
         foreach(var updateMethodModel in model.UpdateMethods)
         {
@@ -285,29 +285,44 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             }
 
 
+            //new UpdateMethod(, new Type[] {  })
 
-            cb.Append(", new UpdateMethod");
-            (updateMethodModel.ImplInterface == RegistryHelpers.TargetInterfaceName ? cb.Append("None") : cb.Append(updateMethodModel.ImplInterface, span.Start, span.Count))
+            cb
+                .Append("new Frent.Updating.UpdateMethodData(")
+                .Append("new ")
+                .Append(updateMethodModel.ImplInterface, span.Start, span.Count)
                 .Append("UpdateRunner")
                 .Append('<')
                 .Append("global::").Append(model.FullName);
 
             foreach (var item in model.GenericArguments)
                 cb.Append(", ").Append(item);
+            
+            cb.Append(">(), ");
 
-            //sb.Append(">(), ").Append(model.UpdateOrder).AppendLine(");");
-            cb.AppendLine(">());");
-
-            foreach (var attrType in updateMethodModel.Attributes)
+            if(updateMethodModel.Attributes.Length == 0)
             {
-                cb.Append("GenerationServices.RegisterUpdateMethodAttribute(")
-                .Append("typeof(")
-                .Append("global::").Append(attrType)
-                .Append("), typeof(")
-                .Append("global::").Append(model.FullName)
-                .AppendLine("));");
+                cb.Append("global::System.Array.Empty<Type>()");
             }
+            else
+            {
+                cb.Append("new Type[] { ");
+                foreach (var attrType in updateMethodModel.Attributes)
+                {
+                    cb
+                    .Append("typeof(")
+                    .Append("global::").Append(attrType)
+                    .Append("), ");
+                }
+                cb.Append("}");
+            }
+
+            cb.AppendLine("), ");
         }
+
+        cb
+            .RemoveLastComma()
+            .AppendLine(");");
 
         if (model.HasFlag(UpdateModelFlags.Initable))
         {

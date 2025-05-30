@@ -7,10 +7,11 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class UniformUpdateRunner<TComp, TUniform> : IRunner
+/// <inheritdoc cref="GenerationServices"/>
+public class UniformUpdateRunner<TComp, TUniform> : IRunner
     where TComp : IUniformComponent<TUniform>
 {
-    public void Run(Array array, Archetype b, World world)
+    void IRunner. Run(Array array, Archetype b, World world)
     {
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
 
@@ -24,7 +25,7 @@ internal class UniformUpdateRunner<TComp, TUniform> : IRunner
         }
     }
 
-    public void Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner. Run(Array array, Archetype b, World world, int start, int length)
     {
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
@@ -39,15 +40,16 @@ internal class UniformUpdateRunner<TComp, TUniform> : IRunner
     }
 }
 
+/// <inheritdoc cref="GenerationServices"/>
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
 [Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
+public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
     where TComp : IUniformComponent<TUniform, TArg>
 {
-    public void Run(Array array, Archetype b, World world)
+    void IRunner. Run(Array array, Archetype b, World world)
     {
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
 
@@ -64,7 +66,7 @@ internal class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
         }
     }
 
-    public void Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner. Run(Array array, Archetype b, World world, int start, int length)
     {
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 

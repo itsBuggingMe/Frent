@@ -7,10 +7,11 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class UpdateRunner<TComp> : IRunner
+/// <inheritdoc cref="GenerationServices"/>
+public class UpdateRunner<TComp> : IRunner
     where TComp : IComponent
 {
-    public void Run(Array array, Archetype b, World world)
+    void IRunner. Run(Array array, Archetype b, World world)
     {
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
 
@@ -22,7 +23,7 @@ internal class UpdateRunner<TComp> : IRunner
         }
     }
 
-    public void Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner. Run(Array array, Archetype b, World world, int start, int length)
     {
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
@@ -35,15 +36,16 @@ internal class UpdateRunner<TComp> : IRunner
     }
 }
 
+/// <inheritdoc cref="GenerationServices"/>
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
 [Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class UpdateRunner<TComp, TArg> : IRunner
+public class UpdateRunner<TComp, TArg> : IRunner
     where TComp : IComponent<TArg>
 {
-    public void Run(Array array, Archetype b, World world)
+    void IRunner. Run(Array array, Archetype b, World world)
     {
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
 
@@ -59,7 +61,7 @@ internal class UpdateRunner<TComp, TArg> : IRunner
         }
     }
 
-    public void Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner. Run(Array array, Archetype b, World world, int start, int length)
     {
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 

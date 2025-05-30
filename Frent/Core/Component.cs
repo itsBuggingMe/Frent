@@ -33,7 +33,7 @@ public static class Component<T>
     internal static readonly IRunner? s_r2;
     internal static readonly IRunner? s_r3;
     internal static readonly IRunner[]? _overflow;
-    internal static readonly ComponentBufferManager BufferManagerInstance;
+    internal static readonly ComponentBufferManager<T> BufferManagerInstance;
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
     
@@ -111,7 +111,16 @@ public static class Component<T>
 
     static Component()
     {
-        (_id, GeneralComponentStorage, Initer, Destroyer, BufferManagerInstance) = Component.GetExistingOrSetupNewComponent<T>();
+        (_id, GeneralComponentStorage, Initer, Destroyer) = Component.GetExistingOrSetupNewComponent<T>();
+
+        if(Component.CachedComponentFactories.TryGetValue(typeof(T), out var componentBufferManager))
+        {
+            BufferManagerInstance = (ComponentBufferManager<T>)componentBufferManager;
+        }
+        else
+        {
+            Component.CachedComponentFactories[typeof(T)] = BufferManagerInstance = new ComponentBufferManager<T>();
+        }
 
         if(GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var runners))
         {
@@ -122,17 +131,22 @@ public static class Component<T>
                 {
                     switch(i)
                     {
-                        case 0: s_r0 = runners[0]; break;
-                        case 1: s_r1 = runners[1]; break;
-                        case 2: s_r2 = runners[2]; break;
-                        case 3: s_r3 = runners[3]; break;
+                        case 0: s_r0 = runners[0].Runner; break;
+                        case 1: s_r1 = runners[1].Runner; break;
+                        case 2: s_r2 = runners[2].Runner; break;
+                        case 3: s_r3 = runners[3].Runner; break;
                         default: throw new Exception("???");
                     }
                 }
             }
             else
             {
-                _overflow = runners;
+                IRunner[] runner = new IRunner[runners.Length];
+                for (int i = 0; i < runners.Length; i++)
+                {
+                    runner[i] = runners[i].Runner;
+                }
+                _overflow = runner;
             }
         }
         else
@@ -166,11 +180,13 @@ public static class Component
 
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
 
+    internal static readonly Dictionary<Type, ComponentBufferManager> CachedComponentFactories = [];
+
     private static int NextComponentID = -1;
 
     internal static ComponentBufferManager GetComponentFactoryFromType(Type t)
     {
-        if (!GenerationServices.ComponentFactories.TryGetValue(t, out var factory))
+        if (!CachedComponentFactories.TryGetValue(t, out var factory))
             Throw_ComponentTypeNotInit(t);
 
         return factory;
@@ -185,7 +201,7 @@ public static class Component
         GenerationServices.RegisterComponent<T>();
     }
 
-    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer, ComponentBufferManager BufferManager) GetExistingOrSetupNewComponent<T>()
+    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer) GetExistingOrSetupNewComponent<T>()
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
@@ -197,8 +213,7 @@ public static class Component
                         componentID, 
                         (IDTable<T>)ComponentTable[componentID.RawIndex].Storage, 
                         (ComponentDelegates<T>.InitDelegate?)ComponentTable[componentID.RawIndex].Initer, 
-                        (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[componentID.RawIndex].Destroyer, 
-                        GetComponentFactoryFromType(typeof(T))
+                        (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[componentID.RawIndex].Destroyer
                     );
             }
 
@@ -222,7 +237,7 @@ public static class Component
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
                 GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null));
 
-            return (id, stack, initDelegate, destroyDelegate, GetComponentFactoryFromType(typeof(T)));
+            return (id, stack, initDelegate, destroyDelegate);
         }
     }
 
@@ -276,7 +291,7 @@ public static class Component
 
     private static IDTable CreateComponentTable(Type type)
     {
-        if (GenerationServices.ComponentFactories.TryGetValue(type, out ComponentBufferManager? factory))
+        if (CachedComponentFactories.TryGetValue(type, out ComponentBufferManager? factory))
             return factory.CreateTable();
         if (type == typeof(void))
             return null!;

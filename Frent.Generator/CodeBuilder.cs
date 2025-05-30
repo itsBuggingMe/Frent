@@ -34,6 +34,19 @@ internal class CodeBuilder
         return this;
     }
 
+    public CodeBuilder RemoveLastComma()
+    {
+        for(int i = _sb.Length - 1; i >= 0; i--)
+        {
+            if (_sb[i] == ',')
+            {
+                _sb.Remove(i, _sb.Length - i);
+                return this;
+            }
+        }
+        return this;
+    }
+
     public CodeBuilder Append(ReadOnlySpan<char> value)
     {
         _sb.EnsureCapacity(value.Length + value.Length);
