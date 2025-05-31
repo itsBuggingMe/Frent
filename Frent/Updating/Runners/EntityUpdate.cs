@@ -11,6 +11,8 @@ namespace Frent.Updating.Runners;
 public class EntityUpdateRunner<TComp> : IRunner
     where TComp : IEntityComponent
 {
+    ComponentID IRunner.ComponentID => Component<TComp>.ID;
+
     void IRunner.Run(Array array, Archetype b, World world)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
@@ -55,6 +57,8 @@ public class EntityUpdateRunner<TComp> : IRunner
 public class EntityUpdateRunner<TComp, TArg> : IRunner
     where TComp : IEntityComponent<TArg>
 {
+    ComponentID IRunner.ComponentID => Component<TComp>.ID;
+
     void IRunner.Run(Array array, Archetype b, World world)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();

@@ -11,6 +11,8 @@ namespace Frent.Updating.Runners;
 public class UpdateRunner<TComp> : IRunner
     where TComp : IComponent
 {
+    ComponentID IRunner.ComponentID => Component<TComp>.ID;
+
     void IRunner. Run(Array array, Archetype b, World world)
     {
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
@@ -45,6 +47,8 @@ public class UpdateRunner<TComp> : IRunner
 public class UpdateRunner<TComp, TArg> : IRunner
     where TComp : IComponent<TArg>
 {
+    ComponentID IRunner.ComponentID => Component<TComp>.ID;
+
     void IRunner. Run(Array array, Archetype b, World world)
     {
         ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);

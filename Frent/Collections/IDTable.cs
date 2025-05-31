@@ -58,7 +58,7 @@ internal abstract class IDTable
     protected abstract void Double();
 }
 
-internal class IDTable<T> : IDTable
+internal sealed class IDTable<T> : IDTable
 {
     public IDTable() : base(Array.Empty<T>(), RuntimeHelpers.IsReferenceOrContainsReferences<T>()) { }
     public ref T[] Buffer => ref Unsafe.As<Array, T[]>(ref _buffer);

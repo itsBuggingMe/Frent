@@ -11,6 +11,8 @@ namespace Frent.Updating.Runners;
 public class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
     where TComp : IEntityUniformComponent<TUniform>
 {
+    ComponentID IRunner.ComponentID => Component<TComp>.ID;
+
     void IRunner.Run(Array array, Archetype b, World world)
     {
         ref EntityIDOnly entityIds = ref b.GetEntityDataReference();
@@ -58,6 +60,8 @@ public class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
 public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
     where TComp : IEntityUniformComponent<TUniform, TArg>
 {
+    ComponentID IRunner.ComponentID => Component<TComp>.ID;
+
     //maybe field acsesses can be optimzed???
     void IRunner.Run(Array array, Archetype b, World world)
     {

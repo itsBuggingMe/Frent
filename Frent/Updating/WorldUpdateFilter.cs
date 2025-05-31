@@ -1,30 +1,37 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Runtime.ExceptionServices;
-using Frent.Collections;
+﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Updating.Runners;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO.Pipes;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
 
 internal class WorldUpdateFilter : IComponentUpdateFilter
 {
+    /*  In each world, there are n archetype that match the filter, where n >= 0.
+     *  In each archetype there are m component types that match the filter, where m >= 0.
+     *  In each component type in the archetype, o methods that match the filter, where o > 0.
+     *  In each method there are p attributes, one of which is the attribute type we are filtering by.
+     *  My head hurts.
+     */
+
     private readonly World _world;
-
     private readonly Type _attributeType;
-    private int _lastRegisteredComponentID;
     
-    private byte[] _componentRunnerIndices = new byte[8];
+    
+    private int _lastRegisteredComponentID;
+    private ShortSparseSet<(Archetype Archetype, int Start, int Length)> _matchedArchtypes = new();
 
-    private int _nextComponentStorageIndex;
+    private ArchtypeUpdateMethod[] _methods = new ArchtypeUpdateMethod[8];
+    private int _methodsCount;
 
-    private readonly ShortSparseSet<(Archetype Archetype, int Start, int Length)> _archetypes = new();
-
-    //these components need to be updated
-    private ComponentSet _components = new();
-
-
+    private Dictionary<ComponentID, FrugalRunnerArray> _matchedComponentMethods = [];
+    private ulong _componentBloomFilter;
 
     public WorldUpdateFilter(World world, Type attributeType)
     {
@@ -37,17 +44,16 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
     public void Update()
     {
+        Span<ArchtypeUpdateMethod> records = _methods.AsSpan();
         World world = _world;
-        Span<byte> componentStorages = _componentRunnerIndices.AsSpan(0, _nextComponentStorageIndex);
-        Span<(Archetype Archetype, int Start, int Length)> archetypes = _archetypes.AsSpan();
-        for (int i = 0; i < archetypes.Length; i++)
+        foreach (var (archetype, start, length) in _matchedArchtypes.AsSpan())
         {
-            (Archetype current, int start, int count) = archetypes[i];
-            Span<byte> storages = componentStorages.Slice(start, count);
-            foreach(var index in storages)
+            ref ComponentStorageRecord archetypeFirst = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
+            foreach(ref var item in records.Slice(start, length))
             {
-                var storageRecord = current.Components.UnsafeArrayIndex(index);
-                storageRecord.Run(current, world);
+                Debug.Assert(item.Index < archetype.Components.Length);
+
+                item.Runner.Run(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world);
             }
         }
     }
@@ -59,24 +65,59 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
             ComponentID thisID = new((ushort)i);
             Type type = thisID.Type;
 
-            if (GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var componentUpdateMethods) 
-                && ContainsComponent(componentUpdateMethods, type))
-            {
-                _components.Set(thisID);
-            }
-        }
+            ulong matchedMethods = default;
+            int matchedMethodsCount = 0;
+            UpdateMethodData[] methods = thisID.Methods;
 
-        // optimize with 64 bit bloom filter?
-        // 99% of cases there will not be more than 64 update types so bloom filter
-        // will literally just become a bit check
-        static bool ContainsComponent(UpdateMethodData[] updateMethodData, Type type)
-        {
-            foreach (var methodData in updateMethodData)
+            for (int j = 0; j < methods.Length; j++)
             {
-                if (Array.IndexOf(methodData.Attributes, type) != -1)
-                    return true;
+                if (methods[j].AttributeIsDefined(_attributeType))
+                {
+                    matchedMethodsCount++;
+                    matchedMethods |= 1UL << j;
+                }
             }
-            return false;
+
+            if(matchedMethodsCount > 0)
+            {// something matched
+                _componentBloomFilter |= 1UL << (i & 63);// set bloom filter bit
+                FrugalRunnerArray frugalRunnerArray = default;
+                IRunner[]? runners = null;
+
+                if(matchedMethodsCount > 1)
+                {
+                    runners = new IRunner[matchedMethodsCount];
+                    frugalRunnerArray = new FrugalRunnerArray(runners);
+                }
+
+                int k = 0;
+                for (int j = 0; matchedMethods != default; j++, matchedMethods >>=   1)
+                {
+                    if ((matchedMethods & 1) == 0)
+                    {
+                        continue;
+                    }
+
+                    var runnerToSave = methods[j].Runner;
+
+                    // index j has runner
+                    if (matchedMethodsCount == 1)
+                    {
+                        frugalRunnerArray = new FrugalRunnerArray(runnerToSave);
+                        break;
+                    }
+                    else
+                    {
+                        runners![k++] = runnerToSave;
+                    }
+                }
+
+#if DEBUG
+                // implicit null check
+                _ = frugalRunnerArray.Length;
+#endif
+                _matchedComponentMethods.Add(thisID, frugalRunnerArray);
+            }
         }
     }
 
@@ -85,73 +126,112 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         if (_lastRegisteredComponentID < Component.ComponentTable.Count)
             RegisterNewComponents();
 
-        int start = _nextComponentStorageIndex;
-        int count = 0;
-        foreach(var component in archetype.ArchetypeTypeArray)
-        {
-            if(_components.Contains(component))
-            {
-                // this archetype has a 
+        ImmutableArray<ComponentID> components = archetype.ID.Types;
+        int start = _methodsCount;
+        int length = 0;
 
+        for(int i = 0; i < components.Length; i++)
+        {
+            ulong mask = 1UL << (components[i].RawIndex & 63);
+            if ((mask & _componentBloomFilter) == 0 || !_matchedComponentMethods.TryGetValue(components[i], out var runners))
+                continue;
+
+            runners.GetOneOrOther(out IRunner[]? arr, out IRunner? single);
+
+            if (single is not null)
+            {
+                PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(single, i + 1 /*offset by one to account for tombstone at [0]*/));
+            }
+            else
+            {
+                foreach (var runner in arr!)
+                {
+                    PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(runner, i + 1));
+                }
             }
         }
 
-        if(count > 0)
-            _archetypes[archetype.ID.RawIndex] = (archetype, start, count);
-
-        void PushIntoComponentRunner(byte index)
+        if(length != 0)
         {
-            if (_nextComponentStorageIndex == _componentRunnerIndices.Length)
-                Array.Resize(ref _componentRunnerIndices, _componentRunnerIndices.Length * 2);
-            //_componentRunnerIndices[_nextComponentStorageIndex++] = inde;
+            _matchedArchtypes[archetype.ID.RawIndex] = (archetype, start, length);
+        }
+
+        void PushArchetypeUpdateMethod(ArchtypeUpdateMethod archtypeUpdateMethod)
+        {
+            MemoryHelpers.GetValueOrResize(ref _methods, _methodsCount++) = archtypeUpdateMethod;
+            length++;
         }
     }
 
     public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes)
     {
-        Span<byte> componentStorages = _componentRunnerIndices.AsSpan(0, _nextComponentStorageIndex);
-        foreach (var (archetype, _, count) in archetypes)
-        {
-            (Archetype current, int start, int end) = _archetypes[archetype.ID.RawIndex];
+        Span<ArchtypeUpdateMethod> records = _methods.AsSpan();
+        World world = _world;
+        var archetypeSet = _matchedArchtypes;
 
-            foreach(var index in componentStorages.Slice(start, end))
+        foreach (var (archetype, _, previousEntityCount) in archetypes)
+        {
+            ref ComponentStorageRecord archetypeFirst = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
+            var (_, start, length) = archetypeSet[archetype.ID.RawIndex];
+            int entitiesToUpdate = archetype.EntityCount - previousEntityCount;
+
+            foreach (ref var item in records.Slice(start, length))
             {
-                var storage = current.Components.UnsafeArrayIndex(index);
-                storage.Run(current, _world, count, current.EntityCount - count);
+                Debug.Assert(item.Index < archetype.Components.Length);
+
+                item.Runner.Run(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world, previousEntityCount, entitiesToUpdate);
             }
         }
     }
 
     /// <summary>
-    /// Tiny optimized set of <see cref="ComponentID"/>.
+    /// An update method for a component type in the context of a specific archetype. The runner executes and the index is the index of the component buffer.
     /// </summary>
-    private struct ComponentSet()
+    internal readonly struct ArchtypeUpdateMethod(IRunner runner, nint index)
     {
-        private HashSet<ComponentID> _components = new();
-        private ulong _bloomFilter;
+        public readonly IRunner Runner = runner;
+        public readonly nint Index = index;
+    }
 
-        public void Set(ComponentID componentID)
+    internal readonly struct FrugalRunnerArray
+    {
+        public FrugalRunnerArray(IRunner only)
         {
-            _components.Add(componentID);
-            _bloomFilter |= 1UL >> (componentID.RawIndex & 63);
+            _root = only;
         }
 
-        public bool Contains(ComponentID componentID)
+        public FrugalRunnerArray(IRunner[] runners)
         {
-            ulong flag = 1UL >> (componentID.RawIndex & 63);
+            _root = runners;
+        }
 
-            if ((_bloomFilter & flag) == 0)// flag not set
+        private readonly object _root;
+
+        public readonly int Length
+        {
+            get
             {
-                return false;
-            }
+                Debug.Assert(_root is not null);
 
-            //flag is set, could be a false positive
-            if (Component.ComponentTable.Count < sizeof(ulong) * 8)// if there are less than 64 components nothing wraps
-            {
-                return true;
-            }
+                if(_root.GetType() == typeof(IRunner[]))
+                {// n > 1
+                    return UnsafeExtensions.UnsafeCast<IRunner[]>(_root).Length;
+                }
 
-            return _components.Contains(componentID);
+                return 1;
+            }
+        }
+
+        public void GetOneOrOther(out IRunner[]? runners, out IRunner? runner)
+        {
+            if (_root.GetType() == typeof(IRunner[]))
+            {// n > 1
+                runners = UnsafeExtensions.UnsafeCast<IRunner[]>(_root);
+                runner = default;
+                return;
+            }
+            runners = default;
+            runner = UnsafeExtensions.UnsafeCast<IRunner>(_root); 
         }
     }
 }

@@ -40,6 +40,9 @@ public static class GenerationServices
     /// <inheritdoc cref="GenerationServices"/>
     public static void RegisterUpdateType(Type type, params UpdateMethodData[] methods)
     {
+        if (methods.Length > 64)
+            FrentExceptions.Throw_InvalidOperationException("Components cannot have more than 64 update methods.");
+
         if (!UserGeneratedTypeMap.TryGetValue(type, out var val))
         {
             UserGeneratedTypeMap.Add(type, methods);
@@ -50,4 +53,15 @@ public static class GenerationServices
 }
 
 /// <inheritdoc cref="GenerationServices"/>
-public readonly record struct UpdateMethodData(IRunner Runner, Type[] Attributes);
+public readonly record struct UpdateMethodData(IRunner Runner, Type[] Attributes)
+{
+    internal readonly bool AttributeIsDefined(Type attributeType)
+    {
+        foreach (var attr in Attributes)
+        {
+            if (attr == attributeType)
+                return true;
+        }
+        return false;
+    }
+}

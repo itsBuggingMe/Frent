@@ -26,88 +26,10 @@ public static class Component<T>
     internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
     internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
 
-    //unroll + devirt until > 4 components
-    internal static readonly int UpdateMethodCount;
-    internal static readonly IRunner? s_r0;
-    internal static readonly IRunner? s_r1;
-    internal static readonly IRunner? s_r2;
-    internal static readonly IRunner? s_r3;
-    internal static readonly IRunner[]? _overflow;
+    internal static readonly UpdateMethodData[] UpdateMethods;
     internal static readonly ComponentBufferManager<T> BufferManagerInstance;
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
-    
-    internal static void UpdateComponentBuffer(Array array, Archetype archetype, World world)
-    {
-        if (UpdateMethodCount <= 4)
-        {
-            switch(UpdateMethodCount)
-            {
-                case 0: break;
-                case 1: 
-                    s_r0!.Run(array, archetype, world);
-                    break;
-                case 2:
-                    s_r0!.Run(array, archetype, world);
-                    s_r1!.Run(array, archetype, world);
-                    break;
-                case 3:
-                    s_r0!.Run(array, archetype, world);
-                    s_r1!.Run(array, archetype, world);
-                    s_r2!.Run(array, archetype, world);
-                    break;
-                case 4:
-                    s_r0!.Run(array, archetype, world);
-                    s_r1!.Run(array, archetype, world);
-                    s_r2!.Run(array, archetype, world);
-                    s_r3!.Run(array, archetype, world);
-                    break;
-            }
-        }
-        else
-        {
-            foreach (var runner in _overflow!)
-            {
-                runner.Run(array, archetype, world);
-            }
-        }
-    }
-
-    internal static void UpdateComponentBuffer(Array array, Archetype archetype, World world, int start, int count)
-    {
-        if (UpdateMethodCount <= 4)
-        {
-            switch (UpdateMethodCount)
-            {
-                case 0: break;
-                case 1:
-                    s_r0!.Run(array, archetype, world, start, count);
-                    break;
-                case 2:
-                    s_r0!.Run(array, archetype, world, start, count);
-                    s_r1!.Run(array, archetype, world, start, count);
-                    break;
-                case 3:
-                    s_r0!.Run(array, archetype, world, start, count);
-                    s_r1!.Run(array, archetype, world, start, count);
-                    s_r2!.Run(array, archetype, world, start, count);
-                    break;
-                case 4:
-                    s_r0!.Run(array, archetype, world, start, count);
-                    s_r1!.Run(array, archetype, world, start, count);
-                    s_r2!.Run(array, archetype, world, start, count);
-                    s_r3!.Run(array, archetype, world, start, count);
-                    break;
-            }
-        }
-        else
-        {
-            foreach (var runner in _overflow!)
-            {
-                runner.Run(array, archetype, world, start, count);
-            }
-        }
-    }
 
     static Component()
     {
@@ -122,36 +44,14 @@ public static class Component<T>
             Component.CachedComponentFactories[typeof(T)] = BufferManagerInstance = new ComponentBufferManager<T>();
         }
 
+
         if(GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var runners))
         {
-            UpdateMethodCount = runners.Length;
-            if(runners.Length <= 4)
-            {
-                for(int i = 0; i < runners.Length; i++)
-                {
-                    switch(i)
-                    {
-                        case 0: s_r0 = runners[0].Runner; break;
-                        case 1: s_r1 = runners[1].Runner; break;
-                        case 2: s_r2 = runners[2].Runner; break;
-                        case 3: s_r3 = runners[3].Runner; break;
-                        default: throw new Exception("???");
-                    }
-                }
-            }
-            else
-            {
-                IRunner[] runner = new IRunner[runners.Length];
-                for (int i = 0; i < runners.Length; i++)
-                {
-                    runner[i] = runners[i].Runner;
-                }
-                _overflow = runner;
-            }
+            UpdateMethods = runners;
         }
         else
         {
-            UpdateMethodCount = 0;
+            UpdateMethods = [];
         }
     }
 }
@@ -235,7 +135,8 @@ public static class Component
             IDTable<T> stack = new IDTable<T>();
             ComponentTable.Push(new ComponentData(type, stack,
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null));
+                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null,
+                GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : []));
 
             return (id, stack, initDelegate, destroyDelegate);
         }
@@ -269,7 +170,8 @@ public static class Component
 
             ComponentTable.Push(new ComponentData(t, CreateComponentTable(t),
                 GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
-                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null));
+                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null, 
+                GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var m) ? m : []));
 
             return id;
         }

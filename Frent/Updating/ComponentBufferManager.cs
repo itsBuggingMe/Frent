@@ -30,21 +30,17 @@ internal abstract class ComponentBufferManager
     /// Used only in source generation
     /// </summary>
     internal abstract IDTable CreateTable();
-
-    #endregion
-
-    #region Things That Need More Type Info
-    /// <summary>
-    /// Calls the Update function on every component.
-    /// </summary>
-    internal abstract void Run(Array buffer, Archetype b, World world);
-    /// <summary>
-    /// Calls the Update function on the subsection of components.
-    /// </summary>
-    internal abstract void Run(Array buffer, Archetype b, World world, int start, int length);
     #endregion
 
     #region Things That Need Buffer & <T>
+    /// <summary>
+    /// Calls all Update functions on every component.
+    /// </summary>
+    internal abstract void Run(Array buffer, Archetype b, World world);
+    /// <summary>
+    /// Calls all Update functions on the subsection of components.
+    /// </summary>
+    internal abstract void Run(Array buffer, Archetype b, World world, int start, int length);
     /// <summary>
     /// Deletes a component from the storage.
     /// </summary>
@@ -220,7 +216,6 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
 
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
             item = default;
-
         return handle;
     }
 
@@ -229,6 +224,19 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
         return ref UnsafeExtensions.UnsafeCast<TComponent[]>(buffer).UnsafeArrayIndex(componentIndex);
     }
 
-    internal override void Run(Array buffer, Archetype b, World world) => Component<TComponent>.UpdateComponentBuffer(buffer, b, world);
-    internal override void Run(Array buffer, Archetype b, World world, int start, int length) => Component<TComponent>.UpdateComponentBuffer(buffer, b, world, start, length);
+    internal override void Run(Array buffer, Archetype b, World world)
+    {
+        foreach(var runner in Component<TComponent>.UpdateMethods)
+        {
+            runner.Runner.Run(buffer, b, world);
+        }
+    }
+
+    internal override void Run(Array buffer, Archetype b, World world, int start, int length)
+    {
+        foreach (var runner in Component<TComponent>.UpdateMethods)
+        {
+            runner.Runner.Run(buffer, b, world, start, length);
+        }
+    }
 }
