@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Updating.Runners;
+using Frent.Updating.Threading;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -25,7 +26,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     
     
     private int _lastRegisteredComponentID;
-    private ShortSparseSet<(Archetype Archetype, int Start, int Length)> _matchedArchtypes = new();
+    private ShortSparseSet<ArchetypeUpdateRecord> _matchedArchtypes = new();
 
     private ArchtypeUpdateMethod[] _methods = new ArchtypeUpdateMethod[8];
     private int _methodsCount;
@@ -33,8 +34,14 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     private Dictionary<ComponentID, FrugalRunnerArray> _matchedComponentMethods = [];
     private ulong _componentBloomFilter;
 
+    private readonly StrongBox<int>? _updateCount;
+    private readonly Stack<ArchetypeUpdateRecord>? _smallArchetypeUpdateRecords;
+    private readonly Stack<ArchetypeUpdateRecord>? _largeArchetypeRecords;
+    private readonly bool _isMultithread;
+
     public WorldUpdateFilter(World world, Type attributeType)
     {
+        _isMultithread = typeof(MultithreadUpdateTypeAttribute).IsAssignableFrom(attributeType);
         _attributeType = attributeType;
         _world = world;
 
@@ -54,6 +61,46 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
                 Debug.Assert(item.Index < archetype.Components.Length);
 
                 item.Runner.Run(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world);
+            }
+        }
+    }
+
+    private void MultithreadedUpdate()
+    {
+        const int LargeArchetypeThreshold = 16;
+
+        Span<ArchtypeUpdateMethod> methods = _methods.AsSpan();
+        var archetypes = _matchedArchtypes.AsSpan();
+
+        int largeCount = 0;
+
+        for (int i = 0; i < archetypes.Length; i++)
+        {
+            var record = archetypes[i];
+            if (record.Archetype.EntityCount > LargeArchetypeThreshold)
+            {
+                _largeArchetypeRecords!.Push(record);
+            }
+            else
+            {
+                _smallArchetypeUpdateRecords!.Push(record);
+            }
+        }
+
+        FrentMultithread.MultipleArchetypeWorkItem.UnsafeQueueWork(
+            _world, _smallArchetypeUpdateRecords!, _methods, _updateCount!);
+
+        int maxChunkSize = largeCount / Environment.ProcessorCount;
+
+        while (_largeArchetypeRecords!.TryPop(out var archetypeRecord))
+        {
+            int entityCount = archetypeRecord.Archetype.EntityCount;
+            for (int i = 0; i < entityCount; i += maxChunkSize)
+            {
+                FrentMultithread.SingleArchetypeWorkItem.UnsafeQueueWork(
+                    _world, archetypeRecord, _methods, _updateCount!,
+                    start: i,
+                    count: Math.Min(maxChunkSize, entityCount - i));
             }
         }
     }
@@ -153,7 +200,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
         if(length != 0)
         {
-            _matchedArchtypes[archetype.ID.RawIndex] = (archetype, start, length);
+            _matchedArchtypes[archetype.ID.RawIndex] = new(archetype, start, length);
         }
 
         void PushArchetypeUpdateMethod(ArchtypeUpdateMethod archtypeUpdateMethod)
@@ -191,6 +238,20 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     {
         public readonly IRunner Runner = runner;
         public readonly nint Index = index;
+    }
+
+    internal readonly struct ArchetypeUpdateRecord(Archetype archetype, int start, int length)
+    {
+        public readonly Archetype Archetype = archetype;
+        public readonly int Start = start;
+        public readonly int Length = length;
+
+        public void Deconstruct(out Archetype archetype, out int start, out int length)
+        {
+            archetype = Archetype;
+            start = Start;
+            length = Length;
+        }
     }
 
     internal readonly struct FrugalRunnerArray
