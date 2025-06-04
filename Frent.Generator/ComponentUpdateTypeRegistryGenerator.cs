@@ -270,6 +270,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     
     private static void AppendInitalizationMethodBody(CodeBuilder cb, in ComponentUpdateItemModel model)
     {
+        cb.Append("GenerationServices.RegisterComponent<global::").Append(model.FullName).AppendLine(">();");
+
         cb
             .Append("GenerationServices.RegisterUpdateType(typeof(")
             .Append("global::").Append(model.FullName)
@@ -288,7 +290,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             //new UpdateMethod(, new Type[] {  })
 
             cb
-                .Append("new Frent.Updating.UpdateMethodData(")
+                .Append("new global::Frent.Updating.UpdateMethodData(")
                 .Append("new ")
                 .Append(updateMethodModel.ImplInterface, span.Start, span.Count)
                 .Append("UpdateRunner")
