@@ -26,7 +26,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     
     
     private int _lastRegisteredComponentID;
-    private ShortSparseSet<ArchetypeUpdateRecord> _matchedArchtypes = new();
+    private ShortSparseSet<ArchetypeUpdateSpan> _matchedArchtypes = new();
 
     private ArchtypeUpdateMethod[] _methods = new ArchtypeUpdateMethod[8];
     private int _methodsCount;
@@ -35,8 +35,8 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     private ulong _componentBloomFilter;
 
     private readonly StrongBox<int>? _updateCount;
-    private readonly Stack<ArchetypeUpdateRecord>? _smallArchetypeUpdateRecords;
-    private readonly Stack<ArchetypeUpdateRecord>? _largeArchetypeRecords;
+    private readonly Stack<ArchetypeUpdateSpan>? _smallArchetypeUpdateRecords;
+    private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
     private readonly bool _isMultithread;
 
     public WorldUpdateFilter(World world, Type attributeType)
@@ -240,7 +240,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         public readonly nint Index = index;
     }
 
-    internal readonly struct ArchetypeUpdateRecord(Archetype archetype, int start, int length)
+    internal readonly struct ArchetypeUpdateSpan(Archetype archetype, int start, int length)
     {
         public readonly Archetype Archetype = archetype;
         public readonly int Start = start;
