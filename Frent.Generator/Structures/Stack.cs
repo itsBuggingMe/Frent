@@ -6,6 +6,7 @@ internal ref struct Stack<T>
 {
     private T[] _array;
     private int _index;
+    public int Count => _index;
 
     public Stack(int len)
     {

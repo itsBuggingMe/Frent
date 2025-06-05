@@ -11,10 +11,9 @@ internal record struct ComponentUpdateItemModel(
     string HintName, // Frent.Generator.Model.ComponentUpdateItemModel
     string MinimallyQualifiedName, // ComponentUpdateItemModel
     EquatableArray<TypeDeclarationModel> NestedTypes,
-    EquatableArray<string> GenericArguments,
     EquatableArray<UpdateMethodModel> UpdateMethods)
 {
-    public static readonly ComponentUpdateItemModel Default = new(default, string.Empty, string.Empty, string.Empty, string.Empty, [], [], []);
+    public static readonly ComponentUpdateItemModel Default = new(default, string.Empty, string.Empty, string.Empty, string.Empty, [], []);
     public readonly bool HasFlag(UpdateModelFlags updateModelFlags) => Flags.HasFlag(updateModelFlags);
 
     public readonly bool IsDefault => Flags == UpdateModelFlags.None;

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 
 namespace Frent.Generator;
@@ -59,11 +60,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             return ComponentUpdateItemModel.Default;
 
         UpdateModelFlags flags = UpdateModelFlags.None;
-        Stack<Diagnostic> diagnostics = new Stack<Diagnostic>(1);
-        INamedTypeSymbol? @interface = null;
+        Stack<UpdateMethodModel> updateMethods = new Stack<UpdateMethodModel>();
 
-        string[] genericArguments = [];
         bool needsRegistering = false;
+
 
         foreach (var potentialInterface in componentTypeSymbol.AllInterfaces)
         {
@@ -90,12 +90,15 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 }
                 else
                 {
-                    @interface ??= potentialInterface;
+                    // where IComponentBase is the target interface
                 }
             }
             else if(potentialInterface.IsFrentComponentInterface())
             {
-                @interface = potentialInterface;
+                // this is the IUpdate<T...> or whatever interface it implements.
+                INamedTypeSymbol @interface = potentialInterface;
+                string[] genericArguments;
+                Stack<string> attributes = new Stack<string>();
 
                 if(@interface.TypeArguments.Length != 0)
                 {
@@ -107,33 +110,38 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                         genericArguments[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
                     }
                 }
+                else
+                {
+                    genericArguments = Array.Empty<string>();
+                }
+
+                Debugger.Launch();
+
+                updateMethods.Push(new UpdateMethodModel(
+                    ImplInterface: @interface.Name,
+                    GenericArguments: new(genericArguments),
+                    Attributes: new(attributes.ToArray())
+                ));
             }
         }
 
         //this path is still hot!
-        if (!needsRegistering || @interface is null)
+        if (!needsRegistering || updateMethods.Count == 0)
             return ComponentUpdateItemModel.Default;
 
         //only components here
 
-        //since inline array doesn't exist, [null!, ...] allocates -_-
-        Stack<string> attributes = new Stack<string>(1);
-        PushUpdateTypeAttributes(ref attributes, gsc.Node, gsc.SemanticModel);
-
         AddMiscFlags();
-
-        Debug.Assert(genericArguments is not null);
 
         string? @namespace = null;
 
         if(!componentTypeSymbol.ContainingNamespace.IsGlobalNamespace)
             @namespace = componentTypeSymbol.ContainingNamespace.ToString();
 
-        var nestTypes = GetContainingTypes(ref diagnostics);
+        var nestTypes = GetContainingTypes();
 
-        bool isAcc =
-                    componentTypeSymbol.DeclaredAccessibility == Accessibility.Public ||
-                    componentTypeSymbol.DeclaredAccessibility == Accessibility.Internal;
+        bool isAcc = componentTypeSymbol.DeclaredAccessibility is Accessibility.Internal or Accessibility.Public;
+
         if ((nestTypes.Length != 0 && !isAcc) || flags.HasFlag(UpdateModelFlags.IsGeneric))
             flags |= UpdateModelFlags.IsSelfInit;
 
@@ -146,11 +154,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             MinimallyQualifiedName: componentTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
 
             NestedTypes: new EquatableArray<TypeDeclarationModel>(nestTypes),
-            GenericArguments: new EquatableArray<string>(genericArguments!),
-
-            UpdateMethods: new EquatableArray<UpdateMethodModel>(
-                [new UpdateMethodModel(new(attributes.ToArray()), @interface.Name)]
-                )
+            
+            UpdateMethods: new EquatableArray<UpdateMethodModel>(updateMethods.ToArray())
             );
 
         void AddMiscFlags()
@@ -167,7 +172,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 flags |= UpdateModelFlags.IsRecord;
         }
 
-        TypeDeclarationModel[] GetContainingTypes(ref Stack<Diagnostic> diags)
+        TypeDeclarationModel[] GetContainingTypes()
         {
             int nestedTypeCount = 0;
             INamedTypeSymbol current = componentTypeSymbol;
@@ -193,7 +198,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
     }
 
-    private static void PushUpdateTypeAttributes(ref Stack<string> attributes,  SyntaxNode node, SemanticModel semanticModel)
+    private static void PushUpdateTypeAttributes(ref Stack<string> attributes, SyntaxNode node, SemanticModel semanticModel)
     {
         foreach (var item in ((TypeDeclarationSyntax)node).Members)
         {
@@ -297,7 +302,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append('<')
                 .Append("global::").Append(model.FullName);
 
-            foreach (var item in model.GenericArguments)
+            foreach (var item in updateMethodModel.GenericArguments)
                 cb.Append(", ").Append(item);
             
             cb.Append(">(), ");
