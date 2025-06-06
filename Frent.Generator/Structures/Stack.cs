@@ -13,6 +13,11 @@ internal ref struct Stack<T>
         _array = len == 0 ? [] : new T[len];
     }
 
+    public Stack() : this(0)
+    {
+
+    }
+
     public void Push(T val)
     {
         if (_index >= _array.Length)
