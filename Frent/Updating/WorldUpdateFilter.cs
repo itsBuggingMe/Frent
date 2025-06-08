@@ -47,16 +47,35 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
         foreach (var archetype in world.EnabledArchetypes.AsSpan())
             ArchetypeAdded(archetype.Archetype(world)!);
+
+        if(_isMultithread)
+        {
+            _updateCount = new StrongBox<int>();
+            _smallArchetypeUpdateRecords = new Stack<ArchetypeUpdateSpan>();
+            _largeArchetypeRecords = new Stack<ArchetypeUpdateSpan>();
+        }
     }
 
     public void Update()
+    {
+        if(_isMultithread)
+        {
+            MultithreadedUpdate();
+        }
+        else
+        {
+            SinglethreadedUpdate();
+        }
+    }
+
+    private void SinglethreadedUpdate()
     {
         Span<ArchtypeUpdateMethod> records = _methods.AsSpan();
         World world = _world;
         foreach (var (archetype, start, length) in _matchedArchtypes.AsSpan())
         {
             ref ComponentStorageRecord archetypeFirst = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
-            foreach(ref var item in records.Slice(start, length))
+            foreach (ref var item in records.Slice(start, length))
             {
                 Debug.Assert(item.Index < archetype.Components.Length);
 
@@ -80,6 +99,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
             if (record.Archetype.EntityCount > LargeArchetypeThreshold)
             {
                 _largeArchetypeRecords!.Push(record);
+                largeCount += record.Archetype.EntityCount;
             }
             else
             {
@@ -90,7 +110,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         FrentMultithread.MultipleArchetypeWorkItem.UnsafeQueueWork(
             _world, _smallArchetypeUpdateRecords!, _methods, _updateCount!);
 
-        int maxChunkSize = largeCount / Environment.ProcessorCount;
+        int maxChunkSize = Math.Max(largeCount / Environment.ProcessorCount, 256);
 
         while (_largeArchetypeRecords!.TryPop(out var archetypeRecord))
         {

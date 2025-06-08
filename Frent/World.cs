@@ -5,6 +5,7 @@ using Frent.Core;
 using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Systems;
+using Frent.Systems.Queries;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -354,12 +355,38 @@ public partial class World : IDisposable
         return q;
     }
 
+    public QueryBuilder Query<T>() => new QueryBuilder(this);
+
     internal Query CreateQueryFromSpan(ReadOnlySpan<Rule> rules) => CreateQuery(MemoryHelpers.ReadOnlySpanToImmutableArray(rules));
+
+    internal Query BuildQuery<T>()
+        where T : struct, IQueryBuilder
+    {
+        ref Query query = ref QueryInfo<T>.Queries[ID];
+        query ??= QueryInfo<T>.Build(this);
+        return query;
+    }
+
+    internal static class QueryInfo<T>
+        where T : struct, IQueryBuilder
+    {
+        public static readonly ShortSparseSet<Query> Queries = new();
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static Query Build(World world)
+        {
+            List<Rule> rules = [];
+            default(T).AddRules(rules);
+            return world.CreateQuery(rules.ToImmutableArray());
+        }
+    }
 
     internal void UpdateArchetypeTable(int newSize)
     {
         Debug.Assert(newSize > WorldArchetypeTable.Length);
         Array.Resize(ref WorldArchetypeTable, newSize);
+
+        World world = GlobalWorldTables.Worlds[ID];
     }
 
     internal void EnterDisallowState()

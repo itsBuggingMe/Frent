@@ -8,8 +8,6 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using System.Numerics;
-using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Frent.Generator;

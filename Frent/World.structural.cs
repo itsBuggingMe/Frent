@@ -58,7 +58,7 @@ partial class World
 
         ImmutableArray<ComponentID> destinationComponents = destination.ArchetypeTypeArray;
 
-        int writeToIndex = 0;
+        //int writeToIndex = 0;
         for (int i = 0; i < destinationComponents.Length;)
         {
             ComponentID componentToMove = destinationComponents[i];

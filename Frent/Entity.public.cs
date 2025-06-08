@@ -188,6 +188,11 @@ partial struct Entity
     #endregion
 
     #region Add
+    /// <summary>
+    /// Adds a set of components copied from component handles.
+    /// </summary>
+    /// <param name="componentHandles">The handles to copy components from.</param>
+    /// <exception cref="ArgumentException">If adding <paramref name="componentHandles.Length"/> components will result in more than the maximum allowed commponent count.</exception>
     public void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out var world);
@@ -215,6 +220,14 @@ partial struct Entity
         for(int i = 0; i < componentHandles.Length; i++)
         {
             buffer[i].CallIniter(this, nextLocation.Index);
+        }
+
+        EventRecord events = world.EventLookup.GetOrAddNew(EntityIDOnly);
+
+        for (int i = 0; i < componentHandles.Length; i++)
+        {
+            events.Add.NormalEvent.Invoke(this, componentHandles[i].ComponentID);
+            buffer[i].InvokeGenericActionWith(events.Add.GenericEvent, this, nextLocation.Index);
         }
     }
 
