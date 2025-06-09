@@ -51,9 +51,6 @@ There is also samples for [Monogame](https://github.com/itsBuggingMe/Frent/blob/
 
 Frent is a lot faster than most C# ECS implementations - [Benchmark](https://github.com/Doraku/Ecs.CSharp.Benchmark).
 
-# Special features
-
-
 
 # Features
 ## Implemented
