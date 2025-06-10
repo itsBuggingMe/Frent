@@ -205,7 +205,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         bool isUniform = isBoth || @interface.Name is "IUniformComponent";
         bool isEntity = isBoth || @interface.Name is "IEntityComponent";
 
-
         foreach (var item in typeDeclarationSyntax.Members)
         {
             if (item is not MethodDeclarationSyntax method || method.AttributeLists.Count == 0 || method.Identifier.ToString() != RegistryHelpers.UpdateMethodName)
@@ -225,11 +224,12 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             {
                 if (isEntity && i == 0)
                 {
-                    if (GetTypeSymbol(method, 0).IsEntity())
+                    if (!GetTypeSymbol(method, 0).IsEntity())
                     {
                         match = false;
                         break;
                     }
+
                     continue;
                 }
 
@@ -238,7 +238,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     match = false;
                     break;
                 }
-
             }
 
             if (!match)

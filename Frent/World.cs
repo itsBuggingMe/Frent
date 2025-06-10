@@ -63,7 +63,7 @@ public partial class World : IDisposable
         _worldUpdateMethodCalled = false;
     }
 
-    internal Dictionary<int, Query> QueryCache = [];
+    internal FastStack<Query> QueryCache = new FastStack<Query>(4);
 
     internal CountdownEvent SharedCountdown => _sharedCountdown;
     private CountdownEvent _sharedCountdown = new(0);
@@ -320,7 +320,7 @@ public partial class World : IDisposable
         if (!GlobalWorldTables.HasTag(archetype.ID, Tag<Disable>.ID))
             EnabledArchetypes.Push(archetype.ID);
         foreach (var qkvp in QueryCache)
-            qkvp.Value.TryAttachArchetype(archetype);
+            qkvp.TryAttachArchetype(archetype);
         foreach (var fkvp in _updatesByAttributes)
             fkvp.Value.ArchetypeAdded(archetype);
         foreach(var fkvp in _singleComponentUpdates)
@@ -330,6 +330,7 @@ public partial class World : IDisposable
     internal Query CreateQuery(ImmutableArray<Rule> rules)
     {
         Query q = new Query(this, rules);
+        QueryCache.Push(q);
         foreach (ref var element in WorldArchetypeTable.AsSpan())
             if (element.Archetype is not null)
                 q.TryAttachArchetype(element.Archetype);
