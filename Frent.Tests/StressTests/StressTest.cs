@@ -63,7 +63,9 @@ internal class WorldState : IDisposable
     public WorldState(int seed)
     {
         _syncedWorld = new();
-        _everythingQuery = _syncedWorld.CustomQuery();
+        _everythingQuery = _syncedWorld.CreateQuery()
+            .Build();
+
         _random = new Random(seed);
         _create = typeof(World).GetMethods().Where(m => m.Name == "Create").Where(m => m.IsGenericMethod).ToArray();
     }

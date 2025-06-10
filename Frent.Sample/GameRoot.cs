@@ -102,7 +102,7 @@ namespace Frent.Sample
             Vector256<float> deltaTime = Vector256.Create(1f);
 
             foreach((Span<Position> positions, Span<Velocity> velocities) in _world
-                .Query<With<Position>, With<Velocity>>()
+                .Query<Position, Velocity>()
                 .EnumerateChunks<Position, Velocity>())
             {
                 //8 floats/vec
@@ -128,7 +128,7 @@ namespace Frent.Sample
             }
 
             foreach ((Ref<Velocity> vel, Ref<Position> pos, Ref<Bounds> bounds) in _world
-                .Query<With<Velocity>, With<Position>, With<Bounds>>()
+                .Query<Velocity, Position, Bounds>()
                 .Enumerate<Velocity, Position, Bounds>())
             {
                 Rectangle window = GraphicsDevice.Viewport.Bounds;
@@ -182,7 +182,7 @@ namespace Frent.Sample
             GraphicsDevice.Clear(Color.CornflowerBlue);
             SpriteBatch.Begin();
             foreach((Ref<SinglePixel> pix, Ref<Position> pos, Ref<Bounds> bounds) in _world
-                .Query<With<SinglePixel>, With<Position>, With<Bounds>>()
+                .Query<SinglePixel, Position, Bounds>()
                 .Enumerate<SinglePixel, Position, Bounds>())
             {
                 Vector2 topLeft = pos.Value.XY - bounds.Value.Size * 0.5f;

@@ -1,108 +1,194 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Frent.Systems.Queries;
 
-public struct QueryBuilder(World world) : IQueryBuilder
+/// <inheritdoc cref="IQueryBuilder"/>
+public readonly struct QueryBuilder(World world) : IQueryBuilder
 {
-    public World? World => world;
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public World World { get; init; } = world;
+    /// <inheritdoc cref="IQueryBuilder"/>
     public void AddRules(List<Rule> rules) { }
-    public QueryWith<T, QueryBuilder> With<T>() => new() { World = World };
-    public QueryWith<T1, QueryWith<T2, QueryBuilder>> With<T1, T2>() => new() { World = World };
-    public QueryWith<T1, QueryWith<T2, QueryWith<T3, QueryBuilder>>> With<T1, T2, T3>() => new() { World = World };
-    public QueryWith<T1, QueryWith<T2, QueryWith<T3, QueryWith<T4, QueryBuilder>>>> With<T1, T2, T3, T4>() => new() { World = World };
 
-    public readonly Query Build() => World?.BuildQuery<QueryBuilder>() ?? throw new InvalidOperationException();
+    /// <summary>
+    /// Excludes entities with the tag <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of excludes.</typeparam>
+    public readonly QueryUntagged<N, QueryBuilder> Untagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the tag <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of include.</typeparam>
+    public readonly QueryTagged<N, QueryBuilder> Tagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the component <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to include.</typeparam>
+    public readonly QueryWith<N, QueryBuilder> With<N>() => new(World);
+    /// <summary>
+    /// Excludes entities with the component <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to exclude.</typeparam>
+    public readonly QueryWithout<N, QueryBuilder> Without<N>() => new(World);
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public readonly Query Build() => World.BuildQuery<QueryBuilder>();
 }
 
-public struct QueryWith<T, TRest> : IQueryBuilder
+/// <inheritdoc cref="IQueryBuilder"/>
+public struct QueryWith<T, TRest>(World world) : IQueryBuilder
     where TRest : struct, IQueryBuilder
 {
-    public World? World { get; init; }
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public World World { get; init; } = world;
 
+    /// <inheritdoc cref="IQueryBuilder"/>
     public void AddRules(List<Rule> rules)
     {
         rules.Add(Rule.HasComponent(Component<T>.ID));
         default(TRest).AddRules(rules);
-    }   
+    }
 
-    public QueryWith<T, QueryWith<T, TRest>> With<T>() => new() { World = World };
-    public QueryWith<T1, QueryWith<T2, QueryWith<T, TRest>>> With<T1, T2>() => new() { World = World };
-    public QueryWith<T1, QueryWith<T2, QueryWith<T3, QueryWith<T, TRest>>>> With<T1, T2, T3>() => new() { World = World };
-    public QueryWith<T1, QueryWith<T2, QueryWith<T3, QueryWith<T4, QueryWith<T, TRest>>>>> With<T1, T2, T3, T4>() => new() { World = World };
+    /// <summary>
+    /// Excludes entities with the tag <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of excludes.</typeparam>
+    public readonly QueryUntagged<N, QueryWith<T, TRest>> Untagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the tag <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of include.</typeparam>
+    public readonly QueryTagged<N, QueryWith<T, TRest>> Tagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the component <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to include.</typeparam>
+    public readonly QueryWith<N, QueryWith<T, TRest>> With<N>() => new(World);
+    /// <summary>
+    /// Excludes entities with the component <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to exclude.</typeparam>
+    public readonly QueryWithout<N, QueryWith<T, TRest>> Without<N>() => new(World);
 
-    public QueryWithout<T, QueryWith<T, TRest>> Without<T>() => new() { World = World };
-    public QueryWithout<T1, QueryWithout<T2, QueryWith<T, TRest>>> Without<T1, T2>() => new() { World = World };
-    public QueryWithout<T1, QueryWithout<T2, QueryWithout<T3, QueryWith<T, TRest>>>> Without<T1, T2, T3>() => new() { World = World };
-    public QueryWithout<T1, QueryWithout<T2, QueryWithout<T3, QueryWithout<T4, QueryWith<T, TRest>>>>> Without<T1, T2, T3, T4>() => new() { World = World };
-
-    public readonly Query Build() => World?.BuildQuery<QueryWith<T, TRest>>() ?? throw new InvalidOperationException();
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public readonly Query Build() => World.BuildQuery<QueryWith<T, TRest>>();
 }
 
-public struct QueryWithout<T, TRest> : IQueryBuilder
+/// <inheritdoc cref="IQueryBuilder"/>
+public readonly struct QueryWithout<T, TRest>(World world) : IQueryBuilder
     where TRest : struct, IQueryBuilder
 {
-    public World? World { get; init; }
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public World World { get; init; } = world;
 
-
+    /// <inheritdoc cref="IQueryBuilder"/>
     public void AddRules(List<Rule> rules)
     {
         rules.Add(Rule.NotComponent(Component<T>.ID));
         default(TRest).AddRules(rules);
     }
 
-    public QueryWithout<T, QueryWithout<T, TRest>> Without<T>() => new() { World = World };
-    public QueryWithout<T1, QueryWithout<T2, QueryWithout<T, TRest>>> Without<T1, T2>() => new() { World = World };
-    public QueryWithout<T1, QueryWithout<T2, QueryWithout<T3, QueryWithout<T, TRest>>>> Without<T1, T2, T3>() => new() { World = World };
-    public QueryWithout<T1, QueryWithout<T2, QueryWithout<T3, QueryWithout<T4, QueryWithout<T, TRest>>>>> Without<T1, T2, T3, T4>() => new() { World = World };
+    /// <summary>
+    /// Excludes entities with the tag <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of excludes.</typeparam>
+    public readonly QueryUntagged<N, QueryWithout<T, TRest>> Untagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the tag <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of include.</typeparam>
+    public readonly QueryTagged<N, QueryWithout<T, TRest>> Tagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the component <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to include.</typeparam>
+    public readonly QueryWith<N, QueryWithout<T, TRest>> With<N>() => new(World);
+    /// <summary>
+    /// Excludes entities with the component <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to exclude.</typeparam>
+    public readonly QueryWithout<N, QueryWithout<T, TRest>> Without<N>() => new(World);
 
-    public QueryTagged<T, QueryWithout<T, TRest>> Tagged<T>() => new() { World = World };
-    public QueryTagged<T1, QueryTagged<T2, QueryWithout<T, TRest>>> Tagged<T1, T2>() => new() { World = World };
-    public QueryTagged<T1, QueryTagged<T2, QueryTagged<T3, QueryWithout<T, TRest>>>> Tagged<T1, T2, T3>() => new() { World = World };
-    public QueryTagged<T1, QueryTagged<T2, QueryTagged<T3, QueryTagged<T4, QueryWithout<T, TRest>>>>> Tagged<T1, T2, T3, T4>() => new() { World = World };
-
-    public readonly Query Build() => World?.BuildQuery<QueryWithout<T, TRest>>() ?? throw new InvalidOperationException();
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public readonly Query Build() => World.BuildQuery<QueryWithout<T, TRest>>();
 }
 
-public struct QueryTagged<T, TRest> : IQueryBuilder
+/// <inheritdoc cref="IQueryBuilder"/>
+public readonly struct QueryTagged<T, TRest>(World world) : IQueryBuilder
     where TRest : struct, IQueryBuilder
 {
-    public World? World { get; init; }
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public World World { get; init; } = world;
 
+    /// <inheritdoc cref="IQueryBuilder"/>
     public void AddRules(List<Rule> rules)
     {
         rules.Add(Rule.HasTag(Tag<T>.ID));
         default(TRest).AddRules(rules);
     }
 
-    public QueryTagged<T, QueryTagged<T, TRest>> Tagged<T>() => new() { World = World };
-    public QueryTagged<T1, QueryTagged<T2, QueryTagged<T, TRest>>> Tagged<T1, T2>() => new() { World = World };
-    public QueryTagged<T1, QueryTagged<T2, QueryTagged<T3, QueryTagged<T, TRest>>>> Tagged<T1, T2, T3>() => new() { World = World };
-    public QueryTagged<T1, QueryTagged<T2, QueryTagged<T3, QueryTagged<T4, QueryTagged<T, TRest>>>>> Tagged<T1, T2, T3, T4>() => new() { World = World };
+    /// <summary>
+    /// Excludes entities with the tag <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of excludes.</typeparam>
+    public readonly QueryUntagged<N, QueryTagged<T, TRest>> Untagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the tag <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of include.</typeparam>
+    public readonly QueryTagged<N, QueryTagged<T, TRest>> Tagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the component <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to include.</typeparam>
+    public readonly QueryWith<N, QueryTagged<T, TRest>> With<N>() => new(World);
+    /// <summary>
+    /// Excludes entities with the component <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to exclude.</typeparam>
+    public readonly QueryWithout<N, QueryTagged<T, TRest>> Without<N>() => new(World);
 
-    public QueryUntagged<T, QueryTagged<T, TRest>> Untagged<T>() => new() { World = World };
-    public QueryUntagged<T1, QueryUntagged<T2, QueryTagged<T, TRest>>> Untagged<T1, T2>() => new() { World = World };
-    public QueryUntagged<T1, QueryUntagged<T2, QueryUntagged<T3, QueryTagged<T, TRest>>>> Untagged<T1, T2, T3>() => new() { World = World };
-    public QueryUntagged<T1, QueryUntagged<T2, QueryUntagged<T3, QueryUntagged<T4, QueryTagged<T, TRest>>>>> Untagged<T1, T2, T3, T4>() => new() { World = World };
-    
-    public readonly Query Build() => World?.BuildQuery<QueryTagged<T, TRest>>() ?? throw new InvalidOperationException();
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public readonly Query Build() => World.BuildQuery<QueryTagged<T, TRest>>();
 }
 
-public struct QueryUntagged<T, TRest> : IQueryBuilder
+/// <inheritdoc cref="IQueryBuilder"/>
+public readonly struct QueryUntagged<T, TRest>(World world) : IQueryBuilder
     where TRest : struct, IQueryBuilder
 {
-    public World? World { get; init; }
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public World World { get; init; } = world;
 
-    public void AddRules(List<Rule> rules)
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public readonly void AddRules(List<Rule> rules)
     {
         rules.Add(Rule.NotTag(Tag<T>.ID));
         default(TRest).AddRules(rules);
     }
 
-    public QueryUntagged<T, QueryUntagged<T, TRest>> Untagged<T>() => new() { World = World };
-    public QueryUntagged<T1, QueryUntagged<T2, QueryUntagged<T, TRest>>> Untagged<T1, T2>() => new() { World = World };
-    public QueryUntagged<T1, QueryUntagged<T2, QueryUntagged<T3, QueryUntagged<T, TRest>>>> Untagged<T1, T2, T3>() => new() { World = World };
-    public QueryUntagged<T1, QueryUntagged<T2, QueryUntagged<T3, QueryUntagged<T4, QueryUntagged<T, TRest>>>>> Untagged<T1, T2, T3, T4>() => new() { World = World };
+    /// <summary>
+    /// Excludes entities with the tag <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of excludes.</typeparam>
+    public readonly QueryUntagged<N, QueryUntagged<T, TRest>> Untagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the tag <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of tag of include.</typeparam>
+    public readonly QueryTagged<N, QueryUntagged<T, TRest>> Tagged<N>() => new(World);
+    /// <summary>
+    /// Includes entities with the component <typeparamref name="N"/> in this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to include.</typeparam>
+    public readonly QueryWith<N, QueryUntagged<T, TRest>> With<N>() => new(World);
+    /// <summary>
+    /// Excludes entities with the component <typeparamref name="N"/> from this query.
+    /// </summary>
+    /// <typeparam name="N">The type of component to exclude.</typeparam>
+    public readonly QueryWithout<N, QueryUntagged<T, TRest>> Without<N>() => new(World);
 
-    public readonly Query Build() => World?.BuildQuery<QueryUntagged<T,TRest>>() ?? throw new InvalidOperationException();
+
+    /// <inheritdoc cref="IQueryBuilder"/>
+    public readonly Query Build() => World.BuildQuery<QueryUntagged<T,TRest>>();
 }

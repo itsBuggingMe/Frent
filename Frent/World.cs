@@ -315,25 +315,6 @@ public partial class World : IDisposable
         }
     }
 
-    /// <summary>
-    /// Creates a custom query from the given set of rules. For an entity to be queried, all rules must apply.
-    /// </summary>
-    /// <param name="rules">The rules governing which entities are queried.</param>
-    /// <returns>A query object representing all the entities that satisfy all the rules.</returns>
-    public Query CustomQuery(params Rule[] rules)
-    {
-        QueryHash queryHash = QueryHash.New();
-        foreach (Rule rule in rules)
-            queryHash.AddRule(rule);
-
-        int hashCode = queryHash.ToHashCode();
-
-        if (!QueryCache.TryGetValue(hashCode, out Query? query))
-            QueryCache[hashCode] = query = CreateQueryFromSpan([.. rules]);
-
-        return query;
-    }
-
     internal void ArchetypeAdded(Archetype archetype, Archetype temporaryCreationArchetype)
     {
         if (!GlobalWorldTables.HasTag(archetype.ID, Tag<Disable>.ID))
@@ -355,7 +336,12 @@ public partial class World : IDisposable
         return q;
     }
 
-    public QueryBuilder Query<T>() => new QueryBuilder(this);
+
+    /// <summary>
+    /// Returns a query builder that can be used to create a query with the specified rules.
+    /// </summary>
+    public QueryBuilder CreateQuery() => new QueryBuilder(this);
+
 
     internal Query CreateQueryFromSpan(ReadOnlySpan<Rule> rules) => CreateQuery(MemoryHelpers.ReadOnlySpanToImmutableArray(rules));
 

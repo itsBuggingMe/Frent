@@ -51,10 +51,10 @@ internal class Samples
         for (int i = 0; i < 5; i++)
             world.Create<int>(i);
 
-        world.Query<With<int>>().Delegate((ref int x) => Console.Write($"{x++}, "));
+        world.Query<int>().Delegate((ref int x) => Console.Write($"{x++}, "));
         Console.WriteLine();
         
-        world.Query<With<int>>().Inline<WriteAction, int>(default);
+        world.Query<int>().Inline<WriteAction, int>(default);
     }
 
     internal struct WriteAction : IAction<int>

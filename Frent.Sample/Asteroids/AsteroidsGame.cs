@@ -185,8 +185,13 @@ public partial class AsteroidsGame : Game
             e.Tag<Shootable>();
         }
 
-        Query collidables = _world.Query<With<CircleCollision>, With<Transform>, Not<BulletBehavior>>();
-        Query bullets = _world.Query<With<CircleCollision>, With<Transform>, With<BulletBehavior>>();
+        Query collidables = _world.CreateQuery()
+            .With<CircleCollision>()
+            .With<Transform>()
+            .Without<BulletBehavior>()
+            .Build();
+
+        Query bullets = _world.Query<CircleCollision, Transform, BulletBehavior>();
         foreach ((Entity entity1, Ref<CircleCollision> collision1, Ref<Transform> trans1) in collidables.EnumerateWithEntities<CircleCollision, Transform>())
         {
             foreach ((Entity entity2, Ref<CircleCollision> collision2, Ref<Transform> trans2) in bullets.EnumerateWithEntities<CircleCollision, Transform>())
