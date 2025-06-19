@@ -8,7 +8,7 @@ namespace Frent.Benchmarks;
 
 public class MultithreadBenchmark
 {
-    [Params(1_000, 10_000, 100_000, 1_000_000)]
+    //[Params(1_000, 10_000, 100_000, 1_000_000)]
     public int EntityCount { get; set; } = 1_000;
 
 

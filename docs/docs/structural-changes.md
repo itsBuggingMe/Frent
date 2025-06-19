@@ -17,7 +17,7 @@ using World world = new();
 Entity entity = world.Create<int>(0);
 
 Entity deferred = Entity.Null;
-foreach (var _ in world.Query<With<int>>()
+foreach (var e in world.Query<int>()
     .Enumerate<int>())
 {
     // Frent allows you to directly create entities during updates and systems
@@ -29,5 +29,5 @@ foreach (var _ in world.Query<With<int>>()
     _ = deferred.IsAlive; // true
 }// enumerator is implicitly disposed after foreach; changes are applied
 
-_ = deferred.IsAlive // false
+_ = deferred.IsAlive; // false
 ```

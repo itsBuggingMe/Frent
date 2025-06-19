@@ -8,6 +8,7 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace Frent.Generator;
@@ -46,6 +47,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         static void RegisterSource(SourceProductionContext context, SourceOutput output)
         {
+            Log($"Registering source: {output.Name}");
+            Log(output.Source);
             if (output.Name is not null)
                 context.AddSource(output.Name, output.Source);
         }
@@ -346,13 +349,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append("global::").Append(model.FullName);
 
             foreach (var item in updateMethodModel.GenericArguments)
-                cb.Append(", ").Append(item);
+                cb.Append(", global::").Append(item);
 
             cb.Append(">(), ");
 
             if (updateMethodModel.Attributes.Length == 0)
             {
-                cb.Append("global::System.Array.Empty<Type>()");
+                cb.Append("global::System.Array.Empty<global::System.Type>()");
             }
             else
             {
@@ -476,5 +479,17 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         if (!Debugger.IsAttached && !Launched)
             Debugger.Launch();
         Launched = true;
+    }
+
+    static Action<string, System.Collections.Generic.IEnumerable<string>>? s_appendAllLines;
+    internal static void Log(string message)
+    {
+        s_appendAllLines ??= (Action<string, System.Collections.Generic.IEnumerable<string>>)typeof(ValueTuple)
+            .Assembly
+            .GetType("System.IO.File")
+            .GetMethods(BindingFlags.Static | BindingFlags.Public)
+            .First(t => t.Name == "AppendAllLines" && t.GetParameters().Length == 2)
+            .CreateDelegate(typeof(Action<string, System.Collections.Generic.IEnumerable<string>>));
+        s_appendAllLines(@"C:\Users\Jason\Downloads\sg_log.txt", [message]);
     }
 }
