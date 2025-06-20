@@ -8,6 +8,7 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace Frent.Generator;
@@ -346,13 +347,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append("global::").Append(model.FullName);
 
             foreach (var item in updateMethodModel.GenericArguments)
-                cb.Append(", ").Append(item);
+                cb.Append(", global::").Append(item);
 
             cb.Append(">(), ");
 
             if (updateMethodModel.Attributes.Length == 0)
             {
-                cb.Append("global::System.Array.Empty<Type>()");
+                cb.Append("global::System.Array.Empty<global::System.Type>()");
             }
             else
             {

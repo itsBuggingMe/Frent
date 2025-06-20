@@ -31,7 +31,7 @@ world.Update();
 Console.WriteLine(entity.Get<Position>());
 
 // Alternatively, use a system
-world.Query<With<Position>, With<Velocity>>()
+world.Query<Position, Velocity>()
     .Delegate((ref Position p, ref Velocity v) => p.Value += v.Delta);
 
 record struct Position(Vector2 Value);
