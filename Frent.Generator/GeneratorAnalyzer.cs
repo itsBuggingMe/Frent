@@ -17,7 +17,7 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
 
     static GeneratorAnalyzer()
     {
-        var b = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(4);
+        var b = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(3);
         b.Add(NonPartialGenericComponent);
         b.Add(NonPartialOuterInaccessibleType);
         b.Add(NonPartialNestedInaccessibleType);

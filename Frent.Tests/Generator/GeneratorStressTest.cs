@@ -84,3 +84,11 @@ internal partial class InterfacePack : IInitable, IComponent
         UpdateCount++;
     }
 }
+
+struct ValueTupleUniform : IUniformComponent<(string, int), (int, string)>
+{
+    public void Update((string, int) uniform, ref (int, string) arg)
+    {
+        throw new NotImplementedException();
+    }
+}

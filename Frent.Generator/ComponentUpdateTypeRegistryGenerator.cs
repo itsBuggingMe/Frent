@@ -347,7 +347,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append("global::").Append(model.FullName);
 
             foreach (var item in updateMethodModel.GenericArguments)
-                cb.Append(", global::").Append(item);
+                cb.Append(", ").Append(item);
 
             cb.Append(">(), ");
 
@@ -357,7 +357,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             }
             else
             {
-                cb.Append("new Type[] { ");
+                cb.Append("new global::System.Type[] { ");
                 foreach (var attrType in updateMethodModel.Attributes)
                 {
                     cb
