@@ -10,7 +10,7 @@ Frent is on [Nuget](https://www.nuget.org/packages/Frent/)!
 > You will need to enable prerelease to see the package in many UIs.
 
 ```pwsh
-dotnet add package Frent --version 0.5.6.2-beta
+dotnet add package Frent --version 0.5.6.3-beta
 ```
 
 *Note: Unity requires a [different package](https://itsbuggingme.github.io/Frent/docs/unity.html)*

@@ -158,7 +158,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
                 }
 
                 int k = 0;
-                for (int j = 0; matchedMethods != default; j++, matchedMethods >>=   1)
+                for (int j = 0; matchedMethods != default; j++, matchedMethods >>= 1)
                 {
                     if ((matchedMethods & 1) == 0)
                     {
@@ -239,7 +239,11 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         foreach (var (archetype, _, previousEntityCount) in archetypes)
         {
             ref ComponentStorageRecord archetypeFirst = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
-            var (_, start, length) = archetypeSet[archetype.ID.RawIndex];
+
+            if (!archetypeSet.TryGet(archetype.ID.RawIndex, out var archetypeSpan))
+                continue;
+
+            var (_, start, length) = archetypeSpan;
             int entitiesToUpdate = archetype.EntityCount - previousEntityCount;
 
             foreach (ref var item in records.Slice(start, length))

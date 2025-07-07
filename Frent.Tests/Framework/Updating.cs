@@ -219,6 +219,16 @@ internal class Updating
         That(comp.Count1, Is.EqualTo(2));
         That(comp.Count2, Is.EqualTo(2));
     }
+
+    [Test]
+    public void DeferredUpdate_FilterNoMatch_NoNullReferenceException()
+    {
+        using World world = new();
+
+        world.Create<NoMatch>(new(world));
+
+        world.Update<FilterAttribute2>();
+    }
 }
 
 internal partial struct LazyComponent<T>(Action a) : IComponent
@@ -235,4 +245,13 @@ internal struct MultipleUpdateComponent : IComponent, IComponent<MultipleUpdateC
     public void Update() => Count1++;
     [FilterAttribute2]
     public void Update(ref MultipleUpdateComponent _) => Count2++;
+}
+
+internal struct NoMatch(World world) : IComponent
+{
+    [FilterAttribute2]
+    public void Update()
+    {
+        world.Create(new LazyComponent<float>(() => throw new Exception("This should not called")));
+    }
 }
