@@ -1,9 +1,8 @@
 ﻿using Frent.Core;
+using System.Diagnostics;
 using Frent.Core.Structures;
 using Frent.Updating.Runners;
-using System.Buffers;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -106,8 +105,8 @@ public partial struct Entity : IEquatable<Entity>
             goto doesntExist;
 
         exists = true;
-        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(
-            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex));
+        T[] storage = UnsafeExtensions.UnsafeCast<T[]>(
+            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex).Buffer);
 
         return new Ref<T>(storage, entityLocation.Index);
 

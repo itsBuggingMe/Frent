@@ -195,10 +195,63 @@ internal class Updating
 
         That(count, Is.EqualTo(3));
     }
+
+    [Test]
+    public void Update_MultipleUpdateMethods_Filters()
+    {
+        using World world = new();
+
+        Entity e = world.Create(new MultipleUpdateComponent());
+        ref MultipleUpdateComponent comp = ref e.Get<MultipleUpdateComponent>();
+
+        world.Update();
+
+        That(comp.Count1, Is.EqualTo(1));
+        That(comp.Count2, Is.EqualTo(1));
+
+        world.Update<FilterAttribute1>();
+
+        That(comp.Count1, Is.EqualTo(2));
+        That(comp.Count2, Is.EqualTo(1));
+
+        world.Update<FilterAttribute2>();
+
+        That(comp.Count1, Is.EqualTo(2));
+        That(comp.Count2, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void DeferredUpdate_FilterNoMatch_NoNullReferenceException()
+    {
+        using World world = new();
+
+        world.Create<NoMatch>(new(world));
+
+        world.Update<FilterAttribute2>();
+    }
 }
 
 internal partial struct LazyComponent<T>(Action a) : IComponent
 {
     [FilterAttribute1]
     public void Update() => a();
+}
+
+internal struct MultipleUpdateComponent : IComponent, IComponent<MultipleUpdateComponent>
+{
+    public int Count1;
+    public int Count2;
+    [FilterAttribute1]
+    public void Update() => Count1++;
+    [FilterAttribute2]
+    public void Update(ref MultipleUpdateComponent _) => Count2++;
+}
+
+internal struct NoMatch(World world) : IComponent
+{
+    [FilterAttribute2]
+    public void Update()
+    {
+        world.Create(new LazyComponent<float>(() => throw new Exception("This should not called")));
+    }
 }

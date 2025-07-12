@@ -1,4 +1,5 @@
-﻿using Frent.Updating.Runners;
+﻿using Frent.Updating;
+using Frent.Updating.Runners;
 using System.Runtime.InteropServices;
 
 namespace Frent.Core;
@@ -12,7 +13,6 @@ public ref struct Ref<T>
 #if NET7_0_OR_GREATER
     internal Ref(T[] compArr, int index) => _comp = ref compArr.UnsafeArrayIndex(index);
     internal Ref(Span<T> compSpan, int index) => _comp = ref compSpan.UnsafeSpanIndex(index);
-    internal Ref(ComponentStorage<T> compSpan, int index) => _comp = ref compSpan[index];
 
     private ref T _comp;
 
@@ -41,12 +41,6 @@ public ref struct Ref<T>
         _offset = index;
     }
 
-    internal Ref(ComponentStorage<T> compSpan, int index)
-    {
-        _data = compSpan.AsSpan();
-        _offset = index;
-    }
-
     private Span<T> _data;
     private int _offset;
 
@@ -66,7 +60,6 @@ public ref struct Ref<T>
 #else
     internal Ref(T[] compArr, int index) => _comp = MemoryMarshal.CreateSpan(ref compArr.UnsafeArrayIndex(index), 1);
     internal Ref(Span<T> compSpan, int index) => _comp = MemoryMarshal.CreateSpan(ref compSpan.UnsafeSpanIndex(index), 1);
-    internal Ref(ComponentStorage<T> compSpan, int index) => _comp = MemoryMarshal.CreateSpan(ref compSpan[index], 1);
 
     private Span<T> _comp;
 

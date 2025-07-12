@@ -127,8 +127,8 @@ partial struct Entity
 
         //2x
         //hardware trap
-        ComponentStorage<T> storage = UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(archetype.Components.UnsafeArrayIndex(compIndex));
-        return ref storage[lookup.Index];
+        ComponentStorageRecord storage = archetype.Components.UnsafeArrayIndex(compIndex);
+        return ref storage.UnsafeIndex<T>(lookup.Index);
     }//2, 0
 
     /// <summary>
@@ -189,7 +189,7 @@ partial struct Entity
         if (compIndex == 0)
             FrentExceptions.Throw_ComponentNotFoundException(id.Type);
         //3x
-        lookup.Archetype.Components[compIndex].SetAt(obj, lookup.Index);
+        lookup.Archetype.Components[compIndex].SetAt(this, obj, lookup.Index);
     }
 
     /// <summary>
@@ -250,6 +250,49 @@ partial struct Entity
 
     #region Add
     /// <summary>
+    /// Adds a set of components copied from component handles.
+    /// </summary>
+    /// <param name="componentHandles">The handles to copy components from.</param>
+    /// <exception cref="ArgumentException">If adding <paramref name="componentHandles.Length"/> components will result in more than the maximum allowed commponent count.</exception>
+    public void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out var world);
+        
+        if (componentHandles.Length + eloc.Archetype.ComponentTypeCount > MemoryHelpers.MaxComponentCount)
+            throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
+        
+        ArchetypeID finalArchetype = eloc.ArchetypeID;
+        foreach (var componentHandle in componentHandles)
+            finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddTag);
+        
+        Archetype destinationArchetype = finalArchetype.Archetype(world);
+        
+        world.MoveEntityToArchetypeAdd(this, ref eloc, out EntityLocation nextLocation, destinationArchetype);
+        
+        Span<ComponentStorageRecord> buffer = MemoryHelpers.GetSharedTempComponentStorageBuffer(componentHandles.Length);
+
+        for(int i = 0; i < componentHandles.Length; i++)
+        {
+            var storage = destinationArchetype.Components[destinationArchetype.GetComponentIndex(componentHandles[i].ComponentID)];
+            storage.SetAt(null, componentHandles[i], nextLocation.Index);
+            buffer[i] = storage;
+        }
+
+        for(int i = 0; i < componentHandles.Length; i++)
+        {
+            buffer[i].CallIniter(this, nextLocation.Index);
+        }
+
+        EventRecord events = world.EventLookup.GetOrAddNew(EntityIDOnly);
+
+        for (int i = 0; i < componentHandles.Length; i++)
+        {
+            events.Add.NormalEvent.Invoke(this, componentHandles[i].ComponentID);
+            buffer[i].InvokeGenericActionWith(events.Add.GenericEvent, this, nextLocation.Index);
+        }
+    }
+
+    /// <summary>
     /// Adds a component to this <see cref="Entity"/> as its own type
     /// </summary>
     /// <param name="component">The component, which could be boxed</param>
@@ -273,15 +316,27 @@ partial struct Entity
         ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            if (componentID.IsSparseComponent)
+            w.AddComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
+            
+            ComponentStorageRecord componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
+            componentRunner.SetAt(this, component, entityLocation.Index);
+
+            if(EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
-                w.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Add(EntityID, component);
-            }
-            else
-            {
-                ComponentStorageBase componentRunner = null!;
-                w.AddComponent(this, ref lookup, componentID, ref componentRunner, out EntityLocation entityLocation);
-                componentRunner.SetAt(component, entityLocation.Index);
+                if (w.ComponentAddedEvent.HasListeners)
+                    w.ComponentAddedEvent.Invoke(this, componentID);
+
+                if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+                {
+#if NETSTANDARD2_1
+                    EventRecord events = w.EventLookup[EntityIDOnly];
+#else
+                    ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(w.EventLookup, EntityIDOnly);
+#endif
+
+                    events.Add.NormalEvent.Invoke(this, componentID);
+                    componentRunner.InvokeGenericActionWith(events.Add.GenericEvent, this, entityLocation.Index);
+                }
             }
         }
         else
@@ -667,7 +722,7 @@ partial struct Entity
     public void EnumerateComponents(IGenericAction onEach)
     {
         ref var lookup = ref AssertIsAlive(out var _);
-        ComponentStorageBase[] runners = lookup.Archetype.Components;
+        ComponentStorageRecord[] runners = lookup.Archetype.Components;
         for (int i = 1; i < runners.Length; i++)
         {
             runners[i].InvokeGenericActionWith(onEach, lookup.Index);

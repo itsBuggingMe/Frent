@@ -4,9 +4,11 @@
 
 A high preformance, low memory usage, archetypical **[ECF](https://itsbuggingme.github.io/Frent/docs/ecf.html)/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
 
+A high performance, low memory usage, archetyped based **[EC](https://itsbuggingme.github.io/Frent/docs/ecf.html) framework/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
+
 *Whaaaat?! Aren't there enough ECS libraries out there!*
 
-While Frent's implementation is an archetype based ECS, thats not why Frent was made. Frent is primarily an **ECF** - Entity Component Framework - that allows you to easily use composition for code reuse rather than inheritance with minimal boilerplate. Think Unity's Monobehavior powered by the principles and speed of an ECS, as well as less boilerplate.
+While Frent's implementation is an archetype based ECS, thats not why Frent was made. Frent is primarily an **EC** framework - Entity Component framework - that allows you to easily use composition for code reuse rather than inheritance with minimal boilerplate. Write components that include behavior, lifetime management, and events while enjoying all the performance benefits of an ECS.
 
 Want to write systems anyways? Frent also has a Systems API that allows you to query entities in the style of an ECS.
 
@@ -31,13 +33,13 @@ world.Update();
 Console.WriteLine(entity.Get<Position>());
 
 // Alternatively, use a system
-world.Query<With<Position>, With<Velocity>>()
+world.Query<Position, Velocity>()
     .Delegate((ref Position p, ref Velocity v) => p.Value += v.Delta);
 
 record struct Position(Vector2 Value);
 record struct Velocity(Vector2 Delta) : IInitable, IComponent<Position>
 {
-    // Component lifetime management is first class with IInitable and IDestroyable
+    // There is also IDestroyable
     public void Init(Entity self) { }
     public void Update(ref Position position) => position.Value += Delta;
 }
@@ -47,36 +49,37 @@ Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs
 
 There is also samples for [Monogame](https://github.com/itsBuggingMe/Frent/blob/master/Frent.Sample/Asteroids/AsteroidsGame.cs), [Unity](https://github.com/itsBuggingMe/Frent.Unity.Sample) and [Godot](https://github.com/itsBuggingMe/FrentGodotSample).
 
-## Preformance
+## Performance
 
 Frent is a lot faster than most C# ECS implementations - [Benchmark](https://github.com/Doraku/Ecs.CSharp.Benchmark).
+
 
 # Features
 
 ## Implemented
-
-- [X]  Tiny 64 bit `Entity` struct
-- [X]  Up to 127 components per `Entity`
-- [X]  Classes and structs as components
-- [X]  Pass in uniform data e.g., `deltaTime`
-- [X]  World Update Filtering
-- [X]  Zero reflection
-- [X]  AOT Compatible
-- [X]  Non-Generic API
-- [X]  Entity Tags
+- [x]  Tiny entity struct the size of 8 bytes
+- [x]  Up to 127 components per entity
+- [x]  `struct` & `class` as components
+- [x]  Pass in uniform data automatically e.g., `deltaTime`
+- [x]  AOT Compatible & Zero reflection
+- [x]  Non-Generic APIs
+- [X]  Tags
 - [X]  Command buffer
-- [X]  Automatic structual change management during updates
+- [X]  Events on entity creation/deletion, component add/remove
+- [X]  Automatic structual change management
+- [X] `EntityMarshal` and `WorldMarshal` for even faster speeds!
+- [x]  Bulk operations
+- [X]  Multithreading
 
 ## Future
 
 - [ ]  Comprehensive docs
 - [ ]  100% Test coverage
 - [ ]  More samples, examples, & explanations!
-- [ ]  Multithreading
 
 # Contributing
 
 Wanna help?
 
-Report bugs, suggest APIs, and give general feedback.
+Report bugs, suggest APIs, and give general [feedback](https://github.com/itsBuggingMe/Frent/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22open%20for%20feedback%22).
 Just open an issue before starting a large feature.

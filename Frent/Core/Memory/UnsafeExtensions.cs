@@ -9,13 +9,13 @@ internal static class UnsafeExtensions
     public static ref T UnsafeArrayIndex<T>(this T[] arr, nint index) =>
         ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(arr), index);
     public static ref T UnsafeArrayIndex<T>(this T[] arr, int index) =>
-        ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(arr), index);
+        ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(arr), (nint)(uint)index);
     public static ref T UnsafeArrayIndex<T>(this T[] arr, ushort index) =>
         ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(arr), index);
     public static ref T UnsafeArrayIndex<T>(this T[] arr, uint index) =>
         ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(arr), index);
     public static ref T UnsafeSpanIndex<T>(this Span<T> arr, int index) =>
-        ref Unsafe.Add(ref MemoryMarshal.GetReference(arr), index);
+        ref Unsafe.Add(ref MemoryMarshal.GetReference(arr), (nint)(uint)index);
     public static ref T UnsafeSpanIndex<T>(this Span<T> arr, ushort index) =>
         ref Unsafe.Add(ref MemoryMarshal.GetReference(arr), index);
     public static ref T UnsafeSpanIndex<T>(this Span<T> arr, uint index) =>

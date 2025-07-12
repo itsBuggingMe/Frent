@@ -52,57 +52,6 @@ internal class WorldTests
     }
 
     [Test]
-    public void CustomQuery_CustomRuleApplies()
-    {
-        using World world = new();
-
-        Query query = world.CustomQuery(Rule.Delegate(e => e.Types.Length == 3));
-
-        world.Create(1, new Class1(), new Struct1(1));
-        world.Create(1, new Class2(), new Struct2(1));
-        world.Create(1, new Class1());
-
-        That(query.EntityCount(), Is.EqualTo(2));
-
-        query.AssertEntitiesNotDefault();
-    }
-
-    [Test]
-    public void CustomQuery_RuleApplies()
-    {
-        using World world = new();
-
-        Query query = world.CustomQuery(
-            Rule.HasComponent(Component<int>.ID),
-            Rule.HasComponent(Component<Class1>.ID),
-            Rule.HasComponent(Component<Struct1>.ID));
-
-        world.Create(1, new Class1(), new Struct1(1));
-        world.Create(1, new Class2(), new Struct2(1));
-        world.Create(1, new Class1());
-
-        That(query.EntityCount(), Is.EqualTo(1));
-
-        query.AssertEntitiesNotDefault();
-    }
-
-    [Test]
-    public void CustomQuery_OverEmptyArchetype()
-    {
-        using World world = new();
-
-        Query query = world.CustomQuery(Rule.IncludeDisabledRule);
-
-        world.Create(1, new Class1(), new Struct1(1));
-        world.Create(1, new Class2(), new Struct2(1));
-        world.Create(1, new Class1());
-
-        That(query.EntityCount(), Is.EqualTo(3));
-
-        query.AssertEntitiesNotDefault();
-    }
-
-    [Test]
     public void EnsureCapacityGeneric_Allocates()
     {
         const int EntitiesToAllocate = 1000;
@@ -131,7 +80,7 @@ internal class WorldTests
 
         world.Create(1, new Class2(), new Struct2());
 
-        var query = world.Query<With<int>, With<Class1>, With<Struct1>>();
+        var query = world.Query<int, Class1, Struct1>();
 
         query.AssertEntitiesNotDefault();
 
@@ -247,7 +196,7 @@ internal class WorldTests
 
         List<Entity> newEntities = [];
 
-        foreach(Entity _ in world.Query<With<int>, With<float>>().EnumerateWithEntities())
+        foreach(Entity _ in world.Query<int, float>().EnumerateWithEntities())
         {
             var e1 = world.Create(42, 42f);
             var e2 = world.Create(42);

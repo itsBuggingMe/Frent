@@ -1,0 +1,4 @@
+apiRules:
+- exclude:
+    hasAttribute:
+      uid: Frent.Variadic.Generator.VariadicAttribute

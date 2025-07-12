@@ -7,8 +7,8 @@ using System.Runtime.CompilerServices;
 
 namespace Frent;
 
-[Variadic("        ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index]; ref1 = comp;",
-    "|        ref T$ ref$ = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index))[eloc.Index]; ref$ = comp$;\n|")]
+[Variadic("        ref T ref1 = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;",
+    "|        ref T$ ref$ = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index); ref$ = comp$;\n|")]
 [Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
     "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
 [Variadic("            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
@@ -30,7 +30,7 @@ partial class World
         ref var entity = ref Unsafe.NullRef<EntityIDOnly>();
         EntityLocation eloc = default;
 
-        ComponentStorageBase[] components;
+        ComponentStorageRecord[] components;
 
         if (AllowStructualChanges)
         {
@@ -51,7 +51,7 @@ partial class World
         EntityTable[id] = eloc;
 
         //1x array lookup per component
-        ref T ref1 = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index))[eloc.Index]; ref1 = comp;
+        ref T ref1 = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
 
         Entity concreteEntity = new Entity(ID, version, id);
         

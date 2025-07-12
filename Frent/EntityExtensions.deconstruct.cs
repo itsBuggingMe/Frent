@@ -25,7 +25,7 @@ public static partial class EntityExtensions
     {
         EntityLocation eloc = e.AssertIsAlive(out _);
 
-        ComponentStorageBase[] comps = eloc.Archetype.Components;
+        ComponentStorageRecord[] comps = eloc.Archetype.Components;
         byte[] archetypeTable = eloc.Archetype.ComponentTagTable;
 
         comp = GetComp<T>(archetypeTable, comps, eloc.Index);
@@ -35,9 +35,9 @@ public static partial class EntityExtensions
 partial class EntityExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Ref<TC> GetComp<TC>(byte[] archetypeTable, ComponentStorageBase[] comps, int index)
+    private static Ref<TC> GetComp<TC>(byte[] archetypeTable, ComponentStorageRecord[] comps, int index)
     {
         int compIndex = archetypeTable.UnsafeArrayIndex(Component<TC>.ID.RawIndex) & GlobalWorldTables.IndexBits;
-        return new Ref<TC>(UnsafeExtensions.UnsafeCast<ComponentStorage<TC>>(comps.UnsafeArrayIndex(compIndex)), index);
+        return new Ref<TC>(UnsafeExtensions.UnsafeCast<TC[]>(comps.UnsafeArrayIndex(compIndex).Buffer), index);
     }
 }

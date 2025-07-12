@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Frent.Updating;
+using System.Diagnostics;
 
 namespace Frent.Core;
 
@@ -18,6 +19,7 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
     public Type Type => Component.ComponentTable[RawIndex].Type;
 
     ushort ITypeID.Value => RawIndex;
+    internal readonly UpdateMethodData[] Methods => Component.ComponentTable[RawIndex].UpdateMethods;
 
     /// <summary>
     /// Checks if this <see cref="ComponentID"/> instance represents the same ID as <paramref name="other"/>.

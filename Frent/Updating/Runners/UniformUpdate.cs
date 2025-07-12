@@ -7,12 +7,15 @@ using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
-internal class UniformUpdate<TComp, TUniform>(int cap) : ComponentStorage<TComp>(cap)
+/// <inheritdoc cref="GenerationServices"/>
+public class UniformUpdateRunner<TComp, TUniform> : IRunner
     where TComp : IUniformComponent<TUniform>
 {
-    internal override void Run(World world, Archetype b)
+    ComponentID IRunner.ComponentID => Component<TComp>.ID;
+
+    void IRunner. Run(Array array, Archetype b, World world)
     {
-        ref TComp comp = ref GetComponentStorageDataReference();
+        ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
 
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
@@ -24,9 +27,9 @@ internal class UniformUpdate<TComp, TUniform>(int cap) : ComponentStorage<TComp>
         }
     }
 
-    internal override void Run(World world, Archetype b, int start, int length)
+    void IRunner. Run(Array array, Archetype b, World world, int start, int length)
     {
-        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+        ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
@@ -37,31 +40,22 @@ internal class UniformUpdate<TComp, TUniform>(int cap) : ComponentStorage<TComp>
             comp = ref Unsafe.Add(ref comp, 1);
         }
     }
-
-    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        throw new NotImplementedException();
 }
 
-/// <inheritdoc cref="IComponentStorageBaseFactory"/>
-public class UniformUpdateRunnerFactory<TComp, TUniform> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
-    where TComp : IUniformComponent<TUniform>
-{
-    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new UniformUpdate<TComp, TUniform>(capacity);
-    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new UniformUpdate<TComp, TUniform>(capacity);
-}
-
+/// <inheritdoc cref="GenerationServices"/>
 [Variadic(GetComponentRefFrom, GetComponentRefPattern)]
 [Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
 [Variadic(IncRefFrom, IncRefPattern)]
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(PutArgFrom, PutArgPattern)]
-internal class UniformUpdate<TComp, TUniform, TArg>(int capacity) : ComponentStorage<TComp>(capacity)
+public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
     where TComp : IUniformComponent<TUniform, TArg>
 {
-    internal override void Run(World world, Archetype b)
+    ComponentID IRunner.ComponentID => Component<TComp>.ID;
+
+    void IRunner. Run(Array array, Archetype b, World world)
     {
-        ref TComp comp = ref GetComponentStorageDataReference();
+        ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
 
         ref TArg arg = ref b.GetComponentDataReference<TArg>();
 
@@ -76,9 +70,9 @@ internal class UniformUpdate<TComp, TUniform, TArg>(int capacity) : ComponentSto
         }
     }
 
-    internal override void Run(World world, Archetype b, int start, int length)
+    void IRunner. Run(Array array, Archetype b, World world, int start, int length)
     {
-        ref TComp comp = ref Unsafe.Add(ref GetComponentStorageDataReference(), start);
+        ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
         ref TArg arg = ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
 
@@ -92,17 +86,4 @@ internal class UniformUpdate<TComp, TUniform, TArg>(int capacity) : ComponentSto
             arg = ref Unsafe.Add(ref arg, 1);
         }
     }
-
-    internal override void MultithreadedRun(CountdownEvent countdown, World world, Archetype b) =>
-        throw new NotImplementedException();
-}
-
-/// <inheritdoc cref="IComponentStorageBaseFactory"/>
-[Variadic(TArgFrom, TArgPattern)]
-public class UniformUpdateRunnerFactory<TComp, TUniform, TArg> : IComponentStorageBaseFactory, IComponentStorageBaseFactory<TComp>
-    where TComp : IUniformComponent<TUniform, TArg>
-{
-    ComponentStorageBase IComponentStorageBaseFactory.Create(int capacity) => new UniformUpdate<TComp, TUniform, TArg>(capacity);
-    IDTable IComponentStorageBaseFactory.CreateStack() => new IDTable<TComp>();
-    ComponentStorage<TComp> IComponentStorageBaseFactory<TComp>.CreateStronglyTyped(int capacity) => new UniformUpdate<TComp, TUniform, TArg>(capacity);
 }

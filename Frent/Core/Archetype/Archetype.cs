@@ -13,6 +13,7 @@ namespace Frent.Core;
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 internal partial class Archetype
 {
+    internal int ComponentTypeCount => Components.Length - 1;//0 is null for hardware trap
     internal ArchetypeID ID => _archetypeID;
     internal ImmutableArray<ComponentID> ArchetypeTypeArray => _archetypeID.Types;
     internal ImmutableArray<TagID> ArchetypeTagArray => _archetypeID.Tags;
@@ -26,14 +27,19 @@ internal partial class Archetype
         {
             FrentExceptions.Throw_ComponentNotFoundException<T>();
         }
-        return UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(components.UnsafeArrayIndex(index)).AsSpanLength(NextComponentIndex);
+        var arr = UnsafeExtensions.UnsafeCast<T[]>(components.UnsafeArrayIndex(index).Buffer);
+#if NETSTANDARD
+        return arr.AsSpan(0, NextComponentIndex);
+#else
+        return MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(arr), NextComponentIndex);
+#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref T GetComponentDataReference<T>()
     {
         int index = GetComponentIndex<T>();
-        return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
+        return ref MemoryMarshal.GetArrayDataReference(UnsafeExtensions.UnsafeCast<T[]>(Components.UnsafeArrayIndex(index).Buffer));
     }
 
 
@@ -57,7 +63,7 @@ internal partial class Archetype
     /// Note! Entity location version is not set! 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, out ComponentStorageBase[] writeStorage)
+    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, out ComponentStorageRecord[] writeStorage)
     {
         if (deferredCreationArchetype.DeferredEntityCount == 0)
             world.DeferredCreationArchetypes.Push(new(this, deferredCreationArchetype, EntityCount));
@@ -77,7 +83,7 @@ internal partial class Archetype
 
     // Only to be called by CreateDeferredEntityLocation
     // Allow the jit to inline that method more easily
-    private ref EntityIDOnly CreateDeferredEntityLocationTempBuffers(Archetype deferredCreationArchetype, int futureSlot, scoped ref EntityLocation entityLocation, out ComponentStorageBase[] writeStorage)
+    private ref EntityIDOnly CreateDeferredEntityLocationTempBuffers(Archetype deferredCreationArchetype, int futureSlot, scoped ref EntityLocation entityLocation, out ComponentStorageRecord[] writeStorage)
     {
         //we need to place into temp buffers
         entityLocation.Index = futureSlot - _entities.Length;
@@ -213,7 +219,7 @@ internal partial class Archetype
         #region Unroll
         DeleteComponentData args = new(index, NextComponentIndex);
 
-        ref ComponentStorageBase first = ref MemoryMarshal.GetArrayDataReference(Components);
+        ref ComponentStorageRecord first = ref MemoryMarshal.GetArrayDataReference(Components);
 
         switch (Components.Length)
         {
@@ -266,7 +272,7 @@ internal partial class Archetype
             return;
         var comprunners = Components;
         for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Run(world, this);
+            comprunners[i].Run(this, world);
     }
 
     internal void Update(World world, int start, int length)
@@ -275,23 +281,15 @@ internal partial class Archetype
             return;
         var comprunners = Components;
         for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Run(world, this, start, length);
+            comprunners[i].Run(this, world, start, length);
     }
 
-    internal void MultiThreadedUpdate(CountdownEvent countdown, World world)
-    {
-        if (NextComponentIndex == 0)
-            return;
-        foreach (var comprunner in Components)
-            comprunner.MultithreadedRun(countdown, world, this);
-    }
-
-    internal void ReleaseArrays()
+    internal void ReleaseArrays(bool isDeferredCreate)
     {
         _entities = [];
         var comprunners = Components;
         for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Trim(0);
+            comprunners[i].Release(this, isDeferredCreate);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -299,6 +297,12 @@ internal partial class Archetype
     {
         var index = Component<T>.ID.RawIndex;
         return ComponentTagTable.UnsafeArrayIndex(index) & GlobalWorldTables.IndexBits;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ComponentStorageRecord GetComponentStorage<T>()
+    {
+        return Components.UnsafeArrayIndex(GetComponentIndex<T>());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -320,12 +324,6 @@ internal partial class Archetype
         return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) << 7) != 0;
     }
 
-    internal Fields Data => new Fields()
-    {
-        Map = ComponentTagTable,
-        Components = Components,
-    };
-
     internal Span<EntityIDOnly> GetEntitySpan()
     {
         Debug.Assert(NextComponentIndex <= _entities.Length);
@@ -337,17 +335,4 @@ internal partial class Archetype
     }
 
     internal ref EntityIDOnly GetEntityDataReference() => ref MemoryMarshal.GetArrayDataReference(_entities);
-
-    internal struct Fields
-    {
-        internal byte[] Map;
-        internal ComponentStorageBase[] Components;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal ref T GetComponentDataReference<T>()
-        {
-            int index = Map.UnsafeArrayIndex(Component<T>.ID.RawIndex);
-            return ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(Components.UnsafeArrayIndex(index)).GetComponentStorageDataReference();
-        }
-    }
 }

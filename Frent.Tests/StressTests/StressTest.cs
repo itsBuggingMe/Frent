@@ -63,7 +63,9 @@ internal class WorldState : IDisposable
     public WorldState(int seed)
     {
         _syncedWorld = new();
-        _everythingQuery = _syncedWorld.CustomQuery();
+        _everythingQuery = _syncedWorld.CreateQuery()
+            .Build();
+
         _random = new Random(seed);
         _create = typeof(World).GetMethods().Where(m => m.Name == "Create").Where(m => m.IsGenericMethod).ToArray();
     }
@@ -244,7 +246,7 @@ internal class WorldState : IDisposable
                 var res = entity.Get(comp.ComponentID);
                 if (res is null)
                     ;
-                That(exp, Is.EqualTo(res));
+                That(res, Is.EqualTo(exp));
                 That(entity.Has(comp.ComponentID));
             }
         }

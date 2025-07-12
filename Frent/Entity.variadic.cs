@@ -11,9 +11,9 @@ using System.Runtime.InteropServices;
 namespace Frent;
 
 #if NETSTANDARD2_1
-[Variadic("[null!]", "MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, $)")]
+[Variadic("[null!]", "MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, $)", 8)]
 #else
-[Variadic("[null!]", "[|null!, |]")]
+[Variadic("[null!]", "[|null!, |]", 8)]
 #endif
 [Variadic("        events.GenericEvent!.Invoke(entity, ref component);", "|        events.GenericEvent!.Invoke(entity, ref component$);\n|", 8)]
 [Variadic("        events.NormalEvent.Invoke(entity, Component<T>.ID);", "|        events.NormalEvent.Invoke(entity, Component<T$>.ID);\n|")]
@@ -23,13 +23,10 @@ namespace Frent;
 [Variadic("in T c1", "|in T$ c$, |")]
 [Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[$]")]
 [Variadic("        @event.InvokeInternal(entity, Component<T>.ID);", "|        @event.InvokeInternal(entity, Component<T$>.ID);\n|")]
-
 [Variadic("        @event.InvokeInternal(entity, Core.Tag<T>.ID);", "|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);\n|")]
 [Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
-
 [Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
-[Variadic("        ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;",
-    "|        ref var c$ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T$>>(buff.UnsafeSpanIndex($ - 1))[nextLocation.Index]; c$ref = c$;\n|")]
+[Variadic("        ref var c1ref = ref to.GetComponentStorage<T>().UnsafeIndex<T>(nextLocation.Index); c1ref = c1;", "|        ref var c$ref = ref to.GetComponentStorage<T$>().UnsafeIndex<T$>(nextLocation.Index); c$ref = c$;|")]
 [Variadic("            world.WorldUpdateCommandBuffer.Tag<T>(this);", "|            world.WorldUpdateCommandBuffer.Tag<T$>(this);\n|")]
 [Variadic("            world.WorldUpdateCommandBuffer.Detach<T>(this);", "|            world.WorldUpdateCommandBuffer.Detach<T$>(this);\n|")]
 [Variadic("Core.Tag<T>.ID", "[|Core.Tag<T$>.ID, |]")]
@@ -47,6 +44,7 @@ partial struct Entity
     /// Adds a component to this <see cref="Entity"/>.
     /// </summary>
     /// <remarks>If the world is being updated, changed are deffered to the end of the world update.</remarks>
+    /// <variadic />
     [SkipLocalsInit]
     public void Add<T>(in T c1)
     {
@@ -64,10 +62,9 @@ partial struct Entity
             ref thisLookup,
             true);
 
-        Span<ComponentStorageBase> buff = [null!];
-        world.MoveEntityToArchetypeAdd(buff, this, ref thisLookup, out EntityLocation nextLocation, to);
+        world.MoveEntityToArchetypeAdd(this, ref thisLookup, out EntityLocation nextLocation, to);
 
-        ref var c1ref = ref UnsafeExtensions.UnsafeCast<ComponentStorage<T>>(buff.UnsafeSpanIndex(0))[nextLocation.Index]; c1ref = c1;
+        ref var c1ref = ref to.GetComponentStorage<T>().UnsafeIndex<T>(nextLocation.Index); c1ref = c1;
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
 
@@ -93,6 +90,7 @@ partial struct Entity
     /// Removes a component from this <see cref="Entity"/>
     /// </summary>
     /// <inheritdoc cref="Add{T}(in T)"/>
+    /// <variadic /> 
     [SkipLocalsInit]
     public void Remove<T>()
     {
@@ -119,6 +117,7 @@ partial struct Entity
     /// Adds a tag to this <see cref="Entity"/>
     /// </summary>
     /// <inheritdoc cref="Add{T}(in T)"/>
+    /// <variadic />
     [SkipLocalsInit]
     public void Tag<T>()
     {
@@ -160,6 +159,7 @@ partial struct Entity
     /// Removes a tag from this <see cref="Entity"/>
     /// </summary>
     /// <inheritdoc cref="Add{T}(in T)"/>
+    /// <variadic />
     [SkipLocalsInit]
     public void Detach<T>()
     {

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace Frent.Generator;
@@ -58,11 +59,11 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         if (componentTypeSymbol.TypeKind is not (TypeKind.Class or TypeKind.Struct))
             return ComponentUpdateItemModel.Default;
 
-        UpdateModelFlags flags = UpdateModelFlags.None;
-        Stack<Diagnostic> diagnostics = new Stack<Diagnostic>(1);
-        INamedTypeSymbol? @interface = null;
+        TypeDeclarationSyntax componentTypeDeclarationSyntax = (TypeDeclarationSyntax)gsc.Node;
 
-        string[] genericArguments = [];
+        UpdateModelFlags flags = UpdateModelFlags.None;
+        Stack<UpdateMethodModel> updateMethods = new Stack<UpdateMethodModel>();
+
         bool needsRegistering = false;
 
         foreach (var potentialInterface in componentTypeSymbol.AllInterfaces)
@@ -90,13 +91,15 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 }
                 else
                 {
-                    @interface ??= potentialInterface;
+                    // where IComponentBase is the target interface
                 }
             }
             else if(potentialInterface.IsFrentComponentInterface())
             {
-                @interface = potentialInterface;
+                // this is the IComponent<T...> or whatever interface it implements.
+                INamedTypeSymbol @interface = potentialInterface;
 
+                string[] genericArguments;
                 if(@interface.TypeArguments.Length != 0)
                 {
                     genericArguments = new string[@interface.TypeArguments.Length];
@@ -107,33 +110,40 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                         genericArguments[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
                     }
                 }
+                else
+                {
+                    genericArguments = Array.Empty<string>();
+                }
+
+                Stack<string> attributes = new Stack<string>();
+
+                PushUpdateTypeAttributes(ref attributes, componentTypeDeclarationSyntax, @interface, gsc.SemanticModel);
+
+                updateMethods.Push(new UpdateMethodModel(
+                    ImplInterface: @interface.Name,
+                    GenericArguments: new(genericArguments),
+                    Attributes: new(attributes.ToArray())
+                ));
             }
         }
 
         //this path is still hot!
-        if (!needsRegistering || @interface is null)
+        if (!needsRegistering)
             return ComponentUpdateItemModel.Default;
 
         //only components here
 
-        //since inline array doesn't exist, [null!, ...] allocates -_-
-        Stack<string> attributes = new Stack<string>(1);
-        PushUpdateTypeAttributes(ref attributes, gsc.Node, gsc.SemanticModel);
-
         AddMiscFlags();
-
-        Debug.Assert(genericArguments is not null);
 
         string? @namespace = null;
 
         if(!componentTypeSymbol.ContainingNamespace.IsGlobalNamespace)
             @namespace = componentTypeSymbol.ContainingNamespace.ToString();
 
-        var nestTypes = GetContainingTypes(ref diagnostics);
+        var nestTypes = GetContainingTypes();
 
-        bool isAcc =
-                    componentTypeSymbol.DeclaredAccessibility == Accessibility.Public ||
-                    componentTypeSymbol.DeclaredAccessibility == Accessibility.Internal;
+        bool isAcc = componentTypeSymbol.DeclaredAccessibility is Accessibility.Internal or Accessibility.Public;
+
         if ((nestTypes.Length != 0 && !isAcc) || flags.HasFlag(UpdateModelFlags.IsGeneric))
             flags |= UpdateModelFlags.IsSelfInit;
 
@@ -142,13 +152,12 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             Flags: flags,
             FullName: componentTypeSymbol.ToString(),
             Namespace: @namespace,
-            ImplInterface:  @interface.Name,
             HintName: componentTypeSymbol.Name,
             MinimallyQualifiedName: componentTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
 
             NestedTypes: new EquatableArray<TypeDeclarationModel>(nestTypes),
-            GenericArguments: new EquatableArray<string>(genericArguments!),
-            Attributes: new EquatableArray<string>(attributes.ToArray())
+            
+            UpdateMethods: new EquatableArray<UpdateMethodModel>(updateMethods.ToArray())
             );
 
         void AddMiscFlags()
@@ -165,7 +174,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 flags |= UpdateModelFlags.IsRecord;
         }
 
-        TypeDeclarationModel[] GetContainingTypes(ref Stack<Diagnostic> diags)
+        TypeDeclarationModel[] GetContainingTypes()
         {
             int nestedTypeCount = 0;
             INamedTypeSymbol current = componentTypeSymbol;
@@ -191,34 +200,76 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
     }
 
-    private static void PushUpdateTypeAttributes(ref Stack<string> attributes,  SyntaxNode node, SemanticModel semanticModel)
+    private static void PushUpdateTypeAttributes(ref Stack<string> attributes, TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol @interface, SemanticModel semanticModel)
     {
-        foreach (var item in ((TypeDeclarationSyntax)node).Members)
-        {
-            if (item is MethodDeclarationSyntax method && method.AttributeLists.Count != 0 && method.Identifier.ToString() == RegistryHelpers.UpdateMethodName)
-            {
-                foreach (var attrList in method.AttributeLists)
-                {
-                    foreach (var attr in attrList.Attributes)
-                    {
-                        if (semanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor)
-                        {
-                            if (InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
-                            {
-                                attributes.Push(attrCtor.ContainingType.ToString());
-                            }
+        bool isBoth = @interface.Name is "IEntityUniformComponent";
+        bool isUniform = isBoth || @interface.Name is "IUniformComponent";
+        bool isEntity = isBoth || @interface.Name is "IEntityComponent";
 
-                            //if(ImplementsInterface(attrCtor.ContainingType, RegistryHelpers.UpdateOrderInterfaceName) && attrCtor.Parameters.Length > 0)
-                            //{
-                            //    if(attrCtor.Parameters[0].ExplicitDefaultValue is int updateorder)
-                            //    {
-                            //        order = updateorder;
-                            //    }
-                            //}
+        foreach (var item in typeDeclarationSyntax.Members)
+        {
+            if (item is not MethodDeclarationSyntax method || method.AttributeLists.Count == 0 || method.Identifier.ToString() != RegistryHelpers.UpdateMethodName)
+                continue;
+
+            // we have a update method, not sure if it is the right one though
+
+            // if its entity, there will always be +1 argument compared to generic arguments.
+            if (method.ParameterList.Parameters.Count != @interface.TypeArguments.Length + (isEntity ? 1 : 0))
+                continue;
+
+
+            bool match = true;
+            int genericArgumentIndex = 0;
+
+            for(int i = 0; i < method.ParameterList.Parameters.Count; i++)
+            {
+                if (isEntity && i == 0)
+                {
+                    if (!GetTypeSymbol(method, 0).IsEntity())
+                    {
+                        match = false;
+                        break;
+                    }
+
+                    continue;
+                }
+
+                if (!SymbolEqualityComparer.Default.Equals(GetTypeSymbol(method, i), @interface.TypeArguments[genericArgumentIndex++]))
+                {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (!match)
+                continue;
+
+            foreach (var attrList in method.AttributeLists)
+            {
+                foreach (var attr in attrList.Attributes)
+                {
+                    if (semanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor)
+                    {
+                        if (InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
+                        {
+                            attributes.Push(attrCtor.ContainingType.ToString());
                         }
                     }
                 }
             }
+        }
+
+        ITypeSymbol? GetTypeSymbol(MethodDeclarationSyntax method, int parameterIndex)
+        {
+            TypeSyntax? parameterSyntax = method.ParameterList.Parameters[parameterIndex].Type;
+
+            if (parameterSyntax is null)
+            {
+                return null;
+            }
+
+            ITypeSymbol? type = semanticModel.GetTypeInfo(parameterSyntax).Type;
+            return type;
         }
     }
 
@@ -268,32 +319,62 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     
     private static void AppendInitalizationMethodBody(CodeBuilder cb, in ComponentUpdateItemModel model)
     {
-        var span = ExtractUpdaterName(model.ImplInterface);
-        
+        cb.Append("GenerationServices.RegisterComponent<global::").Append(model.FullName).AppendLine(">();");
+
         cb
-            .Append("GenerationServices.RegisterType(typeof(")
+            .Append("GenerationServices.RegisterUpdateType(typeof(")
             .Append("global::").Append(model.FullName)
-            .Append("), new ");
+            .Append("), ");
 
-        (model.ImplInterface == RegistryHelpers.TargetInterfaceName ? cb.Append("None") : cb.Append(model.ImplInterface, span.Start, span.Count))
-            .Append("UpdateRunnerFactory")
-            .Append('<')
-            .Append("global::").Append(model.FullName);
-
-        foreach (var item in model.GenericArguments)
-            cb.Append(", ").Append(item);
-
-        //sb.Append(">(), ").Append(model.UpdateOrder).AppendLine(");");
-        cb.AppendLine(">());");
-        foreach (var attrType in model.Attributes)
+        foreach (var updateMethodModel in model.UpdateMethods)
         {
-            cb.Append("GenerationServices.RegisterUpdateMethodAttribute(")
-            .Append("typeof(")
-            .Append("global::").Append(attrType)
-            .Append("), typeof(")
-            .Append("global::").Append(model.FullName)
-            .AppendLine("));");
+            var span = ExtractUpdaterName(updateMethodModel.ImplInterface);
+
+            if (updateMethodModel.ImplInterface == RegistryHelpers.TargetInterfaceName)
+            {
+                continue;
+            }
+
+
+            //new UpdateMethod(, new Type[] {  })
+
+            cb
+                .Append("new global::Frent.Updating.UpdateMethodData(")
+                .Append("new ")
+                .Append(updateMethodModel.ImplInterface, span.Start, span.Count)
+                .Append("UpdateRunner")
+                .Append('<')
+                .Append("global::").Append(model.FullName);
+
+            foreach (var item in updateMethodModel.GenericArguments)
+                cb.Append(", ").Append(item);
+
+            cb.Append(">(), ");
+
+            if (updateMethodModel.Attributes.Length == 0)
+            {
+                cb.Append("global::System.Array.Empty<global::System.Type>()");
+            }
+            else
+            {
+                cb.Append("new global::System.Type[] { ");
+                foreach (var attrType in updateMethodModel.Attributes)
+                {
+                    cb
+                    .Append("typeof(")
+                    .Append("global::").Append(attrType)
+                    .Append("), ");
+                }
+                cb.Append("}");
+            }
+
+            cb.Append("), ");
         }
+
+        cb
+            .RemoveLastComma()
+            .AppendLine(");");
+
         if (model.HasFlag(UpdateModelFlags.Initable))
         {
             cb.Append("GenerationServices.RegisterInit<")
@@ -333,8 +414,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .AppendLine()
             .If(@namespace is not null, @namespace, (ns, c) => c.Append("namespace ").AppendLine(ns).Scope())
 
-                .Foreach((ReadOnlySpan<TypeDeclarationModel>)model.NestedTypes, ct, 
-                (in TypeDeclarationModel typeInfo, CodeBuilder cb, CancellationToken _) => 
+                .Foreach((ReadOnlySpan<TypeDeclarationModel>)model.NestedTypes, ct,
+                (in TypeDeclarationModel typeInfo, CodeBuilder cb, CancellationToken _) =>
                     cb.Append("partial ").If(typeInfo.IsRecord, c => c.Append("record")).Append(typeInfo.TypeKind switch
                     {
                         TypeKind.Struct => "struct ",
@@ -361,7 +442,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         {
             const string FileEnd = ".g.cs";
             Span<char> newName = stackalloc char[name.Length + FileEnd.Length];
-            for(int i = 0; i < name.Length; i++)
+            for (int i = 0; i < name.Length; i++)
             {
                 newName[i] = name[i] switch
                 {
@@ -384,5 +465,17 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             typeSymbol = typeSymbol.BaseType;
         }
         return false;
+    }
+
+    static bool Launched = false;
+
+    [Conditional("DEBUG")]
+    [DebuggerStepThrough]
+    [DebuggerHidden]
+    internal static void LaunchDebugger()
+    {
+        if (!Debugger.IsAttached && !Launched)
+            Debugger.Launch();
+        Launched = true;
     }
 }

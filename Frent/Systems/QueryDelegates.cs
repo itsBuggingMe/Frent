@@ -5,6 +5,7 @@ namespace Frent.Systems;
 /// <summary>
 /// Delegates for executing a functions on a <see cref="Query"/>
 /// </summary>
+/// <variadic />
 [Variadic("T>", "|T$, |>")]
 [Variadic("ref T comp1", "|ref T$ comp$, |")]
 public static partial class QueryDelegates

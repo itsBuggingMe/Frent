@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
@@ -38,17 +39,17 @@ namespace Frent.Variadic.Generator
             _classTable ??= new();
             var table = _classTable;
 
-            foreach (var item in variadics)
+            foreach (var (Symbol, Node, Model) in variadics)
             {
-                if (item.Node is null)
+                if (Node is null)
                     continue;
-                var parentType = item.Node?.FirstAncestorOrSelf<TypeDeclarationSyntax>();
-                if (parentType is null || item.Symbol is null)
+                var parentType = Node?.FirstAncestorOrSelf<TypeDeclarationSyntax>();
+                if (parentType is null || Symbol is null)
                     continue;
 
-                if (!table.TryGetValue((parentType, item.Symbol), out var stack))
+                if (!table.TryGetValue((parentType, Symbol), out var stack))
                 {
-                    table[(parentType, item.Symbol)] = ExtractArguments(item.Symbol);
+                    table[(parentType, Symbol)] = ExtractArguments(Symbol);
                 }
             }
 
@@ -62,8 +63,9 @@ namespace Frent.Variadic.Generator
                     .Loop(EnumerateUsings(kvp.Key.Item1.SyntaxTree.GetRoot(ct)), (c, s) => c.AppendLine(s.ToString()), ct)
                     .AppendLine()
                     .Append("namespace ").Append(kvp.Key.Item2.ContainingNamespace).AppendLine(';');
+                const string Exclude = "/// <exclude />";
 
-                cb.Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString());
+                cb.AppendLine(Exclude).Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString().Replace("/// <variadic />", Exclude));
                 //cb.Append(Regex.Replace(kvp.Key.Item1.ToFullString(), @"\[Variadic\(""\s*(.*?)\s*"",\s*""\|?(.*?)\|?""\)\]", ""));
 
                 var str = cb.ToString();

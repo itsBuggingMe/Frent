@@ -6,10 +6,16 @@ internal ref struct Stack<T>
 {
     private T[] _array;
     private int _index;
+    public int Count => _index;
 
     public Stack(int len)
     {
         _array = len == 0 ? [] : new T[len];
+    }
+
+    public Stack() : this(0)
+    {
+
     }
 
     public void Push(T val)

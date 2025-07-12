@@ -19,6 +19,7 @@ public interface IComponent : IComponentBase
 /// Indicates a component should be updated with the specified components
 /// </summary>
 /// <remarks>Components should only implement one "Update" method.</remarks>
+/// <variadic />
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IComponent<TArg> : IComponentBase

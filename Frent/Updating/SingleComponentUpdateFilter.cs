@@ -4,7 +4,7 @@ namespace Frent.Updating;
 
 internal class SingleComponentUpdateFilter : IComponentUpdateFilter
 {
-    private (Archetype Archetype, ComponentStorageBase Storage)[] _archetypes = [];
+    private (Archetype Archetype, ComponentStorageRecord Storage)[] _archetypes = [];
     private int _count;
     private readonly ComponentID _componentID;
     private readonly World _world;
@@ -23,7 +23,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
     {
         var world = _world;
         foreach(var (archetype, storage) in _archetypes.AsSpan(0, _count))
-            storage.Run(world, archetype);
+            storage.Run(archetype, world);
     }
 
     public void ArchetypeAdded(Archetype archetype)
@@ -43,7 +43,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
             int componentIndex = archetype.GetComponentIndex(_componentID);
             if(componentIndex != 0)
             {//this archetype has this component type
-                archetype.Components[componentIndex].Run(world, archetype, initalEntityCount, archetype.EntityCount - initalEntityCount);
+                archetype.Components[componentIndex].Run(archetype, world, initalEntityCount, archetype.EntityCount - initalEntityCount);
             }
         }
     }

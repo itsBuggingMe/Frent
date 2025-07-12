@@ -1,8 +1,8 @@
 # Introduction to Entity Component Frameworks
 
-What's an ECF (Entity Component Framework)?
+What's an EC (Entity Component) framework?
 
-> An ECF is where you create *entities* which are made of *components* inside a *framework*.
+> An EC framework is where you create *entities* which are made of *components* inside a *framework*.
 
 That definition wasn't too useful. Lets zoom in.
 
@@ -40,13 +40,13 @@ You may have heard the phrase:
 
 Components follow composition, allowing for extremely simple code reuse. A health component for example can be given to an enemy entity, or a player entity, or a rock. There is no need to plan and force behaviors into unmaintainable long complex chains of inheritance.
 
-Other notable projects that use an ECF are [Monocle](https://github.com/JamesMcMahon/monocle-engine) and Unity.
+Other notable projects that use an EC framework are [Monocle](https://github.com/JamesMcMahon/monocle-engine) and Unity.
 
 ### The Framework:
 
 Frent takes composition to the next level by removing or alleviating overheads normally associated with heavy composition (virtual calls, object overhead, garbage collection), replacing them with the speed advantages of an [ECS](https://github.com/SanderMertens/ecs-faq). With Frent, you get the best of all worlds. The __intuition__ of OOP programming, __flexibility__ of component oriented programming style, and the __performance__ of an ECS.
 
-Don't like ECFs anyways? Since Frent is powered by an ECS internally, it also exposes a way to directly Query entities in the style of a regular ECS.
+Don't like components with behavior? Since Frent is powered by an ECS internally, it also exposes a way to directly query entities in the style of a regular ECS, which is just as fast.
 
 ### The editor advantage
 

@@ -56,6 +56,15 @@ public static class RegistryHelpers
         }
     };
 
+    public static bool IsEntity(this ITypeSymbol? symbol) => symbol is
+    {
+        Name: "Entity",
+        ContainingNamespace:
+        {
+            Name: "Frent",
+        }
+    };
+
     public static bool IsSpecialComponentInterface(this INamedTypeSymbol namedTypeSymbol) => namedTypeSymbol is
     {
         Name: TargetInterfaceName or InitableInterfaceName or DestroyableInterfaceName,

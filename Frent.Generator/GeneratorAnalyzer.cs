@@ -17,11 +17,10 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
 
     static GeneratorAnalyzer()
     {
-        var b = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(4);
+        var b = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(3);
         b.Add(NonPartialGenericComponent);
         b.Add(NonPartialOuterInaccessibleType);
         b.Add(NonPartialNestedInaccessibleType);
-        b.Add(MultipleComponentInterfaces);
         _supportedDiagnostics = b.MoveToImmutable();
     }
 
@@ -40,7 +39,7 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
             return;
 
         bool isComponent = false;
-        int updateInterfaceCount = 0;
+        //int updateInterfaceCount = 0;
 
 
         foreach(var @interface in namedTypeSymbol.AllInterfaces)
@@ -49,11 +48,14 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
                 return;
 
             isComponent = true;
-            if(!@interface.IsSpecialComponentInterface() && @interface.IsFrentComponentInterface())
-            {//if its a Frent interface and is not Initable, Destroyable, or IComponentBase, it must be one of the update interfaces
-                updateInterfaceCount++;
-            }
+
+            break;
+            //if(!@interface.IsSpecialComponentInterface() && @interface.IsFrentComponentInterface())
+            //{//if its a Frent interface and is not Initable, Destroyable, or IComponentBase, it must be one of the update interfaces
+            //    updateInterfaceCount++;
+            //}
         }
+
         if (!isComponent)
             return;
 
@@ -83,10 +85,10 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
                 Report(NonPartialOuterInaccessibleType, current, current.Name);
         }
 
-        if(updateInterfaceCount > 1)
-        {
-            Report(MultipleComponentInterfaces, current);
-        }
+        //if(updateInterfaceCount > 1)
+        //{
+        //    Report(MultipleComponentInterfaces, current);
+        //}
 
         void Report(DiagnosticDescriptor diagnosticDescriptor, ISymbol location, params object?[] args)
         {
@@ -117,13 +119,5 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
         messageFormat: "Inaccessible Nested Component Type '{0}' must be marked as partial",
         category: "Source Generation",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor MultipleComponentInterfaces = new(
-        id: "FR0003",
-        title: "Multiple Component Interface Implementations",
-        messageFormat: "Components should only implement one update component interface",
-        category: "Source Generation",
-        DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 }

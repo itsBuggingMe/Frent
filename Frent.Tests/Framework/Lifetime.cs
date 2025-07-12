@@ -7,7 +7,7 @@ namespace Frent.Tests.Framework;
 internal class Lifetime
 {
     [Test]
-    public void Destroy_CalledOnDelete()
+    public void DestroyCalled_OnDelete()
     {
         using World world = new();
         int destroyCount = 0;
@@ -31,7 +31,7 @@ internal class Lifetime
     }
 
     [Test]
-    public void Init_CalledWhenCreated()
+    public void InitCalled_WhenCreated()
     {
         using World world = new();
 
@@ -67,6 +67,18 @@ internal class Lifetime
         {
             Entity e = w.Create(c);
             e.Delete();
+        });
+    }
+
+    [Test]
+    public void DestroyCalled_OnWorldDispose()
+    {
+        World world = new();
+
+        TestForLifetimeInvocation(world, (w, c) =>
+        {
+            Entity e = w.Create(c);
+            w.Dispose();
         });
     }
 

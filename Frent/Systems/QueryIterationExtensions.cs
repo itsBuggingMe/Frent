@@ -19,6 +19,7 @@ public static partial class QueryIterationExtensions
     /// </summary>
     /// <param name="query">The query to iterate over.</param>
     /// <param name="action">The behavior to execute on every component set.</param>
+    /// <variadic />
     public static void Delegate<T>(this Query query, QueryDelegates.Query<T> action)
     {
         foreach (var archetype in query.AsSpan())
@@ -41,6 +42,7 @@ public static partial class QueryIterationExtensions
     /// </summary>
     /// <param name="query">The query to iterate over.</param>
     /// <param name="action">The struct behavior to execute on every component set.</param>
+    /// <variadic />
     public static void Inline<TAction, T>(this Query query, TAction action)
         where TAction : IAction<T>
     {

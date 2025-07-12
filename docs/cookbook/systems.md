@@ -5,15 +5,17 @@ Frent also supports directly querying and updating entities. There are two main 
 #### Example:
 
 ```csharp
-using World world = new World();
+DefaultUniformProvider provider = new DefaultUniformProvider();
+provider.Add<byte>(5);
+using World world = new World(provider);
 
 for (int i = 0; i < 5; i++)
     world.Create<int>(i);
 
-world.Query<With<int>>().Delegate((ref int x) => Console.Write($"{x++}, "));
+world.Query<int>().Delegate((ref int x) => Console.Write($"{x++}, "));
 Console.WriteLine();
-
-world.Query<With<int>>().Inline<WriteAction, int>(new WriteAction());
+        
+world.Query<int>().Inline<WriteAction, int>(new WriteAction());
 
 internal struct WriteAction : IAction<int>
 {

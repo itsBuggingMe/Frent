@@ -5,6 +5,7 @@ using Frent.Core;
 using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Systems;
+using Frent.Systems.Queries;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -49,7 +50,21 @@ public partial class World : IDisposable
     internal readonly Entity DefaultWorldEntity;
     private bool _isDisposed = false;
 
-    internal Dictionary<int, Query> QueryCache = [];
+    internal volatile bool _worldUpdateMethodCalled;
+
+    internal void EnterWorldUpdateMethod()
+    {
+        if(_worldUpdateMethodCalled)
+            FrentExceptions.Throw_InvalidOperationException("Nested World.Update calls are not supported!");
+        _worldUpdateMethodCalled = true;
+    }
+
+    internal void ExitWorldUpdateMethod()
+    {
+        _worldUpdateMethodCalled = false;
+    }
+
+    internal FastStack<Query> QueryCache = new FastStack<Query>(4);
 
     internal CountdownEvent SharedCountdown => _sharedCountdown;
     private CountdownEvent _sharedCountdown = new(0);
@@ -223,14 +238,12 @@ public partial class World : IDisposable
     public void Update()
     {
         EnterDisallowState();
+        EnterWorldUpdateMethod();
         try
         {
             if (CurrentConfig.MultiThreadedUpdate)
             {
-                foreach (var element in EnabledArchetypes.AsSpan())
-                {
-                    element.Archetype(this)!.MultiThreadedUpdate(_sharedCountdown, this);
-                }
+                throw new NotSupportedException();
             }
             else
             {
@@ -242,6 +255,7 @@ public partial class World : IDisposable
         }
         finally
         {
+            ExitWorldUpdateMethod();
             ExitDisallowState(null, CurrentConfig.UpdateDeferredCreationEntities);
         }   
     }
@@ -259,6 +273,7 @@ public partial class World : IDisposable
     public void Update(Type attributeType)
     {
         EnterDisallowState();
+        EnterWorldUpdateMethod();
         WorldUpdateFilter? appliesTo = default;
         try
         {
@@ -268,6 +283,7 @@ public partial class World : IDisposable
         }
         finally
         {
+            ExitWorldUpdateMethod();
             ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
         }
     }
@@ -279,6 +295,7 @@ public partial class World : IDisposable
     public void UpdateComponent(ComponentID componentType)
     {
         EnterDisallowState();
+        EnterWorldUpdateMethod();
         SingleComponentUpdateFilter? singleComponent = null;
 
         try
@@ -294,27 +311,9 @@ public partial class World : IDisposable
         }
         finally
         {
+            ExitWorldUpdateMethod();
             ExitDisallowState(singleComponent, CurrentConfig.UpdateDeferredCreationEntities);
         }
-    }
-
-    /// <summary>
-    /// Creates a custom query from the given set of rules. For an entity to be queried, all rules must apply.
-    /// </summary>
-    /// <param name="rules">The rules governing which entities are queried.</param>
-    /// <returns>A query object representing all the entities that satisfy all the rules.</returns>
-    public Query CustomQuery(params Rule[] rules)
-    {
-        QueryHash queryHash = QueryHash.New();
-        foreach (Rule rule in rules)
-            queryHash.AddRule(rule);
-
-        int hashCode = queryHash.ToHashCode();
-
-        if (!QueryCache.TryGetValue(hashCode, out Query? query))
-            QueryCache[hashCode] = query = CreateQueryFromSpan([.. rules]);
-
-        return query;
     }
 
     internal void ArchetypeAdded(Archetype archetype, Archetype temporaryCreationArchetype)
@@ -322,7 +321,7 @@ public partial class World : IDisposable
         if (!GlobalWorldTables.HasTag(archetype.ID, Tag<Disable>.ID))
             EnabledArchetypes.Push(archetype.ID);
         foreach (var qkvp in QueryCache)
-            qkvp.Value.TryAttachArchetype(archetype);
+            qkvp.TryAttachArchetype(archetype);
         foreach (var fkvp in _updatesByAttributes)
             fkvp.Value.ArchetypeAdded(archetype);
         foreach(var fkvp in _singleComponentUpdates)
@@ -332,18 +331,50 @@ public partial class World : IDisposable
     internal Query CreateQuery(ImmutableArray<Rule> rules)
     {
         Query q = new Query(this, rules);
+        QueryCache.Push(q);
         foreach (ref var element in WorldArchetypeTable.AsSpan())
             if (element.Archetype is not null)
                 q.TryAttachArchetype(element.Archetype);
         return q;
     }
 
+
+    /// <summary>
+    /// Returns a query builder that can be used to create a query with the specified rules.
+    /// </summary>
+    public QueryBuilder CreateQuery() => new QueryBuilder(this);
+
+
     internal Query CreateQueryFromSpan(ReadOnlySpan<Rule> rules) => CreateQuery(MemoryHelpers.ReadOnlySpanToImmutableArray(rules));
+
+    internal Query BuildQuery<T>()
+        where T : struct, IQueryBuilder
+    {
+        ref Query query = ref QueryInfo<T>.Queries[ID];
+        query ??= QueryInfo<T>.Build(this);
+        return query;
+    }
+
+    internal static class QueryInfo<T>
+        where T : struct, IQueryBuilder
+    {
+        public static readonly ShortSparseSet<Query> Queries = new();
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static Query Build(World world)
+        {
+            List<Rule> rules = [];
+            default(T).AddRules(rules);
+            return world.CreateQuery(rules.ToImmutableArray());
+        }
+    }
 
     internal void UpdateArchetypeTable(int newSize)
     {
         Debug.Assert(newSize > WorldArchetypeTable.Length);
         Array.Resize(ref WorldArchetypeTable, newSize);
+
+        World world = GlobalWorldTables.Worlds[ID];
     }
 
     internal void EnterDisallowState()
@@ -454,8 +485,8 @@ public partial class World : IDisposable
         {
             if(item.Archetype is not null)
             {
-                item.Archetype.ReleaseArrays();
-                item.DeferredCreationArchetype.ReleaseArrays();
+                item.Archetype.ReleaseArrays(false);
+                item.DeferredCreationArchetype.ReleaseArrays(true);
             }
         }
 
@@ -468,14 +499,15 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    /// Creates an <see cref="Entity"/>
+    /// Creates an <see cref="Entity"/>.
     /// </summary>
-    /// <param name="components">The components to use</param>
-    /// <returns>The created entity</returns>
+    /// <param name="components">The components to use.</param>
+    /// <returns>The created entity.</returns>
     public Entity CreateFromObjects(ReadOnlySpan<object> components)
     {
         if (components.Length > MemoryHelpers.MaxComponentCount)
             throw new ArgumentException("Max 127 components on an entity", nameof(components));
+
         Span<ComponentID> types = stackalloc ComponentID[components.Length];
 
         for (int i = 0; i < components.Length; i++)
@@ -485,16 +517,55 @@ public partial class World : IDisposable
 
         ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation loc);
         Entity entity = CreateEntityFromLocation(loc);
-        entityID.ID = entity.EntityID;
-        entityID.Version = entity.EntityVersion;
+        entityID.Init(entity);
 
-        Span<ComponentStorageBase> archetypeComponents = archetype.Components.AsSpan();
+        Span<ComponentStorageRecord> archetypeComponents = archetype.Components.AsSpan();
         for (int i = 1; i < archetypeComponents.Length; i++)
         {
-            archetypeComponents[i].SetAt(components[i - 1], loc.Index);
+            archetypeComponents[i].SetAt(null, components[i - 1], loc.Index);
+        }
+        for (int i = 1; i < archetypeComponents.Length; i++)
+        {
+            archetypeComponents[i].CallIniter(entity, loc.Index);
         }
 
         EntityCreatedEvent.Invoke(entity);
+        return entity;
+    }
+
+    /// <summary>
+    /// Creates an <see cref="Entity"/> from a set of component handles. The handles are not disposed.
+    /// </summary>
+    /// <returns>The created entity.</returns>
+    public Entity CreateFromHandles(ReadOnlySpan<ComponentHandle> componentHandles, ReadOnlySpan<TagID> tags = default)
+    {
+        if (componentHandles.Length > MemoryHelpers.MaxComponentCount)
+            throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
+
+        Span<ComponentID> componentIDs = stackalloc ComponentID[componentHandles.Length];
+
+        for (int i = 0; i < componentHandles.Length; i++)
+            componentIDs[i] = componentHandles[i].ComponentID;
+
+        Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentIDs, tags, this);
+
+        ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation entityLocation);
+
+        Entity entity = CreateEntityFromLocation(entityLocation);
+        entityID.Init(entity);
+
+        Span<ComponentStorageRecord> archetypeComponents = archetype.Components.AsSpan();
+        for (int i = 1; i < archetypeComponents.Length; i++)
+        {
+            archetypeComponents[i].SetAt(null, componentHandles[i - 1], entityLocation.Index);
+        }
+        for (int i = 1; i < archetypeComponents.Length; i++)
+        {
+            archetypeComponents[i].CallIniter(entity, entityLocation.Index);
+        }
+
+        EntityCreatedEvent.Invoke(entity);
+
         return entity;
     }
 
@@ -512,12 +583,9 @@ public partial class World : IDisposable
     internal Entity CreateEntityWithoutEvent()
     {
         ref var entity = ref DefaultArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
-
-        var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new EntityIDOnly(NextEntityID++, 0);
-        eloc.Version = version;
-        EntityTable[id] = eloc;
-
-        return new Entity(ID, version, id);
+        Entity result = CreateEntityFromLocation(eloc);
+        entity.Init(result);
+        return result;
     }
 
     internal void InvokeEntityCreated(Entity entity)

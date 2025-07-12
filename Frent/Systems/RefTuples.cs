@@ -7,6 +7,7 @@ namespace Frent.Systems;
 /// <summary>
 /// A tuple of multiple references.
 /// </summary>
+/// <variadic />
 [Variadic("Tuple<T>", "Tuple<|T$, |>")]
 [Variadic("    public Ref<T> Item1;", "|    public Ref<T$> Item$;\n|")]
 [Variadic("out Ref<T> @ref", "|out Ref<T$> @ref$, |")]
@@ -27,6 +28,7 @@ public ref struct RefTuple<T>
 /// <summary>
 /// A tuple of multiple references with an <see cref="Entity"/>.
 /// </summary>
+/// <variadic />
 [Variadic("Tuple<T>", "Tuple<|T$, |>")]
 [Variadic("    public Ref<T> Item1;", "|    public Ref<T$> Item$;\n|")]
 [Variadic("out Ref<T> @ref", "|out Ref<T$> @ref$, |")]
@@ -52,6 +54,7 @@ public ref struct EntityRefTuple<T>
 /// <summary>
 /// A tuple of a chunk of entities and their components.
 /// </summary>
+/// <variadic />
 [Variadic("Tuple<T>", "Tuple<|T$, |>")]
 [Variadic("    public Span<T> Span;", "|    public Span<T$> Span$;\n|")]
 [Variadic("out Span<T> @comp1", "|out Span<T$> @comp$, |")]

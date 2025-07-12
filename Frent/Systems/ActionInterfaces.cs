@@ -7,6 +7,7 @@ namespace Frent.Systems;
 /// An arbitary function with one parameter
 /// </summary>
 /// <remarks>Used to inline query functions</remarks>
+/// <variadic />
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
 public interface IAction<TArg>
