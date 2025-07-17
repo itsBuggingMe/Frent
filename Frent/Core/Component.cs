@@ -158,9 +158,7 @@ public static class Component
             IDTable<T> stack = new IDTable<T>();
             ComponentTable.Push(new ComponentData(type, stack,
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null, Component<T>.IsSparseComponent));
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null,
-                GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : []));
+                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null, [], Component<T>.IsSparseComponent));
 
             return (id, stack, initDelegate, destroyDelegate);
         }
@@ -192,15 +190,11 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            ComponentTable.Push(new ComponentData(t, 
-                GetComponentTable(t),
             ComponentTable.Push(new ComponentData(t, CreateComponentTable(t),
                 GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
                 GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null, 
                 typeof(ISparseComponent).IsAssignableFrom(t)
                 ));
-                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null, 
-                GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var m) ? m : []));
 
             return id;
         }
