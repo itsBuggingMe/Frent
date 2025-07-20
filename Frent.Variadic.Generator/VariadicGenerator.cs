@@ -63,9 +63,14 @@ namespace Frent.Variadic.Generator
                     .Loop(EnumerateUsings(kvp.Key.Item1.SyntaxTree.GetRoot(ct)), (c, s) => c.AppendLine(s.ToString()), ct)
                     .AppendLine()
                     .Append("namespace ").Append(kvp.Key.Item2.ContainingNamespace).AppendLine(';');
-                const string Exclude = "/// <exclude />";
 
-                cb.AppendLine(Exclude).Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString().Replace("/// <variadic />", Exclude));
+                const string Exclude = "/// <exclude />";
+                // hella jank but whatever
+                string leadingTrivia = kvp.Key.Item1.AttributeLists.First().GetLeadingTrivia().ToFullString();
+                if(leadingTrivia.Contains("/// <variadic />") || leadingTrivia.Contains("/// <inheritdoc cref=\"GenerationServices\"/>"))
+                    cb.AppendLine(Exclude);
+
+                cb.Append(kvp.Key.Item1.WithAttributeLists([]).ToFullString().Replace("/// <variadic />", Exclude));
                 //cb.Append(Regex.Replace(kvp.Key.Item1.ToFullString(), @"\[Variadic\(""\s*(.*?)\s*"",\s*""\|?(.*?)\|?""\)\]", ""));
 
                 var str = cb.ToString();

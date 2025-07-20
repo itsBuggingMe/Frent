@@ -367,3 +367,4 @@ FodyWeavers.xsd
 # Doc FX files
 .cache
 /**/_site/
+/docs/api
