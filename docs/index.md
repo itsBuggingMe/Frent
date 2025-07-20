@@ -2,10 +2,18 @@
 _layout: landing
 ---
 
-# This is the **HOMEPAGE**.
 
-Refer to [Markdown](http://daringfireball.net/projects/markdown/) for how to write markdown files.
+<div style="text-align: center; font-size: 4rem">Frent</div>
 
-## Quick Start Notes:
+<div style="text-align: center;">High performance EC/ECS.</div>
 
-1. Add images to the *images* folder if the file is referencing an image.
+<br/>
+
+<br/>
+
+<div style="font-size: 1rem; padding: 1rem; max-width: fit-content; margin-left: auto; margin-right: auto;">
+    <div style="margin: 1rem; font-size: 1.3rem"><a href="/installation.html">Installation</a></div>
+    <div style="margin: 1rem; font-size: 1.3rem"><a href="/cookbook/component-composition.html">Cookbook</a></div>
+    <div style="margin: 1rem; font-size: 1.3rem"><a href="/doc">Concepts</a></div>
+    <div style="margin: 1rem; font-size: 1.3rem"><a href="/api">API Reference</a></div>
+</div>

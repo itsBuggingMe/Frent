@@ -4,7 +4,7 @@
     {
       "src": [
         {
-          "src": "../Frent",
+          "src": "../Frent/",
           "files": [
             "**/*.csproj"
           ]
@@ -40,7 +40,7 @@
       "_appName": "Frent",
       "_appTitle": "Frent",
       "_enableSearch": true,
-      "pdf": false
+      "pdf": true
     }
   }
 }
