@@ -1,8 +1,0 @@
-- name: Component Composition
-  href: component-composition.md
-- name: Uniforms and Entities
-  href: uniforms.md
-- name: The Entity Struct
-  href: entity.md
-- name: Systems
-  href: systems.md

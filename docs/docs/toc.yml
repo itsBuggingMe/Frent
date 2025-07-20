@@ -1,14 +1,4 @@
+- name: Introduction
+  href: introduction.md
 - name: Getting Started
   href: getting-started.md
-- name: What's an ECF?
-  href: ecf.md
-- name: Making Components
-  href: components.md
-- name: Filtering Updates
-  href: filter-components.md
-- name: Component Lifetimes
-  href: component-lifetimes.md
-- name: Unity
-  href: unity.md
-- name: Structural Changes
-  href: structural-changes.md
