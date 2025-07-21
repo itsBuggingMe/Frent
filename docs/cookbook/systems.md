@@ -1,29 +1,11 @@
-### Systems
+# Systems
 
-Frent also supports directly querying and updating entities. There are two main types of queries, inline queries and delegate queries. Delegate queries are concise. However, they are slightly slower as they cannot be inlined by the JIT compiler. Inline queries use structs that implement the `IAction` interfaces. These interfaces also have versions with up to 16 generic component arguments. 
+You can execute behavior on a query to form a system in the traditional ECS sense. You have three main ways to do this: delegates, structs, and enumerators. Each method has their own upsides and downsides.
 
-#### Example:
+<iframe src="https://itsbuggingme.github.io/InteractiveDocHosting/?code=using%20World%20world%20%3D%20new%28%29%3B%0D%0Aworld.Create%28%22Jill%22%29%3B%0D%0Aworld.Create%28%22Jack%22%29%3B%0D%0A%0D%0Aworld.Query%3Cstring%3E%28%29.Delegate%28%28ref%20string%20comp%29%20%3D%3E%20Console.WriteLine%28comp%20%2B%20%22%20delegate%22%29%29%3B%0D%0A%0D%0Aworld.Query%3Cstring%3E%28%29.Inline%3CInline%2C%20string%3E%28default%28Inline%29%29%3B%0D%0A%0D%0A%2F%2F%20You%20can%20also%20deconstruct%20a%20RefTuple%20if%20it%20has%20more%20than%201%20component%0D%0Aforeach%28RefTuple%3Cstring%3E%20comp%20in%20world.Query%3Cstring%3E%28%29.Enumerate%3Cstring%3E%28%29%29%0D%0A%20%20%20%20Console.WriteLine%28comp.Item1.Value%20%2B%20%22%20Enumerator%22%29%3B%0D%0A%0D%0Astruct%20Inline%20%3A%20IAction%3Cstring%3E%0D%0A%7B%0D%0A%20%20%20%20public%20void%20Run%28ref%20string%20comp%29%20%3D%3E%20Console.WriteLine%28comp%20%2B%20%22%20Inline%22%29%3B%0D%0A%7D" onload='javascript:(function(o){window.addEventListener("message", function(event){if(event.data.type=="setHeight"){o.style.height=event.data.height+"px";}});}(this));' style="height:200px;width:100%;border:none;overflow:hidden;"></iframe>
 
-```csharp
-DefaultUniformProvider provider = new DefaultUniformProvider();
-provider.Add<byte>(5);
-using World world = new World(provider);
-
-for (int i = 0; i < 5; i++)
-    world.Create<int>(i);
-
-world.Query<int>().Delegate((ref int x) => Console.Write($"{x++}, "));
-Console.WriteLine();
-        
-world.Query<int>().Inline<WriteAction, int>(new WriteAction());
-
-internal struct WriteAction : IAction<int>
-{
-    public void Run(ref int x) => Console.Write($"{x++}, ");
-}
-```
-#### Output:
-```
-0, 1, 2, 3, 4,
-1, 2, 3, 4, 5,
-```
+| Method       | Pros                                               | Cons                                               |
+|--------------|----------------------------------------------------|----------------------------------------------------|
+| Delegates    | - Easy to write                                    | - A bit slower (almost identical perf dotnet 9+)<br/> - Need to allocate closure for outside variables. |
+| Structs      | - Struct methods can be inlined for performance. <br/> - Struct itself can store variables. | - Verbose syntax <br/> - Need to declare all generic types when calling. |
+| Enumerators  | - Get access to all variables in scope <br/> - Use raw chunk buffers with `.EnumerateChunks` | - Verbose to access components                |

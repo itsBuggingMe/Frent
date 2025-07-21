@@ -21,6 +21,7 @@ public static partial class EntityExtensions
     /// </summary>
     /// <exception cref="InvalidOperationException">The entity is not alive.</exception>
     /// <exception cref="ComponentNotFoundException">The entity does not have all the components specified.</exception>
+    /// <variadic />
     public static void Deconstruct<T>(this Entity e, out Ref<T> comp)
     {
         EntityLocation eloc = e.AssertIsAlive(out _);

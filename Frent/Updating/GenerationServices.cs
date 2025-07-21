@@ -9,6 +9,7 @@ namespace Frent.Updating;
 /// <summary>
 /// Used only for source generation
 /// </summary>
+/// <variadic />
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class GenerationServices
 {
