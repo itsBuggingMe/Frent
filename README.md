@@ -35,9 +35,8 @@ record struct Velocity(Vector2 Delta) : IComponent<Position>
     public void Update(ref Position position) => position.Value += Delta;
 }
 ```
-[Interactive Demo Version](https://itsbuggingme.github.io/Frent/interactive-game.html)
 
-Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/index.html)!
+Wanna learn more? Dive into the [docs](https://itsbuggingme.github.io/Frent/index.html) or check out the [Interactive Demo](https://itsbuggingme.github.io/Frent/interactive-game.html)!
 
 There is also samples for [Monogame](https://github.com/itsBuggingMe/Frent/blob/master/Frent.Sample/Asteroids/AsteroidsGame.cs), [Unity](https://github.com/itsBuggingMe/Frent.Unity.Sample) and [Godot](https://github.com/itsBuggingMe/FrentGodotSample).
 
