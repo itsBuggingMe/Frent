@@ -16,6 +16,7 @@
             What is a <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record">record struct</a>?
             <br/>
             What is a <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/using">using statement</a>?
+            <br/>
         </div>
     </div>
     <iframe src="https://itsbuggingme.github.io/InteractiveDocHosting/?code=using%20World%20world%20%3D%20new%28%29%3B%0D%0A%0D%0AName%20name%20%3D%20new%28%22Misty%22%29%3B%0D%0ASpecies%20species%20%3D%20new%28%22Cat%22%29%3B%0D%0A%0D%0A%2F%2F%20Create%20an%20entity%20that%20is%20a%20cat%20with%20the%20name%20Misty%0D%0AEntity%20myCat%20%3D%20world.Create%28name%2C%20species%29%3B%0D%0A%0D%0A%2F%2F%20Get%20the%20Species%20component%0D%0ASpecies%20myCatSpecies%20%3D%20myCat.Get%3CSpecies%3E%28%29%3B%0D%0A%0D%0AConsole.WriteLine%28%24%22myCat%20is%20a%20%7BmyCatSpecies.Kind%7D%22%29%3B%0D%0A%0D%0A%0D%0A%0D%0Astruct%20Name%28string%20Value%29%20%3A%20IComponent%0D%0A%7B%0D%0A%20%20%20%20public%20void%20Update%28%29%0D%0A%20%20%20%20%7B%0D%0A%20%20%20%20%20%20%20%20Console.WriteLine%28%24%22My%20name%20is%20%7BValue%7D%22%29%3B%0D%0A%20%20%20%20%7D%0D%0A%7D%0D%0A%0D%0Arecord%20struct%20Species%28string%20Kind%29%3B" onload='javascript:(function(o){window.addEventListener("message", function(event){if(event.data.type=="setHeight"){o.style.height=event.data.height+"px";}});}(this));' style="height:200px;width:100%;border:none;overflow:hidden;"></iframe>
