@@ -9,7 +9,7 @@ While Frent's implementation is an archetype based ECS, thats not why Frent was 
 
 Want to write systems anyways? Frent also has a Systems API that allows you to query entities in the style of an ECS.
 
-> [!CAUTION]
+> [!WARNING]
 > Frent is still in beta and is not completely stable.
 
 ## Quick Example
@@ -30,16 +30,14 @@ world.Update();
 Console.WriteLine(entity.Get<Position>());
 
 record struct Position(Vector2 Value);
-record struct Velocity(Vector2 Delta) : IInitable, IComponent<Position>
+record struct Velocity(Vector2 Delta) : IComponent<Position>
 {
-    // There is also IDestroyable
-    public void Init(Entity self) { }
     public void Update(ref Position position) => position.Value += Delta;
 }
 ```
-[Interactive Demo Version](https://itsbuggingme.github.io/Frent/docs/readme-demo.html)
+[Interactive Demo Version](https://itsbuggingme.github.io/Frent/interactive-game.html)
 
-Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/docs/getting-started.html)!
+Wanna learn more? Check out the [docs](https://itsbuggingme.github.io/Frent/index.html)!
 
 There is also samples for [Monogame](https://github.com/itsBuggingMe/Frent/blob/master/Frent.Sample/Asteroids/AsteroidsGame.cs), [Unity](https://github.com/itsBuggingMe/Frent.Unity.Sample) and [Godot](https://github.com/itsBuggingMe/FrentGodotSample).
 
