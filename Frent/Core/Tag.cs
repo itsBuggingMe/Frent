@@ -16,7 +16,10 @@ public class Tag<T>
 }
 
 //this entirely piggybacks on top of component
-internal class Tag
+/// <summary>
+/// Manages tag types.
+/// </summary>
+public class Tag
 {
     private static readonly Dictionary<Type, TagID> ExistingTagIDs = [];
     internal static FastStack<Type> TagTable = FastStack<Type>.Create(4);
@@ -26,7 +29,12 @@ internal class Tag
     //initalize default(TagID) to point to disable
     static Tag() => GetTagID(typeof(Disable));
 
-    internal static TagID GetTagID(Type type)
+    /// <summary>
+    /// Gets the <see cref="TagID"/> for the given type."/>
+    /// </summary>
+    /// <param name="type">The type to get a <see cref="TagID"/> for.</param>
+    /// <returns>The tag ID.</returns>
+    public static TagID GetTagID(Type type)
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
