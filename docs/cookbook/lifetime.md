@@ -1,5 +1,7 @@
 # Component Lifetime
 
+<br/>
+
 <div style="display: flex">
     <div style="width: 90%">
         <h5>Lifetime</h5>

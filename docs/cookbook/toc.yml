@@ -2,6 +2,8 @@
   href: component-composition.md
 - name: The Entity
   href: entity.md
+- name: Filtering Updates
+  href: filter-update.md
 - name: Queries
   href: queries.md
 - name: Systems
