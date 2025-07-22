@@ -1,0 +1,9 @@
+# Filtering Updates
+
+<br/>
+
+`World.Update` calls every single `Update` method on every single component. Now this isn't very useful, as there is no guarantee of order and everything is updated. Filter attributes inherit from `UpdateTypeAttribute` and can be applied to `Update` methods. You can then call `World.Update<T>()` where `T` is your update type attribute. This will filter to only call methods with the attribute.
+
+You can also specify a specific component to call all of the `Update` methods on for more control.
+
+<iframe src="https://itsbuggingme.github.io/InteractiveDocHosting/?code=using%20World%20world%20%3D%20new%28%29%3B%0D%0Aworld.Create%28new%20Player%28%29%29%3B%0D%0A%0D%0AConsole.WriteLine%28%22Calling%20Tick...%22%29%3B%0D%0Aworld.Update%3CTick%3E%28%29%3B%0D%0A%0D%0AConsole.WriteLine%28%22Calling%20Render...%22%29%3B%0D%0Aworld.Update%3CRender%3E%28%29%3B%0D%0A%0D%0AConsole.WriteLine%28%22Calling%20Player...%22%29%3B%0D%0Aworld.UpdateComponent%28Component%3CPlayer%3E.ID%29%3B%0D%0A%0D%0Astruct%20Player%20%3A%20IComponent%2C%20IEntityComponent%0D%0A%7B%0D%0A%20%20%20%20%5BTick%5D%0D%0A%20%20%20%20public%20void%20Update%28%29%20%3D%3E%20Console.WriteLine%28%22Player%20Tick%21%22%29%3B%0D%0A%20%20%20%20%5BRender%5D%0D%0A%20%20%20%20public%20void%20Update%28Entity%20_%29%20%3D%3E%20Console.WriteLine%28%22Player%20Render%21%22%29%3B%0D%0A%7D%0D%0A%0D%0Aclass%20Tick%20%3A%20UpdateTypeAttribute%3B%0D%0Aclass%20Render%20%3A%20UpdateTypeAttribute%3B" onload='javascript:(function(o){window.addEventListener("message", function(event){if(event.data.type=="setHeight"){o.style.height=event.data.height+"px";}});}(this));' style="height:200px;width:100%;border:none;overflow:hidden;"></iframe>
