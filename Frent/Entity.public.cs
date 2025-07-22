@@ -7,6 +7,7 @@ using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -674,7 +675,13 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     public World World
     {
-        get => GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID) ?? throw new InvalidOperationException();
+        get
+        {
+            World? world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
+            if (world is null)
+                Throw_EntityIsDead();
+            return world;
+        }
     }
 
     /// <summary>
