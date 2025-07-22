@@ -6,6 +6,7 @@ namespace Frent.Systems;
 /// <summary>
 /// Enumerates all component references of the specified types for each <see cref="Entity"/> in a query in chunks.
 /// </summary>
+/// <variadic />
 [Variadic("                Span = cur.GetComponentSpan<T>(),",
     "|                Span$ = cur.GetComponentSpan<T$>(),\n|")]
 [Variadic("<T>", "<|T$, |>")]

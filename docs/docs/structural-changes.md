@@ -1,33 +1,23 @@
 # Structural Changes
-The operations of deleting entities, adding components, removing components, tagging entities, detaching tags are known as structural changes.
-These operations cannot occur during a world update. A world update begins at the start of any `World.Update` call or system enumeration.
-For systems, the world update might end whenever an enumerator is disposed. Multiple systems and `World.Update` calls may be active at the same time, and all of these calls and enumerators must be disposed in order to allow structural changes.
 
-If a structural change method is called during any world update, that change is deferred to the end of the world update. This is different than most other ECS libraries where a command buffer is manually used to defer changes.
+Some operations are structural changes, which means that the internal data structures may be altered. To ensure safety, there is different behavior if a `Update` call or system is currently active.
 
-When creating entities during a `World.Update` call, these entities may or may not be updated on the same method call depending on `Config.UpdateDeferredCreationEntities`.
+| Action           | Behavior        |
+|------------------|-----------------|
+| Create Entity    | Fully Supported |
+| Delete Entity    | Auto Deferred*  |
+| Add Component    | Auto Deferred   |
+| Remove Component | Auto Deferred   |
+| Tag Tag          | Auto Deferred   |
+| Detach Tag       | Auto Deferred   |
+
+\* May have support in the future. 
+
+Creating entities is fully supported during systems and updates. When creating entities during a `World.Update`, you can require the components on these entities to be updated by setting `Config.UpdateDeferredCreationEntities` to true and passing a config into the world.
+
+In addition, since structural changes may change internal structures, all `ref`s and `Ref<T>`s should be treated as outdated after making a call that causes a structural change.
+
+Structural changes that are auto deferred are saved and only applied once all systems and `Update` methods finish.
 
 > [!CAUTION]
-> Missing an enumerator dispose can cause the world to be stuck in a state where it never allows structural changes. It is reccomended to stick to the `foreach` syntax and let C# generate the dispose call itself.
-
-```csharp
-using World world = new();
-
-// Create an entity so the system runs at least once.
-Entity entity = world.Create<int>(0);
-
-Entity deferred = Entity.Null;
-foreach (var e in world.Query<int>()
-    .Enumerate<int>())
-{
-    // Frent allows you to directly create entities during updates and systems
-    deferred = world.Create<int>(2);
-    int comp = deferred.Get<int>(); // 2
-
-    // Other changes, like delete, are deferred.
-    deferred.Delete();
-    _ = deferred.IsAlive; // true
-}// enumerator is implicitly disposed after foreach; changes are applied
-
-_ = deferred.IsAlive; // false
-```
+> Missing an enumerator dispose when enumerating a query can cause the world to be stuck in a state where it never applies structural changes. It is reccomended to stick to the `foreach` syntax and let C# generate the dispose call itself.

@@ -24,7 +24,7 @@ public static class WorldMarshal
     /// <param name="world">The world that the entity belongs to.</param>
     /// <param name="entity">The entity whose component buffer to get.</param>
     /// <param name="index">The index of the entity's component.</param>
-    /// <returns>The entire sliced raw buffer. May be larger than the number of entities in an archetype.</returns>
+    /// <returns>The entire unsliced raw buffer. May be larger than the number of entities in an archetype.</returns>
     public static Span<T> GetRawBuffer<T>(World world, Entity entity, out int index)
     {
         EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entity.EntityID);

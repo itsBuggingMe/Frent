@@ -10,8 +10,11 @@ internal static class GlobalWorldTables
     internal static int ComponentTagTableBufferSize { get; set; }//reps the length of the second dimension
     internal static Table<World> Worlds = new Table<World>(2);
 
+#if NET9_0_OR_GREATER
+    internal static readonly Lock BufferChangeLock = new Lock();
+#else
     internal static readonly object BufferChangeLock = new object();
-
+#endif
     //each byte contains the data as follows:
     // 1 bit Tag exists -> Lookup by tag ID
     // 3 bits - nothing

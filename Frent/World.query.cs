@@ -7,6 +7,7 @@ namespace Frent;
 /// <summary>
 /// Extensions for building queries in a <see cref="World"/>.
 /// </summary>
+/// <variadic />
 [Variadic("Query<T>", "Query<|T$, |>", 8)]
 [Variadic(".With<T>()", "|.With<T$>()|")]
 public static partial class WorldQueryExtensions

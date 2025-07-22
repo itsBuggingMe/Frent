@@ -1,8 +1,12 @@
 - name: Component Composition
   href: component-composition.md
-- name: Uniforms and Entities
-  href: uniforms.md
-- name: The Entity Struct
+- name: The Entity
   href: entity.md
+- name: Filtering Updates
+  href: filter-update.md
+- name: Queries
+  href: queries.md
 - name: Systems
   href: systems.md
+- name: Component Lifetimes
+  href: lifetime.md

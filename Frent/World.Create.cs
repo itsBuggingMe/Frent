@@ -22,6 +22,7 @@ partial class World
     /// Creates an <see cref="Entity"/> with the given component(s)
     /// </summary>
     /// <returns>An <see cref="Entity"/> that can be used to acsess the component data</returns>
+    /// <variadic />
     [SkipLocalsInit]
     public Entity Create<T>(in T comp)
     {
@@ -66,6 +67,7 @@ partial class World
     /// </summary>
     /// <param name="count">The number of entities to create</param>
     /// <returns>The entities created and their component spans</returns>
+    /// <variadic />
     public ChunkTuple<T> CreateMany<T>(int count)
     {
         if (count < 0)

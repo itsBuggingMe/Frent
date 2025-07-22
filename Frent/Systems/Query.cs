@@ -51,6 +51,7 @@ public partial class Query
     }
 }
 
+/// <variadic />
 [Variadic("<T>", "<|T$, |>")]
 partial class Query
 {
