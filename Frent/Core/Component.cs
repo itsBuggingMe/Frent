@@ -192,7 +192,8 @@ public static class Component
 
             ComponentTable.Push(new ComponentData(t, CreateComponentTable(t),
                 GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
-                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null, 
+                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null,
+                GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var m) ? m : [],
                 typeof(ISparseComponent).IsAssignableFrom(t)
                 ));
 

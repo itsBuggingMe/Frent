@@ -99,7 +99,7 @@ public partial struct Entity : IEquatable<Entity>
         if (!InternalIsAlive(out var _, out var entityLocation))
             goto doesntExist;
 
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
+        int compIndex = entityLocation.Archetype.GetComponentIndex<T>();
 
         if (compIndex == 0)
             goto doesntExist;
@@ -115,6 +115,7 @@ public partial struct Entity : IEquatable<Entity>
         return default;
     }
 
+    [DoesNotReturn]
     private static void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
