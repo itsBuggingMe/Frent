@@ -1,5 +1,4 @@
-﻿using Frent.Buffers;
-using Frent.Collections;
+﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
 using Frent.Core.Events;
@@ -9,13 +8,21 @@ using Frent.Systems.Queries;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.AccessControl;
 
 [assembly: InternalsVisibleTo("Frent.Tests")]
 namespace Frent;
+
+/*
+ * Sparse set todo:
+ * Track sparse set index
+ * Bitset table for sparse set component set (limit to 256 sparse components?)
+ * Get/Set/Has/ + other non mutating methods
+ * Add/Remove
+ * Benchmarks
+ * Stress tests!
+ */
 
 /// <summary>
 /// A collection of entities that can be updated and queried.
