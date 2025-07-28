@@ -1,6 +1,5 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using Frent.Core.Sparse;
 using Frent.Systems;
 using Frent.Updating;
 using Frent.Updating.Runners;
@@ -10,8 +9,8 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[Variadic("        ref T ref1 = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;",
-    "|        ref T$ ref$ = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index); ref$ = comp$;\n|")]
+[Variadic("        ref T ref1 = ref (Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index)); ref1 = comp;",
+    "        ref T$ ref$ = ref (Component<T$>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index)); ref$ = comp;\n|")]
 [Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
     "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
 [Variadic("            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
