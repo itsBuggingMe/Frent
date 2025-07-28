@@ -4,6 +4,7 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -108,6 +109,7 @@ public static class Component
     internal static readonly Dictionary<Type, ComponentBufferManager> CachedComponentFactories = [];
 
     private static int NextComponentID = -1;
+    private static int NextSparseSetComponentIndex = 0;
 
     internal static ComponentBufferManager GetComponentFactoryFromType(Type t)
     {
@@ -173,16 +175,18 @@ public static class Component
     /// </summary>
     /// <param name="t">The type to get the component ID of</param>
     /// <returns>The component ID</returns>
-    public static ComponentID GetComponentID(Type t)
+    public static ComponentID GetComponentID(Type t) => GetComponentIDCore(t, null);
+
+    private static ComponentID GetComponentIDCore(Type type, IDTable? table)
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
-            if (ExistingComponentIDs.TryGetValue(t, out ComponentID value))
+            if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
             {
                 return value;
             }
 
-            EnsureTypeInit(t);
+            EnsureTypeInit(type);
 
             int nextIDInt = ++NextComponentID;
 
@@ -190,15 +194,15 @@ public static class Component
                 throw new InvalidOperationException($"Exceeded maximum unique component type count of 65535");
 
             ComponentID id = new ComponentID((ushort)nextIDInt);
-            ExistingComponentIDs[t] = id;
+            ExistingComponentIDs[type] = id;
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            ComponentTable.Push(new ComponentData(t, CreateComponentTable(t),
-                GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
-                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null,
-                GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var m) ? m : [],
-                typeof(ISparseComponent).IsAssignableFrom(t)
+            ComponentTable.Push(new ComponentData(type, table ?? CreateComponentTable(type),
+                GenerationServices.TypeIniters.TryGetValue(type, out var v) ? v : null,
+                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? d : null,
+                GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : [],
+                typeof(ISparseComponent).IsAssignableFrom(type) ? ++NextSparseSetComponentIndex : 0
                 ));
 
             return id;
