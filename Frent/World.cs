@@ -35,11 +35,14 @@ public partial class World : IDisposable
     private static ushort _nextWorldID = 1;
     #endregion
 
-    //entityID -> entity metadata
+    //entity ID -> entity metadata
     internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
+
+    // entity ID -> sparse component bitset
+    internal readonly Dictionary<int, Bitset> SparseComponentTable = new();
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
-    internal SparseSetBase[] WorldSparseSetTable;
+    internal ComponentSparseSetBase[] WorldSparseSetTable;
 
     internal struct WorldArchetypeTableItem(Archetype archetype, Archetype temp)
     {
@@ -55,7 +58,7 @@ public partial class World : IDisposable
     private Dictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = [];
     internal int NextEntityID;
 
-    internal readonly ushort ID;
+    internal readonly ushort WorldID;
     internal readonly Entity DefaultWorldEntity;
     private bool _isDisposed = false;
 
@@ -222,14 +225,14 @@ public partial class World : IDisposable
     {
         CurrentConfig = config ?? Config.Singlethreaded;
         _uniformProvider = uniformProvider ?? NullUniformProvider.Instance;
-        ID = _nextWorldID++;
+        WorldID = _nextWorldID++;
 
-        GlobalWorldTables.Worlds[ID] = this;
+        GlobalWorldTables.Worlds[WorldID] = this;
 
         WorldArchetypeTable = new WorldArchetypeTableItem[GlobalWorldTables.ComponentTagLocationTable.Length];
 
         WorldUpdateCommandBuffer = new CommandBuffer(this);
-        DefaultWorldEntity = new Entity(ID, default, default);
+        DefaultWorldEntity = new Entity(WorldID, default, default);
         DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
     }
 
@@ -238,7 +241,7 @@ public partial class World : IDisposable
         var (id, version) = RecycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(NextEntityID++, (ushort)0);
         entityLocation.Version = version;
         EntityTable[id] = entityLocation;
-        return new Entity(ID, version, id);
+        return new Entity(WorldID, version, id);
     }
 
     /// <summary>
@@ -359,7 +362,7 @@ public partial class World : IDisposable
     internal Query BuildQuery<T>()
         where T : struct, IQueryBuilder
     {
-        ref Query query = ref QueryInfo<T>.Queries[ID];
+        ref Query query = ref QueryInfo<T>.Queries[WorldID];
         query ??= QueryInfo<T>.Build(this);
         return query;
     }
@@ -383,7 +386,7 @@ public partial class World : IDisposable
         Debug.Assert(newSize > WorldArchetypeTable.Length);
         Array.Resize(ref WorldArchetypeTable, newSize);
 
-        World world = GlobalWorldTables.Worlds[ID];
+        World world = GlobalWorldTables.Worlds[WorldID];
     }
 
     internal void EnterDisallowState()
@@ -466,7 +469,7 @@ public partial class World : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EventRecord TryGetEventData(EntityLocation entityLocation, EntityIDOnly entity, EntityFlags eventType, out bool exists)
     {
-        if (entityLocation.HasEvent(eventType))
+        if (entityLocation.HasFlag(eventType))
         {
             exists = true;
             return ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity);
@@ -488,7 +491,7 @@ public partial class World : IDisposable
         if (_isDisposed)
             throw new InvalidOperationException("World is already disposed!");
 
-        GlobalWorldTables.Worlds[ID] = null!;
+        GlobalWorldTables.Worlds[WorldID] = null!;
 
         foreach (ref var item in WorldArchetypeTable.AsSpan())
         {

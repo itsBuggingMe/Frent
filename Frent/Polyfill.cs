@@ -61,6 +61,30 @@ namespace System.Numerics
 {
     internal static class BitOperations
     {
+        public static int LeadingZeroCount(nuint value)
+        {
+            if(IntPtr.Size == 8)
+            {
+                uint hi = (uint)(value >> 32);
+
+                if (hi == 0)
+                {
+                    return 32 + LeadingZeroCount((uint)value);
+                }
+
+                return LeadingZeroCount(hi);
+            }
+
+            return LeadingZeroCount((uint)value);
+        }
+
+        private static int LeadingZeroCount(uint value)
+        {
+            if (value == 0)
+                return 32;
+            return 31 ^ Log2(value);
+        }
+
         public static int Log2(uint value)
         {
             value |= value >> 01;

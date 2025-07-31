@@ -1,6 +1,8 @@
-﻿using Frent.Core;
+﻿using Frent.Collections;
+using Frent.Core;
 using Frent.Core.Structures;
 using Frent.Updating;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -16,7 +18,7 @@ partial class World
      *  These functions take all the data it needs, with no validation that an entity is alive
      */
 
-    internal void RemoveComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID)
+    internal void RemoveArchetypicalComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID)
     {
         Archetype destination = RemoveComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.RemoveComponent)
             .Archetype(this);
@@ -32,7 +34,7 @@ partial class World
 #endif
     }
 
-    internal void AddComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID, out EntityLocation entityLocation, out Archetype destination)
+    internal void AddArchetypicalComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID, out EntityLocation entityLocation, out Archetype destination)
     {
         destination = AddComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.AddComponent)
             .Archetype(this);
@@ -229,7 +231,7 @@ partial class World
     private void InvokeDeleteEvents(Entity entity, EntityLocation entityLocation)
     {
         EntityDeletedEvent.Invoke(entity);
-        if (entityLocation.HasEvent(EntityFlags.OnDelete))
+        if (entityLocation.HasFlag(EntityFlags.OnDelete))
         {
             foreach (var @event in EventLookup[entity.EntityIDOnly].Delete.AsSpan())
             {
@@ -245,6 +247,9 @@ partial class World
         //entity is guaranteed to be alive here
         EntityIDOnly replacedEntity = currentLookup.Archetype.DeleteEntity(currentLookup.Index);
 
+        if (currentLookup.HasFlag(EntityFlags.HasSparseComponents))
+            CleanupSparseComponents(entity, ref currentLookup);
+
         Debug.Assert(replacedEntity.ID < EntityTable._buffer.Length);
         Debug.Assert(entity.EntityID < EntityTable._buffer.Length);
 
@@ -259,6 +264,18 @@ partial class World
             ref var id = ref RecycledEntityIds.Push();
             id = entity.EntityIDOnly;
             id.Version++;
+        }
+    }
+
+    internal void CleanupSparseComponents(Entity entity, ref EntityLocation currentLookup)
+    {
+        bool removed = SparseComponentTable.Remove(entity.EntityID, out Bitset bitset);
+        Debug.Assert(removed);
+
+        Span<ComponentSparseSetBase> lookup = WorldSparseSetTable.AsSpan();
+        foreach (int offset in bitset)
+        {
+            lookup.UnsafeSpanIndex(offset).Remove(entity.EntityID);
         }
     }
     #endregion

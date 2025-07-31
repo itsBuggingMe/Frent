@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.IO.Pipes;
+using System.Numerics;
 
 namespace Frent.Collections;
 
@@ -17,13 +18,13 @@ internal struct Bitset(int capacity)
             return;
         }
 
-        loc[Divide(index)] |= 1 << Mod(index);
+        loc[Divide(index)] |= (nint)1 << Mod(index);
     }
 
     private void ResizeAndSet(int index)
     {
         Array.Resize(ref _bits, (int)BitOperations.RoundUpToPowerOf2((uint)(Divide(index) + 1)));
-        _bits[Divide(index)] |= 1 << Mod(index);
+        _bits[Divide(index)] |= (nint)1 << Mod(index);
     }
 
     public bool IsSet(int index)
@@ -35,7 +36,7 @@ internal struct Bitset(int capacity)
             return false;
         }
 
-        return (loc[Divide(index)] & (1 << Mod(index))) != 0;
+        return (loc[Divide(index)] & ((nint)1 << Mod(index))) != 0;
     }
 
     private static int Mod(int value)
@@ -70,5 +71,36 @@ internal struct Bitset(int capacity)
         }
 
         throw new NotSupportedException();
+    }
+    public Enumerator GetEnumerator() => new(this);
+
+    internal struct Enumerator(Bitset bitset)
+    {
+        private nint[] _bits = bitset._bits;
+        private nint _consumedBits = 0;
+        private int _index = 0;
+        private int _current;
+        public int Current => _current;
+        public bool MoveNext()
+        {
+            if(_consumedBits == 0)
+            {
+                if ((uint)_index < (uint)_bits.Length)
+                {
+                    _current = _index * IntPtr.Size * 8;
+                    _consumedBits = _bits[_index++];
+                    return true;
+                }
+
+                return false;
+            }
+
+            int leadingZeros = BitOperations.LeadingZeroCount((nuint)_consumedBits);
+
+            _consumedBits <<= leadingZeros + 1;
+            _current += leadingZeros;
+
+            return true;
+        }
     }
 }

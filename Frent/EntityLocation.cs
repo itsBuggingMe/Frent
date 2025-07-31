@@ -35,7 +35,7 @@ internal struct EntityLocation
     public static EntityLocation Default { get; } = new EntityLocation(null!, int.MaxValue);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly bool HasEvent(EntityFlags entityFlags)
+    public readonly bool HasFlag(EntityFlags entityFlags)
     {
         var res = (Flags & entityFlags) != EntityFlags.None;
         return res;
@@ -70,11 +70,10 @@ internal enum EntityFlags : ushort
 
     WorldCreate = 1 << 7,
 
-    HasWorldCommandBufferRemove = 1 << 8,
+    HasSparseComponents = 1 << 8,
 
-    HasWorldCommandBufferAdd = 1 << 9,
-
-    HasWorldCommandBufferDelete = 1 << 10,
-
-    IsUnmergedEntity = 1 << 11,
+    HasWorldCommandBufferRemove = 1 << 9,
+    HasWorldCommandBufferAdd = 1 << 10,
+    HasWorldCommandBufferDelete = 1 << 11,
+    IsUnmergedEntity = 1 << 12,
 }

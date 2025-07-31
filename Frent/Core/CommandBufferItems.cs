@@ -8,7 +8,7 @@ internal struct EntityIDOnly(int id, ushort version)
 {
     internal int ID = id;
     internal ushort Version = version;
-    internal Entity ToEntity(World world) => new Entity(world.ID, Version, ID);
+    internal Entity ToEntity(World world) => new Entity(world.WorldID, Version, ID);
     internal void Deconstruct(out int id, out ushort version)
     {
         id = ID;
