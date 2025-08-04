@@ -8,7 +8,7 @@ public class BitsetTests
     [Test]
     public void SetOrResize_BitWithinCapacity_SetsBit()
     {
-        var bitset = new Bitset(64);
+        var bitset = new Bitset();
 
         bitset.SetOrResize(10);
 
@@ -19,7 +19,7 @@ public class BitsetTests
     [Test]
     public void SetOrResize_BitExceedsCapacity_ResizesAndSetsBit()
     {
-        var bitset = new Bitset(1);
+        var bitset = new Bitset();
 
         int index = 1024;
         bitset.SetOrResize(index);
@@ -28,9 +28,10 @@ public class BitsetTests
         That(bitset.IsSet(index + 1), Is.False);
     }
 
+    [Test]
     public void IsSet_BitPreviouslySet_ReturnsTrue([Values(1, 8, 128, 127, 40)] int index)
     {
-        var bitset = new Bitset(index + 1);
+        var bitset = new Bitset();
         bitset.SetOrResize(index);
 
         That(bitset.IsSet(index), Is.True);
@@ -39,7 +40,7 @@ public class BitsetTests
     [Test]
     public void IsSet_BitNotSet_ReturnsFalse()
     {
-        var bitset = new Bitset(64);
+        var bitset = new Bitset();
 
         That(bitset.IsSet(42), Is.False);
     }
@@ -54,10 +55,11 @@ public class BitsetTests
             bitset.SetOrResize(index);
 
         var actual = new List<int>();
-        var enumerator = new Bitset.Enumerator(bitset);
-
-        while (enumerator.MoveNext())
-            actual.Add(enumerator.Current);
+        foreach (var index in bitset)
+        {
+            actual.Add(index);
+        }
+            
 
         That(expected, Is.EqualTo(actual));
     }
@@ -65,7 +67,7 @@ public class BitsetTests
     [Test]
     public void Enumerator_NoBitsSet_YieldsNothing()
     {
-        var bitset = new Bitset(100);
+        var bitset = new Bitset();
         var enumerator = new Bitset.Enumerator(bitset);
 
         That(enumerator.MoveNext(), Is.False);

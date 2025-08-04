@@ -3,11 +3,18 @@ using System.Numerics;
 
 namespace Frent.Collections;
 
-internal struct Bitset(int capacity)
+internal struct Bitset
 {
-    private nint[] _bits = new nint[Divide(capacity)];
-    public readonly int Length => (int)Multiply(_bits.Length);
+    public Bitset(int capacity) => _bits = new nuint[Divide(capacity) + 1];
 
+    public Bitset() : this(0)
+    {
+
+    }
+
+    private nuint[] _bits;
+    public readonly int Length => Multiply(_bits.Length);
+    private nuint HighBit => ((nuint)1 << (IntPtr.Size * 8 - 1));
     public void SetOrResize(int index)
     {
         var loc = _bits;
@@ -18,25 +25,26 @@ internal struct Bitset(int capacity)
             return;
         }
 
-        loc[Divide(index)] |= (nint)1 << Mod(index);
+        loc[Divide(index)] |= HighBit >> Mod(index);
     }
 
     private void ResizeAndSet(int index)
     {
         Array.Resize(ref _bits, (int)BitOperations.RoundUpToPowerOf2((uint)(Divide(index) + 1)));
-        _bits[Divide(index)] |= (nint)1 << Mod(index);
+        _bits[Divide(index)] |= HighBit >> Mod(index);
     }
 
     public bool IsSet(int index)
     {
         var loc = _bits;
 
-        if (!((uint)index < (uint)loc.Length))
+        int chunkIndex = Divide(index);
+        if (!((uint)chunkIndex < (uint)loc.Length))
         {
             return false;
         }
 
-        return (loc[Divide(index)] & ((nint)1 << Mod(index))) != 0;
+        return (loc[chunkIndex] & (HighBit >> Mod(index))) != 0;
     }
 
     private static int Mod(int value)
@@ -54,9 +62,6 @@ internal struct Bitset(int capacity)
         {
             return value >> 5;
         }
-
-        // who is running this on a 16 bit machine?
-        throw new NotSupportedException();
     }
 
     private static int Multiply(int value)
@@ -69,36 +74,36 @@ internal struct Bitset(int capacity)
         {
             return value << 5;
         }
-
-        throw new NotSupportedException();
     }
     public Enumerator GetEnumerator() => new(this);
 
     internal struct Enumerator(Bitset bitset)
     {
-        private nint[] _bits = bitset._bits;
-        private nint _consumedBits = 0;
+        private nuint[] _bits = bitset._bits;
+        private nuint _consumedBits = 0;
         private int _index = 0;
         private int _current;
-        public int Current => _current;
+        public int Current => _current - 1;
         public bool MoveNext()
         {
-            if(_consumedBits == 0)
+            while(_consumedBits == 0)
             {
                 if ((uint)_index < (uint)_bits.Length)
                 {
                     _current = _index * IntPtr.Size * 8;
                     _consumedBits = _bits[_index++];
-                    return true;
                 }
-
-                return false;
+                else
+                {
+                    return false;
+                }
             }
 
-            int leadingZeros = BitOperations.LeadingZeroCount((nuint)_consumedBits);
+            int leadingZeros = BitOperations.LeadingZeroCount(_consumedBits);
 
-            _consumedBits <<= leadingZeros + 1;
-            _current += leadingZeros;
+            int bitsToConsume = leadingZeros + 1;
+            _consumedBits <<= bitsToConsume;
+            _current += bitsToConsume;
 
             return true;
         }
