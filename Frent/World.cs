@@ -16,12 +16,13 @@ namespace Frent;
 
 /*
  * Sparse set todo:
- * Track sparse set index
- * Bitset table for sparse set component set (limit to 256 sparse components?)
- * Get/Set/Has/ + other non mutating methods
- * Add/Remove
- * Benchmarks
- * Stress tests!
+ * [x] Track sparse set index
+ * [ ] Bitset table for sparse set component set (limit to 256 sparse components?)
+ * [ ] Get/Set/Has/ + other non mutating methods
+ * [ ] Add/Remove
+ * [ ] Updates
+ * [ ] Benchmarks
+ * [ ] Stress tests!
  */
 
 /// <summary>
@@ -37,7 +38,7 @@ public partial class World : IDisposable
     internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
 
     // entity ID -> sparse component bitset
-    internal Dictionary<int, Bitset> _sparseComponentTable = new();
+    internal readonly Dictionary<int, Bitset> SparseComponentTable = new();
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal SparseSetBase[] WorldSparseSetTable;
@@ -56,7 +57,7 @@ public partial class World : IDisposable
     private Dictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = [];
     internal int NextEntityID;
 
-    internal readonly ushort ID;
+    internal readonly ushort WorldID;
     internal readonly Entity DefaultWorldEntity;
     private bool _isDisposed = false;
 
@@ -223,14 +224,14 @@ public partial class World : IDisposable
     {
         CurrentConfig = config ?? Config.Singlethreaded;
         _uniformProvider = uniformProvider ?? NullUniformProvider.Instance;
-        ID = _nextWorldID++;
+        WorldID = _nextWorldID++;
 
-        GlobalWorldTables.Worlds[ID] = this;
+        GlobalWorldTables.Worlds[WorldID] = this;
 
         WorldArchetypeTable = new WorldArchetypeTableItem[GlobalWorldTables.ComponentTagLocationTable.Length];
 
         WorldUpdateCommandBuffer = new CommandBuffer(this);
-        DefaultWorldEntity = new Entity(ID, default, default);
+        DefaultWorldEntity = new Entity(WorldID, default, default);
         DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
     }
 
@@ -239,7 +240,7 @@ public partial class World : IDisposable
         var (id, version) = RecycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(NextEntityID++, (ushort)0);
         entityLocation.Version = version;
         EntityTable[id] = entityLocation;
-        return new Entity(ID, version, id);
+        return new Entity(WorldID, version, id);
     }
 
     /// <summary>
@@ -360,7 +361,7 @@ public partial class World : IDisposable
     internal Query BuildQuery<T>()
         where T : struct, IQueryBuilder
     {
-        ref Query query = ref QueryInfo<T>.Queries[ID];
+        ref Query query = ref QueryInfo<T>.Queries[WorldID];
         query ??= QueryInfo<T>.Build(this);
         return query;
     }
@@ -384,7 +385,7 @@ public partial class World : IDisposable
         Debug.Assert(newSize > WorldArchetypeTable.Length);
         Array.Resize(ref WorldArchetypeTable, newSize);
 
-        World world = GlobalWorldTables.Worlds[ID];
+        World world = GlobalWorldTables.Worlds[WorldID];
     }
 
     internal void EnterDisallowState()
@@ -489,7 +490,7 @@ public partial class World : IDisposable
         if (_isDisposed)
             throw new InvalidOperationException("World is already disposed!");
 
-        GlobalWorldTables.Worlds[ID] = null!;
+        GlobalWorldTables.Worlds[WorldID] = null!;
 
         foreach (ref var item in WorldArchetypeTable.AsSpan())
         {

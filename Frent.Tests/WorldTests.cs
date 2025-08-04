@@ -19,7 +19,7 @@ internal class WorldTests
         ushort id;
         using (World world2 = new())
         {
-            That(id = world2.ID, Is.Not.EqualTo(world1.ID));
+            That(id = world2.WorldID, Is.Not.EqualTo(world1.WorldID));
         }
     }
 

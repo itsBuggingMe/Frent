@@ -1,6 +1,5 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using Frent.Core.Sparse;
 using Frent.Systems;
 using Frent.Updating;
 using Frent.Updating.Runners;
@@ -10,14 +9,19 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[Variadic("        ref T ref1 = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;",
-    "|        ref T$ ref$ = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index); ref$ = comp$;\n|")]
+[Variadic("        ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;",
+    "|        ref T$ ref$ = ref Component<T$>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index); ref$ = comp$;\n|")]
 [Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
     "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
 [Variadic("            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
 [Variadic("e<T>", "e<|T$, |>")]
 [Variadic("y<T>", "y<|T$, |>")]
 [Variadic("in T comp", "|in T$ comp$, |")]
+[Variadic("            if (Component<T>.IsSparseComponent) bitset.SetOrResize(Component<T>.SparseSetComponentIndex);",
+    "|            if (Component<T$>.IsSparseComponent) bitset.SetOrResize(Component<T$>.SparseSetComponentIndex);\n|")]
+[Variadic("Component<T>.IsSparseComponent &&",
+    "|!Component<T$>.IsSparseComponent && |")]
+
 //it just so happens Archetype and Create both end with "e"
 partial class World
 {
@@ -57,9 +61,24 @@ partial class World
         ref SparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
 
         //1x array lookup per component
-        ref T ref1 = ref (Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index)); ref1 = comp;
-        
-        Entity concreteEntity = new Entity(ID, version, id);
+        ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
+
+
+        if (!(Component<T>.IsSparseComponent && true))
+        {// TODO: maybe make new custom ref dict? this is getting ridiculous.
+#if NETSTANDARD
+            Bitset bitset = SparseComponentTable.GetOrAddNew(id);
+#else
+            ref Bitset bitset = ref CollectionsMarshal.GetValueRefOrAddDefault(SparseComponentTable, id, out _);
+#endif
+            if (Component<T>.IsSparseComponent) bitset.SetOrResize(Component<T>.SparseSetComponentIndex);
+
+#if NETSTANDARD
+            SparseComponentTable[id] = bitset;
+#endif
+        }
+
+        Entity concreteEntity = new Entity(WorldID, version, id);
         
         Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
         EntityCreatedEvent.Invoke(concreteEntity);
