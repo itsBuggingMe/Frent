@@ -303,7 +303,7 @@ public class CommandBuffer
             ref var record = ref _world.EntityTable[id];
             if (record.Version == item.Entity.Version)
             {
-                _world.RemoveComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
+                _world.RemoveArchetypicalComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
             }
         }
 
@@ -315,12 +315,12 @@ public class CommandBuffer
             {
                 Entity concrete = command.Entity.ToEntity(_world);
 
-                _world.AddComponent(concrete, ref record, command.ComponentHandle.ComponentID, out var location, out var destination);
+                _world.AddArchetypicalComponent(concrete, ref record, command.ComponentHandle.ComponentID, out var location, out var destination);
 
                 var runner = destination.Components[destination.GetComponentIndex(command.ComponentHandle.ComponentID)];
                 runner.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
 
-                if (record.HasEvent(EntityFlags.AddComp))
+                if (record.HasFlag(EntityFlags.AddComp))
                 {
 #if NETSTANDARD2_1
                     var events = _world.EventLookup[command.Entity];

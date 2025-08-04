@@ -103,6 +103,7 @@ public static class ComponentDelegates<T>
 public static class Component
 {
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
+    internal static FastStack<ComponentData> ComponentTableBySparseIndex = FastStack<ComponentData>.Create(2);
 
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
 
@@ -198,12 +199,18 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            ComponentTable.Push(new ComponentData(type, table ?? CreateComponentTable(type),
-                GenerationServices.TypeIniters.TryGetValue(type, out var v) ? v : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? d : null,
+            bool isSparseComponent = typeof(ISparseComponent).IsAssignableFrom(type);
+
+            ComponentData data = new ComponentData(type, table ?? CreateComponentTable(type),
+                GenerationServices.TypeIniters.GetValueOrDefault(type),
+                GenerationServices.TypeDestroyers.GetValueOrDefault(type),
                 GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : [],
-                typeof(ISparseComponent).IsAssignableFrom(type) ? ++NextSparseSetComponentIndex : 0
-                ));
+                isSparseComponent ? ++NextSparseSetComponentIndex : 0
+            );
+
+            ComponentTable.Push(data);
+            if (isSparseComponent)
+                ComponentTableBySparseIndex.Push(data);
 
             return id;
         }
@@ -247,5 +254,10 @@ public static class Component
     }
 
     //initalize default(ComponentID) to point to void
-    static Component() => GetComponentID(typeof(void));
+    static Component()
+    {
+        GetComponentID(typeof(void));
+        // offset by one
+        ComponentTableBySparseIndex.Push(default);
+    }
 }

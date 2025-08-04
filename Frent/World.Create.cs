@@ -9,8 +9,8 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[Variadic("        ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;",
-    "|        ref T$ ref$ = ref Component<T$>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index); ref$ = comp$;\n|")]
+[Variadic("        ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;",
+    "|        ref T$ ref$ = ref Component<T$>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index); ref$ = comp$;\n|")]
 [Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
     "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
 [Variadic("            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
@@ -51,6 +51,13 @@ partial class World
             entity = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
         }
 
+        bool hasSparseComponent = !(Component<T>.IsSparseComponent && true);
+
+        if (hasSparseComponent)
+        {
+            eloc.Flags |= EntityFlags.HasSparseComponents;
+        }
+
         //manually inlined from World.CreateEntityFromLocation
         //The jit likes to inline the outer create function and not inline
         //the inner functions - benchmarked to improve perf by 10-20%
@@ -58,19 +65,19 @@ partial class World
         eloc.Version = version;
         EntityTable[id] = eloc;
 
-        ref SparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
+        ref ComponentSparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
 
         //1x array lookup per component
-        ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
+        ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
 
-
-        if (!(Component<T>.IsSparseComponent && true))
+        if (hasSparseComponent)
         {// TODO: maybe make new custom ref dict? this is getting ridiculous.
 #if NETSTANDARD
             Bitset bitset = SparseComponentTable.GetOrAddNew(id);
 #else
             ref Bitset bitset = ref CollectionsMarshal.GetValueRefOrAddDefault(SparseComponentTable, id, out _);
 #endif
+
             if (Component<T>.IsSparseComponent) bitset.SetOrResize(Component<T>.SparseSetComponentIndex);
 
 #if NETSTANDARD

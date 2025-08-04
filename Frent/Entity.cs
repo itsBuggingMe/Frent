@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Frent.Collections;
 
 namespace Frent;
 
@@ -96,8 +97,14 @@ public partial struct Entity : IEquatable<Entity>
 
     private Ref<T> TryGetCore<T>(out bool exists)
     {
-        if (!InternalIsAlive(out var _, out var entityLocation))
+        if (!InternalIsAlive(out var world, out var entityLocation))
             goto doesntExist;
+
+        if (Component<T>.IsSparseComponent)
+        {
+            return UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.SparseIndex))
+                .TryGet(out exists);
+        }
 
         int compIndex = entityLocation.Archetype.GetComponentIndex<T>();
 

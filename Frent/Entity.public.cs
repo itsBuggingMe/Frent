@@ -25,7 +25,7 @@ partial struct Entity
     {
         ref EntityLocation entityLocation = ref AssertIsAlive(out World world);
         if (componentID.IsSparseComponent)
-            return world.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Has(EntityID);
+            return world.WorldSparseSetTable.UnsafeArrayIndex(componentID.SparseIndex).Has(EntityID);
         return entityLocation.Archetype.GetComponentIndex(componentID) != 0;
     }
 
@@ -38,7 +38,7 @@ partial struct Entity
     {
         ref EntityLocation entityLocation = ref AssertIsAlive(out World world);
         if(Component<T>.IsSparseComponent)
-            return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.RawIndex).Has(EntityID);
+            return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.SparseIndex).Has(EntityID);
         return entityLocation.Archetype.GetComponentIndex<T>() != 0;
     }
 
@@ -60,7 +60,7 @@ partial struct Entity
         {
             if(componentID.IsSparseComponent)
             {
-                return world.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Has(EntityID);
+                return world.WorldSparseSetTable.UnsafeArrayIndex(componentID.SparseIndex).Has(EntityID);
             }
             else
             {
@@ -82,7 +82,7 @@ partial struct Entity
         {
             if (Component<T>.IsSparseComponent)
             {
-                return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.RawIndex).Has(EntityID);
+                return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.SparseIndex).Has(EntityID);
             }
             else
             {
@@ -118,8 +118,8 @@ partial struct Entity
 
         if(Component<T>.IsSparseComponent)
         {
-            var set = world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.RawIndex);
-            return ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(set)[EntityID];
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.SparseIndex);
+            return ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(set)[EntityID];
         }
 
         Archetype archetype = lookup.Archetype;
@@ -145,7 +145,7 @@ partial struct Entity
 
         if(id.IsSparseComponent)
         {
-            var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.RawIndex);
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.SparseIndex);
             return set.Get(EntityID);
         }
 
@@ -179,7 +179,7 @@ partial struct Entity
 
         if (id.IsSparseComponent)
         {
-            var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.RawIndex);
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.SparseIndex);
             set.Set(EntityID, obj);
             return;
         }
@@ -231,7 +231,7 @@ partial struct Entity
 
         if(componentId.IsSparseComponent)
         {
-            var set = world.WorldSparseSetTable.UnsafeArrayIndex(componentId.RawIndex);
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(componentId.SparseIndex);
             return set.TryGet(EntityID, out value);
         }
 
@@ -263,8 +263,19 @@ partial struct Entity
             throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
         
         ArchetypeID finalArchetype = eloc.ArchetypeID;
+
+        //TODO: setting sparse bits and calling initers.
         foreach (var componentHandle in componentHandles)
-            finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddTag);
+        {
+            if (componentHandle.ComponentID.IsSparseComponent)
+            {
+                world.WorldSparseSetTable.UnsafeArrayIndex(componentHandle.ComponentID.SparseIndex).Add(eloc.Index, componentHandle);
+            }
+            else
+            {
+                finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddTag)
+            }
+        }
         
         Archetype destinationArchetype = finalArchetype.Archetype(world);
         
@@ -317,7 +328,7 @@ partial struct Entity
         ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            w.AddComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
+            w.AddArchetypicalComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
             
             ComponentStorageRecord componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
             componentRunner.SetAt(this, component, entityLocation.Index);
@@ -363,7 +374,7 @@ partial struct Entity
             }
             else
             {
-                w.RemoveComponent(this, ref lookup, componentID);
+                w.RemoveArchetypicalComponent(this, ref lookup, componentID);
             }
         }
         else
@@ -553,7 +564,7 @@ partial struct Entity
             return;
 
 #if NETSTANDARD2_1
-        bool exists = entityLocation.HasEvent(flag);
+        bool exists = entityLocation.HasFlag(flag);
         var events = exists ? world.EventLookup[EntityIDOnly] : default;
 #else
         ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, flag, out bool exists);
@@ -598,7 +609,7 @@ partial struct Entity
         if (@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
 #if NETSTANDARD2_1
-        bool exists = entityLocation.HasEvent(flag);
+        bool exists = entityLocation.HasFlag(flag);
         var record = exists ? world.EventLookup[EntityIDOnly] : default;
 #else
         ref var record = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);

@@ -41,7 +41,7 @@ public partial class World : IDisposable
     internal readonly Dictionary<int, Bitset> SparseComponentTable = new();
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
-    internal SparseSetBase[] WorldSparseSetTable;
+    internal ComponentSparseSetBase[] WorldSparseSetTable;
 
     internal struct WorldArchetypeTableItem(Archetype archetype, Archetype temp)
     {
@@ -468,7 +468,7 @@ public partial class World : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EventRecord TryGetEventData(EntityLocation entityLocation, EntityIDOnly entity, EntityFlags eventType, out bool exists)
     {
-        if (entityLocation.HasEvent(eventType))
+        if (entityLocation.HasFlag(eventType))
         {
             exists = true;
             return ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity);
