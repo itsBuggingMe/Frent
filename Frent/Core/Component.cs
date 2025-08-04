@@ -158,7 +158,9 @@ public static class Component
             IDTable<T> stack = new IDTable<T>();
             ComponentTable.Push(new ComponentData(type, stack,
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null, [], Component<T>.IsSparseComponent));
+                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null,
+                GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : [],
+                Component<T>.IsSparseComponent));
 
             return (id, stack, initDelegate, destroyDelegate);
         }
