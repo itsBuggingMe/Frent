@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Frent.Collections;
 
 //[DebuggerTypeProxy(typeof(RefDictionary<,>.RefDictionaryDebugView))]
-internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey>
+internal class RefDictionary<TKey, TValue> where TKey : notnull
 {
     public RefDictionary()
     {
@@ -28,7 +28,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey
     private int _free = -1;
 
     [StructLayout(LayoutKind.Auto)]
-    private struct Entry
+    internal struct Entry
     {
         /*_buckets*/
         // entry[mod(hash)]
@@ -39,7 +39,24 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey
         internal int NextIndex;
     }
 
-    public bool Remove(TKey key)
+    public bool TryGetValue(TKey key, out TValue value)
+    {
+        ref Entry entry = ref FindEntry(key);
+
+        if (Unsafe.IsNullRef(ref entry))
+        {
+            Unsafe.SkipInit(out value);
+            MemoryHelpers.Poison(ref value);
+            return false;
+        }
+
+        value = entry.Value;
+        return true;
+    }
+
+    public bool Remove(TKey key) => Remove(key, out _);
+
+    public bool Remove(TKey key, out TValue value)
     {
         Entry[] entries = _entries;
 #if !NETSTANDARD
@@ -61,7 +78,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey
                 // add to free list
                 current.NextIndex = _free;
                 _free = next;
-
+                value = current.Value;
                 return true;
             }
 
@@ -69,8 +86,11 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey
             next = connectedFrom;
         }
         
+        Unsafe.SkipInit(out value);
+        MemoryHelpers.Poison(ref value);
         return false;
     }
+
 
     public ref TValue? GetValueRefOrAddDefault(TKey key, out bool exists)
     {
@@ -173,6 +193,31 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey
         }
 
         return ref CreateEntry(key);
+    }
+
+    public Enumerator GetEnumerator() => new Enumerator(_entries);
+
+    internal struct Enumerator
+    {
+        internal Enumerator(Entry[] entries)
+        {
+            _entries = entries;
+            _index = -1;
+        }
+
+        private int _index;
+        private Entry[] _entries;
+
+        public KeyValuePair<TKey, TValue> Current
+        {
+            get
+            {
+                ref Entry entry = ref _entries[_index];
+                return new KeyValuePair<TKey, TValue>(entry.Key, entry.Value);
+            }
+        }
+
+        public bool MoveNext() => ++_index < _entries.Length;
     }
 
     /*

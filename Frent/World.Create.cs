@@ -71,18 +71,10 @@ partial class World
         ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
 
         if (hasSparseComponent)
-        {// TODO: maybe make new custom ref dict? this is getting ridiculous.
-#if NETSTANDARD
-            Bitset bitset = SparseComponentTable.GetOrAddNew(id);
-#else
-            ref Bitset bitset = ref CollectionsMarshal.GetValueRefOrAddDefault(SparseComponentTable, id, out _);
-#endif
+        {
+            ref Bitset bitset = ref SparseComponentTable.GetValueRefOrAddDefault(id, out _);
 
             if (Component<T>.IsSparseComponent) bitset.SetOrResize(Component<T>.SparseSetComponentIndex);
-
-#if NETSTANDARD
-            SparseComponentTable[id] = bitset;
-#endif
         }
 
         Entity concreteEntity = new Entity(WorldID, version, id);

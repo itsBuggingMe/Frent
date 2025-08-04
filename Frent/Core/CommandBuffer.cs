@@ -322,11 +322,7 @@ public class CommandBuffer
 
                 if (record.HasFlag(EntityFlags.AddComp))
                 {
-#if NETSTANDARD2_1
-                    var events = _world.EventLookup[command.Entity];
-#else
-                    ref var events = ref CollectionsMarshal.GetValueRefOrNullRef(_world.EventLookup, command.Entity);
-#endif
+                    ref var events = ref _world.EventLookup.GetValueRefOrNullRef(command.Entity);
                     events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
                     runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
                 }

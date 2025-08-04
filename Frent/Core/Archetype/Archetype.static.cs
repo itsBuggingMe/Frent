@@ -62,7 +62,7 @@ partial class Archetype
     internal static FastStack<ArchetypeData> ArchetypeTable = FastStack<ArchetypeData>.Create(16);
     internal static int NextArchetypeID = -1;
 
-    private static readonly Dictionary<long, ArchetypeData> ExistingArchetypes = [];
+    private static readonly RefDictionary<long, ArchetypeData> ExistingArchetypes = new();
 
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
@@ -147,28 +147,7 @@ partial class Archetype
             throw new InvalidOperationException("Entities can have a max of 127 components!");
         lock (GlobalWorldTables.BufferChangeLock)
         {
-#if NETSTANDARD2_1
-            var key = GetHash(types, tagTypes);
-            if (ExistingArchetypes.TryGetValue(key, out ArchetypeData value))
-            {
-                return value.ID;
-            }
-
-            int nextIDInt = ++NextArchetypeID;
-            if (nextIDInt == ushort.MaxValue)
-                throw new InvalidOperationException($"Exceeded maximum unique archetype count of 65535");
-            var finalID = new ArchetypeID((ushort)nextIDInt);
-
-            var arr = typesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(types);
-            var tagArr = tagTypesArray ?? MemoryHelpers.ReadOnlySpanToImmutableArray(tagTypes);
-
-            var slot = new ArchetypeData(finalID, arr, tagArr);
-            ArchetypeTable.Push(slot);
-            ModifyComponentLocationTable(arr, tagArr, finalID.RawIndex);
-
-            ExistingArchetypes[key] = slot;
-#else
-            ref ArchetypeData slot = ref CollectionsMarshal.GetValueRefOrAddDefault(ExistingArchetypes, GetHash(types, tagTypes), out bool exists);
+            ref ArchetypeData slot = ref ExistingArchetypes.GetValueRefOrAddDefault(GetHash(types, tagTypes), out bool exists);
             ArchetypeID finalID;
 
             if (exists)
@@ -190,8 +169,6 @@ partial class Archetype
                 ArchetypeTable.Push(slot);
                 ModifyComponentLocationTable(arr, tagArr, finalID.RawIndex);
             }
-#endif
-
             return finalID;
         }
     }

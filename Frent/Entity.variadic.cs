@@ -76,11 +76,7 @@ partial struct Entity
 
             if (EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
-#if NETSTANDARD2_1
-                EventRecord events = world.EventLookup[EntityIDOnly];
-#else
-                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
-#endif
+                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityEvents(this, EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.AddGenericComp), ref events.Add, ref c1ref);
             }
         }
@@ -145,11 +141,7 @@ partial struct Entity
 
             if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
             {
-#if NETSTANDARD2_1
-                EventRecord events = world.EventLookup[EntityIDOnly];
-#else
-                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
-#endif
+                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityTagEvents<T>(this, ref events.Tag);
             }
         }
@@ -187,11 +179,7 @@ partial struct Entity
 
             if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
             {
-#if NETSTANDARD2_1
-                EventRecord events = world.EventLookup[EntityIDOnly];
-#else
-                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
-#endif
+                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityTagEvents<T>(this, ref events.Detach);
             }
         }

@@ -153,11 +153,7 @@ partial class World
 
             if (EntityLocation.HasEventFlag(currentLookup.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
             {
-#if NETSTANDARD2_1
-                var lookup = EventLookup[entity.EntityIDOnly];
-#else
-                ref var lookup = ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity.EntityIDOnly);
-#endif
+                ref var lookup = ref EventLookup.GetValueRefOrNullRef(entity.EntityIDOnly);
 
                 if (hasGenericRemoveEvent)
                 {
@@ -233,7 +229,7 @@ partial class World
         EntityDeletedEvent.Invoke(entity);
         if (entityLocation.HasFlag(EntityFlags.OnDelete))
         {
-            foreach (var @event in EventLookup[entity.EntityIDOnly].Delete.AsSpan())
+            foreach (var @event in EventLookup.GetValueRefOrNullRef(entity.EntityIDOnly).Delete.AsSpan())
             {
                 @event.Invoke(entity);
             }

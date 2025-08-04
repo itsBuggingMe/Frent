@@ -38,7 +38,7 @@ public partial class World : IDisposable
     internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
 
     // entity ID -> sparse component bitset
-    internal readonly Dictionary<int, Bitset> SparseComponentTable = new();
+    internal readonly RefDictionary<int, Bitset> SparseComponentTable = new();
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal ComponentSparseSetBase[] WorldSparseSetTable;
@@ -49,12 +49,12 @@ public partial class World : IDisposable
         public Archetype DeferredCreationArchetype = temp;
     }
 
-    internal Dictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = [];
+    internal RefDictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = new();
 
     internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
     
-    private Dictionary<Type, WorldUpdateFilter> _updatesByAttributes = [];
-    private Dictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = [];
+    private RefDictionary<Type, WorldUpdateFilter> _updatesByAttributes = new();
+    private RefDictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = new();
     internal int NextEntityID;
 
     internal readonly ushort WorldID;
@@ -128,7 +128,7 @@ public partial class World : IDisposable
     /// </summary>
     public Config CurrentConfig { get; set; }
 
-    internal Dictionary<EntityIDOnly, EventRecord> EventLookup = [];
+    internal RefDictionary<EntityIDOnly, EventRecord> EventLookup = new();
     internal readonly Archetype DefaultArchetype;
 
     /// <summary>
@@ -288,8 +288,7 @@ public partial class World : IDisposable
         WorldUpdateFilter? appliesTo = default;
         try
         {
-            if (!_updatesByAttributes.TryGetValue(attributeType, out appliesTo))
-                _updatesByAttributes[attributeType] = appliesTo = new WorldUpdateFilter(this, attributeType);
+            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(attributeType, out _) ??= new WorldUpdateFilter(this, attributeType);
             appliesTo.Update();
         }
         finally
@@ -311,13 +310,7 @@ public partial class World : IDisposable
 
         try
         {
-#if NETSTANDARD2_1
-        if(!_singleComponentUpdates.TryGetValue(componentType, out singleComponent))
-            _singleComponentUpdates[componentType] = singleComponent = new(this, componentType);
-#else
-            singleComponent = CollectionsMarshal.GetValueRefOrAddDefault(_singleComponentUpdates, componentType, out _) ??= new(this, componentType);
-#endif
-
+            singleComponent = _singleComponentUpdates.GetValueRefOrAddDefault(componentType, out _) ??= new(this, componentType);
             singleComponent.Update();  
         }
         finally
@@ -464,21 +457,19 @@ public partial class World : IDisposable
         Interlocked.Decrement(ref _allowStructuralChanges);
     }
 
-#if !NETSTANDARD2_1
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref EventRecord TryGetEventData(EntityLocation entityLocation, EntityIDOnly entity, EntityFlags eventType, out bool exists)
     {
         if (entityLocation.HasFlag(eventType))
         {
             exists = true;
-            return ref CollectionsMarshal.GetValueRefOrNullRef(EventLookup, entity);
+            return ref EventLookup.GetValueRefOrNullRef(entity);
         }
 
 
         exists = false;
         return ref Unsafe.NullRef<EventRecord>();
     }
-#endif
 
     internal bool AllowStructualChanges => _allowStructuralChanges == -1;
 

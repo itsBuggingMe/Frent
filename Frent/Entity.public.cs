@@ -38,7 +38,7 @@ partial struct Entity
     {
         ref EntityLocation entityLocation = ref AssertIsAlive(out World world);
         if(Component<T>.IsSparseComponent)
-            return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.SparseIndex).Has(EntityID);
+            return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex).Has(EntityID);
         return entityLocation.Archetype.GetComponentIndex<T>() != 0;
     }
 
@@ -82,7 +82,7 @@ partial struct Entity
         {
             if (Component<T>.IsSparseComponent)
             {
-                return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.SparseIndex).Has(EntityID);
+                return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex).Has(EntityID);
             }
             else
             {
@@ -118,7 +118,7 @@ partial struct Entity
 
         if(Component<T>.IsSparseComponent)
         {
-            var set = world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.SparseIndex);
+            var set = world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex);
             return ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(set)[EntityID];
         }
 
@@ -264,6 +264,7 @@ partial struct Entity
         
         ArchetypeID finalArchetype = eloc.ArchetypeID;
 
+
         //TODO: setting sparse bits and calling initers.
         foreach (var componentHandle in componentHandles)
         {
@@ -273,7 +274,7 @@ partial struct Entity
             }
             else
             {
-                finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddTag)
+                finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddTag);
             }
         }
         
@@ -340,11 +341,7 @@ partial struct Entity
 
                 if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
                 {
-#if NETSTANDARD2_1
-                    EventRecord events = w.EventLookup[EntityIDOnly];
-#else
-                    ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(w.EventLookup, EntityIDOnly);
-#endif
+                    ref EventRecord events = ref w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
 
                     events.Add.NormalEvent.Invoke(this, componentID);
                     componentRunner.InvokeGenericActionWith(events.Add.GenericEvent, this, entityLocation.Index);
@@ -563,13 +560,7 @@ partial struct Entity
         if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
 
-#if NETSTANDARD2_1
-        bool exists = entityLocation.HasFlag(flag);
-        var events = exists ? world.EventLookup[EntityIDOnly] : default;
-#else
         ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, flag, out bool exists);
-#endif
-
 
         if (exists)
         {
@@ -608,12 +599,9 @@ partial struct Entity
     {
         if (@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
-#if NETSTANDARD2_1
-        bool exists = entityLocation.HasFlag(flag);
-        var record = exists ? world.EventLookup[EntityIDOnly] : default;
-#else
-        ref var record = ref CollectionsMarshal.GetValueRefOrAddDefault(world.EventLookup, EntityIDOnly, out bool exists);
-#endif
+
+        ref var record = ref world.EventLookup.GetValueRefOrAddDefault(EntityIDOnly, out bool exists);
+
         world.EntityTable[EntityID].Flags |= flag;
         EventRecord.Initalize(exists, ref record!);
 

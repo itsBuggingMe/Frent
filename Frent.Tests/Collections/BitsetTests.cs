@@ -59,7 +59,9 @@ public class BitsetTests
         {
             actual.Add(index);
         }
-            
+
+        while (enumerator.MoveNext())
+            actual.Add(enumerator.Current);
 
         That(expected, Is.EqualTo(actual));
     }

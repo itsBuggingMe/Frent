@@ -9,15 +9,13 @@ namespace Frent.Core;
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
 {
-    internal ComponentID(ushort id, ushort sparseIndex)
+    internal ComponentID(ushort id)
     {
         RawIndex = id;
-        SparseIndex = sparseIndex;
     }
+     
     internal readonly ushort RawIndex;
-    internal readonly ushort SparseIndex;
-    internal readonly bool IsSparseComponent => SparseIndex != 0;
-
+     
     /// <summary>
     /// The type of component this <see cref="ComponentID"/> represents.
     /// </summary>

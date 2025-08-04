@@ -100,20 +100,12 @@ internal static class MemoryHelpers
         return builder.ToImmutable();
     }
 
-    public static TValue GetOrAddNew<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key)
-        where TKey : notnull
+    public static TValue GetOrAddNew<TKey, TValue>(this RefDictionary<TKey, TValue> dictionary, TKey key)
+        where TKey : notnull, IEquatable<TKey>
         where TValue : new()
     {
-#if NETSTANDARD2_1
-        if (dictionary.TryGetValue(key, out var value))
-        {
-            return value;
-        }
-        return dictionary[key] = new();
-#else
-        ref var res = ref CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out bool _);
+        ref var res = ref dictionary.GetValueRefOrAddDefault(key, out bool _);
         return res ??= new();
-#endif
     }
 
     public static ref T GetValueOrResize<T>(ref T[] arr, int index)
@@ -157,7 +149,8 @@ internal static class MemoryHelpers
     public static void Poison<T>(ref T item)
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            throw new NotSupportedException("Cleared anyways");
+            return;
+            //throw new NotSupportedException("Cleared anyways");
 
 #if NET6_0_OR_GREATER
         Span<byte> raw = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), Unsafe.SizeOf<T>());

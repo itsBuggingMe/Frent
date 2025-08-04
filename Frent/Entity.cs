@@ -102,7 +102,7 @@ public partial struct Entity : IEquatable<Entity>
 
         if (Component<T>.IsSparseComponent)
         {
-            return UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.ID.SparseIndex))
+            return UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex))
                 .TryGet(out exists);
         }
 

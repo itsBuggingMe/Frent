@@ -108,4 +108,35 @@ internal struct Bitset
             return true;
         }
     }
+    public Enumerator GetEnumerator() => new(this);
+
+    internal struct Enumerator(Bitset bitset)
+    {
+        private nint[] _bits = bitset._bits;
+        private nint _consumedBits = 0;
+        private int _index = 0;
+        private int _current;
+        public int Current => _current;
+        public bool MoveNext()
+        {
+            if(_consumedBits == 0)
+            {
+                if ((uint)_index < (uint)_bits.Length)
+                {
+                    _current = _index * IntPtr.Size * 8;
+                    _consumedBits = _bits[_index++];
+                    return true;
+                }
+
+                return false;
+            }
+
+            int leadingZeros = BitOperations.LeadingZeroCount((nuint)_consumedBits);
+
+            _consumedBits <<= leadingZeros + 1;
+            _current += leadingZeros;
+
+            return true;
+        }
+    }
 }
