@@ -88,7 +88,6 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     {
         const int LargeArchetypeThreshold = 16;
 
-        Span<ArchtypeUpdateMethod> methods = _methods.AsSpan();
         var archetypes = _matchedArchtypes.AsSpan();
 
         int largeCount = 0;

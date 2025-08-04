@@ -26,8 +26,11 @@ public partial class World : IDisposable
     private static ushort _nextWorldID = 1;
     #endregion
 
-    //entityID -> entity metadata
+    //entity ID -> entity metadata
     internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
+
+    // entity ID -> sparse component bitset
+    internal Dictionary<int, Bitset> _sparseComponentTable = new();
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal SparseSetBase[] WorldSparseSetTable;
