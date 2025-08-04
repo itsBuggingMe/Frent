@@ -42,6 +42,8 @@ public static class Component<T>
         }
     }
 
+    internal static /*readonly*/ nint SparseSetComponentIndex => throw new NotImplementedException();
+
     internal static readonly UpdateMethodData[] UpdateMethods;
     internal static readonly ComponentBufferManager<T> BufferManagerInstance;
 

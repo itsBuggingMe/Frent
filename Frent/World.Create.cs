@@ -1,9 +1,12 @@
-﻿using Frent.Core;
+﻿using Frent.Collections;
+using Frent.Core;
+using Frent.Core.Sparse;
 using Frent.Systems;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -26,7 +29,7 @@ partial class World
     [SkipLocalsInit]
     public Entity Create<T>(in T comp)
     {
-        var archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
+        WorldArchetypeTableItem archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
 
         ref var entity = ref Unsafe.NullRef<EntityIDOnly>();
         EntityLocation eloc = default;
@@ -51,9 +54,11 @@ partial class World
         eloc.Version = version;
         EntityTable[id] = eloc;
 
-        //1x array lookup per component
-        ref T ref1 = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
+        ref SparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
 
+        //1x array lookup per component
+        ref T ref1 = ref (Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<SparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index)); ref1 = comp;
+        
         Entity concreteEntity = new Entity(ID, version, id);
         
         Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
@@ -68,6 +73,7 @@ partial class World
     /// <param name="count">The number of entities to create</param>
     /// <returns>The entities created and their component spans</returns>
     /// <variadic />
+    [Obsolete]
     public ChunkTuple<T> CreateMany<T>(int count)
     {
         if (count < 0)
