@@ -165,7 +165,7 @@ public static class Component
                 GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
                 GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null,
                 GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : [],
-                Component<T>.IsSparseComponent));
+                Component<T>.SparseSetComponentIndex));
 
             return (id, stack, initDelegate, destroyDelegate);
         }
