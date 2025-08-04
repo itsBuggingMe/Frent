@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Frent.Collections;
+
+//[DebuggerTypeProxy(typeof(RefDictionary<,>.RefDictionaryDebugView))]
 internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey>
 {
     public RefDictionary()
@@ -44,36 +46,30 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey
         Debug.Assert(BitOperations.PopCount((uint)entries.Length) == 1);
 #endif
 
-        int index = key.GetHashCode() & entries.Length - 1;
-        int previousIndex = -1;
+        int bucket = key.GetHashCode() & (entries.Length - 1);
+        ref int connectedFrom = ref entries[bucket].BucketIndex;
 
-        do
+        for (int next = connectedFrom; next >= 0;)
         {
-            ref Entry current = ref entries[index];
+            ref Entry current = ref entries[next];
             if (current.Key.Equals(key))
             {
-                // add to free list
-                current.NextIndex = _free;
-                _free = index;
                 // relink linked list
                 // say that 3 times fast
-                if(current.NextIndex == -1)
-                {// already end of list
+                connectedFrom = current.NextIndex;
 
-                }
-                else
-                {
+                // add to free list
+                current.NextIndex = _free;
+                _free = next;
 
-                }
                 return true;
             }
 
-            previousIndex = index;
-            index = current.NextIndex;
-        } while (index >= 0);
-
-        Debug.Assert(index == -1);
-        return true;
+            connectedFrom = ref current.NextIndex;
+            next = connectedFrom;
+        }
+        
+        return false;
     }
 
     public ref TValue? GetValueRefOrAddDefault(TKey key, out bool exists)
@@ -104,20 +100,20 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey
         Debug.Assert(BitOperations.PopCount((uint)entries.Length) == 1);
 #endif
 
-        int index = key.GetHashCode() & entries.Length - 1;
+        int bucket = key.GetHashCode() & (entries.Length - 1);
 
-        do
+        for (int next = entries[bucket].BucketIndex; next >= 0;)
         {
-            ref Entry current = ref entries[index];
+            ref Entry current = ref entries[next];
+
             if (current.Key.Equals(key))
             {
                 return ref current;
             }
 
-            index = current.NextIndex;
-        } while (index >= 0);
+            next = current.NextIndex;
+        }
 
-        Debug.Assert(index == -1);
         return ref Unsafe.NullRef<Entry>();
     }
 
@@ -157,26 +153,55 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull, IEquatable<TKey
     private ref Entry DoubleAndCreateEntry(TKey key)
     {
         Entry[] oldEntries = _entries;
-        Array.Resize(ref _entries, _entries.Length * 2);
+        _entries = new Entry[_entries.Length * 2];
         Entry[] entries = _entries;
 
-        for(int i = entries.Length >> 1; i < entries.Length; i++)
+        for(int i = 0; i < entries.Length; i++)
         {
             ref var entry = ref entries[i];
             entry.NextIndex = -1;
             entry.BucketIndex = -1;
         }
 
+        _next = 0;
+
         // rebuild
-        int modMask = entries.Length - 1;
         for (int i = 0; i < oldEntries.Length; i++)
         {
             ref Entry entry = ref oldEntries[i];
-            int bucketIndex = entry.Key.GetHashCode() & modMask;
-
             CreateEntry(entry.Key).Value = entry.Value;
         }
 
         return ref CreateEntry(key);
     }
+
+    /*
+     // save on some il
+    private class RefDictionaryDebugView(RefDictionary<TKey, TValue> dict)
+    {
+        public IEnumerable<int> Free
+        {
+            get
+            {
+                for(int next = dict._free; next != -1; next = dict._entries[next].NextIndex)
+                    yield return next;
+            }
+        }
+
+        public IEnumerable<IEnumerable<Entry>> Buckets
+        {
+            get
+            {
+                for (int hash = 0; hash < dict._entries.Length; hash++)
+                {
+                    List<Entry> entryList = [];
+                    for (int next = dict._entries[hash].BucketIndex; next != -1; next = dict._entries[next].NextIndex)
+                    {
+                        entryList.Add(dict._entries[next]);
+                    }
+                    yield return entryList;
+                }
+            }
+        }
+    }*/
 }

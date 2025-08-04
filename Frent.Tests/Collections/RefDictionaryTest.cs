@@ -60,13 +60,6 @@ public class RefDictionaryTests
     }
 
     [Test]
-    public void Remove_NonExistingKey_ReturnsTrue()
-    {
-        bool removed = _dict.Remove("nonexistent");
-        Assert.That(removed); // As per current implementation, always returns true
-    }
-
-    [Test]
     public void AddMultipleEntries_Resize_AndRetrieveAll()
     {
         for (int i = 0; i < 20; i++)

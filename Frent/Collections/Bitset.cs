@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Frent.Collections;
 
-internal struct Bitset(int capacity) : IEnumerable<int>
+internal struct Bitset(int capacity)
 {
     private nint[] _bits = new nint[Divide(capacity)];
     public readonly int Length => (int)Multiply(_bits.Length);
