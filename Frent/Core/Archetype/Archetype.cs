@@ -315,13 +315,14 @@ internal partial class Archetype
     internal bool HasTag<T>()
     {
         var index = Tag<T>.ID.RawValue;
-        return (ComponentTagTable.UnsafeArrayIndex(index) << 7) != 0;
+        // & instead of >> saves 1 instruction
+        return (ComponentTagTable.UnsafeArrayIndex(index) & GlobalWorldTables.HasTagMask) != 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool HasTag(TagID tagID)
     {
-        return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) << 7) != 0;
+        return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) & GlobalWorldTables.HasTagMask) != 0;
     }
 
     internal Span<EntityIDOnly> GetEntitySpan()

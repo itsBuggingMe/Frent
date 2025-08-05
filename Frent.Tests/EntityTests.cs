@@ -1,4 +1,5 @@
-﻿using Frent.Tests.Helpers;
+﻿using System.Runtime.CompilerServices;
+using Frent.Tests.Helpers;
 using Frent.Core;
 using static NUnit.Framework.Assert;
 
@@ -395,6 +396,33 @@ internal class EntityTests
         var e = world.Create(new Struct1(4));
 
         That(e.TryHas<Struct1>(), Is.True);
+    }
+
+    [Test]
+    public void ComponentTagID_SameID_DoesNotInterfere()
+    {
+        // see #25
+
+        using World world = new();
+
+        // ensure at least 1 tag/comp type init
+        var dummy = world.Create();
+        dummy.Add(0);
+        dummy.Tag<int>();
+        dummy.Delete();
+
+        Entity e = world.Create();
+
+        TagID tag = new TagID(1);
+        ComponentID component = new ComponentID(1);
+
+        e.AddAs(component, Activator.CreateInstance(component.Type)!);
+
+        That(e.Tagged(tag), Is.False);
+
+        e.Tag(tag);
+
+        That(e.Tagged(tag), Is.True);
     }
 
     internal class GenericAction(Action<Type, object?> onAction) : IGenericAction<Entity>, IGenericAction
