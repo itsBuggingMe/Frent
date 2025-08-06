@@ -242,8 +242,9 @@ partial class World
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DeleteEntityWithoutEvents(Entity entity, ref EntityLocation currentLookup)
     {
-        //entity is guaranteed to be alive here
-        EntityIDOnly replacedEntity = currentLookup.Archetype.DeleteEntity(currentLookup.Index);
+        // entity is guaranteed to be alive here
+        // entity is alive; Archetype is not null
+        EntityIDOnly replacedEntity = currentLookup.Archetype!.DeleteEntity(currentLookup.Index);
 
         Debug.Assert(replacedEntity.ID < EntityTable._buffer.Length);
         Debug.Assert(entity.EntityID < EntityTable._buffer.Length);
@@ -251,14 +252,17 @@ partial class World
         ref var replaced = ref EntityTable.UnsafeIndexNoResize(replacedEntity.ID);
         replaced = currentLookup;
         replaced.Version = replacedEntity.Version;
-        currentLookup.Version = ushort.MaxValue;
 
-        if (entity.EntityVersion != ushort.MaxValue - 1)
+        currentLookup.Archetype = null!;
+        currentLookup.Version++;
+
+        if (currentLookup.Version != ushort.MaxValue)
         {
-            //can't use max value as an ID, as it is used as a default value
-            ref var id = ref RecycledEntityIds.Push();
-            id = entity.EntityIDOnly;
-            id.Version++;
+            // don't let versions overflow
+            // add entity to free list
+            _freeListCount++;
+            currentLookup.Index = _freelist;
+            _freelist = entity.EntityID;
         }
     }
     #endregion

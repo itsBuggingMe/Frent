@@ -28,33 +28,30 @@ partial class World
     {
         var archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
 
-        ref var entity = ref Unsafe.NullRef<EntityIDOnly>();
-        EntityLocation eloc = default;
+        ref var archetypeEntityRecord = ref Unsafe.NullRef<EntityIDOnly>();
+        ref EntityLocation eloc = ref FindNewEntityLocation(out int id);
 
         ComponentStorageRecord[] components;
 
         if (AllowStructualChanges)
         {
             components = archetypes.Archetype.Components;
-            entity = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
+            archetypeEntityRecord = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
         }
         else
         {
             // we don't need to manually set flags, they are already zeroed
-            entity = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
+            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
         }
 
-        //manually inlined from World.CreateEntityFromLocation
-        //The jit likes to inline the outer create function and not inline
-        //the inner functions - benchmarked to improve perf by 10-20%
-        var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new(NextEntityID++, 0);
-        eloc.Version = version;
-        EntityTable[id] = eloc;
+        archetypeEntityRecord.Version = eloc.Version;
+        archetypeEntityRecord.ID = id;
 
         //1x array lookup per component
         ref T ref1 = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
 
-        Entity concreteEntity = new Entity(ID, version, id);
+        // Version is incremented on delete, so we don't need to do anything here
+        Entity concreteEntity = new Entity(ID, eloc.Version, id);
         
         Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
         EntityCreatedEvent.Invoke(concreteEntity);

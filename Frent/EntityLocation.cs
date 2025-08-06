@@ -8,6 +8,11 @@ namespace Frent;
 internal struct EntityLocation
 {
     //128 bits
+    // When entity is dead:
+    //  Archetype is null.
+    //  Version is the next version to use.
+    //  Index -1 if end of linked list, n where EntityTable[n] is the next free node.  
+    //  Flags undefined.
     internal Archetype Archetype;
     internal int Index;
     internal EntityFlags Flags;
@@ -19,7 +24,7 @@ internal struct EntityLocation
     {
         Archetype = archetype;
         Index = index;
-        Flags = EntityFlags.None;
+        //Flags = EntityFlags.None;
     }
 
     public EntityLocation(Archetype archetype, int index, EntityFlags flags)
@@ -57,15 +62,16 @@ internal enum EntityFlags : ushort
     AddComp = 1 << 2,
 
     AddGenericComp = 1 << 3,
+    
     RemoveComp = 1 << 4,
 
     RemoveGenericComp = 1 << 5,
 
     OnDelete = 1 << 6,
 
-    Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate,
-
     WorldCreate = 1 << 7,
+
+    Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate,
 
     HasWorldCommandBufferRemove = 1 << 8,
 

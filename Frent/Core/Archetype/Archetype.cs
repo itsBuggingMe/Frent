@@ -53,8 +53,6 @@ internal partial class Archetype
         entityLocation.Index = NextComponentIndex;
         entityLocation.Flags = flags;
         Unsafe.SkipInit(out entityLocation.Version);
-        //poison prolly isnt needed since archetype forces clear anyways
-        MemoryHelpers.Poison(ref entityLocation.Version);
 
         return ref _entities.UnsafeArrayIndex(NextComponentIndex++);
     }
@@ -75,6 +73,7 @@ internal partial class Archetype
             writeStorage = Components;
             entityLocation.Index = futureSlot;
             entityLocation.Archetype = this;
+            entityLocation.Flags = default;
             return ref _entities.UnsafeArrayIndex(futureSlot);
         }
 
@@ -88,6 +87,7 @@ internal partial class Archetype
         //we need to place into temp buffers
         entityLocation.Index = futureSlot - _entities.Length;
         entityLocation.Archetype = deferredCreationArchetype;
+        entityLocation.Flags = default;
 
         Debug.Assert(entityLocation.Index >= 0);
         if (entityLocation.Index >= deferredCreationArchetype._entities.Length)
@@ -145,16 +145,15 @@ internal partial class Archetype
         Span<EntityIDOnly> entitySpan = _entities.AsSpan(NextComponentIndex, count);
 
         int componentIndex = NextComponentIndex;
-        ref var recycled = ref world.RecycledEntityIds;
+
         for (int i = 0; i < entitySpan.Length; i++)
         {
             ref EntityIDOnly archetypeEntity = ref entitySpan[i];
 
-            archetypeEntity = recycled.CanPop() ? recycled.PopUnsafe() : new EntityIDOnly(world.NextEntityID++, 0);
+            ref EntityLocation lookup = ref world.FindNewEntityLocation(out archetypeEntity.ID);
 
-            ref EntityLocation lookup = ref world.EntityTable.UnsafeIndexNoResize(archetypeEntity.ID);
+            archetypeEntity.Version = lookup.Version;
 
-            lookup.Version = archetypeEntity.Version;
             lookup.Archetype = this;
             lookup.Index = componentIndex++;
             lookup.Flags = EntityFlags.None;
