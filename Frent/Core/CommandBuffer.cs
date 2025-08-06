@@ -11,14 +11,15 @@ namespace Frent.Core;
 /// </summary>
 public class CommandBuffer
 {
-    internal FastStack<EntityIDOnly> _deleteEntityBuffer = FastStack<EntityIDOnly>.Create(2);
     internal FastStack<AddComponent> _addComponentBuffer = FastStack<AddComponent>.Create(2);
     internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(2);
-    internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(2);
     internal FastStack<TagCommand> _tagEntityBuffer = FastStack<TagCommand>.Create(2);
     internal FastStack<TagCommand> _detachTagEntityBuffer = FastStack<TagCommand>.Create(2);
+
+    internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(2);
     internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(2);
     private readonly ComponentStorageRecord[] _componentRunnerBuffer = new ComponentStorageRecord[MemoryHelpers.MaxComponentCount];
+    internal FastStack<EntityIDOnly> _deleteEntityBuffer = FastStack<EntityIDOnly>.Create(2);
 
     internal World _world;
     //-1 indicates normal state
@@ -262,7 +263,14 @@ public class CommandBuffer
 
     internal bool PlaybackInternal()
     {
-        bool hasItems = _deleteEntityBuffer.Count > 0 | _createEntityBuffer.Count > 0 | _removeComponentBuffer.Count > 0 | _addComponentBuffer.Count > 0;
+        bool hasItems = 
+            _createEntityBuffer.Count > 0 |
+            _deleteEntityBuffer.Count > 0 |
+            _addComponentBuffer.Count > 0 |
+            _removeComponentBuffer.Count > 0 |
+            _tagEntityBuffer.Count > 0 |
+            _detachTagEntityBuffer.Count > 0
+            ;
 
         if (!hasItems)
             return hasItems;
