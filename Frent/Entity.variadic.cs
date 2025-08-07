@@ -98,15 +98,32 @@ partial struct Entity
             return;
         }
 
-        Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
-            world,
-            ref NeighborCache<T>.Remove.Lookup,
-            ref thisLookup,
-            false);
+        ref Bitset bits = ref Unsafe.NullRef<Bitset>();
+        ref ComponentSparseSetBase start = ref Unsafe.NullRef<ComponentSparseSetBase>();
+        if (NeighborCache<T>.HasAnySparseComponents)
+        {
+            bits = world.SparseComponentTable.GetBitset(EntityID);
+            start = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
+        }
 
-        Span<ComponentHandle> runners = stackalloc ComponentHandle[1];
-        world.MoveEntityToArchetypeRemove(runners, this, ref thisLookup, to);
-        //world.MoveEntityToArchetypeRemove invokes the events for us
+        // set sparse components and bits
+        if (Component<T>.IsSparseComponent) { bits.ClearAt(Component<T>.SparseSetComponentIndex); UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID); }
+
+        if (NeighborCache<T>.HasAnyArchetypicalComponents)
+        {
+            Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
+                world,
+                ref NeighborCache<T>.Remove.Lookup,
+                ref thisLookup,
+                false);
+
+            Span<ComponentHandle> runners = stackalloc ComponentHandle[1];
+            world.MoveEntityToArchetypeRemove(runners, this, ref thisLookup, to);
+            //world.MoveEntityToArchetypeRemove invokes the events for us
+        }
+
+        // invoke sparse events
+        if (Component<T>.IsSparseComponent) UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Event();
     }
 
     /// <summary>
@@ -212,28 +229,19 @@ partial struct Entity
 
     private struct NeighborCache<T> : IArchetypeGraphEdge
     {
-        public void ModifyTags(ref ImmutableArray<TagID> tags, bool add)
+        public static bool HasAnyArchetypicalComponents => !Component<T>.IsSparseComponent;
+        public static bool HasAnySparseComponents => Component<T>.IsSparseComponent;
+
+        public void WriteComponentIDs(Span<ComponentID> ids)
         {
-            if (add)
-            {
-                tags = MemoryHelpers.Concat(tags, Core.Tag<T>.ID);
-            }
-            else
-            {
-                tags = MemoryHelpers.Remove(tags, Core.Tag<T>.ID);
-            }
+            //id.Length == 8
+            ids.UnsafeSpanIndex(0) = Component<T>.ID;
         }
 
-        public void ModifyComponents(ref ImmutableArray<ComponentID> components, bool add)
+        public void WriteTagIDs(Span<TagID> ids)
         {
-            if (add)
-            {
-                components = MemoryHelpers.Concat(components, Component<T>.ID);
-            }
-            else
-            {
-                components = MemoryHelpers.Remove(components, Component<T>.ID);
-            }
+            //id.Length == 8
+            ids.UnsafeSpanIndex(0) = Core.Tag<T>.ID;
         }
 
         //separate into individual classes to avoid creating uneccecary static classes.
@@ -283,6 +291,7 @@ partial struct Entity
             return Archetype.CreateOrGetExistingArchetype(new EntityType(cache.Lookup(index)), world);
         }
 
+        [SkipLocalsInit]
         static Archetype NotInCache(World world, ref ArchetypeNeighborCache cache, ArchetypeID archetypeFromID, bool add)
         {
             ImmutableArray<ComponentID> componentIDs = archetypeFromID.Types;
@@ -290,11 +299,25 @@ partial struct Entity
 
             if (typeof(T) == typeof(ComponentID))
             {
-                default(TEdge).ModifyComponents(ref componentIDs, add);
+                Span<ComponentID> componentsSpecified = stackalloc ComponentID[8];
+                default(TEdge).WriteComponentIDs(componentsSpecified);
+                Span<ComponentID> archetypicals = stackalloc ComponentID[8];
+
+                int index = 0;
+                foreach (var maybeDelta in componentsSpecified)
+                    if (!maybeDelta.IsSparseComponent)
+                        archetypicals[index++] = maybeDelta;
+                archetypicals = archetypicals.Slice(0, index);
+
+                componentIDs = add ? MemoryHelpers.Concat(componentIDs, archetypicals)
+                    : MemoryHelpers.Remove(componentIDs, archetypicals);
             }
             else
             {
-                default(TEdge).ModifyTags(ref tagIDs, add);
+                Span<TagID> delta = stackalloc TagID[8];
+                default(TEdge).WriteTagIDs(delta);
+                tagIDs = add ? MemoryHelpers.Concat(tagIDs, delta) 
+                    : MemoryHelpers.Remove(tagIDs, delta);
             }
 
             Archetype archetype = Archetype.CreateOrGetExistingArchetype(
@@ -312,7 +335,7 @@ partial struct Entity
 
     internal interface IArchetypeGraphEdge
     {
-        void ModifyTags(ref ImmutableArray<TagID> tags, bool add);
-        void ModifyComponents(ref ImmutableArray<ComponentID> components, bool add);
+        void WriteComponentIDs(Span<ComponentID> ids);
+        void WriteTagIDs(Span<TagID> ids);
     }
 }

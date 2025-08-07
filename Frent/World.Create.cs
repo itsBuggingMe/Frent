@@ -72,7 +72,7 @@ partial class World
 
         if (hasSparseComponent)
         {
-            ref Bitset bitset = ref SparseComponentTable.GetValueRefOrAddDefault(id, out _);
+            ref Bitset bitset = ref SparseComponentTable.GetBitset(id);
 
             if (Component<T>.IsSparseComponent) bitset.SetOrResize(Component<T>.SparseSetComponentIndex);
         }

@@ -8,14 +8,25 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
-[Variadic("            i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0);",
+[Variadic("            if(!Component<T>.IsSparseComponent) { i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0); }",
     "|            i = map.UnsafeArrayIndex(Component<T$>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T$>.CreateInstance(1); tmpStorages[i] = Component<T$>.CreateInstance(0);\n|")]
 [Variadic("Archetype<T>", "Archetype<|T$, |>")]
 [Variadic("typeof(T)", "|typeof(T$), |")]
 [Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
 internal static class Archetype<T>
 {
-    public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = new ComponentID[] { Component<T>.ID }.ToImmutableArray();
+    public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = CreateComponentIDArray();
+
+    [SkipLocalsInit]
+    private static ImmutableArray<ComponentID> CreateComponentIDArray()
+    {
+        Span<ComponentID> ids = stackalloc ComponentID[16];
+        int index = 0;
+
+        if(!Component<T>.IsSparseComponent) ids[index++] = Component<T>.ID;
+
+        return ImmutableArray.Create(ids.Slice(0, index));
+    }
 
     //ArchetypeTypes init first, then ID
     public static readonly ArchetypeID ID = Archetype.GetArchetypeID(ArchetypeComponentIDs.AsSpan(), [], ArchetypeComponentIDs, ImmutableArray<TagID>.Empty);
@@ -38,9 +49,9 @@ internal static class Archetype<T>
             ComponentStorageRecord[] tmpStorages = new ComponentStorageRecord[runners.Length];
             byte[] map = GlobalWorldTables.ComponentTagLocationTable[ID.RawIndex];
 
-            int i;
 
-            i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0);
+            Component<T>.InitalizeComponentRunnerImpl(runners, tmpStorages, map);
+
 
             Archetype archetype = new Archetype(ID, runners, false);
             Archetype tempCreateArchetype = new Archetype(ID, tmpStorages, true);
@@ -48,6 +59,7 @@ internal static class Archetype<T>
             world.ArchetypeAdded(archetype, tempCreateArchetype);
             return new World.WorldArchetypeTableItem(archetype, tempCreateArchetype);
         }
+
     }
 
     internal static class OfComponent<C>

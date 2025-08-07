@@ -16,8 +16,6 @@ namespace Frent.Core;
 /// <typeparam name="T">The type of component</typeparam>
 public static class Component<T>
 {
-    internal static ComponentStorageRecord CreateInstance(int capacity) => new ComponentStorageRecord(capacity == 0 ? [] : new T[capacity], BufferManagerInstance);
-
     /// <summary>
     /// The component ID for <typeparamref name="T"/>
     /// </summary>
@@ -40,6 +38,16 @@ public static class Component<T>
             }
 
             return _isSparseComponentAndReference;
+        }
+    }
+
+    internal static void InitalizeComponentRunnerImpl(ComponentStorageRecord[] runners, ComponentStorageRecord[] tmpStorages, byte[] map)
+    {
+        if (!IsSparseComponent)
+        {
+            int i = map.UnsafeArrayIndex(ID.RawIndex) & GlobalWorldTables.IndexBits;
+            runners[i] = new ComponentStorageRecord(new T[1], BufferManagerInstance);
+            tmpStorages[i] = new ComponentStorageRecord(Array.Empty<T>(), BufferManagerInstance);
         }
     }
 

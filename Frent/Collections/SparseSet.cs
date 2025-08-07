@@ -95,6 +95,11 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
     {
         throw new NotImplementedException();
     }
+
+    public void Event()
+    {
+        throw new NotImplementedException();
+    }
 }
 
 internal abstract class ComponentSparseSetBase

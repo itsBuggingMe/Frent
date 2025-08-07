@@ -35,6 +35,17 @@ internal static class MemoryHelpers
     public static int RoundDownToNextMultipleOf16(int value) => value & ~15;
     public static byte BoolToByte(bool b) => Unsafe.As<bool, byte>(ref b);
 
+    public static ref Bitset GetBitset(this RefDictionary<int, Bitset> dict, int key)
+    {
+        ref Bitset set = ref dict.GetValueRefOrAddDefault(key, out bool exist);
+        if (!exist)
+        {
+            set = new(1);
+        }
+
+        return ref set;
+    }
+
     public static ImmutableArray<T> ReadOnlySpanToImmutableArray<T>(ReadOnlySpan<T> span)
     {
         var builder = ImmutableArray.CreateBuilder<T>(span.Length);

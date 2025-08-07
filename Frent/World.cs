@@ -17,7 +17,7 @@ namespace Frent;
 /*
  * Sparse set todo:
  * [x] Track sparse set index
- * [ ] Bitset table for sparse set component set (limit to 256 sparse components?)
+ * [x] Bitset table for sparse set component set (limit to 256 sparse components?)
  * [ ] Get/Set/Has/ + other non mutating methods
  * [ ] Add/Remove
  * [ ] Updates

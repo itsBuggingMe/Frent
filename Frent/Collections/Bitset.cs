@@ -28,6 +28,18 @@ internal struct Bitset
         loc[Divide(index)] |= HighBit >> Mod(index);
     }
 
+    public void ClearAt(int index)
+    {
+        var loc = _bits;
+
+        if (!((uint)index < (uint)loc.Length))
+        {
+            return;
+        }
+
+        loc[Divide(index)] ^= HighBit >> Mod(index);
+    }
+
     private void ResizeAndSet(int index)
     {
         Array.Resize(ref _bits, (int)BitOperations.RoundUpToPowerOf2((uint)(Divide(index) + 1)));
@@ -75,6 +87,7 @@ internal struct Bitset
             return value << 5;
         }
     }
+
     public Enumerator GetEnumerator() => new(this);
 
     internal struct Enumerator(Bitset bitset)
