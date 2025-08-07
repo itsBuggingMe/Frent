@@ -4,7 +4,7 @@ There are a variety of events on `World` and `Entity` you can use.
 
 Events that occur on component add or entity creation are invoked after `IInitable.Init` is invoked.
 
-Events that occur on component remove or entity deletion are invoked before `IDestroyable.Destroy` is invoked.
+Events that occur on component remove or entity deletion are invoked after `IDestroyable.Destroy` is invoked.
 
 This ensures that component states viewed through events are valid.
 
