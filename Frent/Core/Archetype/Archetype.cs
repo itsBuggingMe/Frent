@@ -204,7 +204,7 @@ internal partial class Archetype
     /// <summary>
     /// This method doesn't modify component storages
     /// </summary>
-    internal EntityIDOnly DeleteEntityFromStorage(int index, out int deletedIndex)
+    internal EntityIDOnly DeleteEntityFromEntityArray(int index, out int deletedIndex)
     {
         Debug.Assert(NextComponentIndex > 0);
         deletedIndex = --NextComponentIndex;

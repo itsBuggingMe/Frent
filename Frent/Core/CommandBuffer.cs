@@ -303,31 +303,45 @@ public class CommandBuffer
             ref var record = ref _world.EntityTable[id];
             if (record.Version == item.Entity.Version)
             {
-                _world.RemoveArchetypicalComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
+                //TODO: events
+                int sparseIndex = item.ComponentID.SparseIndex;
+                if (sparseIndex != 0)
+                    _world.WorldSparseSetTable[sparseIndex].Remove(id);
+                else
+                    _world.RemoveArchetypicalComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
             }
         }
 
         while (_addComponentBuffer.TryPop(out var command))
         {
+            //TODO: events
             var id = command.Entity.ID;
             ref var record = ref _world.EntityTable[id];
             if (record.Version == command.Entity.Version)
             {
-                Entity concrete = command.Entity.ToEntity(_world);
-
-                _world.AddArchetypicalComponent(concrete, ref record, command.ComponentHandle.ComponentID, out var location, out var destination);
-
-                var runner = destination.Components[destination.GetComponentIndex(command.ComponentHandle.ComponentID)];
-                runner.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
-
-                if (record.HasFlag(EntityFlags.AddComp))
+                int sparseIndex = command.ComponentHandle.ComponentID.SparseIndex;
+                if (sparseIndex != 0)
                 {
-                    ref var events = ref _world.EventLookup.GetValueRefOrNullRef(command.Entity);
-                    events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
-                    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
+                    _world.WorldSparseSetTable[sparseIndex].Add(id, command.ComponentHandle);
                 }
+                else
+                {
+                    Entity concrete = command.Entity.ToEntity(_world);
 
-                command.ComponentHandle.Dispose();
+                    _world.AddArchetypicalComponent(concrete, ref record, command.ComponentHandle.ComponentID, out var location, out var destination);
+
+                    var runner = destination.Components[destination.GetComponentIndex(command.ComponentHandle.ComponentID)];
+                    runner.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
+
+                    if (record.HasFlag(EntityFlags.AddComp))
+                    {
+                        ref var events = ref _world.EventLookup.GetValueRefOrNullRef(command.Entity);
+                        events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
+                        runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
+                    }
+
+                    command.ComponentHandle.Dispose();
+                }
             }
         }
 

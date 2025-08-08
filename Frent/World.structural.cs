@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Frent.Collections.RefDictionary<TKey, TValue>;
 
 namespace Frent;
 
@@ -52,7 +53,7 @@ partial class World
         destination.CreateEntityLocation(currentLookup.Flags, out nextLocation).Init(entity);
         nextLocation.Version = currentLookup.Version;
 
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Index, out int deletedIndex);
+        EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
         ComponentStorageRecord[] fromRunners = from.Components;
         ComponentStorageRecord[] destRunners = destination.Components;
@@ -87,8 +88,11 @@ partial class World
         currentLookup.Index = nextLocation.Index;
     }
 
+    /// <remarks>
+    /// Does not handle events. Call .Destroy
+    /// </remarks>>
     [SkipLocalsInit]
-    internal void MoveEntityToArchetypeRemove(Span<ComponentHandle> componentHandles, Entity entity, ref EntityLocation currentLookup, Archetype destination)
+    internal void MoveEntityToArchetypeRemove(Entity entity, ref EntityLocation currentLookup, Archetype destination)
     {
         //NOTE: when moving EntityLocation between archetypes, version and flags cannot change
         Archetype from = currentLookup.Archetype;
@@ -98,17 +102,13 @@ partial class World
         destination.CreateEntityLocation(currentLookup.Flags, out var nextLocation).Init(entity);
         nextLocation.Version = currentLookup.Version;
 
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Index, out int deletedIndex);
+        EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
         ComponentStorageRecord[] fromRunners = from.Components;
         ComponentStorageRecord[] destRunners = destination.Components;
         byte[] destMap = destination.ComponentTagTable;
 
         ImmutableArray<ComponentID> fromComponents = from.ArchetypeTypeArray;
-
-        bool hasGenericRemoveEvent = EntityLocation.HasEventFlag(currentLookup.Flags, EntityFlags.RemoveGenericComp);
-
-        int writeToIndex = 0;
 
         DeleteComponentData deleteData = new DeleteComponentData(currentLookup.Index, deletedIndex);
 
@@ -122,11 +122,6 @@ partial class World
             if (toIndex == 0)
             {
                 var runner = fromRunners.UnsafeArrayIndex(i);
-                ref ComponentHandle writeTo = ref componentHandles.UnsafeSpanIndex(writeToIndex++);
-                if (hasGenericRemoveEvent)
-                    writeTo = runner.Store(currentLookup.Index);
-                else//kinda illegal but whatever
-                    writeTo = new ComponentHandle(0, componentToMoveFromFromToTo);
                 runner.Delete(deleteData);
             }
             else
@@ -142,38 +137,6 @@ partial class World
 
         currentLookup.Archetype = nextLocation.Archetype;
         currentLookup.Index = nextLocation.Index;
-
-        if (EntityLocation.HasEventFlag(currentLookup.Flags | WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
-        {
-            if (ComponentRemovedEvent.HasListeners)
-            {
-                foreach (var handle in componentHandles)
-                    ComponentRemovedEvent.Invoke(entity, handle.ComponentID);
-            }
-
-            if (EntityLocation.HasEventFlag(currentLookup.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
-            {
-                ref var lookup = ref EventLookup.GetValueRefOrNullRef(entity.EntityIDOnly);
-
-                if (hasGenericRemoveEvent)
-                {
-                    foreach (var handle in componentHandles)
-                    {
-                        lookup.Remove.NormalEvent.Invoke(entity, handle.ComponentID);
-                        handle.InvokeComponentEventAndConsume(entity, lookup.Remove.GenericEvent);
-                    }
-                }
-                else
-                {
-                    //no need to dispose here, as they were never created
-                    foreach (var handle in componentHandles)
-                    {
-                        lookup.Remove.NormalEvent.Invoke(entity, handle.ComponentID);
-                    }
-                }
-            }
-
-        }
     }
 
     [SkipLocalsInit]
@@ -186,7 +149,7 @@ partial class World
         destination.CreateEntityLocation(currentLookup.Flags, out var nextLocation).Init(entity);
         nextLocation.Version = currentLookup.Version;
 
-        EntityIDOnly movedDown = from.DeleteEntityFromStorage(currentLookup.Index, out int deletedIndex);
+        EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
 
         ComponentStorageRecord[] fromRunners = from.Components;

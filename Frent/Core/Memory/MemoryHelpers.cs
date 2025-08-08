@@ -46,6 +46,13 @@ internal static class MemoryHelpers
         return ref set;
     }
 
+    public static ComponentSparseSet<T> GetSparseSet<T>(ref ComponentSparseSetBase first)
+    {
+        Debug.Assert(Component<T>.IsSparseComponent);
+        return UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref first,
+            Component<T>.SparseSetComponentIndex));
+    }
+
     public static ImmutableArray<T> ReadOnlySpanToImmutableArray<T>(ReadOnlySpan<T> span)
     {
         var builder = ImmutableArray.CreateBuilder<T>(span.Length);

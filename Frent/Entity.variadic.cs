@@ -1,12 +1,9 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
-using Frent.Updating;
-using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -56,15 +53,24 @@ partial struct Entity
             return;
         }
 
-        Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
-            world,
-            ref NeighborCache<T>.Add.Lookup,
-            ref thisLookup,
-            true);
+        Unsafe.SkipInit(out int archIndex);
+        MemoryHelpers.Poison(ref archIndex);
+        Archetype? to = null;
+        ref ComponentSparseSetBase sparseSets = ref (NeighborCache<T>.HasAnySparseComponents ? ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable) : ref Unsafe.NullRef<ComponentSparseSetBase>());
 
-        world.MoveEntityToArchetypeAdd(this, ref thisLookup, out EntityLocation nextLocation, to);
+        if (NeighborCache<T>.HasAnyArchetypicalComponents)
+        {
+            to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
+                world,
+                ref NeighborCache<T>.Add.Lookup,
+                ref thisLookup,
+                true);
 
-        ref var c1ref = ref to.GetComponentStorage<T>().UnsafeIndex<T>(nextLocation.Index); c1ref = c1;
+            world.MoveEntityToArchetypeAdd(this, ref thisLookup, out EntityLocation nextLocation, to);
+            archIndex = nextLocation.Index;
+        }
+
+        ref var c1ref = ref Component<T>.IsSparseComponent ? ref MemoryHelpers.GetSparseSet<T>(ref sparseSets)[EntityID] : ref to!.GetComponentStorage<T>().UnsafeIndex<T>(archIndex); c1ref = c1;
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
 
@@ -98,6 +104,34 @@ partial struct Entity
             return;
         }
 
+        
+        // get comp refs for events & destroyer calling
+        ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
+        Archetype from = thisLookup.Archetype;
+        ref T c1ref = ref Component<T>.Destroyer is null ? ref Unsafe.NullRef<T>() : ref Component<T>.IsSparseComponent ? ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
+
+
+        if (EntityLocation.HasEventFlag(thisLookup.Flags | world.WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
+        {
+            if (world.ComponentRemovedEvent.HasListeners)
+                InvokeComponentWorldEvents<T>(ref world.ComponentAddedEvent, this);
+
+            if (EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
+            {
+                // fill in the gaps
+                if (Component<T>.Destroyer is null) c1ref = ref Component<T>.IsSparseComponent ? ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
+
+                ref var events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
+                InvokePerEntityEvents(this, EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.RemoveGenericComp), ref events.Remove, ref c1ref);
+            }
+
+        }
+
+        // Call Destroyers
+        Component<T>.Destroyer?.Invoke(ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index));
+
+        // Actually move components
+
         ref Bitset bits = ref Unsafe.NullRef<Bitset>();
         ref ComponentSparseSetBase start = ref Unsafe.NullRef<ComponentSparseSetBase>();
         if (NeighborCache<T>.HasAnySparseComponents)
@@ -117,13 +151,8 @@ partial struct Entity
                 ref thisLookup,
                 false);
 
-            Span<ComponentHandle> runners = stackalloc ComponentHandle[1];
-            world.MoveEntityToArchetypeRemove(runners, this, ref thisLookup, to);
-            //world.MoveEntityToArchetypeRemove invokes the events for us
+            world.MoveEntityToArchetypeRemove(this, ref thisLookup, to);
         }
-
-        // invoke sparse events
-        if (Component<T>.IsSparseComponent) UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Event();
     }
 
     /// <summary>

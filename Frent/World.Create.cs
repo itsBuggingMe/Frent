@@ -68,7 +68,7 @@ partial class World
         ref ComponentSparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
 
         //1x array lookup per component
-        ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
+        ref T ref1 = ref Component<T>.IsSparseComponent ? ref MemoryHelpers.GetSparseSet<T>(ref start)[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
 
         if (hasSparseComponent)
         {

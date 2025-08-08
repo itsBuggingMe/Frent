@@ -208,10 +208,6 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     {
         ref var item = ref Index(buffer, componentIndex);
 
-        //we can't just copy to stack and run the destroyer on it
-        //it is stored
-        Component<TComponent>.Destroyer?.Invoke(ref item);
-
         var handle = ComponentHandle.Create(item);
 
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
