@@ -159,6 +159,11 @@ public partial struct Entity : IEquatable<Entity>
 
     private ImmutableArray<ComponentID> AllocateComponentTypeArray()
     {
+        if (!InternalIsAlive(out var world, out var location))
+            Throw_EntityIsDead();
+        if (!location.HasFlag(EntityFlags.HasSparseComponents))
+            return location.Archetype.ArchetypeTypeArray;
+
         var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length);
 
         foreach (var componentID in this)
