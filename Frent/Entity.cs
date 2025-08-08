@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Frent.Collections;
+using System.Collections;
 
 namespace Frent;
 
@@ -152,6 +153,73 @@ public partial struct Entity : IEquatable<Entity>
 
                 return components;
             }
+        }
+    }
+
+
+    private ImmutableArray<ComponentID> AllocateComponentTypeArray()
+    {
+        var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length);
+
+        foreach (var componentID in this)
+        {
+            res.Add(componentID);
+        }
+
+        return res.ToImmutable();
+    }
+
+    public ref struct EntityComponentIDEnumerator
+    {
+        public ComponentID Current => _current;
+        private ReadOnlySpan<ComponentID> _archetypical;
+        private readonly ref Bitset _bitset;
+        private readonly ref ushort _currentVersion;
+        private readonly ushort _expectedVersion;
+        private ComponentID _current;
+        private int _index = -1;
+
+        internal EntityComponentIDEnumerator(Entity entity)
+        {
+            if(!entity.InternalIsAlive(out World world, out EntityLocation entityLocation))
+                return;
+
+            _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
+            _bitset = entityLocation.HasFlag(EntityFlags.HasSparseComponents)
+                ? ref world.SparseComponentTable.GetValueRefOrNullRef(entity.EntityID)
+                : ref Unsafe.NullRef<Bitset>();
+
+            _expectedVersion = entity.EntityVersion;
+            _currentVersion = ref world.EntityTable[entity.EntityID].Version;
+
+        }
+
+        public bool MoveNext()
+        {
+            if(_currentVersion != _expectedVersion)
+                Throw_EntityIsDead();
+
+            if (!_archetypical.IsEmpty)
+            {
+                if (++_index < _archetypical.Length)
+                {
+                    return true;
+                }
+
+                _archetypical = default;
+                _index = 0;
+                return false;
+            }
+
+            int? found = _bitset.TryFindIndexOfBitGreaterThan(_index);
+
+            if (found is { } x)
+            {
+                _index = x;
+                return true;
+            }
+
+            return false;
         }
     }
     #endregion

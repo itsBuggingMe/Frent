@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent;
-
+//TODO: make these methods readonly
 partial struct Entity
 {
     #region Public API
@@ -265,11 +265,14 @@ partial struct Entity
         ArchetypeID finalArchetype = eloc.ArchetypeID;
 
 
-        //TODO: setting sparse bits and calling initers.
+        // set
+        ref Bitset set = ref Unsafe.NullRef<Bitset>();
         foreach (var componentHandle in componentHandles)
         {
             if (componentHandle.ComponentID.IsSparseComponent)
             {
+                if (Unsafe.IsNullRef(ref set))
+                    set = ref world.SparseComponentTable.GetValueRefOrAddDefault(EntityID, out _);
                 world.WorldSparseSetTable.UnsafeArrayIndex(componentHandle.ComponentID.SparseIndex).Add(eloc.Index, componentHandle);
             }
             else
@@ -291,11 +294,14 @@ partial struct Entity
             buffer[i] = storage;
         }
 
+        // init
         for(int i = 0; i < componentHandles.Length; i++)
         {
             buffer[i].CallIniter(this, nextLocation.Index);
         }
 
+
+        // invoke
         EventRecord events = world.EventLookup.GetOrAddNew(EntityIDOnly);
 
         for (int i = 0; i < componentHandles.Length; i++)
@@ -329,11 +335,18 @@ partial struct Entity
         ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
+            int sparseIndex = componentID.SparseIndex;
+            if (sparseIndex != 0)
+            {
+                w.WorldSparseSetTable[sparseIndex].Add(EntityID, component);
+                return;
+            }
             w.AddArchetypicalComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
             
             ComponentStorageRecord componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
             componentRunner.SetAt(this, component, entityLocation.Index);
 
+            //TODO: sparse events
             if(EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
                 if (w.ComponentAddedEvent.HasListeners)
@@ -595,7 +608,7 @@ partial struct Entity
         }
     }
 
-    private void InitalizeEventRecord(object @delegate, EntityFlags flag, bool isGenericEvent = false)
+    private void InitalizeEventRecord(object? @delegate, EntityFlags flag, bool isGenericEvent = false)
     {
         if (@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
@@ -684,10 +697,10 @@ partial struct Entity
     }
 
     /// <summary>
-    /// Gets the component types for this entity, ordered in update order
+    /// Gets the archetypical component types for this entity.
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public ImmutableArray<ComponentID> ComponentTypes
+    public ImmutableArray<ComponentID> ArchetypicalComponentTypes
     {
         get
         {
@@ -695,6 +708,12 @@ partial struct Entity
             return lookup.Archetype.ArchetypeTypeArray;
         }
     }
+
+    /// <summary>
+    /// Gets the all the component types for this entity. This api is allocating.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    public ImmutableArray<ComponentID> ComponentTypes => AllocateComponentTypeArray();
 
     /// <summary>
     /// Gets tags the entity has 
@@ -735,6 +754,8 @@ partial struct Entity
         }
     }
 
+    public readonly EntityComponentIDEnumerator GetEnumerator() => new EntityComponentIDEnumerator(this);
+
     /// <summary>
     /// The null entity
     /// </summary>
@@ -745,7 +766,7 @@ partial struct Entity
     /// </summary>
     /// <param name="components">The components the <see cref="EntityType"/> should have.</param>
     /// <param name="tags">The tags the <see cref="EntityType"/> should have.</param>
-    [Obsolete("Use ArchetypeID.EntityTypeOf instead")]
+    [Obsolete("Use EntityType.EntityTypeOf instead")]
     public static EntityType EntityTypeOf(ReadOnlySpan<ComponentID> components, ReadOnlySpan<TagID> tags)
     {
         return Archetype.GetArchetypeID(components, tags);

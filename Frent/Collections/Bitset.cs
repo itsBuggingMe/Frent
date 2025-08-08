@@ -88,6 +88,11 @@ internal struct Bitset
         }
     }
 
+    internal int? TryFindIndexOfBitGreaterThan(int index)
+    {
+
+    }
+
     public Enumerator GetEnumerator() => new(this);
 
     internal struct Enumerator(Bitset bitset)

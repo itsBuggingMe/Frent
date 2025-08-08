@@ -14,6 +14,7 @@ public static class WorldMarshal
     /// <summary>
     /// Gets a component of an entity, without checking if the entity has the component or if the world belongs to the entity.
     /// </summary>
+    /// <remarks>Component must be an archetypical component.</remarks>
     /// <returns>A reference to the component in memory.</returns>
     public static ref T GetComponent<T>(World world, Entity entity) => ref Get<T>(world, entity.EntityID);
 
@@ -24,6 +25,7 @@ public static class WorldMarshal
     /// <param name="world">The world that the entity belongs to.</param>
     /// <param name="entity">The entity whose component buffer to get.</param>
     /// <param name="index">The index of the entity's component.</param>
+    /// <remarks>Component must be an archetypical component.</remarks>
     /// <returns>The entire unsliced raw buffer. May be larger than the number of entities in an archetype.</returns>
     public static Span<T> GetRawBuffer<T>(World world, Entity entity, out int index)
     {
@@ -35,6 +37,7 @@ public static class WorldMarshal
     /// <summary>
     /// Gets a component of an entity from a raw entityID.
     /// </summary>
+    /// <remarks>Component must be an archetypical component.</remarks>
     /// <returns>A reference to the component in memory.</returns>
     public static ref T Get<T>(World world, int entityID)
     {

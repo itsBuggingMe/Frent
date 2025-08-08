@@ -66,6 +66,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         throw new NotImplementedException();
     }
 
+    // call initer
     public override void Add(int id, ComponentHandle value)
     {
         throw new NotImplementedException();
@@ -107,6 +108,7 @@ internal abstract class ComponentSparseSetBase
     public abstract object Get(int id);
     public abstract void Set(int id, object value);
     public abstract void Add(int id, ComponentHandle value);
+    public abstract void Add(int id, object value);
     public abstract void Remove(int id);
     public abstract bool Has(int id);
     public abstract bool TryGet(int id, out object value);
