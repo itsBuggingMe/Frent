@@ -23,6 +23,7 @@ namespace Frent;
  * [ ] Updates
  * [ ] Benchmarks
  * [ ] Stress tests!
+ * [ ] Tests for lifetime for sparse + archetypical & for all apis, create, create many, add, remove, tag, detach, delete, world dispose +
  */
 
 /// <summary>

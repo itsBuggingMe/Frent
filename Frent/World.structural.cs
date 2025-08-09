@@ -7,7 +7,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static Frent.Collections.RefDictionary<TKey, TValue>;
 
 namespace Frent;
 
@@ -19,6 +18,7 @@ partial class World
      *  These functions take all the data it needs, with no validation that an entity is alive
      */
 
+    //TODO: events for these?
     internal void RemoveArchetypicalComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID)
     {
         Archetype destination = RemoveComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.RemoveComponent)
@@ -27,11 +27,9 @@ partial class World
 #if NETSTANDARD2_1
         //array is allocated
         //Span<ComponentHandle> tmpHandleSpan = [default!];
-        MoveEntityToArchetypeRemove(MemoryHelpers.SharedTempComponentHandleBuffer.AsSpan(0, 1), entity, ref lookup, destination);
+        MoveEntityToArchetypeRemove(entity, ref lookup, destination);
 #else
-        Unsafe.SkipInit(out ComponentHandle tmpHandle);
-        MemoryHelpers.Poison(ref tmpHandle);
-        MoveEntityToArchetypeRemove(MemoryMarshal.CreateSpan(ref tmpHandle, 1), entity, ref lookup, destination);
+        MoveEntityToArchetypeRemove(entity, ref lookup, destination);
 #endif
     }
 

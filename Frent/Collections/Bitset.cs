@@ -5,6 +5,16 @@ namespace Frent.Collections;
 
 internal struct Bitset
 {
+    public static Bitset Empty
+    {
+        get
+        {
+            Bitset bitset = default;
+            bitset._bits = [];
+            return bitset;
+        }
+    }
+
     public Bitset(int capacity) => _bits = new nuint[Divide(capacity) + 1];
 
     public Bitset() : this(0)
@@ -88,9 +98,32 @@ internal struct Bitset
         }
     }
 
-    internal int? TryFindIndexOfBitGreaterThan(int index)
+    internal int? TryFindIndexOfBitGreaterThan(int bitIndex)
     {
+        int chunkIndex = Divide(bitIndex);
+        nuint consumedBits = _bits[chunkIndex];
 
+        consumedBits &= unchecked((nuint)0 - 1) >> Mod(bitIndex);
+
+        while (consumedBits == 0)
+        {
+            if ((uint)bitIndex < (uint)_bits.Length)
+            {
+                bitIndex = bitIndex * IntPtr.Size * 8;
+                consumedBits = _bits[chunkIndex++];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        int leadingZeros = BitOperations.LeadingZeroCount(consumedBits);
+
+        int bitsToConsume = leadingZeros + 1;
+        bitIndex += bitsToConsume;
+
+        return bitIndex;
     }
 
     public Enumerator GetEnumerator() => new(this);

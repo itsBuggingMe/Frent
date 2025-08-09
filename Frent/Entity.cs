@@ -71,7 +71,7 @@ public partial struct Entity : IEquatable<Entity>
     #region Internal Helpers
 
     #region IsAlive
-    internal bool InternalIsAlive([NotNullWhen(true)] out World world, out EntityLocation entityLocation)
+    internal bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         if (world is null)
@@ -178,25 +178,35 @@ public partial struct Entity : IEquatable<Entity>
     {
         public ComponentID Current => _current;
         private ReadOnlySpan<ComponentID> _archetypical;
-        private readonly ref Bitset _bitset;
+        private readonly Bitset _bitset;
+#if NETSTANDARD
+        private ushort _currentVersion => _world.EntityTable[_entityID].Version;
+        private readonly World _world;
+        private int _entityID;
+#else
         private readonly ref ushort _currentVersion;
+#endif
         private readonly ushort _expectedVersion;
         private ComponentID _current;
         private int _index = -1;
 
         internal EntityComponentIDEnumerator(Entity entity)
         {
-            if(!entity.InternalIsAlive(out World world, out EntityLocation entityLocation))
-                return;
+            if(!entity.InternalIsAlive(out World? world, out EntityLocation entityLocation))
+                Throw_EntityIsDead();
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
             _bitset = entityLocation.HasFlag(EntityFlags.HasSparseComponents)
-                ? ref world.SparseComponentTable.GetValueRefOrNullRef(entity.EntityID)
-                : ref Unsafe.NullRef<Bitset>();
+                ? world.SparseComponentTable.GetValueRefOrNullRef(entity.EntityID)
+                : Bitset.Empty;
 
             _expectedVersion = entity.EntityVersion;
+#if NETSTANDARD
+            _world = world;
+            _entityID = entity.EntityID;
+#else
             _currentVersion = ref world.EntityTable[entity.EntityID].Version;
-
+#endif
         }
 
         public bool MoveNext()
@@ -227,7 +237,7 @@ public partial struct Entity : IEquatable<Entity>
             return false;
         }
     }
-    #endregion
+#endregion
 
     #region IEquatable
     /// <summary>
