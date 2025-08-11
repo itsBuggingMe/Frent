@@ -1,0 +1,80 @@
+arity: 16
+
+from:
+            ref TArg arg = ref Unsafe.NullRef<TArg>();
+            if (Component<TArg>.IsSparseComponent) // folded
+            {
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
+                arg = ref Unsafe.Add(ref sparseFirst, sparseArgArray[entity.EntityID]);
+            }
+            else
+            {
+                nint index = entityData.ComponentDataIndex<TArg>();
+                if (index == 0) continue;
+                arg = ref entityData.Get<TArg>(index);
+            }
+
+to:
+|            ref TArg$ arg$ = ref Unsafe.NullRef<TArg$>();
+            if (Component<TArg$>.IsSparseComponent)
+            {
+                if (!((uint)entity.EntityID < (uint)sparseArgArray$.Length)) continue;
+                arg$ = ref Unsafe.Add(ref sparseFirst$, sparseArgArray$[entity.EntityID]);
+            }
+            else
+            {
+                nint index = entityData.ComponentDataIndex<TArg$>();
+                if (index == 0) continue;
+                arg$ = ref entityData.Get<TArg$>(index);
+            }
+|
+
+from:
+            if (Component<TArg>.IsSparseComponent)
+            {
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
+                int index = sparseArgArray[i];
+                if(index < 0) continue;
+                arg = ref Unsafe.Add(ref sparseFirst, index);
+            }
+to:
+|            if (Component<TArg$>.IsSparseComponent)
+            {
+                if (!((uint)entity.EntityID < (uint)sparseArgArray$.Length)) continue;
+                int index = sparseArgArray$[i];
+                if(index < 0) continue;
+                arg$ = ref Unsafe.Add(ref sparseFirst$, index);
+            }
+|
+from:
+            if(!Component<TArg>.IsSparseComponent) arg = ref Unsafe.Add(ref arg, 1);
+to:
+|            if(!Component<TArg$>.IsSparseComponent) arg$ = ref Unsafe.Add(ref arg$, 1);
+|
+from:
+        ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
+        ref TArg arg = ref Component<TArg>.IsSparseComponent ? 
+            ref Unsafe.NullRef<TArg>()
+            : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+to:
+|        ref TArg$ sparseFirst$ = ref IRunner.InitSparse<TArg$>(ref first, out Span<int> sparseArgArray$);
+        ref TArg$ arg$ = ref Component<TArg$>.IsSparseComponent ? 
+            ref Unsafe.NullRef<TArg$>()
+            : ref Unsafe.Add(ref b.GetComponentDataReference<TArg$>(), start);
+|
+
+from:
+        ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
+
+to:
+|        ref TArg$ sparseFirst$ = ref IRunner.InitSparse<TArg$>(ref first, out Span<int> sparseArgArray$);
+|
+
+from:
+ref arg);
+to:
+|ref arg$, |);
+from:
+TArg>
+to:
+|TArg$, |>

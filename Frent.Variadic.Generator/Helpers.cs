@@ -19,6 +19,7 @@ internal class VariadicAttribute : Attribute
 {
     private readonly string _from;
     private readonly string _pattern;
+    private readonly string _path;
     private readonly int _count;
 
     public VariadicAttribute(string from, string pattern, int count = 16)
@@ -26,6 +27,11 @@ internal class VariadicAttribute : Attribute
         _from = from;
         _pattern = pattern;
         _count = count;
+    }
+
+    public VariadicAttribute(string path)
+    {
+        _path = path;
     }
 }";
 

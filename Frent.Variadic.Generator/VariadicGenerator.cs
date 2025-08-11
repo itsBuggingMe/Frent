@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -25,8 +26,10 @@ namespace Frent.Variadic.Generator
                 [method: DebuggerHidden] (_, _) => true,
                 (t, ct) => (t.TargetSymbol, t.TargetNode, t.SemanticModel))
                 .Collect()
+                .Combine(context.AdditionalTextsProvider.Collect())
                 .SelectMany(GroupAttributesIntoModels)
                 .SelectMany(GenerateCode);
+
 
             context.RegisterImplementationSourceOutput(t, (ctx, s) => ctx.AddSource(s.FileName, s.Code));
         }
@@ -34,12 +37,35 @@ namespace Frent.Variadic.Generator
         [ThreadStatic]
         private static Dictionary<(TypeDeclarationSyntax, ISymbol), (string From, string Pattern, int Count)[]> _classTable = new();
 
-        static ImmutableArray<GenerationModel> GroupAttributesIntoModels(ImmutableArray<(ISymbol Symbol, SyntaxNode Node, SemanticModel Model)> variadics, CancellationToken ct)
+        private static readonly string[] ToSplit = ["to:\n"];
+        private static readonly string[] FromSplit = ["from:\n"];
+        static ImmutableArray<GenerationModel> GroupAttributesIntoModels((ImmutableArray<(ISymbol Symbol, SyntaxNode Node, SemanticModel Model)> Data, ImmutableArray<AdditionalText> AdditionText) variadics, CancellationToken ct)
         {
             _classTable ??= new();
             var table = _classTable;
 
-            foreach (var (Symbol, Node, Model) in variadics)
+            Dictionary<string, (string, string, int)[]> fileTemplates = variadics
+                .AdditionText
+                .ToDictionary(a => Path.GetFileNameWithoutExtension(a.Path), a => ParseTemplate(a.GetText()?.ToString() ?? throw new FileLoadException()));
+
+            static (string, string, int)[] ParseTemplate(string template)
+            {
+                template = template.Replace("\r\n", "\n");
+                string[] arr = template.Split(FromSplit, StringSplitOptions.None);
+                (string, string, int)[] parsed = new (string, string, int)[arr.Length - 1];
+
+                int arity = int.Parse(arr[0].Substring("arity:".Length));
+                int index = 0;
+                foreach (var st in arr.AsSpan(1))
+                {
+                    string[] items = st.Split(ToSplit, StringSplitOptions.None);
+                    parsed[index++] = (items[0].TrimEnd(), items[1].TrimEnd(), arity);
+                }
+
+                return parsed;
+            }
+
+            foreach (var (Symbol, Node, Model) in variadics.Data)
             {
                 if (Node is null)
                     continue;
@@ -49,7 +75,7 @@ namespace Frent.Variadic.Generator
 
                 if (!table.TryGetValue((parentType, Symbol), out var stack))
                 {
-                    table[(parentType, Symbol)] = ExtractArguments(Symbol);
+                    table[(parentType, Symbol)] = ExtractArguments(Symbol, fileTemplates);
                 }
             }
 
@@ -80,9 +106,9 @@ namespace Frent.Variadic.Generator
                 if (fileSafeTypeName.IndexOf('<') is { } t && t != -1)
                     fileSafeTypeName = fileSafeTypeName.Substring(0, t);
 
-                return new GenerationModel()
+                return new GenerationModel
                 {
-                    SourceCode = cb.ToString(),
+                    SourceCode = cb.ToString().Replace("\r\n", "\n"),
                     FileName = fileSafeTypeName,
                     Attributes = new EquatableArray<(string From, string Pattern, int Count)>(kvp.Value)
                 };
@@ -92,11 +118,11 @@ namespace Frent.Variadic.Generator
             return arr;
         }
 
-        static (string, string, int)[] ExtractArguments(ISymbol symbol)
+        static (string, string, int)[] ExtractArguments(ISymbol symbol, Dictionary<string, (string, string, int)[]> fromFiles)
         {
             var att = symbol.GetAttributes();
 
-            (string, string, int)[] output = new (string, string, int)[att.Length];
+            List<(string, string, int)> output = new(att.Length);
 
             int j = 0;
             for (int i = 0; i < att.Length; i++)
@@ -104,16 +130,17 @@ namespace Frent.Variadic.Generator
                 AttributeData @this = att[i];
                 if(@this.AttributeClass?.ToString() == Helpers.AttributeMetadataString)
                 {
-                    output[j++] = ((string)@this.ConstructorArguments[0].Value!, (string)@this.ConstructorArguments[1].Value!, (int)@this.ConstructorArguments[2].Value!);
+                    if (@this.ConstructorArguments.Length == 1)
+                    {
+                        output.AddRange(fromFiles[(string)@this.ConstructorArguments[0].Value!]);
+                        continue;
+                    }
+
+                    output.Add(((string)@this.ConstructorArguments[0].Value!, (string)@this.ConstructorArguments[1].Value!, (int)@this.ConstructorArguments[2].Value!));
                 }
             }
 
-            if(j != output.Length)
-            {
-                return output.AsSpan(0, j).ToArray();
-            }
-
-            return output;
+            return output.ToArray();
         }
 
         static ImmutableArray<(string Code, string FileName)> GenerateCode(GenerationModel ctx, CancellationToken ct)//omg cs ref
