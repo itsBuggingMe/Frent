@@ -20,7 +20,9 @@ namespace Frent;
  * [x] Bitset table for sparse set component set (limit to 256 sparse components?)
  * [x] Get/Set/Has/ + other non mutating methods
  * [x] Add/Remove
- * [ ] Updates
+ * [x] Updates
+ * [ ] Systems
+ * [ ] Deferred Updates
  * [ ] Benchmarks
  * [ ] Stress tests!
  * [ ] Tests for lifetime for sparse + archetypical & for all apis, create, create many, add, remove, tag, detach, delete, world dispose +

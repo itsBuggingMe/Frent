@@ -79,7 +79,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
             {
                 Debug.Assert(item.Index < archetype.Components.Length);
 
-                item.Runner.Run(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world);
+                item.Runner.RunArchetypical(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world, 0, archetype.EntityCount);
             }
         }
     }

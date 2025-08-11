@@ -224,7 +224,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     {
         foreach(var runner in Component<TComponent>.UpdateMethods)
         {
-            runner.Runner.Run(buffer, b, world);
+            runner.Runner.RunArchetypical(buffer, b, world, 0, b.EntityCount);
         }
     }
 
