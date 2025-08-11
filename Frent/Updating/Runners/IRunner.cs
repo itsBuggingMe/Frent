@@ -9,8 +9,6 @@ namespace Frent.Updating.Runners;
 /// <inheritdoc cref="GenerationServices"/>
 public interface IRunner
 {
-    internal ComponentID ComponentID { get; }
-
     internal void RunArchetypical(Array buffer, Archetype b, World world, int start, int length);
     internal void RunSparse(ComponentSparseSetBase sparseSet, World world, Span<int> idsToUpdate);
     internal static ref T GetComponentStorageDataReference<T>(Array array)

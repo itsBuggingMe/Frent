@@ -3,7 +3,7 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
-using static Frent.AttributeHelpers;
+using System.Runtime.InteropServices;
 
 namespace Frent.Updating.Runners;
 
@@ -11,23 +11,7 @@ namespace Frent.Updating.Runners;
 public class UniformUpdateRunner<TComp, TUniform> : IRunner
     where TComp : IUniformComponent<TUniform>
 {
-    ComponentID IRunner.ComponentID => Component<TComp>.ID;
-
-    void IRunner. Run(Array array, Archetype b, World world)
-    {
-        ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
-
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-
-        for (int i = b.EntityCount - 1; i >= 0; i--)
-        {
-            comp.Update(uniform);
-
-            comp = ref Unsafe.Add(ref comp, 1);
-        }
-    }
-
-    void IRunner. RunArchetypical(Array array, Archetype b, World world, int start, int length)
+    void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
@@ -38,52 +22,97 @@ public class UniformUpdateRunner<TComp, TUniform> : IRunner
             comp.Update(uniform);
 
             comp = ref Unsafe.Add(ref comp, 1);
+        }
+    }
+
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, Span<int> idsToUpdate)
+    {
+        ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
+
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+
+        for (int i = idsToUpdate.Length - 1; i >= 0; i--)
+        {
+            component.Update(uniform);
         }
     }
 }
 
 /// <inheritdoc cref="GenerationServices"/>
-[Variadic(GetComponentRefFrom, GetComponentRefPattern)]
-[Variadic(GetComponentRefWithStartFrom, GetComponentRefWithStartPattern)]
-[Variadic(IncRefFrom, IncRefPattern)]
-[Variadic(TArgFrom, TArgPattern)]
-[Variadic(PutArgFrom, PutArgPattern)]
+[Variadic(nameof(IRunner))]
 public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
     where TComp : IUniformComponent<TUniform, TArg>
 {
-    ComponentID IRunner.ComponentID => Component<TComp>.ID;
-
-    void IRunner. Run(Array array, Archetype b, World world)
+    void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
-        ref TComp comp = ref IRunner.GetComponentStorageDataReference<TComp>(array);
-
-        ref TArg arg = ref b.GetComponentDataReference<TArg>();
-
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
-
-        for (int i = b.EntityCount - 1; i >= 0; i--)
-        {
-            comp.Update(uniform, ref arg);
-
-            comp = ref Unsafe.Add(ref comp, 1);
-            arg = ref Unsafe.Add(ref arg, 1);
-        }
-    }
-
-    void IRunner. RunArchetypical(Array array, Archetype b, World world, int start, int length)
-    {
+        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
-        ref TArg arg = ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+        ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
 
+        ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
+        ref TArg arg = ref Component<TArg>.IsSparseComponent ?
+            ref Unsafe.NullRef<TArg>()
+            : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+
+        Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
         for (int i = length - 1; i >= 0; i--)
         {
+            entityIds.SetEntity(ref entity);
+
+            if (Component<TArg>.IsSparseComponent)
+            {
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
+                int index = sparseArgArray[i];
+                if (index < 0) continue;
+                arg = ref Unsafe.Add(ref sparseFirst, index);
+            }
+
             comp.Update(uniform, ref arg);
 
+            entityIds = ref Unsafe.Add(ref entityIds, 1);
             comp = ref Unsafe.Add(ref comp, 1);
-            arg = ref Unsafe.Add(ref arg, 1);
+
+            if (!Component<TArg>.IsSparseComponent) arg = ref Unsafe.Add(ref arg, 1);
+        }
+    }
+
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, Span<int> idsToUpdate)
+    {
+        ref int entityId = ref MemoryMarshal.GetReference(idsToUpdate);
+        ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
+
+        ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
+
+        // folded   
+        ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
+
+        Entity entity = world.DefaultWorldEntity;
+        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+
+        for (int i = idsToUpdate.Length - 1; i >= 0; i--, entityId = ref Unsafe.Add(ref entityId, 1))
+        {
+            entity.EntityID = entityId;
+            var entityData = entity.GetCachedLookup(world);
+
+            ref TArg arg = ref Unsafe.NullRef<TArg>();
+            if (Component<TArg>.IsSparseComponent) // folded
+            {
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
+                int index = sparseArgArray[entity.EntityID];
+                if (index < 0) continue;
+                arg = ref Unsafe.Add(ref sparseFirst, index);
+            }
+            else
+            {
+                nint index = entityData.ComponentDataIndex<TArg>();
+                if (index == 0) continue;
+                arg = ref entityData.Get<TArg>(index);
+            }
+
+            component.Update(uniform, ref arg);
         }
     }
 }

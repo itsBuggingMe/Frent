@@ -5,7 +5,9 @@ from:
             if (Component<TArg>.IsSparseComponent) // folded
             {
                 if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
-                arg = ref Unsafe.Add(ref sparseFirst, sparseArgArray[entity.EntityID]);
+                int index = sparseArgArray[entity.EntityID];
+                if (index < 0) continue;
+                arg = ref Unsafe.Add(ref sparseFirst, index);
             }
             else
             {
@@ -19,7 +21,9 @@ to:
             if (Component<TArg$>.IsSparseComponent)
             {
                 if (!((uint)entity.EntityID < (uint)sparseArgArray$.Length)) continue;
-                arg$ = ref Unsafe.Add(ref sparseFirst$, sparseArgArray$[entity.EntityID]);
+                int index = sparseArgArray$[entity.EntityID];
+                if (index < 0) continue;
+                arg$ = ref Unsafe.Add(ref sparseFirst$, index);
             }
             else
             {
@@ -34,7 +38,7 @@ from:
             {
                 if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
                 int index = sparseArgArray[i];
-                if(index < 0) continue;
+                if (index < 0) continue;
                 arg = ref Unsafe.Add(ref sparseFirst, index);
             }
 to:
@@ -47,13 +51,13 @@ to:
             }
 |
 from:
-            if(!Component<TArg>.IsSparseComponent) arg = ref Unsafe.Add(ref arg, 1);
+            if (!Component<TArg>.IsSparseComponent) arg = ref Unsafe.Add(ref arg, 1);
 to:
-|            if(!Component<TArg$>.IsSparseComponent) arg$ = ref Unsafe.Add(ref arg$, 1);
+|            if (!Component<TArg$>.IsSparseComponent) arg$ = ref Unsafe.Add(ref arg$, 1);
 |
 from:
         ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
-        ref TArg arg = ref Component<TArg>.IsSparseComponent ? 
+        ref TArg arg = ref Component<TArg>.IsSparseComponent ?
             ref Unsafe.NullRef<TArg>()
             : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
 to:

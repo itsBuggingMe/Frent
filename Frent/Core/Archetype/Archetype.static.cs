@@ -4,15 +4,10 @@ using Frent.Updating;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
-[Variadic("            if(!Component<T>.IsSparseComponent) { i = map.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T>.CreateInstance(1); tmpStorages[i] = Component<T>.CreateInstance(0); }",
-    "|            i = map.UnsafeArrayIndex(Component<T$>.ID.RawIndex) & GlobalWorldTables.IndexBits; runners[i] = Component<T$>.CreateInstance(1); tmpStorages[i] = Component<T$>.CreateInstance(0);\n|")]
-[Variadic("Archetype<T>", "Archetype<|T$, |>")]
-[Variadic("typeof(T)", "|typeof(T$), |")]
-[Variadic("Component<T>.ID", "|Component<T$>.ID, |")]
+[Variadic(nameof(Archetype))]
 internal static class Archetype<T>
 {
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = CreateComponentIDArray();
@@ -20,10 +15,10 @@ internal static class Archetype<T>
     [SkipLocalsInit]
     private static ImmutableArray<ComponentID> CreateComponentIDArray()
     {
-        Span<ComponentID> ids = stackalloc ComponentID[16];
+        Span<ComponentID> ids = stackalloc ComponentID[1];
         int index = 0;
 
-        if(!Component<T>.IsSparseComponent) ids[index++] = Component<T>.ID;
+        if(!Component<T>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T>.ID;
 
         return ImmutableArray.Create(ids.Slice(0, index));
     }
