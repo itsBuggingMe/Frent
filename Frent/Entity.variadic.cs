@@ -4,31 +4,11 @@ using Frent.Core.Events;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
-#if NETSTANDARD2_1
-[Variadic("[null!]", "MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, $)", 8)]
-#else
-[Variadic("[null!]", "[|null!, |]", 8)]
-#endif
-[Variadic("        events.GenericEvent!.Invoke(entity, ref component);", "|        events.GenericEvent!.Invoke(entity, ref component$);\n|", 8)]
-[Variadic("        events.NormalEvent.Invoke(entity, Component<T>.ID);", "|        events.NormalEvent.Invoke(entity, Component<T$>.ID);\n|")]
-[Variadic("            world.WorldUpdateCommandBuffer.AddComponent(this, c1);", "|            world.WorldUpdateCommandBuffer.AddComponent(this, c$);\n|")]
-[Variadic("            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T>.ID);", "|            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T$>.ID);\n|")]
-[Variadic("ref T component", "|ref T$ component$, |")]
-[Variadic("in T c1", "|in T$ c$, |")]
-[Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[$]")]
-[Variadic("        @event.InvokeInternal(entity, Component<T>.ID);", "|        @event.InvokeInternal(entity, Component<T$>.ID);\n|")]
-[Variadic("        @event.InvokeInternal(entity, Core.Tag<T>.ID);", "|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);\n|")]
-[Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
-[Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
-[Variadic("        ref var c1ref = ref to.GetComponentStorage<T>().UnsafeIndex<T>(nextLocation.Index); c1ref = c1;", "|        ref var c$ref = ref to.GetComponentStorage<T$>().UnsafeIndex<T$>(nextLocation.Index); c$ref = c$;|")]
-[Variadic("            world.WorldUpdateCommandBuffer.Tag<T>(this);", "|            world.WorldUpdateCommandBuffer.Tag<T$>(this);\n|")]
-[Variadic("            world.WorldUpdateCommandBuffer.Detach<T>(this);", "|            world.WorldUpdateCommandBuffer.Detach<T$>(this);\n|")]
-[Variadic("Core.Tag<T>.ID", "[|Core.Tag<T$>.ID, |]")]
-[Variadic("Component<T>.ID", "[|Component<T$>.ID, |]")]
-[Variadic("<T>", "<|T$, |>")]
+[Variadic(nameof(Entity))]
 partial struct Entity
 {
     // traversing archetype graph strategy:
@@ -56,7 +36,9 @@ partial struct Entity
         Unsafe.SkipInit(out int archIndex);
         MemoryHelpers.Poison(ref archIndex);
         Archetype? to = null;
-        ref ComponentSparseSetBase sparseSets = ref (NeighborCache<T>.HasAnySparseComponents ? ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable) : ref Unsafe.NullRef<ComponentSparseSetBase>());
+        ref ComponentSparseSetBase sparseSets = ref NeighborCache<T>.HasAnySparseComponents ? 
+            ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable) :
+            ref Unsafe.NullRef<ComponentSparseSetBase>();
 
         if (NeighborCache<T>.HasAnyArchetypicalComponents)
         {
@@ -70,7 +52,10 @@ partial struct Entity
             archIndex = nextLocation.Index;
         }
 
-        ref var c1ref = ref Component<T>.IsSparseComponent ? ref MemoryHelpers.GetSparseSet<T>(ref sparseSets)[EntityID] : ref to!.GetComponentStorage<T>().UnsafeIndex<T>(archIndex); c1ref = c1;
+        ref var c1ref = ref Component<T>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T>(ref sparseSets)[EntityID] :
+            ref to!.GetComponentStorage<T>().UnsafeIndex<T>(archIndex);
+        c1ref = c1;
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
 
@@ -108,7 +93,11 @@ partial struct Entity
         // get comp refs for events & destroyer calling
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
         Archetype from = thisLookup.Archetype;
-        ref T c1ref = ref Component<T>.Destroyer is null ? ref Unsafe.NullRef<T>() : ref Component<T>.IsSparseComponent ? ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
+        ref T c1ref = ref Component<T>.Destroyer is null ?
+            ref Unsafe.NullRef<T>() : 
+            ref Component<T>.IsSparseComponent ? 
+                ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : 
+                ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
 
 
         if (EntityLocation.HasEventFlag(thisLookup.Flags | world.WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
@@ -119,7 +108,9 @@ partial struct Entity
             if (EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
             {
                 // fill in the gaps
-                if (Component<T>.Destroyer is null) c1ref = ref Component<T>.IsSparseComponent ? ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
+                if (Component<T>.Destroyer is null) c1ref = ref Component<T>.IsSparseComponent ?
+                        ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] :
+                        ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
 
                 ref var events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityEvents(this, EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.RemoveGenericComp), ref events.Remove, ref c1ref);
@@ -141,7 +132,11 @@ partial struct Entity
         }
 
         // set sparse components and bits
-        if (Component<T>.IsSparseComponent) { bits.ClearAt(Component<T>.SparseSetComponentIndex); UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID); }
+        if (Component<T>.IsSparseComponent)
+        {
+            bits.ClearAt(Component<T>.SparseSetComponentIndex);
+            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID);
+        }
 
         if (NeighborCache<T>.HasAnyArchetypicalComponents)
         {
