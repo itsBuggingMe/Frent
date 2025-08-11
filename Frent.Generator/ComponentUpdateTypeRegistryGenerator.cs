@@ -86,6 +86,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     {
                         RegistryHelpers.FullyQualifiedInitableInterfaceName => UpdateModelFlags.Initable,
                         RegistryHelpers.FullyQualifiedDestroyableInterfaceName => UpdateModelFlags.Destroyable,
+                        // handle sparse component if needed in the future
                         _ => UpdateModelFlags.None,
                     };
                 }

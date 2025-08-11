@@ -2,9 +2,6 @@
 using Frent.Components;
 using Frent.Core.Structures;
 using Frent.Updating;
-using Frent.Updating.Runners;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -171,12 +168,19 @@ public static class Component
             int sparseIndex = Component<T>.IsSparseComponent ? ++NextSparseSetComponentIndex : 0;
 
             IDTable<T> stack = new IDTable<T>();
-            ComponentTable.Push(new ComponentData(type, stack,
+            var data = new ComponentData(type, stack, GetComponentFactoryFromType(type),
                 initDelegate,
                 destroyDelegate,
                 GenerationServices.UserGeneratedTypeMap.GetValueOrDefault(type) ?? [],
                 sparseIndex
-            ));
+            );
+            ComponentTable.Push(data);
+
+            if (sparseIndex != 0)
+            {
+                GlobalWorldTables.RegisterNewSparseSetComponent(sparseIndex, CachedComponentFactories[type]);
+                ComponentTableBySparseIndex.Push(data);
+            }
 
             return (id, stack, initDelegate, destroyDelegate, sparseIndex);
         }
@@ -211,17 +215,20 @@ public static class Component
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
             bool isSparseComponent = typeof(ISparseComponent).IsAssignableFrom(type);
-
-            ComponentData data = new ComponentData(type, table ?? CreateComponentTable(type),
+            int sparseIndex = isSparseComponent ? ++NextSparseSetComponentIndex : 0;
+            ComponentData data = new ComponentData(type, table ?? CreateComponentTable(type), type == typeof(void) ? null! : GetComponentFactoryFromType(type),
                 GenerationServices.TypeIniters.GetValueOrDefault(type),
                 GenerationServices.TypeDestroyers.GetValueOrDefault(type),
                 GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : [],
-                isSparseComponent ? ++NextSparseSetComponentIndex : 0
+                sparseIndex
             );
 
             ComponentTable.Push(data);
             if (isSparseComponent)
+            {
+                GlobalWorldTables.RegisterNewSparseSetComponent(sparseIndex, CachedComponentFactories[type]);
                 ComponentTableBySparseIndex.Push(data);
+            }
 
             return id;
         }

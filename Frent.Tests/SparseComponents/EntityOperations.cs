@@ -5,7 +5,7 @@ namespace Frent.Tests.SparseComponents;
 internal class EntityOperations
 {
     [Test]
-    public void AddRemove()
+    public void Create_WithSparseComponent_ComponentStored()
     {
         using World world = new World();
 
