@@ -9,20 +9,8 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[Variadic("        ref T ref1 = ref Component<T>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;",
-    "|        ref T$ ref$ = ref Component<T$>.IsSparseComponent ? ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex))[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index); ref$ = comp$;\n|")]
-[Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
-    "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
-[Variadic("            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
-[Variadic("e<T>", "e<|T$, |>")]
-[Variadic("y<T>", "y<|T$, |>")]
-[Variadic("in T comp", "|in T$ comp$, |")]
-[Variadic("            if (Component<T>.IsSparseComponent) bitset.SetOrResize(Component<T>.SparseSetComponentIndex);",
-    "|            if (Component<T$>.IsSparseComponent) bitset.SetOrResize(Component<T$>.SparseSetComponentIndex);\n|")]
-[Variadic("Component<T>.IsSparseComponent &&",
-    "|!Component<T$>.IsSparseComponent && |")]
 
-//it just so happens Archetype and Create both end with "e"
+[Variadic(nameof(World))]
 partial class World
 {
     /// <summary>
@@ -51,7 +39,7 @@ partial class World
             entity = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
         }
 
-        bool hasSparseComponent = !(Component<T>.IsSparseComponent && true);
+        bool hasSparseComponent = !(!Component<T>.IsSparseComponent && true);
 
         if (hasSparseComponent)
         {
@@ -68,7 +56,10 @@ partial class World
         ref ComponentSparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
 
         //1x array lookup per component
-        ref T ref1 = ref Component<T>.IsSparseComponent ? ref MemoryHelpers.GetSparseSet<T>(ref start)[id] : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
+        ref T ref1 = ref Component<T>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T>(ref start)[id] 
+            : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index);
+        ref1 = comp;
 
         if (hasSparseComponent)
         {
