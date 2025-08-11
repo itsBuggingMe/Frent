@@ -51,7 +51,7 @@ public static class Component<T>
         }
     }
 
-    internal static /*readonly*/ int SparseSetComponentIndex => throw new NotImplementedException();
+    internal static readonly int SparseSetComponentIndex;
 
     internal static readonly UpdateMethodData[] UpdateMethods;
     internal static readonly ComponentBufferManager<T> BufferManagerInstance;
@@ -67,7 +67,7 @@ public static class Component<T>
         }
 
 
-        (_id, GeneralComponentStorage, Initer, Destroyer) = Component.GetExistingOrSetupNewComponent<T>();
+        (_id, GeneralComponentStorage, Initer, Destroyer, SparseSetComponentIndex) = Component.GetExistingOrSetupNewComponent<T>();
 
         if(Component.CachedComponentFactories.TryGetValue(typeof(T), out var componentBufferManager))
         {
@@ -137,7 +137,7 @@ public static class Component
         GenerationServices.RegisterComponent<T>();
     }
 
-    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer) GetExistingOrSetupNewComponent<T>()
+    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer, int SparseIndex) GetExistingOrSetupNewComponent<T>()
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
@@ -149,7 +149,8 @@ public static class Component
                         componentID, 
                         (IDTable<T>)ComponentTable[componentID.RawIndex].Storage, 
                         (ComponentDelegates<T>.InitDelegate?)ComponentTable[componentID.RawIndex].Initer, 
-                        (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[componentID.RawIndex].Destroyer
+                        (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[componentID.RawIndex].Destroyer,
+                        ComponentTable[componentID.RawIndex].SparseComponentIndex
                     );
             }
 
@@ -165,17 +166,19 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            var initDelegate = (ComponentDelegates<T>.InitDelegate?)(GenerationServices.TypeIniters.TryGetValue(type, out var v) ? v : null);
-            var destroyDelegate = (ComponentDelegates<T>.DestroyDelegate?)(GenerationServices.TypeDestroyers.TryGetValue(type, out var v2) ? v2 : null);
+            var initDelegate = (ComponentDelegates<T>.InitDelegate?)(GenerationServices.TypeIniters.GetValueOrDefault(type));
+            var destroyDelegate = (ComponentDelegates<T>.DestroyDelegate?)(GenerationServices.TypeDestroyers.GetValueOrDefault(type));
+            int sparseIndex = Component<T>.IsSparseComponent ? ++NextSparseSetComponentIndex : 0;
 
             IDTable<T> stack = new IDTable<T>();
             ComponentTable.Push(new ComponentData(type, stack,
-                GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null,
-                GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : [],
-                Component<T>.SparseSetComponentIndex));
+                initDelegate,
+                destroyDelegate,
+                GenerationServices.UserGeneratedTypeMap.GetValueOrDefault(type) ?? [],
+                sparseIndex
+            ));
 
-            return (id, stack, initDelegate, destroyDelegate);
+            return (id, stack, initDelegate, destroyDelegate, sparseIndex);
         }
     }
 

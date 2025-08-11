@@ -1,5 +1,7 @@
-﻿using Frent.Components;
+﻿using System.Diagnostics;
 using Frent;
+using Frent.Components;
+using static Frent.Tests.Generator.SourceGeneratorTests;
 using static NUnit.Framework.Assert;
 
 
@@ -7,6 +9,8 @@ namespace Frent.Tests.Generator
 {
     internal partial class SourceGeneratorTests
     {
+        public static TypeRegistrationFlags EventFlags;
+
         //TODO: Cases to test for
         //N deep class/struct nesting
         //public/private/internal
@@ -62,21 +66,14 @@ namespace Frent.Tests.Generator
             using World world = new(new DefaultUniformProvider()
                 .Add<float>(0));
 
+            EventFlags = default;
+
             Entity test = world.Create();
-            if (typeFlags.HasFlag(TypeRegistrationFlags.Initable))
-                Throws<InitalizeException>(() => test.Add(new T()));
-            else
-                test.Add(new T());
+            test.Add(new T());
+            world.Update();
+            test.Remove<T>();
 
-            if (typeFlags.HasFlag(TypeRegistrationFlags.Updateable))
-                Throws<UpdateException>(world.Update);
-            else
-                world.Update();
-
-            if (typeFlags.HasFlag(TypeRegistrationFlags.Destroyable))
-                Throws<DestroyException>(test.Remove<T>);
-            else
-                test.Remove<T>();
+            That(typeFlags, Is.EqualTo(EventFlags));
         }
 
         [Flags]
@@ -93,7 +90,7 @@ namespace Frent.Tests.Generator
             {
                 public void Init(Entity self)
                 {
-                    throw new InitalizeException();
+                    EventFlags |= TypeRegistrationFlags.Initable;
                 }
             }
 
@@ -101,7 +98,7 @@ namespace Frent.Tests.Generator
             {
                 public void Update()
                 {
-                    throw new UpdateException();
+                    EventFlags |= TypeRegistrationFlags.Updateable;
                 }
             }
         }
@@ -110,17 +107,17 @@ namespace Frent.Tests.Generator
         {
             public void Destroy()
             {
-                throw new DestroyException();
+                EventFlags |= TypeRegistrationFlags.Destroyable;
             }
 
             public void Init(Entity self)
             {
-                throw new InitalizeException();
+                EventFlags |= TypeRegistrationFlags.Initable;
             }
 
             public void Update()
             {
-                throw new UpdateException();
+                EventFlags |= TypeRegistrationFlags.Updateable;
             }
         }
     }
@@ -132,7 +129,7 @@ internal partial class InGlobalNamespace : IComponent
 {
     public void Update()
     {
-        throw new UpdateException();
+        EventFlags |= TypeRegistrationFlags.Updateable;
     }
 
     internal partial struct Inner<T> : IComponentBase
@@ -142,7 +139,7 @@ internal partial class InGlobalNamespace : IComponent
         {
             public void Update(T1 uniform)
             {
-                throw new UpdateException();
+                EventFlags |= TypeRegistrationFlags.Updateable;
             }
         }
     }
@@ -154,7 +151,7 @@ internal partial class Derived : InGlobalNamespace
     {
         public void Init(Entity self)
         {
-            throw new InitalizeException();
+            EventFlags |= TypeRegistrationFlags.Initable;
         }
     }
 
@@ -163,12 +160,12 @@ internal partial class Derived : InGlobalNamespace
     {
         public void Update()
         {
-            throw new UpdateException();
+            EventFlags |= TypeRegistrationFlags.Updateable;
         }
 
         public void Update(int uniform)
         {
-            throw new UpdateException();
+            EventFlags |= TypeRegistrationFlags.Updateable;
         }
     }
 }

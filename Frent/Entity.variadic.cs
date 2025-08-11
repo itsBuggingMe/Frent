@@ -103,7 +103,7 @@ partial struct Entity
         if (EntityLocation.HasEventFlag(thisLookup.Flags | world.WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
         {
             if (world.ComponentRemovedEvent.HasListeners)
-                InvokeComponentWorldEvents<T>(ref world.ComponentAddedEvent, this);
+                InvokeComponentWorldEvents<T>(ref world.ComponentRemovedEvent, this);
 
             if (EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
             {
@@ -256,16 +256,18 @@ partial struct Entity
         public static bool HasAnyArchetypicalComponents => !Component<T>.IsSparseComponent;
         public static bool HasAnySparseComponents => Component<T>.IsSparseComponent;
 
-        public void WriteComponentIDs(Span<ComponentID> ids)
+        public void WriteComponentIDs(ref Span<ComponentID> ids)
         {
             //id.Length == 8
             ids.UnsafeSpanIndex(0) = Component<T>.ID;
+            ids = ids.Slice(0, 1);
         }
 
-        public void WriteTagIDs(Span<TagID> ids)
+        public void WriteTagIDs(ref Span<TagID> ids)
         {
             //id.Length == 8
             ids.UnsafeSpanIndex(0) = Core.Tag<T>.ID;
+            ids = ids.Slice(0, 1);
         }
 
         //separate into individual classes to avoid creating uneccecary static classes.
@@ -324,7 +326,7 @@ partial struct Entity
             if (typeof(T) == typeof(ComponentID))
             {
                 Span<ComponentID> componentsSpecified = stackalloc ComponentID[8];
-                default(TEdge).WriteComponentIDs(componentsSpecified);
+                default(TEdge).WriteComponentIDs(ref componentsSpecified);
                 Span<ComponentID> archetypicals = stackalloc ComponentID[8];
 
                 int index = 0;
@@ -339,7 +341,7 @@ partial struct Entity
             else
             {
                 Span<TagID> delta = stackalloc TagID[8];
-                default(TEdge).WriteTagIDs(delta);
+                default(TEdge).WriteTagIDs(ref delta);
                 tagIDs = add ? MemoryHelpers.Concat(tagIDs, delta) 
                     : MemoryHelpers.Remove(tagIDs, delta);
             }
@@ -359,7 +361,7 @@ partial struct Entity
 
     internal interface IArchetypeGraphEdge
     {
-        void WriteComponentIDs(Span<ComponentID> ids);
-        void WriteTagIDs(Span<TagID> ids);
+        void WriteComponentIDs(ref Span<ComponentID> ids);
+        void WriteTagIDs(ref Span<TagID> ids);
     }
 }

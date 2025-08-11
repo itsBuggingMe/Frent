@@ -149,10 +149,10 @@ from:
                         ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] :
                         ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
 to:
-                if (Component<T$>.Destroyer is null) c$ref = ref Component<T$>.IsSparseComponent ?
+|                if (Component<T$>.Destroyer is null) c$ref = ref Component<T$>.IsSparseComponent ?
                         ref MemoryHelpers.GetSparseSet<T$>(ref first)[EntityID] :
                         ref Unsafe.Add(ref from.GetComponentDataReference<T$>(), thisLookup.Index);
-
+|
 from:
         if (Component<T>.IsSparseComponent)
         {
@@ -160,12 +160,12 @@ from:
             UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID);
         }
 to:
-        if (Component<T$>.IsSparseComponent)
+|        if (Component<T$>.IsSparseComponent)
         {
             bits.ClearAt(Component<T$>.SparseSetComponentIndex);
             UnsafeExtensions.UnsafeCast<ComponentSparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex)).Remove(EntityID);
         }
-
+|
 from:
 Add<T>
 to:
@@ -186,3 +186,8 @@ from:
 Detach<T>
 to:
 Detach<|T$, |>
+
+from:
+            ids = ids.Slice(0, 1);
+to:
+            ids = ids.Slice(0, $);

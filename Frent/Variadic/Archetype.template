@@ -11,7 +11,8 @@ to:
 from:
             Component<T>.InitalizeComponentRunnerImpl(runners, tmpStorages, map);
 to:
-            Component<T$>.InitalizeComponentRunnerImpl(runners, tmpStorages, map);
+|            Component<T$>.InitalizeComponentRunnerImpl(runners, tmpStorages, map);
+|
 from:
 Archetype<T>
 to:

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -18,7 +19,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
     {
         foreach (ref var entry in _entries.AsSpan())
         {
-            entry.NextIndex = -1;
+            entry.NextIndex = -2;
             entry.BucketIndex = -1;
         }
     }
@@ -179,7 +180,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         for(int i = 0; i < entries.Length; i++)
         {
             ref var entry = ref entries[i];
-            entry.NextIndex = -1;
+            entry.NextIndex = -2;
             entry.BucketIndex = -1;
         }
 
@@ -195,29 +196,38 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         return ref CreateEntry(key);
     }
 
-    public Enumerator GetEnumerator() => new Enumerator(_entries);
+    public Enumerator GetEnumerator() => new Enumerator(_entries, _next);
 
     internal struct Enumerator
     {
-        internal Enumerator(Entry[] entries)
+        internal Enumerator(Entry[] entries, int count)
         {
             _entries = entries;
+            _count = count;
             _index = -1;
         }
 
         private int _index;
+        private readonly int _count;
         private Entry[] _entries;
+        private KeyValuePair<TKey, TValue> _current;
+        public KeyValuePair<TKey, TValue> Current => _current;
 
-        public KeyValuePair<TKey, TValue> Current
+        public bool MoveNext()
         {
-            get
+            for(_index++; _index < _count; _index++)
             {
                 ref Entry entry = ref _entries[_index];
-                return new KeyValuePair<TKey, TValue>(entry.Key, entry.Value);
+                if (entry.NextIndex != -2)
+                {
+                    _current = new KeyValuePair<TKey, TValue>(entry.Key, entry.Value);
+                    return true;
+                }
             }
-        }
 
-        public bool MoveNext() => ++_index < _entries.Length;
+
+            return false;
+        }
     }
 
     /*
