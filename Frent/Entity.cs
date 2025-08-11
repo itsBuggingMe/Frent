@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Frent.Collections;
 using System.Collections;
+using Frent.Updating;
 
 namespace Frent;
 
@@ -63,15 +64,15 @@ public partial struct Entity : IEquatable<Entity>
         internal ushort WorldID;
     }
 
-    internal EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).EntityIDOnly;
-    internal long PackedValue => Unsafe.As<Entity, long>(ref this);
-    internal int EntityLow => Unsafe.As<Entity, EntityHighLow>(ref this).EntityLow;
+    internal readonly EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref Unsafe.AsRef(in this)).EntityIDOnly;
+    internal readonly long PackedValue => Unsafe.As<Entity, long>(ref Unsafe.AsRef(in this));
+    internal readonly int EntityLow => Unsafe.As<Entity, EntityHighLow>(ref Unsafe.AsRef(in this)).EntityLow;
     #endregion
 
     #region Internal Helpers
 
     #region IsAlive
-    internal bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
+    internal readonly bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         if (world is null)
@@ -84,7 +85,7 @@ public partial struct Entity : IEquatable<Entity>
     }
 
     /// <exception cref="InvalidOperationException">This <see cref="Entity"/> has been deleted.</exception>
-    internal ref EntityLocation AssertIsAlive(out World world)
+    internal readonly ref EntityLocation AssertIsAlive(out World world)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         //hardware trap
@@ -96,7 +97,7 @@ public partial struct Entity : IEquatable<Entity>
 
     #endregion IsAlive
 
-    private Ref<T> TryGetCore<T>(out bool exists)
+    private readonly Ref<T> TryGetCore<T>(out bool exists)
     {
         if (!InternalIsAlive(out var world, out var entityLocation))
             goto doesntExist;
@@ -104,7 +105,7 @@ public partial struct Entity : IEquatable<Entity>
         if (Component<T>.IsSparseComponent)
         {
             return UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex))
-                .TryGet(out exists);
+                .TryGet(EntityID, out exists);
         }
 
         int compIndex = entityLocation.Archetype.GetComponentIndex<T>();
@@ -157,7 +158,7 @@ public partial struct Entity : IEquatable<Entity>
     }
 
 
-    private ImmutableArray<ComponentID> AllocateComponentTypeArray()
+    private readonly ImmutableArray<ComponentID> AllocateComponentTypeArray()
     {
         if (!InternalIsAlive(out var world, out var location))
             Throw_EntityIsDead();
@@ -237,7 +238,40 @@ public partial struct Entity : IEquatable<Entity>
             return false;
         }
     }
-#endregion
+
+    // used for fast acsess in sparse systems
+    internal EntityLookup GetCachedLookup(World world)
+    {
+        ref var record = ref world.EntityTable[EntityID];
+        Archetype archetype = record.Archetype;
+        return new EntityLookup(archetype.ComponentTagTable, archetype.Components, record.Index);
+    }
+#if NETSTANDARD
+    internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
+    {
+        private byte[] ComponentIndexMap = map;
+        private ComponentStorageRecord[] Components = componentStorageRecord;
+        private readonly nint Index = index;
+
+        /// <remarks><paramref name="componentDataIndex"/> should be from a <see cref="ComponentDataIndex{T}"/> call from this struct.</remarks>
+        public ref T Get<T>(nint componentDataIndex) => ref UnsafeExtensions.UnsafeCast<T[]>(Components.UnsafeArrayIndex(componentDataIndex).Buffer).UnsafeArrayIndex(Index);
+
+        public nint ComponentDataIndex<T>() => ComponentIndexMap.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+    }
+#else
+    internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
+    {
+        private ref byte ComponentIndexMap = ref MemoryMarshal.GetArrayDataReference(map);
+        private ref ComponentStorageRecord Components = ref MemoryMarshal.GetArrayDataReference(componentStorageRecord);
+        private readonly nint Index = index;
+
+        /// <remarks><paramref name="componentDataIndex"/> should be from a <see cref="ComponentIndex{T}"/> call from this struct.</remarks>
+        public ref T Get<T>(nint componentDataIndex) => ref UnsafeExtensions.UnsafeCast<T[]>(Unsafe.Add(ref Components, componentDataIndex).Buffer).UnsafeArrayIndex(Index);
+
+        public nint ComponentDataIndex<T>() => Unsafe.Add(ref ComponentIndexMap, Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+    }
+#endif
+    #endregion
 
     #region IEquatable
     /// <summary>

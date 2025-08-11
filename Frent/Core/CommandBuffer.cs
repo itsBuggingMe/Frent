@@ -322,7 +322,7 @@ public class CommandBuffer
                 int sparseIndex = command.ComponentHandle.ComponentID.SparseIndex;
                 if (sparseIndex != 0)
                 {
-                    _world.WorldSparseSetTable[sparseIndex].Add(id, command.ComponentHandle);
+                    _world.WorldSparseSetTable[sparseIndex].AddOrSet(id, command.ComponentHandle);
                 }
                 else
                 {

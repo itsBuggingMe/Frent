@@ -30,7 +30,7 @@ public class EntityUpdateRunner<TComp> : IRunner
         }
     }
 
-    void IRunner.Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
@@ -80,7 +80,7 @@ public class EntityUpdateRunner<TComp, TArg> : IRunner
         }
     }
 
-    void IRunner.Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);

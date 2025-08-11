@@ -138,7 +138,7 @@ internal static class FrentMultithread
                 {
                     Debug.Assert(method.Index < archetype.Components.Length);
 
-                    method.Runner.Run(
+                    method.Runner.RunArchetypical(
                         Unsafe.Add(ref storageStart, method.Index).Buffer,
                         archetype,
                         world,

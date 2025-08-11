@@ -15,101 +15,137 @@ namespace Frent.Collections;
 
 internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 {
-    private int _nextIndex;
     private T[] _dense = new T[InitialCapacity];
 
     public ref T this[int id]
     {
         get
         {
-            ref var index = ref EnsureSparseCapacityAndGetIndex(id);
+            ref var denseIndex = ref EnsureSparseCapacityAndGetIndex(id);
 
-            if (index == -1)
-                index = _nextIndex++;
+            if (denseIndex == -1)
+            {
+                denseIndex = _nextIndex++;
+                _ids.UnsafeArrayIndex(denseIndex) = id;
+            }
 
-            return ref MemoryHelpers.GetValueOrResize(ref _dense, index);
+            return ref MemoryHelpers.GetValueOrResize(ref _dense, denseIndex);
         }
     }
 
-    /// <remarks>This differs from <see cref="this[int]"/> as it throws if the item does not exist.</remarks>
-    public ref T GetTyped(int id) => ref _dense[_sparse[id]]!;
+    public override void AddOrSet(int id, ComponentHandle value) => this[id] = value.Retrieve<T>();
+
+    public override void AddOrSet(int id, object value) => this[id] = (T)value;
 
     public override object Get(int id) => _dense[_sparse[id]]!;
 
-    public override void Set(int id, object value) => _dense[_sparse[id]] = (T)value;
-
-    public override void Add(int id, ComponentHandle value) => this[id] = value.Retrieve<T>();
+    public override void InvokeGenericEvent(int id, Entity entity, GenericEvent @event) => @event.Invoke(entity, ref _dense[_sparse[id]]);
 
     public override void Remove(int id)
     {
-        ref var index = ref _sparse[id];
-        ref var slot = ref _dense[index];
-        Component<T>.Destroyer?.Invoke(ref slot);
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            slot = default!;
-        index = -1;
+        var sparse = _sparse;
+        var dense = _dense;
+        if (!((uint)id < (uint)sparse.Length))
+            return;
+        ref int denseIndexRef = ref sparse[id];
+        int denseIndex = denseIndexRef;
+        if (!((uint)denseIndex < (uint)dense.Length))
+            return;
+
+        ref var toRemove = ref dense[denseIndex];
+        ref var top = ref dense[--_nextIndex];
+        denseIndexRef = -1;
+
+        toRemove = top;
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            top = default;
     }
 
     public override bool TryGet(int id, out object value)
     {
-        throw new NotImplementedException();
+        var res = TryGet(id, out bool exists);
+        value = res.Value!;
+        return exists;
     }
 
-    public Ref<T> TryGet(out bool exists)
+    public Ref<T> TryGet(int id, out bool value)
     {
-        throw new NotImplementedException();
+        var sparse = _sparse;
+        var dense = _dense;
+        if ((uint)id < (uint)sparse.Length)
+        {
+            int denseIndex = sparse[id];
+            if ((uint)denseIndex < (uint)_nextIndex)
+            {
+                value = true;
+                return new Ref<T>(dense, denseIndex);
+            }
+        }
+        value = false;
+        return default;
     }
 
-    public override void Add(int id, object value)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void InvokeGenericEvent(int id, GenericEvent @event)
-    {
-
-    }
+    internal ref T GetComponentDataReference() => ref MemoryMarshal.GetArrayDataReference(_dense);
 }
 
 internal abstract class ComponentSparseSetBase
 {
     protected int[] _sparse;
+    protected int[] _ids;
+    protected int _nextIndex;
+
+    public int Count => _nextIndex;
+
     protected const int InitialCapacity = 4;
 
     protected ComponentSparseSetBase()
     {
         _sparse = new int[InitialCapacity];
+        _ids = new int[InitialCapacity];
         _sparse.AsSpan().Fill(-1);
+        _ids.AsSpan().Fill(-1);
     }
 
     public abstract object Get(int id);
-    public abstract void Set(int id, object value);
-    public abstract void Add(int id, ComponentHandle value);
-    public abstract void Add(int id, object value);
+    public abstract void AddOrSet(int id, ComponentHandle value);
+    public abstract void AddOrSet(int id, object value);
     public abstract void Remove(int id);
     public abstract bool TryGet(int id, out object value);
-    public abstract void InvokeGenericEvent(int id, GenericEvent @event);
+    public abstract void InvokeGenericEvent(int id, Entity entity, GenericEvent @event);
 
     public bool Has(int id)
     {
         int[] arr = _sparse;
-        return (uint)id < (uint)arr.Length && arr[id] == -1;
+        return (uint)id < (uint)arr.Length && arr[id] != -1;
     }
 
     protected ref int EnsureSparseCapacityAndGetIndex(int id)
     {
         var localSparse = _sparse;
-        if (id < localSparse.Length)
+        if ((uint)id < (uint)localSparse.Length)
             return ref localSparse[id];
 
-        return ref ResizeArrayAndGet(ref _sparse, id);
+        ref int sparseIndex = ref ResizeArrayAndGet(ref _sparse, ref _ids, id);
 
-        static ref int ResizeArrayAndGet(ref int[] arr, int index)
+        return ref sparseIndex;
+
+        static ref int ResizeArrayAndGet(ref int[] sparse, ref int[] ids, int index)
         {
-            int prevLen = arr.Length;
-            Array.Resize(ref arr, (int)BitOperations.RoundUpToPowerOf2((uint)index + 1));
-            arr.AsSpan(prevLen).Fill(-1);
-            return ref arr[index];
+            int prevLen = sparse.Length;
+            int newLen = (int)BitOperations.RoundUpToPowerOf2((uint)index + 1);
+            Array.Resize(ref sparse, newLen);
+            Array.Resize(ref ids, newLen);
+            sparse.AsSpan(prevLen).Fill(-1);
+            return ref sparse[index];
         }
     }
+
+    internal ref int GetEntityIDsDataReference() => ref MemoryMarshal.GetArrayDataReference(_ids);
+    internal Span<int> SparseSpan() =>
+#if NETSTANDARD
+        _sparse.AsSpan()
+#else
+        MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_sparse), _sparse.Length)
+#endif
+        ;
 }

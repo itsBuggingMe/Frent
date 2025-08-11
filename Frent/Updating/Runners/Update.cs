@@ -25,7 +25,7 @@ public class UpdateRunner<TComp> : IRunner
         }
     }
 
-    void IRunner. Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner. RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
@@ -65,7 +65,7 @@ public class UpdateRunner<TComp, TArg> : IRunner
         }
     }
 
-    void IRunner. Run(Array array, Archetype b, World world, int start, int length)
+    void IRunner. RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 

@@ -1,7 +1,9 @@
-﻿using Frent.Core;
+﻿using Frent.Collections;
+using Frent.Core;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Dynamic;
+using System.Runtime.InteropServices;
 
 namespace Frent.Marshalling;
 
@@ -41,7 +43,6 @@ public static class WorldMarshal
     /// <returns>A reference to the component in memory.</returns>
     public static ref T Get<T>(World world, int entityID)
     {
-
         EntityLocation location = world.EntityTable.UnsafeIndexNoResize(entityID);
 
         Archetype archetype = location.Archetype;

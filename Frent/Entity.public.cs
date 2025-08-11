@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent;
-//TODO: make these methods readonly
+
 partial struct Entity
 {
     #region Public API
@@ -21,7 +21,7 @@ partial struct Entity
     /// </summary>
     /// <param name="componentID">The component ID of the component type to check.</param>
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
-    public bool Has(ComponentID componentID)
+    public readonly bool Has(ComponentID componentID)
     {
         ref EntityLocation entityLocation = ref AssertIsAlive(out World world);
         if (componentID.IsSparseComponent)
@@ -34,7 +34,7 @@ partial struct Entity
     /// </summary>
     /// <typeparam name="T">The type of component to check.</typeparam>
     /// <returns><see langword="true"/> if the entity has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
-    public bool Has<T>()
+    public readonly bool Has<T>()
     {
         ref EntityLocation entityLocation = ref AssertIsAlive(out World world);
         if(Component<T>.IsSparseComponent)
@@ -47,16 +47,16 @@ partial struct Entity
     /// </summary>
     /// <param name="type">The component type to check if this entity has.</param>
     /// <returns><see langword="true"/> if the entity has a component of <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
-    public bool Has(Type type) => Has(Component.GetComponentID(type));
+    public readonly bool Has(Type type) => Has(Component.GetComponentID(type));
 
     /// <summary>
     /// Checks of this <see cref="Entity"/> has a component specified by <paramref name="componentID"/> without throwing when dead.
     /// </summary>
     /// <param name="componentID">The component ID of the component type to check.</param>
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryHas(ComponentID componentID)
+    public readonly bool TryHas(ComponentID componentID)
     {
-        if(InternalIsAlive(out World world, out EntityLocation entityLocation))
+        if(InternalIsAlive(out World? world, out EntityLocation entityLocation))
         {
             if(componentID.IsSparseComponent)
             {
@@ -76,9 +76,9 @@ partial struct Entity
     /// </summary>
     /// <typeparam name="T">The type of component to check.</typeparam>
     /// <returns><see langword="true"/> if the entity is alive and has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryHas<T>()
+    public readonly bool TryHas<T>()
     {
-        if (InternalIsAlive(out World world, out EntityLocation entityLocation))
+        if (InternalIsAlive(out World? world, out EntityLocation entityLocation))
         {
             if (Component<T>.IsSparseComponent)
             {
@@ -97,7 +97,7 @@ partial struct Entity
     /// </summary>
     /// <param name="type">The type of the component type to check.</param>
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryHas(Type type) => TryHas(Component.GetComponentID(type));
+    public readonly bool TryHas(Type type) => TryHas(Component.GetComponentID(type));
     #endregion
 
     #region Get
@@ -109,7 +109,7 @@ partial struct Entity
     /// <exception cref="NullReferenceException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
     /// <returns>A reference to the component in memory.</returns>
     [SkipLocalsInit]
-    public ref T Get<T>()
+    public readonly ref T Get<T>()
     {
         //Total: 4x lookup
 
@@ -139,7 +139,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="id"/>.</exception>
     /// <returns>The boxed component.</returns>
-    public object Get(ComponentID id)
+    public readonly object Get(ComponentID id)
     {
         ref var lookup = ref AssertIsAlive(out var world);
 
@@ -164,7 +164,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     /// <returns>The component of type <paramref name="type"/></returns>
-    public object Get(Type type) => Get(Component.GetComponentID(type));
+    public readonly object Get(Type type) => Get(Component.GetComponentID(type));
 
     /// <summary>
     /// Gets this <see cref="Entity"/>'s component of type <paramref name="id"/>.
@@ -173,14 +173,14 @@ partial struct Entity
     /// <param name="obj">The component to set</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="id"/>.</exception>
-    public void Set(ComponentID id, object obj)
+    public readonly void Set(ComponentID id, object obj)
     {
         ref var lookup = ref AssertIsAlive(out World world);
 
         if (id.IsSparseComponent)
         {
             var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.SparseIndex);
-            set.Set(EntityID, obj);
+            set.AddOrSet(EntityID, obj);
             return;
         }
 
@@ -201,7 +201,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     /// <returns>The component of type <paramref name="type"/></returns>
-    public void Set(Type type, object obj) => Set(Component.GetComponentID(type), obj);
+    public readonly void Set(Type type, object obj) => Set(Component.GetComponentID(type), obj);
     #endregion
 
     #region TryGet
@@ -211,7 +211,7 @@ partial struct Entity
     /// <typeparam name="T">The type of component.</typeparam>
     /// <param name="value">A wrapper over a reference to the component when <see langword="true"/>.</param>
     /// <returns><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryGet<T>(out Ref<T> value)
+    public readonly bool TryGet<T>(out Ref<T> value)
     {
         value = TryGetCore<T>(out bool exists);
         return exists;
@@ -223,7 +223,7 @@ partial struct Entity
     /// <param name="value">A wrapper over a reference to the component when <see langword="true"/>.</param>
     /// <param name="type">The type of component to try and get</param>
     /// <returns><see langword="true"/> if this entity has a component of type <paramref name="type"/>, otherwise <see langword="false"/>.</returns>
-    public bool TryGet(Type type, [NotNullWhen(true)] out object? value)
+    public readonly bool TryGet(Type type, [NotNullWhen(true)] out object? value)
     {
         ref var lookup = ref AssertIsAlive(out World world);
 
@@ -255,7 +255,7 @@ partial struct Entity
     /// </summary>
     /// <param name="componentHandles">The handles to copy components from.</param>
     /// <exception cref="ArgumentException">If adding <paramref name="componentHandles.Length"/> components will result in more than the maximum allowed commponent count.</exception>
-    public void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
+    public readonly void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out var world);
         
@@ -265,15 +265,12 @@ partial struct Entity
         ArchetypeID finalArchetype = eloc.ArchetypeID;
 
 
-        // set
-        ref Bitset set = ref Unsafe.NullRef<Bitset>();
+        //TODO: setting sparse bits and calling initers.
         foreach (var componentHandle in componentHandles)
         {
             if (componentHandle.ComponentID.IsSparseComponent)
             {
-                if (Unsafe.IsNullRef(ref set))
-                    set = ref world.SparseComponentTable.GetValueRefOrAddDefault(EntityID, out _);
-                world.WorldSparseSetTable.UnsafeArrayIndex(componentHandle.ComponentID.SparseIndex).Add(eloc.Index, componentHandle);
+                world.WorldSparseSetTable.UnsafeArrayIndex(componentHandle.ComponentID.SparseIndex).AddOrSet(eloc.Index, componentHandle);
             }
             else
             {
@@ -294,14 +291,11 @@ partial struct Entity
             buffer[i] = storage;
         }
 
-        // init
         for(int i = 0; i < componentHandles.Length; i++)
         {
             buffer[i].CallIniter(this, nextLocation.Index);
         }
 
-
-        // invoke
         EventRecord events = world.EventLookup.GetOrAddNew(EntityIDOnly);
 
         for (int i = 0; i < componentHandles.Length; i++)
@@ -315,14 +309,14 @@ partial struct Entity
     /// Adds a component to this <see cref="Entity"/> as its own type
     /// </summary>
     /// <param name="component">The component, which could be boxed</param>
-    public void AddBoxed(object component) => AddAs(component.GetType(), component);
+    public readonly void AddBoxed(object component) => AddAs(component.GetType(), component);
 
     /// <summary>
     /// Add a component to an <see cref="Entity"/>
     /// </summary>
     /// <param name="type">The type to add the component as. Note that a component of type DerivedClass and BaseClass are different component types.</param>
     /// <param name="component">The component to add</param>
-    public void AddAs(Type type, object component) => AddAs(Component.GetComponentID(type), component);
+    public readonly void AddAs(Type type, object component) => AddAs(Component.GetComponentID(type), component);
 
     /// <summary>
     /// Adds a component to this <see cref="Entity"/>, as a specific component type.
@@ -330,23 +324,16 @@ partial struct Entity
     /// <param name="componentID">The component type to add as.</param>
     /// <param name="component">The component to add.</param>
     /// <exception cref="InvalidCastException"><paramref name="component"/> is not assignable to the type represented by <paramref name="componentID"/>.</exception>
-    public void AddAs(ComponentID componentID, object component)
+    public readonly void AddAs(ComponentID componentID, object component)
     {
         ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            int sparseIndex = componentID.SparseIndex;
-            if (sparseIndex != 0)
-            {
-                w.WorldSparseSetTable[sparseIndex].Add(EntityID, component);
-                return;
-            }
             w.AddArchetypicalComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
             
             ComponentStorageRecord componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
             componentRunner.SetAt(this, component, entityLocation.Index);
 
-            //TODO: sparse events
             if(EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
                 if (w.ComponentAddedEvent.HasListeners)
@@ -373,7 +360,7 @@ partial struct Entity
     /// Removes a component from this entity
     /// </summary>
     /// <param name="componentID">The <see cref="ComponentID"/> of the component to be removed</param>
-    public void Remove(ComponentID componentID)
+    public readonly void Remove(ComponentID componentID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
@@ -399,7 +386,7 @@ partial struct Entity
     /// <param name="type">The type of component to remove</param>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
-    public void Remove(Type type) => Remove(Component.GetComponentID(type));
+    public readonly void Remove(Type type) => Remove(Component.GetComponentID(type));
     #endregion
 
     #region Tag
@@ -411,7 +398,7 @@ partial struct Entity
     /// <see langword="true"/> if the tag identified by <paramref name="tagID"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
-    public bool Tagged(TagID tagID)
+    public readonly bool Tagged(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out _);
         return lookup.Archetype.HasTag(tagID);
@@ -425,7 +412,7 @@ partial struct Entity
     /// <see langword="true"/> if the tag of type <typeparamref name="T"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> is not alive.</exception>
-    public bool Tagged<T>() => Tagged(Core.Tag<T>.ID);
+    public readonly bool Tagged<T>() => Tagged(Core.Tag<T>.ID);
 
     /// <summary>
     /// Checks whether this <see cref="Entity"/> has a specific tag, using a <see cref="Type"/> to represent the tag.
@@ -436,14 +423,14 @@ partial struct Entity
     /// <see langword="true"/> if the tag represented by <paramref name="type"/> has this <see cref="Entity"/>; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown if the <see cref="Entity"/> not alive.</exception>
-    public bool Tagged(Type type) => Tagged(Core.Tag.GetTagID(type));
+    public readonly bool Tagged(Type type) => Tagged(Core.Tag.GetTagID(type));
 
     /// <summary>
     /// Adds a tag to this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <param name="type">The type to use as a tag</param>
-    public bool Tag(Type type) => Tag(Core.Tag.GetTagID(type));
+    public readonly bool Tag(Type type) => Tag(Core.Tag.GetTagID(type));
 
     /// <summary>
     /// Adds a tag to this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
@@ -451,7 +438,7 @@ partial struct Entity
     /// <remarks>Prefer the <see cref="Tag(TagID)"/> or <see cref="Tag{T}()"/> overloads. Use <see cref="Tag{T}.ID"/> to get a <see cref="TagID"/> instance</remarks>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <param name="tagID">The tagID to use as the tag</param>
-    public bool Tag(TagID tagID)
+    public readonly bool Tag(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
         if (lookup.Archetype.HasTag(tagID))
@@ -471,7 +458,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
     /// <param name="type">The type of tag to remove.</param>
-    public bool Detach(Type type) => Detach(Core.Tag.GetTagID(type));
+    public readonly bool Detach(Type type) => Detach(Core.Tag.GetTagID(type));
 
     /// <summary>
     /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
@@ -479,7 +466,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
     /// <param name="tagID">The type of tag to remove.</param>
-    public bool Detach(TagID tagID)
+    public readonly bool Detach(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
         if (!lookup.Archetype.HasTag(tagID))
@@ -496,7 +483,7 @@ partial struct Entity
     /// <summary>
     /// Raised when the entity is deleted
     /// </summary>
-    public event Action<Entity> OnDelete
+    public readonly event Action<Entity> OnDelete
     {
         add => InitalizeEventRecord(value, EntityFlags.OnDelete);
         remove => UnsubscribeEvent(value, EntityFlags.OnDelete);
@@ -505,7 +492,7 @@ partial struct Entity
     /// <summary>
     /// Raised when a component is added to an entity
     /// </summary>
-    public event Action<Entity, ComponentID> OnComponentAdded
+    public readonly event Action<Entity, ComponentID> OnComponentAdded
     {
         add => InitalizeEventRecord(value, EntityFlags.AddComp);
         remove => UnsubscribeEvent(value, EntityFlags.AddComp);
@@ -514,7 +501,7 @@ partial struct Entity
     /// <summary>
     /// Raised when a component is removed from an entity
     /// </summary>
-    public event Action<Entity, ComponentID> OnComponentRemoved
+    public readonly event Action<Entity, ComponentID> OnComponentRemoved
     {
         add => InitalizeEventRecord(value, EntityFlags.RemoveComp);
         remove => UnsubscribeEvent(value, EntityFlags.RemoveComp);
@@ -523,9 +510,9 @@ partial struct Entity
     /// <summary>
     /// Raised when a component is added to an entity, with the generic parameter
     /// </summary>
-    public GenericEvent? OnComponentAddedGeneric
+    public readonly GenericEvent? OnComponentAddedGeneric
     {
-        readonly set { /*the set is just to enable the += syntax*/ }
+        set { /*the set is just to enable the += syntax*/ }
         get
         {
             if (!InternalIsAlive(out var world, out _))
@@ -538,9 +525,9 @@ partial struct Entity
     /// <summary>
     /// Raised when a component is removed to an entity, with the generic parameter
     /// </summary>
-    public GenericEvent? OnComponentRemovedGeneric
+    public readonly GenericEvent? OnComponentRemovedGeneric
     {
-        readonly set { /*the set is just to enable the += syntax*/ }
+        set { /*the set is just to enable the += syntax*/ }
         get
         {
             if (!InternalIsAlive(out var world, out _))
@@ -553,7 +540,7 @@ partial struct Entity
     /// <summary>
     /// Raised when the entity is tagged
     /// </summary>
-    public event Action<Entity, TagID> OnTagged
+    public readonly event Action<Entity, TagID> OnTagged
     {
         add => InitalizeEventRecord(value, EntityFlags.Tagged);
         remove => UnsubscribeEvent(value, EntityFlags.Tagged);
@@ -562,13 +549,13 @@ partial struct Entity
     /// <summary>
     /// Raised when a tag is detached from the entity
     /// </summary>
-    public event Action<Entity, TagID> OnDetach
+    public readonly event Action<Entity, TagID> OnDetach
     {
         add => InitalizeEventRecord(value, EntityFlags.Detach);
         remove => UnsubscribeEvent(value, EntityFlags.Detach);
     }
 
-    private void UnsubscribeEvent(object value, EntityFlags flag)
+    private readonly void UnsubscribeEvent(object value, EntityFlags flag)
     {
         if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
@@ -608,7 +595,7 @@ partial struct Entity
         }
     }
 
-    private void InitalizeEventRecord(object? @delegate, EntityFlags flag, bool isGenericEvent = false)
+    private readonly void InitalizeEventRecord(object @delegate, EntityFlags flag, bool isGenericEvent = false)
     {
         if (@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
             return;
@@ -651,7 +638,7 @@ partial struct Entity
     /// Deletes this entity
     /// </summary>
     [SkipLocalsInit]
-    public void Delete()
+    public readonly void Delete()
     {
         var world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         //hardware trap
@@ -674,18 +661,18 @@ partial struct Entity
     /// Checks to see if this <see cref="Entity"/> is still alive
     /// </summary>
     /// <returns><see langword="true"/> if this entity is still alive (not deleted), otherwise <see langword="false"/></returns>
-    public bool IsAlive => InternalIsAlive(out _, out _);
+    public readonly bool IsAlive => InternalIsAlive(out _, out _);
 
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> instance is the null entity: <see langword="default"/>(<see cref="Entity"/>)
     /// </summary>
-    public bool IsNull => PackedValue == 0;
+    public readonly bool IsNull => PackedValue == 0;
 
     /// <summary>
     /// Gets the world this entity belongs to
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public World World
+    public readonly World World
     {
         get
         {
@@ -697,10 +684,16 @@ partial struct Entity
     }
 
     /// <summary>
+    /// Gets all the component types for this entity.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    public readonly ImmutableArray<ComponentID> ComponentTypes => AllocateComponentTypeArray();
+
+    /// <summary>
     /// Gets the archetypical component types for this entity.
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public ImmutableArray<ComponentID> ArchetypicalComponentTypes
+    public readonly ImmutableArray<ComponentID> ArchetypicalComponentTypes
     {
         get
         {
@@ -710,16 +703,10 @@ partial struct Entity
     }
 
     /// <summary>
-    /// Gets the all the component types for this entity. This api is allocating.
-    /// </summary>
-    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public ImmutableArray<ComponentID> ComponentTypes => AllocateComponentTypeArray();
-
-    /// <summary>
     /// Gets tags the entity has 
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
-    public ImmutableArray<TagID> TagTypes
+    public readonly ImmutableArray<TagID> TagTypes
     {
         get
         {
@@ -731,7 +718,7 @@ partial struct Entity
     /// <summary>
     /// The <see cref="EntityType"/> of this <see cref="Entity"/>.
     /// </summary>
-    public EntityType Type
+    public readonly EntityType Type
     {
         get
         {
@@ -744,7 +731,7 @@ partial struct Entity
     /// Enumerates all components one by one
     /// </summary>
     /// <param name="onEach">The unbound generic function called on each item</param>
-    public void EnumerateComponents(IGenericAction onEach)
+    public readonly void EnumerateComponents(IGenericAction onEach)
     {
         ref var lookup = ref AssertIsAlive(out var _);
         ComponentStorageRecord[] runners = lookup.Archetype.Components;
@@ -754,7 +741,7 @@ partial struct Entity
         }
     }
 
-    public readonly EntityComponentIDEnumerator GetEnumerator() => new EntityComponentIDEnumerator(this);
+    public readonly EntityComponentIDEnumerator GetEnumerator() => new(this);
 
     /// <summary>
     /// The null entity
@@ -766,7 +753,7 @@ partial struct Entity
     /// </summary>
     /// <param name="components">The components the <see cref="EntityType"/> should have.</param>
     /// <param name="tags">The tags the <see cref="EntityType"/> should have.</param>
-    [Obsolete("Use EntityType.EntityTypeOf instead")]
+    [Obsolete("Use ArchetypeID.EntityTypeOf instead")]
     public static EntityType EntityTypeOf(ReadOnlySpan<ComponentID> components, ReadOnlySpan<TagID> tags)
     {
         return Archetype.GetArchetypeID(components, tags);
