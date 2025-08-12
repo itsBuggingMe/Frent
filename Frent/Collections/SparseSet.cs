@@ -41,7 +41,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 
     public override void InvokeGenericEvent(int id, Entity entity, GenericEvent @event) => @event.Invoke(entity, ref _dense[_sparse[id]]);
 
-    public override void Remove(int id)
+    public override void Remove(int id, bool call)
     {
         var sparse = _sparse;
         var dense = _dense;
@@ -53,6 +53,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
             return;
 
         ref var toRemove = ref dense[denseIndex];
+        if (call) Component<T>.Destroyer?.Invoke(ref toRemove);
         ref var top = ref dense[--_nextIndex];
         denseIndexRef = -1;
 
@@ -109,7 +110,7 @@ internal abstract class ComponentSparseSetBase
     public abstract object Get(int id);
     public abstract void AddOrSet(int id, ComponentHandle value);
     public abstract void AddOrSet(int id, object value);
-    public abstract void Remove(int id);
+    public abstract void Remove(int id, bool callDestroyer);
     public abstract bool TryGet(int id, out object value);
     public abstract void InvokeGenericEvent(int id, Entity entity, GenericEvent @event);
 

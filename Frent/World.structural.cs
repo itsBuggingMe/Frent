@@ -214,6 +214,7 @@ partial class World
         replaced = currentLookup;
         replaced.Version = replacedEntity.Version;
         currentLookup.Version = ushort.MaxValue;
+        currentLookup.Archetype = null!;
 
         if (entity.EntityVersion != ushort.MaxValue - 1)
         {
@@ -232,7 +233,8 @@ partial class World
         Span<ComponentSparseSetBase> lookup = WorldSparseSetTable.AsSpan();
         foreach (int offset in bitset)
         {
-            lookup.UnsafeSpanIndex(offset).Remove(entity.EntityID);
+            var set = lookup.UnsafeSpanIndex(offset);
+            set.Remove(entity.EntityID, true);
         }
     }
     #endregion

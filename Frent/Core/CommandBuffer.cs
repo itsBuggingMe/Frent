@@ -306,7 +306,7 @@ public class CommandBuffer
                 //TODO: events
                 int sparseIndex = item.ComponentID.SparseIndex;
                 if (sparseIndex != 0)
-                    _world.WorldSparseSetTable[sparseIndex].Remove(id);
+                    _world.WorldSparseSetTable[sparseIndex].Remove(id, true);
                 else
                     _world.RemoveArchetypicalComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
             }

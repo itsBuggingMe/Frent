@@ -189,7 +189,7 @@ public partial struct Entity : IEquatable<Entity>
 #endif
         private readonly ushort _expectedVersion;
         private ComponentID _current;
-        private int _index = -1;
+        private int _index = 0;
 
         internal EntityComponentIDEnumerator(Entity entity)
         {
@@ -217,14 +217,14 @@ public partial struct Entity : IEquatable<Entity>
 
             if (!_archetypical.IsEmpty)
             {
-                if (++_index < _archetypical.Length)
+                if (_index < _archetypical.Length)
                 {
+                    _current = _archetypical[_index++];
                     return true;
                 }
 
                 _archetypical = default;
                 _index = 0;
-                return false;
             }
 
             int? found = _bitset.TryFindIndexOfBitGreaterThan(_index);
@@ -232,6 +232,7 @@ public partial struct Entity : IEquatable<Entity>
             if (found is { } x)
             {
                 _index = x;
+                _current = Component.ComponentTableBySparseIndex[_index].ComponentID;
                 return true;
             }
 
@@ -246,6 +247,7 @@ public partial struct Entity : IEquatable<Entity>
         Archetype archetype = record.Archetype;
         return new EntityLookup(archetype.ComponentTagTable, archetype.Components, record.Index);
     }
+
 #if NETSTANDARD
     internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
     {

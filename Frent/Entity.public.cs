@@ -367,7 +367,7 @@ partial struct Entity
         {
             if(componentID.IsSparseComponent)
             {
-                w.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Remove(EntityID);
+                w.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Remove(EntityID, true);
             }
             else
             {

@@ -119,7 +119,7 @@ partial struct Entity
         }
 
         // Call Destroyers
-        Component<T>.Destroyer?.Invoke(ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index));
+        Component<T>.Destroyer?.Invoke(ref c1ref);
 
         // Actually move components
 
@@ -127,7 +127,7 @@ partial struct Entity
         ref ComponentSparseSetBase start = ref Unsafe.NullRef<ComponentSparseSetBase>();
         if (NeighborCache<T>.HasAnySparseComponents)
         {
-            bits = world.SparseComponentTable.GetBitset(EntityID);
+            bits = ref world.SparseComponentTable.GetBitset(EntityID);
             start = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
         }
 
@@ -135,7 +135,7 @@ partial struct Entity
         if (Component<T>.IsSparseComponent)
         {
             bits.ClearAt(Component<T>.SparseSetComponentIndex);
-            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID);
+            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID, false);
         }
 
         if (NeighborCache<T>.HasAnyArchetypicalComponents)

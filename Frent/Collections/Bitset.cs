@@ -103,7 +103,7 @@ internal struct Bitset
         int chunkIndex = Divide(bitIndex);
         nuint consumedBits = _bits[chunkIndex];
 
-        consumedBits &= unchecked((nuint)0 - 1) >> Mod(bitIndex);
+        consumedBits &= unchecked((nuint)0 - 1) >> Mod(bitIndex + 1);
 
         while (consumedBits == 0)
         {
@@ -120,10 +120,7 @@ internal struct Bitset
 
         int leadingZeros = BitOperations.LeadingZeroCount(consumedBits);
 
-        int bitsToConsume = leadingZeros + 1;
-        bitIndex += bitsToConsume;
-
-        return bitIndex;
+        return leadingZeros + Multiply(chunkIndex);
     }
 
     public Enumerator GetEnumerator() => new(this);

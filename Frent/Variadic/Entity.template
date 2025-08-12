@@ -117,9 +117,9 @@ to:
 |
 
 from:
-        Component<T>.Destroyer?.Invoke(ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index));
+        Component<T>.Destroyer?.Invoke(ref c1ref);
 to:
-|        Component<T$>.Destroyer?.Invoke(ref Unsafe.Add(ref from.GetComponentDataReference<T$>(), thisLookup.Index));
+|        Component<T$>.Destroyer?.Invoke(ref c$ref);
 |
 from:
 InvokeComponentWorldEvents<T>
@@ -157,13 +157,13 @@ from:
         if (Component<T>.IsSparseComponent)
         {
             bits.ClearAt(Component<T>.SparseSetComponentIndex);
-            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID);
+            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID, false);
         }
 to:
 |        if (Component<T$>.IsSparseComponent)
         {
             bits.ClearAt(Component<T$>.SparseSetComponentIndex);
-            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex)).Remove(EntityID);
+            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex)).Remove(EntityID, false);
         }
 |
 from:

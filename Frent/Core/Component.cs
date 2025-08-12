@@ -63,9 +63,6 @@ public static class Component<T>
             _isSparseComponentAndReference = typeof(ISparseComponent).IsAssignableFrom(typeof(T));
         }
 
-
-        (_id, GeneralComponentStorage, Initer, Destroyer, SparseSetComponentIndex) = Component.GetExistingOrSetupNewComponent<T>();
-
         if(Component.CachedComponentFactories.TryGetValue(typeof(T), out var componentBufferManager))
         {
             BufferManagerInstance = (ComponentBufferManager<T>)componentBufferManager;
@@ -75,8 +72,9 @@ public static class Component<T>
             Component.CachedComponentFactories[typeof(T)] = BufferManagerInstance = new ComponentBufferManager<T>();
         }
 
+        (_id, GeneralComponentStorage, Initer, Destroyer, SparseSetComponentIndex) = Component.GetExistingOrSetupNewComponent<T>();
 
-        if(GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var runners))
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var runners))
         {
             UpdateMethods = runners;
         }
@@ -108,7 +106,7 @@ public static class ComponentDelegates<T>
 public static class Component
 {
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
-    internal static FastStack<ComponentData> ComponentTableBySparseIndex = FastStack<ComponentData>.Create(2);
+    internal static FastStack<SparseComponentData> ComponentTableBySparseIndex = FastStack<SparseComponentData>.Create(2);
 
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
 
@@ -179,7 +177,7 @@ public static class Component
             if (sparseIndex != 0)
             {
                 GlobalWorldTables.RegisterNewSparseSetComponent(sparseIndex, CachedComponentFactories[type]);
-                ComponentTableBySparseIndex.Push(data);
+                ComponentTableBySparseIndex.Push(new(data.Factory, sparseIndex, id));
             }
 
             return (id, stack, initDelegate, destroyDelegate, sparseIndex);
@@ -227,7 +225,7 @@ public static class Component
             if (isSparseComponent)
             {
                 GlobalWorldTables.RegisterNewSparseSetComponent(sparseIndex, CachedComponentFactories[type]);
-                ComponentTableBySparseIndex.Push(data);
+                ComponentTableBySparseIndex.Push(new(data.Factory, data.SparseComponentIndex, id));
             }
 
             return id;

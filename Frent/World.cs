@@ -233,6 +233,10 @@ public partial class World : IDisposable
 
         WorldArchetypeTable = new WorldArchetypeTableItem[GlobalWorldTables.ComponentTagLocationTable.Length];
         WorldSparseSetTable = new ComponentSparseSetBase[Component.ComponentTableBySparseIndex.Count];
+
+        for (int i = 1; i < WorldSparseSetTable.Length; i++)
+            WorldSparseSetTable[i] = Component.ComponentTableBySparseIndex[i].Factory.CreateSparseSet();
+
         WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultWorldEntity = new Entity(WorldID, default, default);
         DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
@@ -493,6 +497,18 @@ public partial class World : IDisposable
                 item.Archetype.ReleaseArrays(false);
                 item.DeferredCreationArchetype.ReleaseArrays(true);
             }
+        }
+
+        Span<EntityLocation> tableItems = EntityTable.AsSpan();
+        for(int i = 0; i < tableItems.Length; i++)
+        {
+            ref EntityLocation item = ref tableItems[i];
+            if (item.Archetype is null)
+                continue;
+            if (!item.HasFlag(EntityFlags.HasSparseComponents))
+                continue;
+
+            CleanupSparseComponents(new Entity(WorldID, item.Version, i), ref item);
         }
 
         _sharedCountdown.Dispose();
