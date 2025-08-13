@@ -4,15 +4,14 @@ from:
             ref TArg arg = ref Unsafe.NullRef<TArg>();
             if (Component<TArg>.IsSparseComponent) // folded
             {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
                 int index = sparseArgArray[entity.EntityID];
-                if (index < 0) continue;
+                if (index < 0) goto NullRefException;
                 arg = ref Unsafe.Add(ref sparseFirst, index);
             }
             else
             {
                 nint index = entityData.ComponentDataIndex<TArg>();
-                if (index == 0) continue;
                 arg = ref entityData.Get<TArg>(index);
             }
 
@@ -20,33 +19,31 @@ to:
 |            ref TArg$ arg$ = ref Unsafe.NullRef<TArg$>();
             if (Component<TArg$>.IsSparseComponent)
             {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray$.Length)) continue;
+                if (!((uint)entity.EntityID < (uint)sparseArgArray$.Length)) goto NullRefException;
                 int index = sparseArgArray$[entity.EntityID];
-                if (index < 0) continue;
+                if (index < 0) goto NullRefException;
                 arg$ = ref Unsafe.Add(ref sparseFirst$, index);
             }
             else
             {
                 nint index = entityData.ComponentDataIndex<TArg$>();
-                if (index == 0) continue;
                 arg$ = ref entityData.Get<TArg$>(index);
             }
 |
-
 from:
             if (Component<TArg>.IsSparseComponent)
             {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
                 int index = sparseArgArray[i];
-                if (index < 0) continue;
+                if (index < 0) goto NullRefException;
                 arg = ref Unsafe.Add(ref sparseFirst, index);
             }
 to:
 |            if (Component<TArg$>.IsSparseComponent)
             {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray$.Length)) continue;
+                if (!((uint)entity.EntityID < (uint)sparseArgArray$.Length)) goto NullRefException;
                 int index = sparseArgArray$[i];
-                if(index < 0) continue;
+                if(index < 0) goto NullRefException;
                 arg$ = ref Unsafe.Add(ref sparseFirst$, index);
             }
 |

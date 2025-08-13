@@ -1,11 +1,8 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using Frent.Updating.Runners;
 using Frent.Core.Events;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System;
-using System.Net.Security;
 
 namespace Frent.Updating;
 
@@ -40,11 +37,19 @@ internal abstract class ComponentBufferManager
     /// <summary>
     /// Calls all Update functions on every component.
     /// </summary>
-    internal abstract void Run(Array buffer, Archetype b, World world);
+    internal abstract void RunArchetypical(Array buffer, Archetype b, World world);
     /// <summary>
     /// Calls all Update functions on the subsection of components.
     /// </summary>
-    internal abstract void Run(Array buffer, Archetype b, World world, int start, int length);
+    internal abstract void RunArchetypical(Array buffer, Archetype b, World world, int start, int length);
+    /// <summary>
+    /// Calls all Update functions on every component.
+    /// </summary>
+    internal abstract void RunSparse(ComponentSparseSetBase sparseSet, World world);
+    /// <summary>
+    /// Calls all Update functions on the subsection of components.
+    /// </summary>
+    internal abstract void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> entityIds);
     /// <summary>
     /// Deletes a component from the storage.
     /// </summary>
@@ -226,7 +231,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
         return ref UnsafeExtensions.UnsafeCast<TComponent[]>(buffer).UnsafeArrayIndex(componentIndex);
     }
 
-    internal override void Run(Array buffer, Archetype b, World world)
+    internal override void RunArchetypical(Array buffer, Archetype b, World world)
     {
         foreach(var runner in Component<TComponent>.UpdateMethods)
         {
@@ -234,11 +239,32 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
         }
     }
 
-    internal override void Run(Array buffer, Archetype b, World world, int start, int length)
+    internal override void RunArchetypical(Array buffer, Archetype b, World world, int start, int length)
     {
         foreach (var runner in Component<TComponent>.UpdateMethods)
         {
             runner.Runner.RunArchetypical(buffer, b, world, start, length);
+        }
+    }
+
+    internal override void RunSparse(ComponentSparseSetBase sparseSet, World world)
+    {
+        Debug.Assert(!world.AllowStructualChanges);
+
+        Span<int> allIds = sparseSet.SparseSpan();
+        foreach (var runner in Component<TComponent>.UpdateMethods)
+        {
+            runner.Runner.RunSparse(sparseSet, world, allIds);
+        }
+    }
+
+    internal override void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> entityIds)
+    {
+        Debug.Assert(!world.AllowStructualChanges);
+
+        foreach (var runner in Component<TComponent>.UpdateMethods)
+        {
+            runner.Runner.RunSparse(sparseSet, world, entityIds);
         }
     }
 }

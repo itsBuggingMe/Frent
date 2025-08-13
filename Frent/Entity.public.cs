@@ -180,7 +180,7 @@ partial struct Entity
         if (id.IsSparseComponent)
         {
             var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.SparseIndex);
-            set.AddOrSet(EntityID, obj);
+            set.Set(this, obj);
             return;
         }
 
@@ -271,6 +271,7 @@ partial struct Entity
             if (componentHandle.ComponentID.IsSparseComponent)
             {
                 world.WorldSparseSetTable.UnsafeArrayIndex(componentHandle.ComponentID.SparseIndex).AddOrSet(eloc.Index, componentHandle);
+                eloc.Flags |= EntityFlags.HasSparseComponents;
             }
             else
             {
@@ -326,6 +327,7 @@ partial struct Entity
     /// <exception cref="InvalidCastException"><paramref name="component"/> is not assignable to the type represented by <paramref name="componentID"/>.</exception>
     public readonly void AddAs(ComponentID componentID, object component)
     {
+        //TODO: implement sparse
         ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {

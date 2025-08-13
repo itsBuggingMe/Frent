@@ -28,7 +28,26 @@ internal class SparseComponentTestSuite
             DestroyCalled = true;
         }
     }
-    
+
+
+    internal class SparseLifecycleComponentClass : ISparseComponent, IInitable, IDestroyable
+    {
+        public bool InitCalled;
+        public bool DestroyCalled;
+        public Entity InitEntity;
+
+        public void Init(Entity self)
+        {
+            InitCalled = true;
+            InitEntity = self;
+        }
+
+        public void Destroy()
+        {
+            DestroyCalled = true;
+        }
+    }
+
     // Sparse component with basic update
     internal struct SparseUpdateComponent : ISparseComponent, IComponent
     {
@@ -270,15 +289,15 @@ internal class SparseComponentTestSuite
     public void SetComponent_SparseComponentWithLifecycle_LifecycleCalledProperly()
     {
         using World world = new();
-        var entity = world.Create<SparseLifecycleComponent>(default);
+        var entity = world.Create<SparseLifecycleComponentClass>(new());
         
-        ref var originalComponent = ref entity.Get<SparseLifecycleComponent>();
+        ref var originalComponent = ref entity.Get<SparseLifecycleComponentClass>();
         That(originalComponent.InitCalled, Is.True);
         
-        var newComponent = new SparseLifecycleComponent();
-        entity.Set(Component<SparseLifecycleComponent>.ID, newComponent);
+        var newComponent = new SparseLifecycleComponentClass();
+        entity.Set(Component<SparseLifecycleComponentClass>.ID, newComponent);
         
-        ref var updatedComponent = ref entity.Get<SparseLifecycleComponent>();
+        ref var updatedComponent = ref entity.Get<SparseLifecycleComponentClass>();
         That(updatedComponent.InitCalled, Is.True);
         That(updatedComponent.InitEntity, Is.EqualTo(entity));
     }
@@ -743,7 +762,7 @@ internal class SparseComponentTestSuite
         var entity = world.Create();
         
         entity.Add<SparseUpdateComponent>(default);
-        Throws<InvalidOperationException>(() => entity.Add<SparseUpdateComponent>(default));
+        Throws<ComponentAlreadyExistsException>(() => entity.Add<SparseUpdateComponent>(default));
         
         That(entity.Has<SparseUpdateComponent>(), Is.True);
         

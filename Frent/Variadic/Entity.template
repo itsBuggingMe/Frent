@@ -86,12 +86,12 @@ NeighborCache<|T$, |>
 
 from:
         ref var c1ref = ref Component<T>.IsSparseComponent ?
-            ref MemoryHelpers.GetSparseSet<T>(ref sparseSets)[EntityID] :
+            ref MemoryHelpers.GetSparseSet<T>(ref sparseSets).AddComponent(EntityID) :
             ref to!.GetComponentStorage<T>().UnsafeIndex<T>(archIndex);
         c1ref = c1;
 to:
 |        ref var c$ref = ref Component<T$>.IsSparseComponent ?
-            ref MemoryHelpers.GetSparseSet<T$>(ref sparseSets)[EntityID] :
+            ref MemoryHelpers.GetSparseSet<T$>(ref sparseSets).AddComponent(EntityID) :
             ref to!.GetComponentStorage<T$>().UnsafeIndex<T$>(archIndex);
         c$ref = c$;
 |
@@ -108,6 +108,12 @@ to:
             ref Component<T$>.IsSparseComponent ? 
                 ref MemoryHelpers.GetSparseSet<T$>(ref first)[EntityID] : 
                 ref Unsafe.Add(ref from.GetComponentDataReference<T$>(), thisLookup.Index);
+|
+
+from:
+            if(Component<T>.IsSparseComponent) set.SetOrResize(Component<T>.SparseSetComponentIndex);
+to:
+|            if(Component<T$>.IsSparseComponent) set.SetOrResize(Component<T$>.SparseSetComponentIndex);
 |
 
 from:

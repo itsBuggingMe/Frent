@@ -29,7 +29,7 @@ public class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
         }
     }
 
-    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, Span<int> idsToUpdate)
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
     {
         ref int entityId = ref MemoryMarshal.GetReference(idsToUpdate);
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
@@ -72,9 +72,9 @@ public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
 
             if (Component<TArg>.IsSparseComponent)
             {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
                 int index = sparseArgArray[i];
-                if (index < 0) continue;
+                if (index < 0) goto NullRefException;
                 arg = ref Unsafe.Add(ref sparseFirst, index);
             }
 
@@ -85,9 +85,12 @@ public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
 
             if (!Component<TArg>.IsSparseComponent) arg = ref Unsafe.Add(ref arg, 1);
         }
+
+        return;
+    NullRefException: Unsafe.NullRef<int>() = 0;
     }
 
-    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, Span<int> idsToUpdate)
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
     {
         ref int entityId = ref MemoryMarshal.GetReference(idsToUpdate);
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
@@ -108,19 +111,21 @@ public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
             ref TArg arg = ref Unsafe.NullRef<TArg>();
             if (Component<TArg>.IsSparseComponent) // folded
             {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) continue;
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
                 int index = sparseArgArray[entity.EntityID];
-                if (index < 0) continue;
+                if (index < 0) goto NullRefException;
                 arg = ref Unsafe.Add(ref sparseFirst, index);
             }
             else
             {
                 nint index = entityData.ComponentDataIndex<TArg>();
-                if (index == 0) continue;
                 arg = ref entityData.Get<TArg>(index);
             }
-            
+
             component.Update(entity, uniform, ref arg);
         }
+
+        return;
+    NullRefException: Unsafe.NullRef<int>() = 0;
     }
 }

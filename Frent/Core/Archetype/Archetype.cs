@@ -53,8 +53,6 @@ internal partial class Archetype
         entityLocation.Index = NextComponentIndex;
         entityLocation.Flags = flags;
         Unsafe.SkipInit(out entityLocation.Version);
-        //poison prolly isnt needed since archetype forces clear anyways
-        MemoryHelpers.Poison(ref entityLocation.Version);
 
         return ref _entities.UnsafeArrayIndex(NextComponentIndex++);
     }

@@ -10,7 +10,7 @@ namespace Frent.Updating.Runners;
 public interface IRunner
 {
     internal void RunArchetypical(Array buffer, Archetype b, World world, int start, int length);
-    internal void RunSparse(ComponentSparseSetBase sparseSet, World world, Span<int> idsToUpdate);
+    internal void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate);
     internal static ref T GetComponentStorageDataReference<T>(Array array)
     {
         return ref MemoryMarshal.GetArrayDataReference(UnsafeExtensions.UnsafeCast<T[]>(array));

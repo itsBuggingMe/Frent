@@ -22,8 +22,8 @@ internal struct ComponentStorageRecord
         BufferManager = bufferManager;
     }
 
-    internal readonly void Run(Archetype b, World world) => BufferManager.Run(Buffer, b, world);
-    internal readonly void Run(Archetype b, World world, int start, int length) => BufferManager.Run(Buffer, b, world, start, length);
+    internal readonly void Run(Archetype b, World world) => BufferManager.RunArchetypical(Buffer, b, world);
+    internal readonly void Run(Archetype b, World world, int start, int length) => BufferManager.RunArchetypical(Buffer, b, world, start, length);
     internal void ResizeBuffer(int size) => BufferManager.ResizeBuffer(ref Buffer, size);
     internal readonly void Delete(DeleteComponentData deleteComponentData) => BufferManager.Delete(Buffer, deleteComponentData);
     internal readonly void Release(Archetype archetype, bool isDeferredCreate) => BufferManager.Release(Buffer, archetype, isDeferredCreate);

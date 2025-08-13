@@ -33,9 +33,45 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         }
     }
 
+    public ref T AddComponent(int id)
+    {
+        ref var denseIndex = ref EnsureSparseCapacityAndGetIndex(id);
+        if (denseIndex != -1)
+        {
+            FrentExceptions.Throw_ComponentAlreadyExistsException($"Component Already Has Component of Type {typeof(T).Name}!");
+        }
+
+        denseIndex = _nextIndex++;
+        return ref MemoryHelpers.GetValueOrResize(ref _dense, denseIndex);
+    }
+
     public override void AddOrSet(int id, ComponentHandle value) => this[id] = value.Retrieve<T>();
 
-    public override void AddOrSet(int id, object value) => this[id] = (T)value;
+    // match behavior with archetypical set
+    public override void Set(Entity e, object value)
+    {
+        var dense = _dense;
+        var sparse = _sparse;
+
+        if(!((uint)e.EntityID < (uint)sparse.Length))
+            FrentExceptions.Throw_ComponentNotFoundException($"Component of type {typeof(T).Name} does not exist on this entity.");
+        int index = sparse[e.EntityID];
+        if(!((uint)index < (uint)dense.Length))
+            FrentExceptions.Throw_ComponentNotFoundException($"Component of type {typeof(T).Name} does not exist on this entity.");
+
+        ref T toSet = ref dense[index];
+        if (typeof(T).IsValueType)
+        {// treat like writing a byref
+            toSet = (T)value;
+        }
+        else
+        {
+            if (ReferenceEquals(toSet, value))
+                return;
+            toSet = (T)value;
+            Component<T>.Initer?.Invoke(e, ref toSet);
+        }
+    }
 
     public override object Get(int id) => _dense[_sparse[id]]!;
 
@@ -61,6 +97,8 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         if(RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             top = default;
     }
+
+    public override void Run(World world, ReadOnlySpan<int> ids) => Component<T>.BufferManagerInstance.RunSparse(this, world, ids);
 
     public override bool TryGet(int id, out object value)
     {
@@ -109,9 +147,10 @@ internal abstract class ComponentSparseSetBase
 
     public abstract object Get(int id);
     public abstract void AddOrSet(int id, ComponentHandle value);
-    public abstract void AddOrSet(int id, object value);
+    public abstract void Set(Entity e, object value);
     public abstract void Remove(int id, bool callDestroyer);
     public abstract bool TryGet(int id, out object value);
+    public abstract void Run(World world, ReadOnlySpan<int> ids);
     public abstract void InvokeGenericEvent(int id, Entity entity, GenericEvent @event);
 
     public bool Has(int id)
@@ -144,9 +183,9 @@ internal abstract class ComponentSparseSetBase
     internal ref int GetEntityIDsDataReference() => ref MemoryMarshal.GetArrayDataReference(_ids);
     internal Span<int> SparseSpan() =>
 #if NETSTANDARD
-        _sparse.AsSpan()
+        _sparse.AsSpan(0, _nextIndex)
 #else
-        MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_sparse), _sparse.Length)
+        MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_sparse), _nextIndex)
 #endif
         ;
 }

@@ -21,10 +21,16 @@ partial class World
     [SkipLocalsInit]
     public Entity Create<T>(in T comp)
     {
+        //manually inlined from World.CreateEntityFromLocation
+        //The jit likes to inline the outer create function and not inline
+        //the inner functions - benchmarked to improve perf by 10-20%
+        var (id, version) = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new(NextEntityID++, 0);
+        ref EntityLocation eloc = ref EntityTable[id];
+        eloc.Version = version;
+
         WorldArchetypeTableItem archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
 
         ref var entity = ref Unsafe.NullRef<EntityIDOnly>();
-        EntityLocation eloc = default;
 
         ComponentStorageRecord[] components;
 
@@ -37,7 +43,10 @@ partial class World
         {
             // we don't need to manually set flags, they are already zeroed
             entity = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
+            DeferredCreationEntities.Push(id);
         }
+
+        entity = new EntityIDOnly(id, version);
 
         bool hasSparseComponent = !(!Component<T>.IsSparseComponent && true);
 
@@ -46,12 +55,6 @@ partial class World
             eloc.Flags |= EntityFlags.HasSparseComponents;
         }
 
-        //manually inlined from World.CreateEntityFromLocation
-        //The jit likes to inline the outer create function and not inline
-        //the inner functions - benchmarked to improve perf by 10-20%
-        var (id, version) = entity = RecycledEntityIds.CanPop() ? RecycledEntityIds.PopUnsafe() : new(NextEntityID++, 0);
-        eloc.Version = version;
-        EntityTable[id] = eloc;
 
         ref ComponentSparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
 

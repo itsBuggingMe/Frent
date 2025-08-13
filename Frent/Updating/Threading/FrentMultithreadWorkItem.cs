@@ -5,12 +5,80 @@ using System.IO.Pipes;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
-using static Frent.Updating.WorldUpdateFilter;
+using System.Threading;
+using static Frent.Updating.AttributeUpdateFilter;
 
 namespace Frent.Updating.Threading;
 
 internal static class FrentMultithread
 {
+    internal class SparseSetWorkItem
+    {
+        private static readonly
+#if NET9_0_OR_GREATER
+            Lock s_poolLock = new();
+#else
+        object s_poolLock = new();
+#endif
+
+        private static FastStack<SparseSetWorkItem> s_pool = FastStack<SparseSetWorkItem>.Create(1);
+
+        private World? _world;
+        private ArraySegment<SparseUpdateMethod> _update;
+        private int _start;
+        private int _length;
+        private StrongBox<int>? _counter;
+
+        public static void UnsafeQueueWork(World world, ArraySegment<SparseUpdateMethod> method,
+            int start, int length, StrongBox<int> counter)
+        {
+            if(method.Count == 0)
+                return;
+
+            Interlocked.Increment(ref counter.Value);
+
+            SparseSetWorkItem workItem;
+
+            lock (s_poolLock)
+            {
+                workItem = s_pool.TryPop(out var w) ? w : new();
+            }
+
+            workItem._world = world;
+            workItem._start = start;
+            workItem._length = length;
+            workItem._update = method;
+            workItem._counter = counter;
+
+            ThreadPool.UnsafeQueueUserWorkItem(static o =>
+            {
+                SparseSetWorkItem workItem = UnsafeExtensions.UnsafeCast<SparseSetWorkItem>(o!);
+
+                Span<SparseUpdateMethod> methods = workItem._update.AsSpan();
+                ComponentSparseSetBase set = methods[0].SparseSet;
+
+                Span<int> entities = set.SparseSpan().Slice(workItem._start, workItem._length);
+                foreach (SparseUpdateMethod method in methods)
+                {
+                    method.Runner.RunSparse(set, workItem._world!, entities);
+                }
+
+                Interlocked.Decrement(ref workItem._counter!.Value);
+
+                workItem._world = default;
+                workItem._start = default;
+                workItem._length = default;
+                workItem._update = default;
+                workItem._counter = default;
+
+                lock (s_poolLock)
+                {
+                    s_pool.Push(workItem);
+                }
+            }, workItem);
+        }
+    }
+
     internal class MultipleArchetypeWorkItem
     {
         private static readonly

@@ -52,8 +52,8 @@ namespace System.Runtime.InteropServices
     internal static class MemoryMarshal
     {
         public static ref T GetReference<T>(Span<T> span) => ref span.DangerousGetReference();
+        public static ref T GetReference<T>(ReadOnlySpan<T> span) => ref span.DangerousGetReference();
         public static ref T GetArrayDataReference<T>(T[] arr) => ref arr.DangerousGetReference();
-        public static ref byte GetArrayDataReference(Array arr) => throw new NotSupportedException();
     }
 }
 

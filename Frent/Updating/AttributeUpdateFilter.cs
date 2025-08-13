@@ -9,10 +9,11 @@ using System.IO.Pipes;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Frent.Updating.AttributeUpdateFilter;
 
 namespace Frent.Updating;
 
-internal class WorldUpdateFilter : IComponentUpdateFilter
+internal class AttributeUpdateFilter : IComponentUpdateFilter
 {
     /*  In each world, there are n archetype that match the filter, where n >= 0.
      *  In each archetype there are m component types that match the filter, where m >= 0.
@@ -31,7 +32,10 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     private ArchtypeUpdateMethod[] _methods = new ArchtypeUpdateMethod[8];
     private int _methodsCount;
 
-    private Dictionary<ComponentID, FrugalRunnerArray> _matchedComponentMethods = [];
+    private SparseUpdateMethod[] _sparseMethods = new SparseUpdateMethod[4];
+    private int _sparseMethodsCount;
+
+    private Dictionary<ComponentID, FrugalRunnerArray> _matchedArchetypicalComponentMethods = [];
     private ulong _componentBloomFilter;
 
     private readonly StrongBox<int>? _updateCount;
@@ -39,7 +43,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
     private readonly bool _isMultithread;
 
-    public WorldUpdateFilter(World world, Type attributeType)
+    public AttributeUpdateFilter(World world, Type attributeType)
     {
         _isMultithread = typeof(MultithreadUpdateTypeAttribute).IsAssignableFrom(attributeType);
         _attributeType = attributeType;
@@ -58,7 +62,10 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
     public void Update()
     {
-        if(_isMultithread)
+        if (_lastRegisteredComponentID < Component.ComponentTable.Count)
+            RegisterNewComponents();
+
+        if (_isMultithread)
         {
             MultithreadedUpdate();
         }
@@ -81,6 +88,13 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
                 item.Runner.RunArchetypical(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world, 0, archetype.EntityCount);
             }
+        }
+
+        Span<SparseUpdateMethod> sparseUpdates = _sparseMethods.AsSpan(0, _sparseMethodsCount);
+
+        foreach (SparseUpdateMethod method in sparseUpdates)
+        {
+            method.Runner.RunSparse(method.SparseSet, world, method.SparseSet.SparseSpan());
         }
     }
 
@@ -122,6 +136,25 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
                     count: Math.Min(maxChunkSize, entityCount - i));
             }
         }
+
+        Span<SparseUpdateMethod> sparseMethods = _sparseMethods.AsSpan(0, _sparseMethodsCount);
+
+        for (int i = 0; i < sparseMethods.Length; i++)
+        {
+            ComponentSparseSetBase set = sparseMethods[i].SparseSet;
+            int start = i;
+            do
+            {
+                i++;
+
+            } while (i < sparseMethods.Length && set == sparseMethods[i].SparseSet);
+
+            ArraySegment<SparseUpdateMethod> methods = new(_sparseMethods, start, i - start);
+            for (int j = 0; j < set.Count; j += maxChunkSize)
+            {
+                FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, j, Math.Min(maxChunkSize, set.Count - j), _updateCount!);
+            }
+        }
     }
 
     private void RegisterNewComponents()
@@ -146,6 +179,18 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
 
             if(matchedMethodsCount > 0)
             {// something matched
+                if (thisID.IsSparseComponent)
+                {
+                    foreach (var method in methods)
+                    {
+                        MemoryHelpers.GetValueOrResize(ref _sparseMethods, _sparseMethodsCount++) = new SparseUpdateMethod(method.Runner, _world.WorldSparseSetTable[thisID.SparseIndex]);
+                    }
+                    continue;
+                }
+
+                // for archetypical ones, we need to wait for an archetype to show up to actually do something
+                // store which update methods match for this component
+
                 _componentBloomFilter |= 1UL << (i & 63);// set bloom filter bit
                 FrugalRunnerArray frugalRunnerArray = default;
                 IRunner[]? runners = null;
@@ -182,7 +227,8 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
                 // implicit null check
                 _ = frugalRunnerArray.Length;
 #endif
-                _matchedComponentMethods.Add(thisID, frugalRunnerArray);
+
+                _matchedArchetypicalComponentMethods.Add(thisID, frugalRunnerArray);
             }
         }
     }
@@ -199,7 +245,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         for(int i = 0; i < components.Length; i++)
         {
             ulong mask = 1UL << (components[i].RawIndex & 63);
-            if ((mask & _componentBloomFilter) == 0 || !_matchedComponentMethods.TryGetValue(components[i], out var runners))
+            if ((mask & _componentBloomFilter) == 0 || !_matchedArchetypicalComponentMethods.TryGetValue(components[i], out var runners))
                 continue;
 
             runners.GetOneOrOther(out IRunner[]? arr, out IRunner? single);
@@ -229,7 +275,7 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
         }
     }
 
-    public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes)
+    public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes, ReadOnlySpan<int> ids)
     {
         Span<ArchtypeUpdateMethod> records = _methods.AsSpan();
         World world = _world;
@@ -261,6 +307,12 @@ internal class WorldUpdateFilter : IComponentUpdateFilter
     {
         public readonly IRunner Runner = runner;
         public readonly nint Index = index;
+    }
+
+    internal readonly struct SparseUpdateMethod(IRunner runner, ComponentSparseSetBase sparseSet)
+    {
+        public readonly IRunner Runner = runner;
+        public readonly ComponentSparseSetBase SparseSet = sparseSet;
     }
 
     internal readonly struct ArchetypeUpdateSpan(Archetype archetype, int start, int length)

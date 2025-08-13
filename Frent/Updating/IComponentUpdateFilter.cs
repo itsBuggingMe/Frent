@@ -2,5 +2,5 @@
 
 internal interface IComponentUpdateFilter
 {
-    public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes);
+    public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes, ReadOnlySpan<int> ids);
 }

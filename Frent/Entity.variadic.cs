@@ -36,6 +36,7 @@ partial struct Entity
         Unsafe.SkipInit(out int archIndex);
         MemoryHelpers.Poison(ref archIndex);
         Archetype? to = null;
+
         ref ComponentSparseSetBase sparseSets = ref NeighborCache<T>.HasAnySparseComponents ? 
             ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable) :
             ref Unsafe.NullRef<ComponentSparseSetBase>();
@@ -53,9 +54,16 @@ partial struct Entity
         }
 
         ref var c1ref = ref Component<T>.IsSparseComponent ?
-            ref MemoryHelpers.GetSparseSet<T>(ref sparseSets)[EntityID] :
+            ref MemoryHelpers.GetSparseSet<T>(ref sparseSets).AddComponent(EntityID) :
             ref to!.GetComponentStorage<T>().UnsafeIndex<T>(archIndex);
         c1ref = c1;
+
+        if (NeighborCache<T>.HasAnySparseComponents)
+        {
+            thisLookup.Flags |= EntityFlags.HasSparseComponents;
+            ref Bitset set = ref world.SparseComponentTable.GetBitset(EntityID);
+            if(Component<T>.IsSparseComponent) set.SetOrResize(Component<T>.SparseSetComponentIndex);
+        }
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
 

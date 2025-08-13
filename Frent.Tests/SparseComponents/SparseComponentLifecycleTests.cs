@@ -8,7 +8,7 @@ namespace Frent.Tests.SparseComponents;
 
 internal class SparseComponentLifecycleTests
 {
-#region Test Components
+    #region Test Components
     
     internal struct SparseLifecycleOrderComponent(List<string> lifecycleEvents) : ISparseComponent, IInitable, IDestroyable
     {
