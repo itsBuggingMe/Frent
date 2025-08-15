@@ -15,7 +15,7 @@ namespace Frent.Collections;
 
 internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 {
-    private T[] _dense = new T[InitialCapacity];
+    internal T[] Dense = new T[InitialCapacity];
 
     public ref T this[int id]
     {
@@ -29,7 +29,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
                 _ids.UnsafeArrayIndex(denseIndex) = id;
             }
 
-            return ref MemoryHelpers.GetValueOrResize(ref _dense, denseIndex);
+            return ref MemoryHelpers.GetValueOrResize(ref Dense, denseIndex);
         }
     }
 
@@ -42,7 +42,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         }
 
         denseIndex = _nextIndex++;
-        return ref MemoryHelpers.GetValueOrResize(ref _dense, denseIndex);
+        return ref MemoryHelpers.GetValueOrResize(ref Dense, denseIndex);
     }
 
     public override void AddOrSet(int id, ComponentHandle value) => this[id] = value.Retrieve<T>();
@@ -50,7 +50,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
     // match behavior with archetypical set
     public override void Set(Entity e, object value)
     {
-        var dense = _dense;
+        var dense = Dense;
         var sparse = _sparse;
 
         if(!((uint)e.EntityID < (uint)sparse.Length))
@@ -73,14 +73,14 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         }
     }
 
-    public override object Get(int id) => _dense[_sparse[id]]!;
+    public override object Get(int id) => Dense[_sparse[id]]!;
 
-    public override void InvokeGenericEvent(int id, Entity entity, GenericEvent @event) => @event.Invoke(entity, ref _dense[_sparse[id]]);
+    public override void InvokeGenericEvent(int id, Entity entity, GenericEvent @event) => @event.Invoke(entity, ref Dense[_sparse[id]]);
 
     public override void Remove(int id, bool call)
     {
         var sparse = _sparse;
-        var dense = _dense;
+        var dense = Dense;
         if (!((uint)id < (uint)sparse.Length))
             return;
         ref int denseIndexRef = ref sparse[id];
@@ -110,7 +110,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
     public Ref<T> TryGet(int id, out bool value)
     {
         var sparse = _sparse;
-        var dense = _dense;
+        var dense = Dense;
         if ((uint)id < (uint)sparse.Length)
         {
             int denseIndex = sparse[id];
@@ -124,7 +124,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         return default;
     }
 
-    internal ref T GetComponentDataReference() => ref MemoryMarshal.GetArrayDataReference(_dense);
+    internal ref T GetComponentDataReference() => ref MemoryMarshal.GetArrayDataReference(Dense);
 }
 
 internal abstract class ComponentSparseSetBase
@@ -188,4 +188,6 @@ internal abstract class ComponentSparseSetBase
         MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_sparse), _nextIndex)
 #endif
         ;
+
+    internal Span<int> IDSpan() => _ids;
 }

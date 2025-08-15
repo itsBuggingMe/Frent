@@ -22,8 +22,8 @@ namespace Frent;
  * [x] Add/Remove
  * [x] Updates
  * [ ] Systems
- * [ ] Deferred Updates
- * [ ] Benchmarks
+ * [x] Deferred Updates
+ * [x] Benchmarks
  * [ ] Stress tests!
  * [ ] Tests for lifetime for sparse + archetypical & for all apis, create, create many, add, remove, tag, detach, delete, world dispose +
  */

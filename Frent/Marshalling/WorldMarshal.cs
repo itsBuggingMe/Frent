@@ -1,9 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Updating;
-using Frent.Updating.Runners;
-using System.Dynamic;
-using System.Runtime.InteropServices;
+using Frent.Components;
 
 namespace Frent.Marshalling;
 
@@ -52,5 +50,25 @@ public static class WorldMarshal
         //Components[0] null; trap
         ComponentStorageRecord storage = archetype.Components.UnsafeArrayIndex(compIndex);
         return ref storage.UnsafeIndex<T>(location.Index);
+    }
+
+    /// <summary>
+    /// Gets the raw sparse set data for a component from a world.
+    /// </summary>
+    /// <typeparam name="T">The type of component to get/</typeparam>
+    /// <param name="world">The world to get the sparse set from.</param>
+    /// <param name="components">The raw unsliced buffer of components.</param>
+    /// <param name="ids">A record of which entity a component belongs to in the <paramref name="components"/> span.</param>
+    /// <param name="sparse">A mapping from an entity's id to the component index in the <paramref name="components"/> span.</param>
+    /// <returns>The number of entities with a component of type <typeparamref name="T"/> in the <paramref name="world"/>.</returns>
+    public static int GetSparseSet<T>(World world, out Span<T> components, out Span<int> ids, out Span<int> sparse)
+        where T : ISparseComponent
+    {
+        int index = Component<T>.SparseSetComponentIndex;
+        ComponentSparseSet<T> set = UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable[index]);
+        components = set.Dense;
+        ids = set.IDSpan();
+        sparse = set.SparseSpan();
+        return set.Count;
     }
 }
