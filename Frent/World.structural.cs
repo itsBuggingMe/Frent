@@ -227,8 +227,7 @@ partial class World
 
     internal void CleanupSparseComponents(Entity entity, ref EntityLocation currentLookup)
     {
-        bool removed = SparseComponentTable.Remove(entity.EntityID, out Bitset bitset);
-        Debug.Assert(removed);
+        ref var bitset = ref SparseComponentTable[entity.EntityID];
 
         Span<ComponentSparseSetBase> lookup = WorldSparseSetTable.AsSpan();
         foreach (int offset in bitset)
@@ -236,6 +235,7 @@ partial class World
             var set = lookup.UnsafeSpanIndex(offset);
             set.Remove(entity.EntityID, true);
         }
+        bitset = default;
     }
     #endregion
 }

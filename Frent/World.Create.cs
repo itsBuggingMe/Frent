@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 namespace Frent;
 
 
-[Variadic(nameof(World))]
+[Variadic("World.create")]
 partial class World
 {
     /// <summary>
@@ -66,9 +66,9 @@ partial class World
 
         if (hasSparseComponent)
         {
-            ref Bitset bitset = ref SparseComponentTable.GetBitset(id);
+            ref Bitset bitset = ref MemoryHelpers.GetBitset(ref SparseComponentTable, id);
 
-            if (Component<T>.IsSparseComponent) bitset.SetOrResize(Component<T>.SparseSetComponentIndex);
+            if (Component<T>.IsSparseComponent) bitset.Set(Component<T>.SparseSetComponentIndex);
         }
 
         Entity concreteEntity = new Entity(WorldID, version, id);

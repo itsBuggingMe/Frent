@@ -198,8 +198,8 @@ public partial struct Entity : IEquatable<Entity>
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
             _bitset = entityLocation.HasFlag(EntityFlags.HasSparseComponents)
-                ? world.SparseComponentTable.GetValueRefOrNullRef(entity.EntityID)
-                : Bitset.Empty;
+                ? world.SparseComponentTable[entity.EntityID]
+                : default;
 
             _expectedVersion = entity.EntityVersion;
 #if NETSTANDARD

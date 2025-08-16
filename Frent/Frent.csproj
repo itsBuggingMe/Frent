@@ -41,7 +41,7 @@
   </ItemGroup>
   
   <ItemGroup>
-	  <AdditionalFiles Include="Variadic\*" />
+    <AdditionalFiles Include="**\*.template">
   </ItemGroup>
   
 </Project>

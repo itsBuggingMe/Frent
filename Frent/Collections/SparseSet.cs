@@ -7,7 +7,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading.Tasks; 
 using Frent.Core;
 using Frent.Core.Events;
 
@@ -90,11 +90,11 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 
         ref var toRemove = ref dense[denseIndex];
         if (call) Component<T>.Destroyer?.Invoke(ref toRemove);
-        ref var top = ref dense[--_nextIndex];
+        ref var top = ref dense.UnsafeArrayIndex(--_nextIndex);
         denseIndexRef = -1;
 
         toRemove = top;
-        if(RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if(RuntimeHelpers.IsReferenceOrContainsReferences<T>()) 
             top = default;
     }
 

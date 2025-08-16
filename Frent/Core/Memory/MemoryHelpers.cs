@@ -35,15 +35,10 @@ internal static class MemoryHelpers
     public static int RoundDownToNextMultipleOf16(int value) => value & ~15;
     public static byte BoolToByte(bool b) => Unsafe.As<bool, byte>(ref b);
 
-    public static ref Bitset GetBitset(this RefDictionary<int, Bitset> dict, int key)
+    public static ref Bitset GetBitset(scoped ref Bitset[] arr, int key)
     {
-        ref Bitset set = ref dict.GetValueRefOrAddDefault(key, out bool exist);
-        if (!exist)
-        {
-            set = new(1);
-        }
-
-        return ref set;
+        ref var bitset = ref GetValueOrResize(ref arr, key);
+        return ref bitset;
     }
 
     public static ComponentSparseSet<T> GetSparseSet<T>(ref ComponentSparseSetBase first)
@@ -126,14 +121,14 @@ internal static class MemoryHelpers
         return res ??= new();
     }
 
-    public static ref T GetValueOrResize<T>(ref T[] arr, int index)
+    public static ref T GetValueOrResize<T>(scoped ref T[] arr, int index)
     {
         if((uint)index < (uint)arr.Length)
             return ref arr[index];
         return ref ResizeAndGet(ref arr, index);
     }
 
-    private static ref T ResizeAndGet<T>(ref T[] arr, int index)
+    private static ref T ResizeAndGet<T>(scoped ref T[] arr, int index)
     {
         int newSize = (int)BitOperations.RoundUpToPowerOf2((uint)(index + 1));
         Array.Resize(ref arr, newSize);

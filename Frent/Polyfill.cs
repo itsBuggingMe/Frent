@@ -61,21 +61,16 @@ namespace System.Numerics
 {
     internal static class BitOperations
     {
-        public static int LeadingZeroCount(nuint value)
+        public static int LeadingZeroCount(ulong value)
         {
-            if(IntPtr.Size == 8)
+            uint hi = (uint)(value >> 32);
+
+            if (hi == 0)
             {
-                uint hi = (uint)(value >> 32);
-
-                if (hi == 0)
-                {
-                    return 32 + LeadingZeroCount((uint)value);
-                }
-
-                return LeadingZeroCount(hi);
+                return 32 + LeadingZeroCount((uint)value);
             }
 
-            return LeadingZeroCount((uint)value);
+            return LeadingZeroCount(hi);
         }
 
         private static int LeadingZeroCount(uint value)

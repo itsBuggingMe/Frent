@@ -12,11 +12,14 @@ namespace Frent.Benchmarks;
 
 public class Program
 {
-    static void Main(string[] args) => RunBenchmark<MultithreadBenchmark>(m => m.Multi());
+    static void Main(string[] args) => RunBenchmark<AddRemove>(m => m.Sparse());
     
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
+        JitTest(disasmCall);
+
+        return;
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true
