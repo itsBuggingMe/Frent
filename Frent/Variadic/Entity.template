@@ -111,9 +111,9 @@ to:
 |
 
 from:
-            if(Component<T>.IsSparseComponent) set.SetOrResize(Component<T>.SparseSetComponentIndex);
+            if(Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
 to:
-|            if(Component<T$>.IsSparseComponent) set.SetOrResize(Component<T$>.SparseSetComponentIndex);
+|            if(Component<T$>.IsSparseComponent) set.Set(Component<T$>.SparseSetComponentIndex);
 |
 
 from:
