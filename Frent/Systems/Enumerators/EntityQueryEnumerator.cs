@@ -21,7 +21,7 @@ public ref struct EntityQueryEnumerator<T>
     private Span<Archetype> _archetypes;
     private Span<EntityIDOnly> _entityIds;
     private Span<T> _currentSpan1;
-    private EntityQueryEnumerator(Query query)
+    internal EntityQueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
@@ -78,16 +78,9 @@ public ref struct EntityQueryEnumerator<T>
     }
 
     /// <summary>
-    /// Proxy type for foreach syntax
+    /// Gets the enumerator over a query.
     /// </summary>
-    /// <param name="query">The query to wrap.</param>
-    public struct QueryEnumerable(Query query)
-    {
-        /// <summary>
-        /// Gets the enumerator over a query.
-        /// </summary>
-        public EntityQueryEnumerator<T> GetEnumerator() => new EntityQueryEnumerator<T>(query);
-    }
+    public EntityQueryEnumerator<T> GetEnumerator() => this;
 }
 
 /// <summary>
@@ -100,7 +93,7 @@ public ref struct EntityQueryEnumerator
     private World _world;
     private Span<Archetype> _archetypes;
     private Span<EntityIDOnly> _entityIds;
-    private EntityQueryEnumerator(Query query)
+    internal EntityQueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
@@ -149,14 +142,7 @@ public ref struct EntityQueryEnumerator
     }
 
     /// <summary>
-    /// Proxy type for foreach syntax
+    /// Gets the enumerator over a query.
     /// </summary>
-    /// <param name="query"></param>
-    public struct QueryEnumerable(Query query)
-    {
-        /// <summary>
-        /// Gets the enumerator over a query.
-        /// </summary>
-        public EntityQueryEnumerator GetEnumerator() => new EntityQueryEnumerator(query);
-    }
+    public EntityQueryEnumerator GetEnumerator() => this;
 }

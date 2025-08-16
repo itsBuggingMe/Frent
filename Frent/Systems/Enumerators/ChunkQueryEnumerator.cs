@@ -15,7 +15,7 @@ public ref struct ChunkQueryEnumerator<T>
     private World _world;
     private Span<Archetype> _archetypes;
     private int _archetypeIndex;
-    private ChunkQueryEnumerator(Query query)
+    internal ChunkQueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
@@ -53,14 +53,7 @@ public ref struct ChunkQueryEnumerator<T>
     public bool MoveNext() => ++_archetypeIndex < _archetypes.Length;
 
     /// <summary>
-    /// Proxy type for foreach syntax
+    /// Gets the enumerator over a query.
     /// </summary>
-    /// <param name="query">The query to wrap.</param>
-    public struct QueryEnumerable(Query query)
-    {
-        /// <summary>
-        /// Gets the enumerator over a query.
-        /// </summary>
-        public ChunkQueryEnumerator<T> GetEnumerator() => new(query);
-    }
+    public ChunkQueryEnumerator<T> GetEnumerator() => this;
 }

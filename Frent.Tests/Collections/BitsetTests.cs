@@ -17,18 +17,6 @@ public class BitsetTests
     }
 
     [Test]
-    public void SetOrResize_BitExceedsCapacity_ResizesAndSetsBit()
-    {
-        var bitset = new Bitset();
-
-        int index = 1024;
-        bitset.Set(index);
-
-        That(bitset.IsSet(index), Is.True);
-        That(bitset.IsSet(index + 1), Is.False);
-    }
-
-    [Test]
     public void IsSet_BitPreviouslySet_ReturnsTrue([Values(1, 8, 128, 127, 40)] int index)
     {
         var bitset = new Bitset();

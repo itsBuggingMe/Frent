@@ -20,7 +20,7 @@ public ref struct QueryEnumerator<T>
     private World _world;
     private Span<Archetype> _archetypes;
     private Span<T> _currentSpan1;
-    private QueryEnumerator(Query query)
+    internal QueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
@@ -75,14 +75,7 @@ public ref struct QueryEnumerator<T>
     }
 
     /// <summary>
-    /// Proxy type for foreach syntax
+    /// Gets the enumerator over a query.
     /// </summary>
-    /// <param name="query"></param>
-    public struct QueryEnumerable(Query query)
-    {
-        /// <summary>
-        /// Gets the enumerator over a query.
-        /// </summary>
-        public QueryEnumerator<T> GetEnumerator() => new QueryEnumerator<T>(query);
-    }
+    public QueryEnumerator<T> GetEnumerator() => this;
 }

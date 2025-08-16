@@ -7,32 +7,22 @@ namespace Frent.Systems;
 /// </summary>
 public struct Rule : IEquatable<Rule>
 {
-    private RuleState _ruleState;
-    private Func<ArchetypeID, bool>? _custom;
-    private ComponentID _compID;
-    private TagID _tagID;
+    internal RuleState RuleStateValue;
+    internal ComponentID CompID;
+    internal TagID TagID;
 
-    internal bool RuleApplies(ArchetypeID archetypeID) => _ruleState switch
+    internal bool RuleApplies(ArchetypeID archetypeID) => RuleStateValue switch
     {
-        RuleState.NotComponent => !archetypeID.HasComponent(_compID),
-        RuleState.HasComponent => archetypeID.HasComponent(_compID),
-        RuleState.NotTag => !archetypeID.HasTag(_tagID),
-        RuleState.HasTag => archetypeID.HasTag(_tagID),
-        RuleState.CustomDelegate => _custom!(archetypeID),
+        RuleState.NotComponent => !archetypeID.HasComponent(CompID),
+        RuleState.HasComponent => archetypeID.HasComponent(CompID),
+        RuleState.NotTag => !archetypeID.HasTag(TagID),
+        RuleState.HasTag => archetypeID.HasTag(TagID),
         RuleState.IncludeDisabled => true,
         _ => throw new InvalidDataException("Rule not initialized correctly. Use one of the factory methods."),
     };
 
-    /// <summary>
-    /// Creates a custom delegate-based rule.
-    /// </summary>
-    /// <param name="rule">The custom delegate to determine rule applicability.</param>
-    /// <returns>A <see cref="Rule"/> configured with the custom delegate.</returns>
-    public static Rule Delegate(Func<ArchetypeID, bool> rule) => new()
-    {
-        _ruleState = RuleState.CustomDelegate,
-        _custom = rule
-    };
+    internal bool IsSparseRule => CompID != default && CompID.IsSparseComponent;
+    internal int SparseIndex => CompID.SparseIndex;
 
     /// <summary>
     /// Creates a rule that applies when an archetype has the specified component.
@@ -41,8 +31,8 @@ public struct Rule : IEquatable<Rule>
     /// <returns>A <see cref="Rule"/> that checks for the presence of a component.</returns>
     public static Rule HasComponent(ComponentID compID) => new()
     {
-        _ruleState = RuleState.HasComponent,
-        _compID = compID
+        RuleStateValue = RuleState.HasComponent,
+        CompID = compID
     };
 
     /// <summary>
@@ -52,8 +42,8 @@ public struct Rule : IEquatable<Rule>
     /// <returns>A <see cref="Rule"/> that checks for the absence of a component.</returns>
     public static Rule NotComponent(ComponentID compID) => new()
     {
-        _ruleState = RuleState.NotComponent,
-        _compID = compID
+        RuleStateValue = RuleState.NotComponent,
+        CompID = compID
     };
 
     /// <summary>
@@ -63,8 +53,8 @@ public struct Rule : IEquatable<Rule>
     /// <returns>A <see cref="Rule"/> that checks for the presence of a tag.</returns>
     public static Rule HasTag(TagID tagID) => new()
     {
-        _ruleState = RuleState.HasTag,
-        _tagID = tagID
+        RuleStateValue = RuleState.HasTag,
+        TagID = tagID
     };
 
     /// <summary>
@@ -74,8 +64,8 @@ public struct Rule : IEquatable<Rule>
     /// <returns>A <see cref="Rule"/> that checks for the absence of a tag.</returns>
     public static Rule NotTag(TagID tagID) => new()
     {
-        _ruleState = RuleState.NotTag,
-        _tagID = tagID
+        RuleStateValue = RuleState.NotTag,
+        TagID = tagID
     };
 
     /// <summary>
@@ -84,10 +74,9 @@ public struct Rule : IEquatable<Rule>
     /// <param name="other">The <see cref="Rule"/> to compare against.</param>
     /// <returns><see langword="true"/> if the rules are equal, <see langword="false"/> otherwise.</returns>
     public bool Equals(Rule other) =>
-        _ruleState == other._ruleState &&
-        _custom == other._custom &&
-        _compID.Equals(other._compID) &&
-        _tagID.Equals(other._tagID);
+        RuleStateValue == other.RuleStateValue &&
+        CompID.Equals(other.CompID) &&
+        TagID.Equals(other.TagID);
 
     /// <summary>
     /// Determines whether this <see cref="Rule"/> is equal to an object.
@@ -100,7 +89,7 @@ public struct Rule : IEquatable<Rule>
     /// Gets a hash code for this <see cref="Rule"/>.
     /// </summary>
     /// <returns>A hash code representing this <see cref="Rule"/>.</returns>
-    public override int GetHashCode() => HashCode.Combine(_ruleState, _custom, _compID, _tagID);
+    public override int GetHashCode() => HashCode.Combine(RuleStateValue, CompID, TagID);
 
     /// <summary>
     /// Determines whether two <see cref="Rule"/> instances are equal.
@@ -118,10 +107,9 @@ public struct Rule : IEquatable<Rule>
     /// <returns><see langword="true"/> if the rules are not equal, <see langword="false"/> otherwise.</returns>
     public static bool operator !=(Rule left, Rule right) => !left.Equals(right);
 
-    private enum RuleState : int
+    internal enum RuleState : int
     {
         None = 0,
-        CustomDelegate,
         HasComponent,
         NotComponent,
         HasTag,
@@ -132,5 +120,5 @@ public struct Rule : IEquatable<Rule>
     /// <summary>
     /// Using this rule will include disabled entities in a query.
     /// </summary>
-    public static readonly Rule IncludeDisabledRule = new Rule() { _ruleState = RuleState.IncludeDisabled };
+    public static readonly Rule IncludeDisabledRule = new Rule() { RuleStateValue = RuleState.IncludeDisabled };
 }

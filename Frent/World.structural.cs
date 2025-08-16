@@ -235,7 +235,6 @@ partial class World
             var set = lookup.UnsafeSpanIndex(offset);
             set.Remove(entity.EntityID, true);
         }
-        bitset = default;
     }
     #endregion
 }

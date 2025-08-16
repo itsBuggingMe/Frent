@@ -73,7 +73,7 @@ public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
             if (Component<TArg>.IsSparseComponent)
             {
                 if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
-                int index = sparseArgArray[i];
+                int index = sparseArgArray[entity.EntityID];
                 if (index < 0) goto NullRefException;
                 arg = ref Unsafe.Add(ref sparseFirst, index);
             }

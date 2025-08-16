@@ -108,7 +108,7 @@ partial class World
         
         var chunks = new ChunkTuple<T>()
         {
-            Entities = new EntityEnumerator.EntityEnumerable(this, entities),
+            Entities = new EntityEnumerator(this, entities),
             Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],
         };
         
