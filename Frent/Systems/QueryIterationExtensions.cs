@@ -11,12 +11,7 @@ namespace Frent.Systems;
 /// <summary>
 /// Extensions to execute behavior on queries.
 /// </summary>
-[Variadic("            ref T c1 = ref archetype.GetComponentDataReference<T>();",
-    "|            ref T$ c$ = ref archetype.GetComponentDataReference<T$>();\n|")]
-[Variadic("                c1 = ref Unsafe.Add(ref c1, 1);",
-    "|                c$ = ref Unsafe.Add(ref c$, 1);\n|")]
-[Variadic("T>", "|T$, |>")]
-[Variadic("ref c1)", "|ref c$, |)")]
+[Variadic(nameof(QueryIterationExtensions))]
 public static partial class QueryIterationExtensions
 {
     /// <summary>

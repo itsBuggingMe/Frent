@@ -1,6 +1,8 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+#if !NETSTANDARD
 using System.Runtime.Intrinsics;
+#endif
 
 namespace Frent.Collections;
 

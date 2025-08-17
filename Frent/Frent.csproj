@@ -41,7 +41,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <AdditionalFiles Include="**\*.template"/>
+    <AdditionalFiles Include="**\*.template" />
   </ItemGroup>
   
 </Project>
