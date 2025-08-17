@@ -113,7 +113,7 @@ partial class World
         for (int i = 0; i < fromComponents.Length;)
         {
             ComponentID componentToMoveFromFromToTo = fromComponents[i];
-            int toIndex = destMap.UnsafeArrayIndex(componentToMoveFromFromToTo.RawIndex);
+            int toIndex = destMap.UnsafeArrayIndex(componentToMoveFromFromToTo.RawIndex) & GlobalWorldTables.IndexBits;
 
             i++;
 
