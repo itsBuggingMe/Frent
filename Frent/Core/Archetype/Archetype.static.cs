@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
 
-[Variadic]
+[Variadic(nameof(Archetype))]
 internal static class Archetype<T>
 {
     public static readonly ImmutableArray<ComponentID> ArchetypeComponentIDs = CreateComponentIDArray();

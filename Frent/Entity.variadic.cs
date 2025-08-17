@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[Variadic]
+[Variadic(nameof(Entity))]
 partial struct Entity
 {
     // traversing archetype graph strategy:
