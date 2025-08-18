@@ -61,21 +61,16 @@ namespace System.Numerics
 {
     internal static class BitOperations
     {
-        public static int LeadingZeroCount(nuint value)
+        public static int LeadingZeroCount(ulong value)
         {
-            if(IntPtr.Size == 8)
+            uint hi = (uint)(value >> 32);
+
+            if (hi == 0)
             {
-                uint hi = (uint)(value >> 32);
-
-                if (hi == 0)
-                {
-                    return 32 + LeadingZeroCount((uint)value);
-                }
-
-                return LeadingZeroCount(hi);
+                return 32 + LeadingZeroCount((uint)value);
             }
 
-            return LeadingZeroCount((uint)value);
+            return LeadingZeroCount(hi);
         }
 
         private static int LeadingZeroCount(uint value)
@@ -119,6 +114,20 @@ namespace System.Numerics
             08, 12, 20, 28, 15, 17, 24, 07,
             19, 27, 23, 06, 26, 05, 04, 31
         ];
+
+        public static int PopCount(ulong value)
+        {
+            const ulong c1 = 0x_55555555_55555555ul;
+            const ulong c2 = 0x_33333333_33333333ul;
+            const ulong c3 = 0x_0F0F0F0F_0F0F0F0Ful;
+            const ulong c4 = 0x_01010101_01010101ul;
+
+            value -= (value >> 1) & c1;
+            value = (value & c2) + ((value >> 2) & c2);
+            value = (((value + (value >> 4)) & c3) * c4) >> 56;
+
+            return (int)value;
+        }
     }
 }
 #endregion

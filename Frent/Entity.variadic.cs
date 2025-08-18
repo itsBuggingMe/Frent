@@ -61,8 +61,8 @@ partial struct Entity
         if (NeighborCache<T>.HasAnySparseComponents)
         {
             thisLookup.Flags |= EntityFlags.HasSparseComponents;
-            ref Bitset set = ref world.SparseComponentTable.GetBitset(EntityID);
-            if(Component<T>.IsSparseComponent) set.SetOrResize(Component<T>.SparseSetComponentIndex);
+            ref Bitset set = ref MemoryHelpers.GetBitset(ref world.SparseComponentTable, EntityID);
+            if(Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
         }
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
@@ -135,11 +135,12 @@ partial struct Entity
         ref ComponentSparseSetBase start = ref Unsafe.NullRef<ComponentSparseSetBase>();
         if (NeighborCache<T>.HasAnySparseComponents)
         {
-            bits = ref world.SparseComponentTable.GetBitset(EntityID);
+            bits = ref MemoryHelpers.GetBitset(ref world.SparseComponentTable, EntityID);
             start = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
         }
 
         // set sparse components and bits
+
         if (Component<T>.IsSparseComponent)
         {
             bits.ClearAt(Component<T>.SparseSetComponentIndex);
@@ -147,7 +148,7 @@ partial struct Entity
         }
 
         if (NeighborCache<T>.HasAnyArchetypicalComponents)
-        {
+        {   
             Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
                 world,
                 ref NeighborCache<T>.Remove.Lookup,
@@ -304,6 +305,8 @@ partial struct Entity
 
 partial struct Entity
 {
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void M() { }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Archetype TraverseThroughCacheOrCreate<T, TEdge>(
         World world,

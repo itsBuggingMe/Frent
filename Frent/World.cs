@@ -41,7 +41,7 @@ public partial class World : IDisposable
     internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
 
     // entity ID -> sparse component bitset
-    internal readonly RefDictionary<int, Bitset> SparseComponentTable = new();
+    internal Bitset[] SparseComponentTable = [];
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal ComponentSparseSetBase[] WorldSparseSetTable;

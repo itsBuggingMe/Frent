@@ -165,14 +165,15 @@ public partial struct Entity : IEquatable<Entity>
         if (!location.HasFlag(EntityFlags.HasSparseComponents))
             return location.Archetype.ArchetypeTypeArray;
 
-        var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length);
+        var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length + 
+            world.SparseComponentTable[EntityID].PopCnt());
 
         foreach (var componentID in this)
         {
             res.Add(componentID);
         }
 
-        return res.ToImmutable();
+        return res.MoveToImmutable();
     }
 
     public ref struct EntityComponentIDEnumerator
@@ -198,8 +199,8 @@ public partial struct Entity : IEquatable<Entity>
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
             _bitset = entityLocation.HasFlag(EntityFlags.HasSparseComponents)
-                ? world.SparseComponentTable.GetValueRefOrNullRef(entity.EntityID)
-                : Bitset.Empty;
+                ? world.SparseComponentTable[entity.EntityID]
+                : default;
 
             _expectedVersion = entity.EntityVersion;
 #if NETSTANDARD
@@ -224,10 +225,10 @@ public partial struct Entity : IEquatable<Entity>
                 }
 
                 _archetypical = default;
-                _index = 0;
+                _index = -1;
             }
 
-            int? found = _bitset.TryFindIndexOfBitGreaterThan(_index);
+            int? found = _bitset.TryFindIndexOfBitGreaterThanOrEqualTo(_index + 1);
 
             if (found is { } x)
             {

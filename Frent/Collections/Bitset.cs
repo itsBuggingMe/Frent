@@ -1,159 +1,119 @@
-﻿using System.IO.Pipes;
-using System.Numerics;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
+#if !NETSTANDARD
+using System.Runtime.Intrinsics;
+#endif
 
 namespace Frent.Collections;
 
 internal struct Bitset
 {
-    public static Bitset Empty
+    public const int Capacity = 256;
+    private const ulong HighBit = 1UL << 63;
+    private ulong _0;
+    private ulong _1;
+    private ulong _2;
+    private ulong _3;
+
+    public bool IsDefault => _0 == default &&
+        _1 == default &&
+        _2 == default &&
+        _3 == default;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Set(int index)
     {
-        get
-        {
-            Bitset bitset = default;
-            bitset._bits = [];
-            return bitset;
-        }
+        ref ulong lane = ref Unsafe.Add(ref _0, (nuint)(uint)index >> 6);
+        lane |= HighBit >> (index & 63);
     }
 
-    public Bitset(int capacity) => _bits = new nuint[Divide(capacity) + 1];
-
-    public Bitset() : this(0)
-    {
-
-    }
-
-    private nuint[] _bits;
-    public readonly int Length => Multiply(_bits.Length);
-    private nuint HighBit => ((nuint)1 << (IntPtr.Size * 8 - 1));
-    public void SetOrResize(int index)
-    {
-        var loc = _bits;
-
-        if(!((uint)index < (uint)loc.Length))
-        {
-            ResizeAndSet(index);
-            return;
-        }
-
-        loc[Divide(index)] |= HighBit >> Mod(index);
-    }
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ClearAt(int index)
     {
-        var loc = _bits;
-
-        if (!((uint)index < (uint)loc.Length))
-        {
-            return;
-        }
-
-        loc[Divide(index)] ^= HighBit >> Mod(index);
+        ref ulong lane = ref Unsafe.Add(ref _0, (nuint)(uint)index >> 6);
+        lane &= ~(HighBit >> (index & 63));
     }
 
-    private void ResizeAndSet(int index)
-    {
-        Array.Resize(ref _bits, (int)BitOperations.RoundUpToPowerOf2((uint)(Divide(index) + 1)));
-        _bits[Divide(index)] |= HighBit >> Mod(index);
-    }
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsSet(int index)
     {
-        var loc = _bits;
-
-        int chunkIndex = Divide(index);
-        if (!((uint)chunkIndex < (uint)loc.Length))
-        {
-            return false;
-        }
-
-        return (loc[chunkIndex] & (HighBit >> Mod(index))) != 0;
+        ulong lane = Unsafe.Add(ref _0, (nuint)(uint)index >> 6);
+        return (lane & (HighBit >> (index & 63))) != 0;
     }
 
-    private static int Mod(int value)
+    /// <summary>
+    /// Calculate the bitwise AND of two bitsets and returns true if any bit is remaining
+    /// </summary>
+    public static bool AndAndThenAnySet(ref Bitset a, ref Bitset b)
     {
-        return value & (IntPtr.Size * 8 - 1);
+#if NETSTANDARD
+        return (
+            (a._0 & a._0) |
+            (a._1 & a._1) |
+            (a._2 & a._2) |
+            (a._3 & a._3)) != 0;
+#else
+        Vector256<ulong> vec1 = Unsafe.As<ulong, Vector256<ulong>>(ref a._0);
+        Vector256<ulong> vec2 = Unsafe.As<ulong, Vector256<ulong>>(ref b._0);
+
+        return (vec1 & vec2) != Vector256<ulong>.Zero;
+#endif
     }
 
-    private static int Divide(int value)
+    internal int? TryFindIndexOfBitGreaterThanOrEqualTo(int bitIndex)
     {
-        if(IntPtr.Size == 8)
-        {
-            return value >> 6;
-        }
-        else
-        {
-            return value >> 5;
-        }
-    }
+        if (!((uint)bitIndex < Capacity))
+            return null;
 
-    private static int Multiply(int value)
-    {
-        if (IntPtr.Size == 8)
-        {
-            return value << 6;
-        }
-        else
-        {
-            return value << 5;
-        }
-    }
+        int laneIndex = bitIndex >> 6;
+        int bitOffset = (bitIndex) & 63;
+        // 0101010000100000000000000000000000000000000000000000000000000001
+        ulong bits = Unsafe.Add(ref _0, (nuint)laneIndex);
+        bits &= ulong.MaxValue >> bitOffset;
 
-    internal int? TryFindIndexOfBitGreaterThan(int bitIndex)
-    {
-        int chunkIndex = Divide(bitIndex);
-        nuint consumedBits = _bits[chunkIndex];
-
-        consumedBits &= unchecked((nuint)0 - 1) >> Mod(bitIndex + 1);
-
-        while (consumedBits == 0)
+        while (bits == 0)
         {
-            if ((uint)bitIndex < (uint)_bits.Length)
-            {
-                bitIndex = bitIndex * IntPtr.Size * 8;
-                consumedBits = _bits[chunkIndex++];
-            }
-            else
-            {
+            laneIndex++;
+            if (laneIndex >= 4)
                 return null;
-            }
+            bits = Unsafe.Add(ref _0, (nuint)laneIndex);
         }
 
-        int leadingZeros = BitOperations.LeadingZeroCount(consumedBits);
-
-        return leadingZeros + Multiply(chunkIndex);
+        int leading = BitOperations.LeadingZeroCount(bits);
+        return (laneIndex << 6) + leading;
     }
 
-    public Enumerator GetEnumerator() => new(this);
+    public readonly Enumerator GetEnumerator() => new(this);
 
-    internal struct Enumerator(Bitset bitset)
+    public readonly int PopCnt() =>
+        BitOperations.PopCount(_0) +
+        BitOperations.PopCount(_1) +
+        BitOperations.PopCount(_2) +
+        BitOperations.PopCount(_3)
+        ;
+
+    internal ref struct Enumerator
     {
-        private nuint[] _bits = bitset._bits;
-        private nuint _consumedBits = 0;
-        private int _index = 0;
-        private int _current;
-        public int Current => _current - 1;
+        private Bitset _set;
+        private int _index;
+
+        public Enumerator(Bitset bitset)
+        {
+            _set = bitset;
+            _index = 0;
+        }
+
+        public int Current => _index - 1;
+
         public bool MoveNext()
         {
-            while(_consumedBits == 0)
+            int? index = _set.TryFindIndexOfBitGreaterThanOrEqualTo(_index);
+            if(index is int x)
             {
-                if ((uint)_index < (uint)_bits.Length)
-                {
-                    _current = _index * IntPtr.Size * 8;
-                    _consumedBits = _bits[_index++];
-                }
-                else
-                {
-                    return false;
-                }
+                _index = x + 1;
+                return true;
             }
-
-            int leadingZeros = BitOperations.LeadingZeroCount(_consumedBits);
-
-            int bitsToConsume = leadingZeros + 1;
-            _consumedBits <<= bitsToConsume;
-            _current += bitsToConsume;
-
-            return true;
+            return false;
         }
     }
 }
