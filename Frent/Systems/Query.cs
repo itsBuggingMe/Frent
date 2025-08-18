@@ -14,6 +14,8 @@ public partial class Query
 {
     internal Span<Archetype> AsSpan() => _archetypes.AsSpan();
 
+    internal int ArchetypeCount => _archetypes.Count;
+
     private FastStack<Archetype> _archetypes = FastStack<Archetype>.Create(2);
     private ImmutableArray<Rule> _archetypicalRules;
     private ImmutableArray<Rule> _sparseRules;
@@ -58,6 +60,10 @@ public partial class Query
 
         HasSparseExclusions = !_excludeSparseComponents.IsDefault;
     }
+
+#if !NETSTANDARD
+    internal ref Archetype GetArchetypeDataReference() => ref _archetypes.GetDataReference();
+#endif
 
     internal void TryAttachArchetype(Archetype archetype)
     {

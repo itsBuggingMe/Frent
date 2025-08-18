@@ -1,5 +1,10 @@
 using Frent.Core;
 using Frent.Variadic.Generator;
+using Frent.Collections;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System;
+using System.Runtime.Intrinsics;
 
 namespace Frent.Systems;
 
@@ -83,28 +88,37 @@ public ref struct EntityQueryEnumerator<T>
     public EntityQueryEnumerator<T> GetEnumerator() => this;
 }
 
+#if NETSTANDARD
+
+#else
 /// <summary>
 /// An enumerator that can be used to enumerate all <see cref="Entity"/> instances in a <see cref="Query"/>.
 /// </summary>
 public ref struct EntityQueryEnumerator
 {
-    private int _archetypeIndex;
-    private int _componentIndex;
     private World _world;
-    private Span<Archetype> _archetypes;
-    private Span<EntityIDOnly> _entityIds;
+    private ref Archetype _current;
+    private ref EntityIDOnly _currentEntity;
+
+    private int _archetypesLeft;
+    private int _entitiesLeft;
+
+    private readonly Vector256<ulong> _include;
+    private readonly Vector256<ulong> _exclude;
+    private readonly bool _checkSparse;
+
     internal EntityQueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
-        _archetypes = query.AsSpan();
-        _archetypeIndex = -1;
+        _current = ref Unsafe.Subtract(ref query.GetArchetypeDataReference(), 1);
+        _archetypesLeft = query.ArchetypeCount;
     }
-
+    
     /// <summary>
     /// The current <see cref="Entity"/> instance.
     /// </summary>
-    public Entity Current => _entityIds[_componentIndex].ToEntity(_world);
+    public Entity Current => _currentEntity.ToEntity(_world);
 
     /// <summary>
     /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
@@ -120,22 +134,35 @@ public ref struct EntityQueryEnumerator
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()
     {
-        if (++_componentIndex < _entityIds.Length)
-        {
-            return true;
+        while (--_entitiesLeft >= 0)
+        {// a okay
+            _currentEntity = ref Unsafe.Add(ref _currentEntity, 1);
+            if(_checkSparse)
+            {
+                
+            }
+            else
+            {
+                return true;
+            }
         }
 
-        _componentIndex = 0;
-        _archetypeIndex++;
-
-        while ((uint)_archetypeIndex < (uint)_archetypes.Length)
+        while (--_archetypesLeft >= 0)
         {
-            var cur = _archetypes[_archetypeIndex];
-            _entityIds = cur.GetEntitySpan();
-            if (!_entityIds.IsEmpty)
-                return true;
+            _current = ref Unsafe.Add(ref _current, 1);
+            _entitiesLeft = _current.EntityCount - 1;
+
+            if (_entitiesLeft < 0)
+                continue;
+
+            while (_checkSparse)
+            {
+
+            }
+
+            _currentEntity = ref _current.GetEntityDataReference();
             
-            _archetypeIndex++;
+            return true;
         }
 
         return false;
@@ -146,3 +173,4 @@ public ref struct EntityQueryEnumerator
     /// </summary>
     public EntityQueryEnumerator GetEnumerator() => this;
 }
+#endif

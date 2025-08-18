@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 #if !NETSTANDARD
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 #endif
 
 namespace Frent.Collections;
@@ -44,6 +45,9 @@ internal struct Bitset
     /// <summary>
     /// Calculate the bitwise AND of two bitsets and returns true if any bit is remaining
     /// </summary>
+    /// <remarks>
+    /// Should be aligned
+    /// </remarks>
     public static bool AndAndThenAnySet(ref Bitset a, ref Bitset b)
     {
 #if NETSTANDARD
@@ -59,6 +63,30 @@ internal struct Bitset
         return (vec1 & vec2) != Vector256<ulong>.Zero;
 #endif
     }
+
+#if !NETSTANDARD
+    /// <summary>
+    /// True if pass, false if fail
+    /// </summary>
+    /// <remarks>
+    /// Should be aligned
+    /// </remarks>
+    public static bool Filter(ref Bitset set, Vector256<ulong> include, Vector256<ulong> exclude)
+    {
+        Vector256<ulong> self = Unsafe.As<ulong, Vector256<ulong>>(ref set._0);
+
+        if(Avx2.IsSupported)
+        {
+            // zero for pass
+            // zf = exclude
+            // 
+            Avx512Vbmi.TestNotZAndNotC(include, );
+            return (include & self) == include && Avx.TestZ(include, exclude);
+        }
+        // remaining bits == fail
+        return (include & self) == include && (exclude & self) == Vector256<ulong>.Zero;
+    }
+#endif
 
     internal int? TryFindIndexOfBitGreaterThanOrEqualTo(int bitIndex)
     {
