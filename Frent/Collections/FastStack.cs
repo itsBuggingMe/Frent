@@ -103,6 +103,10 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
         _nextIndex = 0;
     }
 
+#if !NETSTANDARD2_1
+    public readonly ref T GetDataReference() => ref MemoryMarshal.GetArrayDataReference(_buffer);
+#endif
+
     public void ClearWithoutClearingGCReferences() => _nextIndex = 0;
 
     readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
