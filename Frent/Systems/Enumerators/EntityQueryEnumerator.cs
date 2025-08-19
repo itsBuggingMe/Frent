@@ -190,29 +190,39 @@ public ref struct EntityQueryEnumerator
     private readonly World _world;
     private ref Archetype _currentArchetype;
     private ref EntityIDOnly _currentEntity;
+    private Span<Bitset> _archetypeBitsets;
 
     private int _archetypesLeft;
     private int _entitiesLeft;
 
+    private Entity _current;
+
     private readonly System.Runtime.Intrinsics.Vector256<ulong> _include;
     private readonly System.Runtime.Intrinsics.Vector256<ulong> _exclude;
-    private readonly ref Bitset _entityBitsetsFirst;
+
+    // inverse of _entitiesLeft
+    private int _sparseIndex;
 
     internal EntityQueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
-        _include = query.IncludeMask.AsVector();
-        _exclude = query.ExcludeMask.AsVector();
+
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        if (query.HasSparseRules)
+        {
+            _include = query.IncludeMask.AsVector();
+            _exclude = query.ExcludeMask.AsVector();
+        }
 
         _currentArchetype = ref Unsafe.Subtract(ref query.GetArchetypeDataReference(), 1);
         _archetypesLeft = query.ArchetypeCount;
     }
-    
+
     /// <summary>
-    /// The current <see cref="Entity"/> instance.
+    /// The current tuple of component references and the <see cref="Entity"/> instance.
     /// </summary>
-    public Entity Current => _currentEntity.ToEntity(_world);
+    public Entity Current => _current;
 
     /// <summary>
     /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
@@ -228,17 +238,26 @@ public ref struct EntityQueryEnumerator
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()
     {
-BeginConsumeEntities:
+    BeginConsumeEntities:
 
         while (--_entitiesLeft >= 0)
         {// a okay
+            _sparseIndex++;
+
             _currentEntity = ref Unsafe.Add(ref _currentEntity, 1);
-            if (!Unsafe.IsNullRef(ref _entityBitsetsFirst))
+
+            if (_sparseIndex >= 0)
             {
-                ref Bitset set = ref Unsafe.Add(ref _entityBitsetsFirst, _currentEntity.ID);
+                if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
+                    continue;
+
+                ref Bitset set = ref _archetypeBitsets[_sparseIndex];
+
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
             }
+
+            _current = _currentEntity.ToEntity(_world);
 
             return true;
         }
@@ -247,8 +266,12 @@ BeginConsumeEntities:
         {
             _currentArchetype = ref Unsafe.Add(ref _currentArchetype, 1);
             _entitiesLeft = _currentArchetype.EntityCount;
-            // point to index -1
+            if (_sparseIndex >= 0)
+            {
+                _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
+            }
 
+            // point to index -1
             _currentEntity = ref Unsafe.Subtract(ref _currentArchetype.GetEntityDataReference(), 1);
 
             goto BeginConsumeEntities;
@@ -267,11 +290,13 @@ BeginConsumeEntities:
 /// Enumerates all component references of the specified types and the <see cref="Entity"/> instance for each <see cref="Entity"/> in a query.
 /// </summary>
 /// <variadic />
+[Variadic(AttributeHelpers.QueryEnumerator)]
 public ref struct EntityQueryEnumerator<T>
 {
     private readonly World _world;
     private ref Archetype _currentArchetype;
     private ref EntityIDOnly _currentEntity;
+    private Span<Bitset> _archetypeBitsets;
 
     private int _archetypesLeft;
     private int _entitiesLeft;
@@ -280,13 +305,21 @@ public ref struct EntityQueryEnumerator<T>
 
     private readonly System.Runtime.Intrinsics.Vector256<ulong> _include;
     private readonly System.Runtime.Intrinsics.Vector256<ulong> _exclude;
-    private readonly ref Bitset _entityBitsetsFirst;
+
+    // inverse of _entitiesLeft
+    private int _sparseIndex;
+
     internal EntityQueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
-        _include = query.IncludeMask.AsVector();
-        _exclude = query.ExcludeMask.AsVector();
+
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        if (query.HasSparseRules)
+        {
+            _include = query.IncludeMask.AsVector();
+            _exclude = query.ExcludeMask.AsVector();
+        }
 
         _currentArchetype = ref Unsafe.Subtract(ref query.GetArchetypeDataReference(), 1);
         _archetypesLeft = query.ArchetypeCount;
@@ -315,17 +348,23 @@ public ref struct EntityQueryEnumerator<T>
 
         while (--_entitiesLeft >= 0)
         {// a okay
+            _sparseIndex++;
+
             _currentEntity = ref Unsafe.Add(ref _currentEntity, 1);
 
-            _current.Entity = _currentEntity.ToEntity(_world);
-            _current.Item1.RawRef = ref Unsafe.Add(ref _current.Item1.RawRef, 1);
-
-            if (!Unsafe.IsNullRef(ref _entityBitsetsFirst))
+            if (_sparseIndex >= 0)
             {
-                ref Bitset set = ref Unsafe.Add(ref _entityBitsetsFirst, _currentEntity.ID);
+                if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
+                    continue;
+
+                ref Bitset set = ref _archetypeBitsets[_sparseIndex];
+
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
             }
+
+            _current.Entity = _currentEntity.ToEntity(_world);
+            _current.Item1.RawRef = ref Unsafe.Add(ref _current.Item1.RawRef, 1);
 
             return true;
         }
@@ -334,10 +373,17 @@ public ref struct EntityQueryEnumerator<T>
         {
             _currentArchetype = ref Unsafe.Add(ref _currentArchetype, 1);
             _entitiesLeft = _currentArchetype.EntityCount;
+            if (_sparseIndex >= 0)
+            {
+                _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
+                _sparseIndex = -1;
+            }
+
             // point to index -1
             _currentEntity = ref Unsafe.Subtract(ref _currentArchetype.GetEntityDataReference(), 1);
 
             _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);
+
 
             goto BeginConsumeEntities;
         }

@@ -83,7 +83,7 @@ internal struct Bitset
     }
 
 #if !NETSTANDARD
-    public Vector256<ulong> AsVector() => Unsafe.As<Bitset, Vector256<ulong>>(ref this);
+    public Vector256<ulong> AsVector() => Vector256.LoadUnsafe(ref _0);
     /// <summary>
     /// True if pass, false if fail
     /// </summary>

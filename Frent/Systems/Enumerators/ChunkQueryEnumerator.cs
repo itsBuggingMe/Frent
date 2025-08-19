@@ -7,6 +7,7 @@ namespace Frent.Systems;
 /// Enumerates all component references of the specified types for each <see cref="Entity"/> in a query in chunks.
 /// </summary>
 /// <variadic />
+[Variadic("Component<T>.IsSparseComponent", "|Component<T$>.IsSparseComponent || |false")]
 [Variadic("                Span = cur.GetComponentSpan<T>(),",
     "|                Span$ = cur.GetComponentSpan<T$>(),\n|")]
 [Variadic("<T>", "<|T$, |>")]
@@ -17,6 +18,9 @@ public ref struct ChunkQueryEnumerator<T>
     private int _archetypeIndex;
     internal ChunkQueryEnumerator(Query query)
     {
+        if (Component<T>.IsSparseComponent)
+            throw new NotSupportedException("Cannot enumerate chunks over sparse components!");
+
         _world = query.World;
         _world.EnterDisallowState();
         _archetypes = query.AsSpan();

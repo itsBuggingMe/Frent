@@ -8,4 +8,6 @@ internal static class AttributeHelpers
 
     public const string RefArgFrom = "ref TArg arg";
     public const string RefArgPattern = "|ref TArg$ arg$, |";
+
+    public const string QueryEnumerator = "QueryEnumerator";
 }
