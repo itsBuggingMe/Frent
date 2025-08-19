@@ -20,11 +20,13 @@ public partial class Query
     private ImmutableArray<Rule> _archetypicalRules;
     private ImmutableArray<Rule> _sparseRules;
 
-    private Bitset _hasSparseComponents;
-    private Bitset _excludeSparseComponents;
+    private readonly Bitset _hasSparseComponents;
+    private readonly Bitset _excludeSparseComponents;
     internal readonly bool HasSparseExclusions = false;
+    internal readonly bool HasSparseRules = false;
 
     internal Bitset ExcludeMask => _excludeSparseComponents;
+    internal Bitset IncludeMask => _hasSparseComponents;
 
     internal World World { get; init; }
     internal bool IncludeDisabled { get; init; }
@@ -38,6 +40,8 @@ public partial class Query
         {
             if(rule.IsSparseRule)
             {
+                HasSparseRules = true;
+
                 builderSparse.Add(rule);
 
                 Debug.Assert(rule.SparseIndex != 0);

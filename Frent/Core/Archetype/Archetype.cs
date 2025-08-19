@@ -17,6 +17,7 @@ internal partial class Archetype
     internal ArchetypeID ID => _archetypeID;
     internal ImmutableArray<ComponentID> ArchetypeTypeArray => _archetypeID.Types;
     internal ImmutableArray<TagID> ArchetypeTagArray => _archetypeID.Tags;
+    internal EntityIDOnly[] EntityIDArray => _entities;
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
     internal int EntityCount => NextComponentIndex;
     internal Span<T> GetComponentSpan<T>()

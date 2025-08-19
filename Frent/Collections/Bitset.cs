@@ -21,6 +21,7 @@ internal struct Bitset
         _2 == default &&
         _3 == default;
 
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(int index)
     {
@@ -52,10 +53,10 @@ internal struct Bitset
     {
 #if NETSTANDARD
         return (
-            (a._0 & a._0) |
-            (a._1 & a._1) |
-            (a._2 & a._2) |
-            (a._3 & a._3)) != 0;
+            (a._0 & b._0) |
+            (a._1 & b._1) |
+            (a._2 & b._2) |
+            (a._3 & b._3)) != 0;
 #else
         Vector256<ulong> vec1 = Unsafe.As<ulong, Vector256<ulong>>(ref a._0);
         Vector256<ulong> vec2 = Unsafe.As<ulong, Vector256<ulong>>(ref b._0);
@@ -65,6 +66,7 @@ internal struct Bitset
     }
 
 #if !NETSTANDARD
+    public Vector256<ulong> AsVector() => Unsafe.As<Bitset, Vector256<ulong>>(ref this);
     /// <summary>
     /// True if pass, false if fail
     /// </summary>
@@ -75,17 +77,35 @@ internal struct Bitset
     {
         Vector256<ulong> self = Unsafe.As<ulong, Vector256<ulong>>(ref set._0);
 
-        if(Avx2.IsSupported)
+        if(Avx.IsSupported)
         {
-            // zero for pass
-            // zf = exclude
-            // 
-            Avx512Vbmi.TestNotZAndNotC(include, );
-            return (include & self) == include && Avx.TestZ(include, exclude);
+            return Avx.TestC(self, include) && Avx.TestZ(self, exclude);
         }
         // remaining bits == fail
         return (include & self) == include && (exclude & self) == Vector256<ulong>.Zero;
     }
+#else
+    public static bool Filter(ref Bitset self, Bitset include, Bitset exclude)
+    {
+        return (include & self) == include && (exclude & self) == default;
+    }
+
+    public static Bitset operator &(Bitset l, Bitset r) => new Bitset
+    {
+        _0 = l._0 & r._0,
+        _1 = l._1 & r._1,
+        _2 = l._2 & r._2,
+        _3 = l._3 & r._3,
+    };
+
+    public static bool operator ==(Bitset l, Bitset r) =>
+        l._0 == r._0 &&
+        l._1 == r._1 &&
+        l._2 == r._2 &&
+        l._3 == r._3;
+
+    public static bool operator !=(Bitset l, Bitset r) =>
+        !(l == r);
 #endif
 
     internal int? TryFindIndexOfBitGreaterThanOrEqualTo(int bitIndex)
