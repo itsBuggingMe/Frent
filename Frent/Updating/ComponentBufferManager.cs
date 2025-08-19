@@ -251,10 +251,9 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     {
         Debug.Assert(!world.AllowStructualChanges);
 
-        Span<int> allIds = sparseSet.SparseSpan();
         foreach (var runner in Component<TComponent>.UpdateMethods)
         {
-            runner.Runner.RunSparse(sparseSet, world, allIds);
+            runner.Runner.RunSparse(sparseSet, world);
         }
     }
 
@@ -264,7 +263,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
 
         foreach (var runner in Component<TComponent>.UpdateMethods)
         {
-            runner.Runner.RunSparse(sparseSet, world, entityIds);
+            runner.Runner.RunSparse(sparseSet, world);
         }
     }
 }

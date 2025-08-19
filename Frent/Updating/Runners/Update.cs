@@ -24,13 +24,39 @@ public class UpdateRunner<TComp> : IRunner
         }
     }
 
-    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world)
     {
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
 
-        for (int i = idsToUpdate.Length - 1; i >= 0; i--)
+        for (int i = sparseSet.Count - 1; i >= 0; i--)
         {
             component.Update();
+
+            component = ref Unsafe.Add(ref component, 1);
+        }
+    }
+
+    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
+    {
+        ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
+        ReadOnlySpan<int> map = sparseSet.SparseSpan();
+
+        foreach (var entityId in idsToUpdate)
+        {
+            if (!((uint)entityId < (uint)map.Length))
+            {
+                continue;
+            }
+
+            int denseIndex = map[entityId];
+
+            // ids in idsToUpdate are not guarenteed to be in this set
+            if (denseIndex <= 0)
+            {
+                continue;
+            }
+
+            Unsafe.Add(ref component, denseIndex).Update();
         }
     }
 }
@@ -78,9 +104,10 @@ public class UpdateRunner<TComp, TArg> : IRunner
     NullRefException: Unsafe.NullRef<int>() = 0;
     }
 
-    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
+
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world)
     {
-        ref int entityId = ref MemoryMarshal.GetReference(idsToUpdate);
+        ref int entityId = ref sparseSet.GetEntityIDsDataReference();
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
 
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
@@ -90,7 +117,7 @@ public class UpdateRunner<TComp, TArg> : IRunner
 
         Entity entity = world.DefaultWorldEntity;
 
-        for (int i = idsToUpdate.Length - 1; i >= 0; i--, entityId = ref Unsafe.Add(ref entityId, 1))
+        for (int i = sparseSet.Count - 1; i >= 0; i--)
         {
             entity.EntityID = entityId;
             var entityData = entity.GetCachedLookup(world);
@@ -105,11 +132,56 @@ public class UpdateRunner<TComp, TArg> : IRunner
             }
             else
             {
-                nint index = entityData.ComponentDataIndex<TArg>();
-                arg = ref entityData.Get<TArg>(index);
+                arg = ref entityData.Get<TArg>();
             }
 
             component.Update(ref arg);
+
+            component = ref Unsafe.Add(ref component, 1);
+            entityId = ref Unsafe.Add(ref entityId, 1);
+        }
+
+        return;
+    NullRefException: Unsafe.NullRef<int>() = 0;
+    }
+
+    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
+    {
+        ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
+
+        ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
+        ReadOnlySpan<int> map = sparseSet.SparseSpan();
+
+        // folded   
+        ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
+
+        Entity entity = world.DefaultWorldEntity;
+
+        foreach (var entityId in idsToUpdate)
+        {
+            if (!((uint)entityId < (uint)map.Length))
+                continue;
+            int denseIndex = map[entityId];
+            if (denseIndex <= 0)
+                continue;
+
+            entity.EntityID = entityId;
+            var entityData = entity.GetCachedLookup(world);
+
+            ref TArg arg = ref Unsafe.NullRef<TArg>();
+            if (Component<TArg>.IsSparseComponent) // folded
+            {
+                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
+                int index = sparseArgArray[entity.EntityID];
+                if (index < 0) goto NullRefException;
+                arg = ref Unsafe.Add(ref sparseFirst, index);
+            }
+            else
+            {
+                arg = ref entityData.Get<TArg>();
+            }
+
+            Unsafe.Add(ref component, denseIndex).Update(ref arg);
         }
 
         return;
