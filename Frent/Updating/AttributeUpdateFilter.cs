@@ -94,7 +94,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         foreach (SparseUpdateMethod method in sparseUpdates)
         {
-            method.Runner.RunSparse(method.SparseSet, world, method.SparseSet.SparseSpan());
+            method.Runner.RunSparse(method.SparseSet, world);
         }
     }
 
@@ -146,14 +146,10 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             do
             {
                 i++;
-
             } while (i < sparseMethods.Length && set == sparseMethods[i].SparseSet);
 
             ArraySegment<SparseUpdateMethod> methods = new(_sparseMethods, start, i - start);
-            for (int j = 0; j < set.Count; j += maxChunkSize)
-            {
-                FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, j, Math.Min(maxChunkSize, set.Count - j), _updateCount!);
-            }
+            FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, _updateCount!);
         }
     }
 
@@ -297,6 +293,11 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
                 item.Runner.RunArchetypical(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world, previousEntityCount, entitiesToUpdate);
             }
+        }
+
+        foreach(var sparseMethod in _sparseMethods)
+        {
+            sparseMethod.Runner.RunSparseSubset(sparseMethod.SparseSet, world, ids);
         }
     }
 

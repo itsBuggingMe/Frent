@@ -25,12 +25,9 @@ internal static class FrentMultithread
 
         private World? _world;
         private ArraySegment<SparseUpdateMethod> _update;
-        private int _start;
-        private int _length;
         private StrongBox<int>? _counter;
 
-        public static void UnsafeQueueWork(World world, ArraySegment<SparseUpdateMethod> method,
-            int start, int length, StrongBox<int> counter)
+        public static void UnsafeQueueWork(World world, ArraySegment<SparseUpdateMethod> method, StrongBox<int> counter)
         {
             if(method.Count == 0)
                 return;
@@ -45,8 +42,6 @@ internal static class FrentMultithread
             }
 
             workItem._world = world;
-            workItem._start = start;
-            workItem._length = length;
             workItem._update = method;
             workItem._counter = counter;
 
@@ -57,17 +52,14 @@ internal static class FrentMultithread
                 Span<SparseUpdateMethod> methods = workItem._update.AsSpan();
                 ComponentSparseSetBase set = methods[0].SparseSet;
 
-                Span<int> entities = set.SparseSpan().Slice(workItem._start, workItem._length);
                 foreach (SparseUpdateMethod method in methods)
                 {
-                    method.Runner.RunSparse(set, workItem._world!, entities);
+                    method.Runner.RunSparse(set, workItem._world!);
                 }
 
                 Interlocked.Decrement(ref workItem._counter!.Value);
 
                 workItem._world = default;
-                workItem._start = default;
-                workItem._length = default;
                 workItem._update = default;
                 workItem._counter = default;
 

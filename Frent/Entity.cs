@@ -256,10 +256,7 @@ public partial struct Entity : IEquatable<Entity>
         private ComponentStorageRecord[] Components = componentStorageRecord;
         private readonly nint Index = index;
 
-        /// <remarks><paramref name="componentDataIndex"/> should be from a <see cref="ComponentDataIndex{T}"/> call from this struct.</remarks>
-        public ref T Get<T>(nint componentDataIndex) => ref UnsafeExtensions.UnsafeCast<T[]>(Components.UnsafeArrayIndex(componentDataIndex).Buffer).UnsafeArrayIndex(Index);
-
-        public nint ComponentDataIndex<T>() => ComponentIndexMap.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+        public ref T Get<T>() => ref UnsafeExtensions.UnsafeCast<T[]>(Components.UnsafeArrayIndex(ComponentIndexMap.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits).Buffer).UnsafeArrayIndex(Index);
     }
 #else
     internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
@@ -268,10 +265,12 @@ public partial struct Entity : IEquatable<Entity>
         private ref ComponentStorageRecord Components = ref MemoryMarshal.GetArrayDataReference(componentStorageRecord);
         private readonly nint Index = index;
 
-        /// <remarks><paramref name="componentDataIndex"/> should be from a <see cref="ComponentDataIndex{T}"/> call from this struct.</remarks>
-        public ref T Get<T>(nint componentDataIndex) => ref UnsafeExtensions.UnsafeCast<T[]>(Unsafe.Add(ref Components, componentDataIndex).Buffer).UnsafeArrayIndex(Index);
-
-        public nint ComponentDataIndex<T>() => Unsafe.Add(ref ComponentIndexMap, Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+        public ref T Get<T>()
+        {
+            var index = Unsafe.Add(ref ComponentIndexMap, Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+            T[] buffer = UnsafeExtensions.UnsafeCast<T[]>(Unsafe.Add(ref Components, index).Buffer);
+            return ref buffer.UnsafeArrayIndex(Index);
+        }
     }
 #endif
     #endregion

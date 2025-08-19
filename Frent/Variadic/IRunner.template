@@ -11,10 +11,8 @@ from:
             }
             else
             {
-                nint index = entityData.ComponentDataIndex<TArg>();
-                arg = ref entityData.Get<TArg>(index);
+                arg = ref entityData.Get<TArg>();
             }
-
 to:
 |            ref TArg$ arg$ = ref Unsafe.NullRef<TArg$>();
             if (Component<TArg$>.IsSparseComponent)
@@ -26,8 +24,7 @@ to:
             }
             else
             {
-                nint index = entityData.ComponentDataIndex<TArg$>();
-                arg$ = ref entityData.Get<TArg$>(index);
+                arg$ = ref entityData.Get<TArg$>();
             }
 |
 from:
