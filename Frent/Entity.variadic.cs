@@ -61,7 +61,10 @@ partial struct Entity
         if (NeighborCache<T>.HasAnySparseComponents)
         {
             thisLookup.Flags |= EntityFlags.HasSparseComponents;
-            ref Bitset set = ref MemoryHelpers.GetBitset(ref world.SparseComponentTable, EntityID);
+            ref Bitset set = ref NeighborCache<T>.HasAnyArchetypicalComponents ?
+                ref to!.GetBitset(archIndex) : // guarded by HasAnyArchetypicalComponents
+                ref thisLookup.Archetype.GetBitset(thisLookup.Index);
+
             if(Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
         }
 
@@ -135,7 +138,8 @@ partial struct Entity
         ref ComponentSparseSetBase start = ref Unsafe.NullRef<ComponentSparseSetBase>();
         if (NeighborCache<T>.HasAnySparseComponents)
         {
-            bits = ref MemoryHelpers.GetBitset(ref world.SparseComponentTable, EntityID);
+            bits = thisLookup.Archetype.GetBitset(thisLookup.Index);
+
             start = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
         }
 

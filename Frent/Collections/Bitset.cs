@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 #if !NETSTANDARD
 using System.Runtime.Intrinsics;
@@ -30,6 +31,18 @@ internal struct Bitset
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Bitset CompSet(int index)
+    {
+        if (index != 0)
+        {
+            ref ulong lane = ref Unsafe.Add(ref _0, (nuint)(uint)index >> 6);
+            lane |= HighBit >> (index & 63);
+        }
+
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ClearAt(int index)
     {
         ref ulong lane = ref Unsafe.Add(ref _0, (nuint)(uint)index >> 6);
@@ -46,9 +59,6 @@ internal struct Bitset
     /// <summary>
     /// Calculate the bitwise AND of two bitsets and returns true if any bit is remaining
     /// </summary>
-    /// <remarks>
-    /// Should be aligned
-    /// </remarks>
     public static bool AndAndThenAnySet(ref Bitset a, ref Bitset b)
     {
 #if NETSTANDARD
@@ -58,8 +68,15 @@ internal struct Bitset
             (a._2 & b._2) |
             (a._3 & b._3)) != 0;
 #else
-        Vector256<ulong> vec1 = Unsafe.As<ulong, Vector256<ulong>>(ref a._0);
-        Vector256<ulong> vec2 = Unsafe.As<ulong, Vector256<ulong>>(ref b._0);
+        // TODO: use native memory and Vector256.LoadAlignedNonTemporal?
+
+        Vector256<ulong> vec1 = Vector256.LoadUnsafe(ref a._0);
+        Vector256<ulong> vec2 = Vector256.LoadUnsafe(ref b._0);
+
+        if (Avx.IsSupported)
+        {
+            return !Avx.TestZ(vec1, vec2);
+        }
 
         return (vec1 & vec2) != Vector256<ulong>.Zero;
 #endif
@@ -75,7 +92,7 @@ internal struct Bitset
     /// </remarks>
     public static bool Filter(ref Bitset set, Vector256<ulong> include, Vector256<ulong> exclude)
     {
-        Vector256<ulong> self = Unsafe.As<ulong, Vector256<ulong>>(ref set._0);
+        Vector256<ulong> self = Vector256.LoadUnsafe(ref set._0);
 
         if(Avx.IsSupported)
         {
@@ -84,10 +101,29 @@ internal struct Bitset
         // remaining bits == fail
         return (include & self) == include && (exclude & self) == Vector256<ulong>.Zero;
     }
+
+    public static void AssertHasSparseComponents(ref Bitset sparseBits, ref Bitset include)
+    {
+        Vector256<ulong> self = Vector256.LoadUnsafe(ref sparseBits._0);
+        Vector256<ulong> includeVec = Vector256.LoadUnsafe(ref include._0);
+
+        if (Avx.TestC(self, includeVec))
+            return;
+
+        FrentExceptions.Throw_NullReferenceException();
+    }
 #else
     public static bool Filter(ref Bitset self, Bitset include, Bitset exclude)
     {
         return (include & self) == include && (exclude & self) == default;
+    }
+
+    public static void AssertHasSparseComponents(ref Bitset sparseBits, ref Bitset include)
+    {
+        if ((include & sparseBits) == include)
+            return;
+
+        Unsafe.NullRef<int>() = 0;
     }
 
     public static Bitset operator &(Bitset l, Bitset r) => new Bitset

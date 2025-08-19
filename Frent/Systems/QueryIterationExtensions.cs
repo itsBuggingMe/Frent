@@ -5,6 +5,7 @@ using Frent.Variadic.Generator;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace Frent.Systems;
 
@@ -81,12 +82,13 @@ public static partial class QueryIterationExtensions
         where TAction : IAction<T>
     {
         Bitset excludeBits = query.ExcludeMask;
-        Span<Bitset> worldBitsets = query.World.SparseComponentTable;
 
         ref T sparseFirst = ref IRunner.InitSparse<T>(ref first, out Span<int> sparseArgArray);
 
         foreach (var archetype in query.AsSpan())
         {
+            Span<Bitset> bitset = archetype.SparseBitsetSpan();
+
             //use ref instead of span to avoid extra locals
             scoped ref T c1 = ref Component<T>.IsSparseComponent ?
                 ref Unsafe.NullRef<T>() :
@@ -94,7 +96,7 @@ public static partial class QueryIterationExtensions
 
             ref EntityIDOnly entity = ref archetype.GetEntityDataReference();
 
-            for (nint i = archetype.EntityCount - 1; i >= 0; i--)
+            for (int i = archetype.EntityCount - 1; i >= 0; i--)
             {
                 int id = entity.ID;
                 if (Component<T>.IsSparseComponent)
@@ -106,7 +108,7 @@ public static partial class QueryIterationExtensions
                 }
 
                 // exclude
-                if ((uint)id < (uint)worldBitsets.Length && Bitset.AndAndThenAnySet(ref excludeBits, ref worldBitsets[id]))
+                if ((uint)i < (uint)bitset.Length && Bitset.AndAndThenAnySet(ref excludeBits, ref bitset[i]))
                 {
                     continue;
                 }

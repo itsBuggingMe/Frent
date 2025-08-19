@@ -14,11 +14,6 @@ internal static class MemoryHelpers
 {
     public const int MaxComponentCount = 127;
 
-#if NETSTANDARD2_1
-    [ThreadStatic]
-    internal static readonly ComponentHandle[] SharedTempComponentHandleBuffer = new ComponentHandle[8];
-#endif
-
     [ThreadStatic]
     private static ComponentStorageRecord[] s_sharedTempComponentStorageBuffer = [];
 

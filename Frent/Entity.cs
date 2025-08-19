@@ -166,7 +166,7 @@ public partial struct Entity : IEquatable<Entity>
             return location.Archetype.ArchetypeTypeArray;
 
         var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length + 
-            world.SparseComponentTable[EntityID].PopCnt());
+            location.GetBitset().PopCnt());
 
         foreach (var componentID in this)
         {
@@ -199,7 +199,7 @@ public partial struct Entity : IEquatable<Entity>
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
             _bitset = entityLocation.HasFlag(EntityFlags.HasSparseComponents)
-                ? world.SparseComponentTable[entity.EntityID]
+                ? entityLocation.GetBitset()
                 : default;
 
             _expectedVersion = entity.EntityVersion;
@@ -246,6 +246,26 @@ public partial struct Entity : IEquatable<Entity>
     {
         ref var record = ref world.EntityTable[EntityID];
         Archetype archetype = record.Archetype;
+        return new EntityLookup(archetype.ComponentTagTable, archetype.Components, record.Index);
+    }
+
+    /// <summary>
+    /// expected must not be default
+    /// </summary>
+    internal EntityLookup GetCachedLookupAndAssertSparseComponent(World world, Bitset expected)
+    {
+        Debug.Assert(!expected.IsDefault);
+        ref var record = ref world.EntityTable[EntityID];
+        Archetype archetype = record.Archetype;
+        Span<Bitset> bitsets = archetype.SparseBitsetSpan();
+
+        int index = record.Index;
+        // match behavior of archetypical component missing
+        if (!((uint)index < (uint)bitsets.Length))
+            FrentExceptions.Throw_NullReferenceException();
+
+        Bitset.AssertHasSparseComponents(ref bitsets[index], ref expected);
+
         return new EntityLookup(archetype.ComponentTagTable, archetype.Components, record.Index);
     }
 

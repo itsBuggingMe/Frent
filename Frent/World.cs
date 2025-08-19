@@ -24,7 +24,7 @@ namespace Frent;
  * [ ] Systems
  * [x] Deferred Updates
  * [x] Benchmarks
- * [ ] Stress tests!
+ * [ ] Fuzzer project
  * [ ] Tests for lifetime for sparse + archetypical & for all apis, create, create many, add, remove, tag, detach, delete, world dispose +
  */
 
@@ -40,8 +40,6 @@ public partial class World : IDisposable
     //entity ID -> entity metadata
     internal Table<EntityLocation> EntityTable = new Table<EntityLocation>(256);
 
-    // entity ID -> sparse component bitset
-    internal Bitset[] SparseComponentTable = [];
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal ComponentSparseSetBase[] WorldSparseSetTable;

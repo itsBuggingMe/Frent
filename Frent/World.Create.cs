@@ -66,7 +66,7 @@ partial class World
 
         if (hasSparseComponent)
         {
-            ref Bitset bitset = ref MemoryHelpers.GetBitset(ref SparseComponentTable, id);
+            ref Bitset bitset = ref archetypes.Archetype.GetBitset(eloc.Index);
 
             if (Component<T>.IsSparseComponent) bitset.Set(Component<T>.SparseSetComponentIndex);
         }

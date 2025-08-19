@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Frent.Collections;
 
 namespace Frent.Core;
 
@@ -20,6 +21,12 @@ internal partial class Archetype
     internal EntityIDOnly[] EntityIDArray => _entities;
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
     internal int EntityCount => NextComponentIndex;
+    internal ref Bitset GetBitset(int index) => ref MemoryHelpers.GetValueOrResize(ref _sparseBits, index);
+#if NETSTANDARD
+    internal Span<Bitset> SparseBitsetSpan() => _sparseBits;
+#else
+    internal Span<Bitset> SparseBitsetSpan() => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_sparseBits), _sparseBits.Length);
+#endif
     internal Span<T> GetComponentSpan<T>()
     {
         var components = Components;

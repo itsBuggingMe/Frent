@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Frent.Collections;
 
 namespace Frent;
 
@@ -47,6 +48,11 @@ internal struct EntityLocation
         var res = (entityFlags & target) != EntityFlags.None;
         return res;
     }
+
+    /// <remarks>
+    /// May resize the internal bitset buffer
+    /// </remarks>
+    public ref Bitset GetBitset() => ref Archetype.GetBitset(Index);
 }
 
 [Flags]

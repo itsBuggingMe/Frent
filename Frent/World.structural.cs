@@ -227,7 +227,7 @@ partial class World
 
     internal void CleanupSparseComponents(Entity entity, ref EntityLocation currentLookup)
     {
-        ref var bitset = ref SparseComponentTable[entity.EntityID];
+        ref var bitset = ref currentLookup.GetBitset();
 
         Span<ComponentSparseSetBase> lookup = WorldSparseSetTable.AsSpan();
         foreach (int offset in bitset)

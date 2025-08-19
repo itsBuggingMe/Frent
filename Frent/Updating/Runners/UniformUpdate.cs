@@ -73,9 +73,12 @@ public class UniformUpdateRunner<TComp, TUniform> : IRunner
 public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
     where TComp : IUniformComponent<TUniform, TArg>
 {
+    private static readonly Bitset SparseIncludeBits = new Bitset()
+        .CompSet(Component<TArg>.SparseSetComponentIndex)
+        ;
+
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
-        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
@@ -88,28 +91,30 @@ public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for (int i = length - 1; i >= 0; i--)
+        Span<Bitset> bitsets = b.SparseBitsetSpan();
+        // TODO: double check that the jit register promotes this.
+        // This needs to stay in a ymm register on x86
+        Bitset includeBits = SparseIncludeBits;
+
+        for (int i = 0; i < length; i++)
         {
-            entityIds.SetEntity(ref entity);
+            if (Component<TArg>.IsSparseComponent && (uint)i < (uint)bitsets.Length)
+            {
+                Bitset.AssertHasSparseComponents(ref bitsets[i], ref includeBits);
+            }
 
             if (Component<TArg>.IsSparseComponent)
             {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
-                int index = sparseArgArray[entity.EntityID];
-                if (index < 0) goto NullRefException;
+                int index = sparseArgArray.UnsafeSpanIndex(entity.EntityID);
                 arg = ref Unsafe.Add(ref sparseFirst, index);
             }
 
             comp.Update(uniform, ref arg);
 
-            entityIds = ref Unsafe.Add(ref entityIds, 1);
             comp = ref Unsafe.Add(ref comp, 1);
 
             if (!Component<TArg>.IsSparseComponent) arg = ref Unsafe.Add(ref arg, 1);
         }
-
-        return;
-    NullRefException: Unsafe.NullRef<int>() = 0;
     }
 
     void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world)
@@ -128,29 +133,19 @@ public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
         for (int i = sparseSet.Count - 1; i >= 0; i--)
         {
             entity.EntityID = entityId;
-            var entityData = entity.GetCachedLookup(world);
+            var entityData = Component<TArg>.IsSparseComponent
+                ? entity.GetCachedLookupAndAssertSparseComponent(world, SparseIncludeBits)
+                : entity.GetCachedLookup(world);
 
-            ref TArg arg = ref Unsafe.NullRef<TArg>();
-            if (Component<TArg>.IsSparseComponent) // folded
-            {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
-                int index = sparseArgArray[entity.EntityID];
-                if (index < 0) goto NullRefException;
-                arg = ref Unsafe.Add(ref sparseFirst, index);
-            }
-            else
-            {
-                arg = ref entityData.Get<TArg>();
-            }
+            ref TArg arg = ref Component<TArg>.IsSparseComponent
+                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
+                : ref entityData.Get<TArg>();
 
             component.Update(uniform, ref arg);
 
             component = ref Unsafe.Add(ref component, 1);
             entityId = ref Unsafe.Add(ref entityId, 1);
         }
-
-        return;
-    NullRefException: Unsafe.NullRef<int>() = 0;
     }
 
     void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
@@ -175,25 +170,15 @@ public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
                 continue;
 
             entity.EntityID = entityId;
-            var entityData = entity.GetCachedLookup(world);
+            var entityData = Component<TArg>.IsSparseComponent
+                ? entity.GetCachedLookupAndAssertSparseComponent(world, SparseIncludeBits)
+                : entity.GetCachedLookup(world);
 
-            ref TArg arg = ref Unsafe.NullRef<TArg>();
-            if (Component<TArg>.IsSparseComponent) // folded
-            {
-                if (!((uint)entity.EntityID < (uint)sparseArgArray.Length)) goto NullRefException;
-                int index = sparseArgArray[entity.EntityID];
-                if (index < 0) goto NullRefException;
-                arg = ref Unsafe.Add(ref sparseFirst, index);
-            }
-            else
-            {
-                arg = ref entityData.Get<TArg>();
-            }
+            ref TArg arg = ref Component<TArg>.IsSparseComponent
+                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
+                : ref entityData.Get<TArg>();
 
             Unsafe.Add(ref component, denseIndex).Update(uniform, ref arg);
         }
-
-        return;
-    NullRefException: Unsafe.NullRef<int>() = 0;
     }
 }

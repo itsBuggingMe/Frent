@@ -295,7 +295,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        foreach(var sparseMethod in _sparseMethods)
+        foreach(var sparseMethod in _sparseMethods.AsSpan(0, _sparseMethodsCount))
         {
             sparseMethod.Runner.RunSparseSubset(sparseMethod.SparseSet, world, ids);
         }
