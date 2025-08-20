@@ -103,7 +103,7 @@ public partial class Query
 }
 
 /// <variadic />
-//[Variadic("<T>", "<|T$, |>")]
+[Variadic("<T>", "<|T$, |>")]
 partial class Query
 {
     /// <summary>

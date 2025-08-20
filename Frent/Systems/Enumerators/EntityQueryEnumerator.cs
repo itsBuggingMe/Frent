@@ -14,36 +14,44 @@ namespace Frent.Systems;
 public ref struct EntityQueryEnumerator
 {
     private readonly World _world;
-    private readonly Span<Archetype> _archetypes;
-    private Archetype? _currentArchetype;
-    private EntityIDOnly[] _currentEntity;
+    private Span<Archetype> _archetypes;
+    private Span<EntityIDOnly> _entities;
 
-    private int _currentArchetypeIndex;
-    private int _currentEntityIndex;
+
+    private ref Archetype _currentArchetype => ref _archetypes[_archetypesIndex];
+    private ref EntityIDOnly _currentEntity => ref _entities[_entitiesIndex];
+
+    private Span<Bitset> _archetypeBitsets;
+
+    private int _archetypesIndex;
+    private int _entitiesIndex;
+
+    private Entity _current;
 
     private readonly Bitset _include;
     private readonly Bitset _exclude;
 
-    private Entity _current;
+    // inverse of _entitiesLeft
+    private int _sparseIndex;
 
     internal EntityQueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
+
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        if (query.HasSparseRules)
+        {
+            _include = query.IncludeMask;
+            _exclude = query.ExcludeMask;
+        }
+
         _archetypes = query.AsSpan();
-        
-        _currentArchetypeIndex = -1;
-        _currentEntityIndex = int.MaxValue - 1;
-
-        _include = query.IncludeMask;
-        _exclude = query.ExcludeMask;
-
-        _currentEntity = [];
-        _current = _world.DefaultWorldEntity;
+        _archetypesIndex = -1;
     }
-    
+
     /// <summary>
-    /// The current <see cref="Entity"/> instance.
+    /// The current tuple of component references and the <see cref="Entity"/> instance.
     /// </summary>
     public Entity Current => _current;
 
@@ -61,29 +69,37 @@ public ref struct EntityQueryEnumerator
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()
     {
-BeginConsumeEntities:
+    BeginConsumeEntities:
 
-        while (++_currentEntityIndex < _currentEntity.Length)
+        while (++_archetypesIndex < _archetypes.Length)
         {// a okay
-            _currentEntity[_currentEntityIndex].SetEntity(ref _current);
+            _sparseIndex++;
 
+            if (_sparseIndex >= 0)
+            {
+                if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
+                    continue;
 
+                ref Bitset set = ref _archetypeBitsets[_sparseIndex];
 
-            //if (_entityBitsets is not null)
-            //{
-            //    ref Bitset set = ref _entityBitsets[_current.EntityID];
-            //    if (!Bitset.Filter(ref set, _include, _exclude))
-            //        continue;
-            //}
+                if (!Bitset.Filter(ref set, _include, _exclude))
+                    continue;
+            }
+
+            _current = _currentEntity.ToEntity(_world);
 
             return true;
         }
 
-        if (++_currentArchetypeIndex < _archetypes.Length)
+        if ((uint)++_archetypesIndex < (uint)_archetypes.Length)
         {
-            _currentArchetype = _archetypes[_currentArchetypeIndex];
-            _currentEntity = _currentArchetype.EntityIDArray;
-            _currentEntityIndex = -1;
+            if (_sparseIndex >= 0)
+            {
+                _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
+            }
+
+            // point to index -1
+            _entitiesIndex = -1;
 
             goto BeginConsumeEntities;
         }
@@ -101,34 +117,44 @@ BeginConsumeEntities:
 /// Enumerates all component references of the specified types and the <see cref="Entity"/> instance for each <see cref="Entity"/> in a query.
 /// </summary>
 /// <variadic />
+[Variadic(AttributeHelpers.QueryEnumerator)]
 public ref struct EntityQueryEnumerator<T>
 {
     private readonly World _world;
-    private readonly Span<Archetype> _archetypes;
-    private Archetype? _currentArchetype;
-    private EntityIDOnly[] _currentEntity;
+    private Span<Archetype> _archetypes;
+    private Span<EntityIDOnly> _entities;
+    private Span<T> _compSpan1;
 
-    private int _currentArchetypeIndex;
-    private int _currentEntityIndex;
+    private ref Archetype _currentArchetype => ref _archetypes[_archetypesIndex];
+    private ref EntityIDOnly _currentEntity => ref _entities[_entitiesIndex];
+
+    private Span<Bitset> _archetypeBitsets;
+
+    private int _archetypesIndex;
+    private int _entitiesIndex;
+
+    private EntityRefTuple<T> _current;
 
     private readonly Bitset _include;
     private readonly Bitset _exclude;
 
-    private EntityRefTuple<T> _current;
+    // inverse of _entitiesLeft
+    private int _sparseIndex;
 
     internal EntityQueryEnumerator(Query query)
     {
         _world = query.World;
         _world.EnterDisallowState();
+
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        if (query.HasSparseRules)
+        {
+            _include = query.IncludeMask;
+            _exclude = query.ExcludeMask;
+        }
+
         _archetypes = query.AsSpan();
-
-        _currentArchetypeIndex = -1;
-        _currentEntityIndex = int.MaxValue - 1;
-
-        _include = query.IncludeMask;
-        _exclude = query.ExcludeMask;
-
-        _currentEntity = [];
+        _archetypesIndex = -1;
     }
 
     /// <summary>
@@ -150,25 +176,38 @@ public ref struct EntityQueryEnumerator<T>
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()
     {
-        BeginConsumeEntities:
+    BeginConsumeEntities:
 
-        while (++_currentEntityIndex < _currentEntity.Length)
+        while (++_entitiesIndex < _archetypes.Length)
         {// a okay
-            //if (_entityBitsets is not null)
-            //{
-            //    ref Bitset set = ref _entityBitsets[_currentEntity[_currentEntityIndex].ID];
-            //    if (!Bitset.Filter(ref set, _include, _exclude))
-            //        continue;
-            //}
+            _sparseIndex++;
+
+            if (_sparseIndex >= 0)
+            {
+                if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
+                    continue;
+
+                ref Bitset set = ref _archetypeBitsets[_sparseIndex];
+
+                if (!Bitset.Filter(ref set, _include, _exclude))
+                    continue;
+            }
+
+            _current.Entity = _currentEntity.ToEntity(_world);
+            _current.Item1 = new Ref<T>();
 
             return true;
         }
 
-        if (++_currentArchetypeIndex < _archetypes.Length)
+        if ((uint)++_archetypesIndex < (uint)_archetypes.Length)
         {
-            _currentArchetype = _archetypes[_currentArchetypeIndex];
-            _currentEntity = _currentArchetype.EntityIDArray;
-            _currentEntityIndex = -1;
+            if (_sparseIndex >= 0)
+            {
+                _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
+            }
+
+            // point to index -1
+            _entitiesIndex = -1;
 
             goto BeginConsumeEntities;
         }
@@ -364,7 +403,12 @@ public ref struct EntityQueryEnumerator<T>
             }
 
             _current.Entity = _currentEntity.ToEntity(_world);
-            _current.Item1.RawRef = ref Unsafe.Add(ref _current.Item1.RawRef, 1);
+            // get ref to first sparse set
+            // then use
+
+            _current.Item1.RawRef = Component<T>.IsSparseComponent
+                ? _current.Item1.RawRef = ref Unsafe.Add(ref _current.Item1.RawRef, 1)
+                : _world.WorldSparseSetTable.UnsafeArrayIndex();
 
             return true;
         }
@@ -382,7 +426,7 @@ public ref struct EntityQueryEnumerator<T>
             // point to index -1
             _currentEntity = ref Unsafe.Subtract(ref _currentArchetype.GetEntityDataReference(), 1);
 
-            _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);
+            if(!Component<T>.IsSparseComponent) _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);
 
 
             goto BeginConsumeEntities;
