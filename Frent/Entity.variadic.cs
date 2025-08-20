@@ -138,7 +138,7 @@ partial struct Entity
         ref ComponentSparseSetBase start = ref Unsafe.NullRef<ComponentSparseSetBase>();
         if (NeighborCache<T>.HasAnySparseComponents)
         {
-            bits = thisLookup.Archetype.GetBitset(thisLookup.Index);
+            bits = ref thisLookup.Archetype.GetBitset(thisLookup.Index);
 
             start = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
         }

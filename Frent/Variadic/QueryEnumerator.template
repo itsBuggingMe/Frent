@@ -1,10 +1,10 @@
 arity: 16
 from:
-            _current.Item1.RawRef = Component<T>.IsSparseComponent
+            _current.Item1.RawRef = ref !Component<T>.IsSparseComponent
                 ? ref Unsafe.Add(ref _current.Item1.RawRef, 1)
                 : ref MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId);
 to:
-|            _current.Item$.RawRef = Component<T$>.IsSparseComponent
+|            _current.Item$.RawRef = ref !Component<T$>.IsSparseComponent
                 ? ref Unsafe.Add(ref _current.Item$.RawRef, 1)
                 : ref MemoryHelpers.GetSparseSet<T$>(ref first).GetUnsafe(entityId);
 |

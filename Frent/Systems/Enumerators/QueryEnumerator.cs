@@ -2,6 +2,7 @@ using Frent.Collections;
 using Frent.Core;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Systems;
 
@@ -39,7 +40,7 @@ public ref struct QueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask;
@@ -102,6 +103,7 @@ public ref struct QueryEnumerator<T>
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
+                _sparseIndex = -1;
             }
 
             _entities = _currentArchetype.GetEntitySpan();
@@ -132,6 +134,7 @@ public ref struct QueryEnumerator<T>
     private readonly World _world;
     private ref Archetype _currentArchetype;
     private Span<Bitset> _archetypeBitsets;
+    private ref EntityIDOnly _currentEntity;
 
     private int _archetypesLeft;
     private int _entitiesLeft;
@@ -149,7 +152,7 @@ public ref struct QueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask.AsVector();
@@ -185,6 +188,8 @@ public ref struct QueryEnumerator<T>
         {// a okay
             _sparseIndex++;
 
+            _currentEntity = ref Unsafe.Add(ref _currentEntity, 1);
+
             if (_sparseIndex >= 0)
             {
                 if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
@@ -196,7 +201,15 @@ public ref struct QueryEnumerator<T>
                     continue;
             }
 
-            _current.Item1.RawRef = ref Unsafe.Add(ref _current.Item1.RawRef, 1);
+            int entityId = _currentEntity.ID;
+
+            ref ComponentSparseSetBase first = ref (Component<T>.IsSparseComponent)
+                ? ref MemoryMarshal.GetArrayDataReference(_world.WorldSparseSetTable)
+                : ref Unsafe.NullRef<ComponentSparseSetBase>();
+
+            _current.Item1.RawRef = ref !Component<T>.IsSparseComponent
+                ? ref Unsafe.Add(ref _current.Item1.RawRef, 1)
+                : ref MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId);
 
             return true;
         }
@@ -210,6 +223,7 @@ public ref struct QueryEnumerator<T>
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
                 _sparseIndex = -1;
             }
+            _currentEntity = ref Unsafe.Subtract(ref _currentArchetype.GetEntityDataReference(), 1);
 
             // point to index -1
             if (!Component<T>.IsSparseComponent) _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);

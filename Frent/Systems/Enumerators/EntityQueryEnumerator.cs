@@ -39,7 +39,7 @@ public ref struct EntityQueryEnumerator
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask;
@@ -96,6 +96,7 @@ public ref struct EntityQueryEnumerator
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
+                _sparseIndex = -1;
             }
             _entities = _currentArchetype.GetEntitySpan();
 
@@ -147,7 +148,7 @@ public ref struct EntityQueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask;
@@ -211,6 +212,7 @@ public ref struct EntityQueryEnumerator<T>
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
+                _sparseIndex = -1;
             }
 
             _entities = _currentArchetype.GetEntitySpan();
@@ -257,7 +259,7 @@ public ref struct EntityQueryEnumerator
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask.AsVector();
@@ -318,6 +320,7 @@ public ref struct EntityQueryEnumerator
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
+                _sparseIndex = -1;
             }
 
             // point to index -1
@@ -363,7 +366,7 @@ public ref struct EntityQueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : -1;
+        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask.AsVector();
@@ -421,7 +424,7 @@ public ref struct EntityQueryEnumerator<T>
                 ? ref MemoryMarshal.GetArrayDataReference(_world.WorldSparseSetTable)
                 : ref Unsafe.NullRef<ComponentSparseSetBase>();
 
-            _current.Item1.RawRef = Component<T>.IsSparseComponent
+            _current.Item1.RawRef = ref !Component<T>.IsSparseComponent
                 ? ref Unsafe.Add(ref _current.Item1.RawRef, 1)
                 : ref MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId);
 

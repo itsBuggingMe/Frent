@@ -71,6 +71,16 @@ partial class Archetype
 
     private static readonly RefDictionary<long, ArchetypeData> ExistingArchetypes = new();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void CopyBitset(Archetype from, Archetype to, int fromIndex, int toIndex)
+    {
+        var sparseBits = from.BitsetArray;
+        if (!((uint)fromIndex < (uint)sparseBits.Length))
+            return;
+
+        to.GetBitset(toIndex) = sparseBits[fromIndex];
+    }
+
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
         ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);

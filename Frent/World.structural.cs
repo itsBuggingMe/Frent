@@ -51,6 +51,8 @@ partial class World
         destination.CreateEntityLocation(currentLookup.Flags, out nextLocation).Init(entity);
         nextLocation.Version = currentLookup.Version;
 
+        Archetype.CopyBitset(from, destination, currentLookup.Index, nextLocation.Index);
+
         EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
         ComponentStorageRecord[] fromRunners = from.Components;
@@ -100,6 +102,8 @@ partial class World
         destination.CreateEntityLocation(currentLookup.Flags, out var nextLocation).Init(entity);
         nextLocation.Version = currentLookup.Version;
 
+        Archetype.CopyBitset(from, destination, currentLookup.Index, nextLocation.Index);
+
         EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
         ComponentStorageRecord[] fromRunners = from.Components;
@@ -146,6 +150,8 @@ partial class World
 
         destination.CreateEntityLocation(currentLookup.Flags, out var nextLocation).Init(entity);
         nextLocation.Version = currentLookup.Version;
+
+        Archetype.CopyBitset(from, destination, currentLookup.Index, nextLocation.Index);
 
         EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
