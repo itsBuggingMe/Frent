@@ -30,14 +30,15 @@ partial class World
 
         WorldArchetypeTableItem archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
 
-        ref var entity = ref Unsafe.NullRef<EntityIDOnly>();
+        ref var archetypeEntityRecord = ref Unsafe.NullRef<EntityIDOnly>();
+        ref EntityLocation eloc = ref FindNewEntityLocation(out int id);
 
         ComponentStorageRecord[] components;
 
         if (AllowStructualChanges)
         {
             components = archetypes.Archetype.Components;
-            entity = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
+            archetypeEntityRecord = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
         }
         else
         {
@@ -55,6 +56,8 @@ partial class World
             eloc.Flags |= EntityFlags.HasSparseComponents;
         }
 
+        archetypeEntityRecord.Version = eloc.Version;
+        archetypeEntityRecord.ID = id;
 
         ref ComponentSparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
 
@@ -71,7 +74,8 @@ partial class World
             if (Component<T>.IsSparseComponent) bitset.Set(Component<T>.SparseSetComponentIndex);
         }
 
-        Entity concreteEntity = new Entity(WorldID, version, id);
+        // Version is incremented on delete, so we don't need to do anything here
+        Entity concreteEntity = new Entity(WorldID, eloc.Version, id);
         
         Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
         EntityCreatedEvent.Invoke(concreteEntity);

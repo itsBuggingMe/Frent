@@ -18,8 +18,7 @@ internal static class GlobalWorldTables
 #endif
     //each byte contains the data as follows:
     // 1 bit Tag exists -> Lookup by tag ID
-    // 3 bits - nothing
-    // 4 bits - index of component (1111) -> Lookup by component ID
+    // 7 bits - index of component (111_1111) -> Lookup by component ID
 
     public const byte HasTagMask = 0b_1000_0000;
     public const byte DefaultNoTag = 0b_0000_0000;

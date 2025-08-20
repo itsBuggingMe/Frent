@@ -82,6 +82,7 @@ internal partial class Archetype
             writeStorage = Components;
             entityLocation.Index = futureSlot;
             entityLocation.Archetype = this;
+            entityLocation.Flags = default;
             return ref _entities.UnsafeArrayIndex(futureSlot);
         }
 
@@ -95,6 +96,7 @@ internal partial class Archetype
         //we need to place into temp buffers
         entityLocation.Index = futureSlot - _entities.Length;
         entityLocation.Archetype = deferredCreationArchetype;
+        entityLocation.Flags = default;
 
         Debug.Assert(entityLocation.Index >= 0);
         if (entityLocation.Index >= deferredCreationArchetype._entities.Length)
@@ -171,16 +173,15 @@ internal partial class Archetype
         Span<EntityIDOnly> entitySpan = _entities.AsSpan(NextComponentIndex, count);
 
         int componentIndex = NextComponentIndex;
-        ref var recycled = ref world.RecycledEntityIds;
+
         for (int i = 0; i < entitySpan.Length; i++)
         {
             ref EntityIDOnly archetypeEntity = ref entitySpan[i];
 
-            archetypeEntity = recycled.CanPop() ? recycled.PopUnsafe() : new EntityIDOnly(world.NextEntityID++, 0);
+            ref EntityLocation lookup = ref world.FindNewEntityLocation(out archetypeEntity.ID);
 
-            ref EntityLocation lookup = ref world.EntityTable.UnsafeIndexNoResize(archetypeEntity.ID);
+            archetypeEntity.Version = lookup.Version;
 
-            lookup.Version = archetypeEntity.Version;
             lookup.Archetype = this;
             lookup.Index = componentIndex++;
             lookup.Flags = EntityFlags.None;
@@ -344,13 +345,14 @@ internal partial class Archetype
     internal bool HasTag<T>()
     {
         var index = Tag<T>.ID.RawValue;
-        return (ComponentTagTable.UnsafeArrayIndex(index) << 7) != 0;
+        // & instead of >> saves 1 instruction
+        return (ComponentTagTable.UnsafeArrayIndex(index) & GlobalWorldTables.HasTagMask) != 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool HasTag(TagID tagID)
     {
-        return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) << 7) != 0;
+        return (ComponentTagTable.UnsafeArrayIndex(tagID.RawValue) & GlobalWorldTables.HasTagMask) != 0;
     }
 
     internal Span<EntityIDOnly> GetEntitySpan()

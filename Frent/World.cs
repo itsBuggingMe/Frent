@@ -52,10 +52,16 @@ public partial class World : IDisposable
 
     internal RefDictionary<ArchetypeEdgeKey, Archetype> ArchetypeGraphEdges = new();
 
-    internal NativeStack<EntityIDOnly> RecycledEntityIds = new NativeStack<EntityIDOnly>(256);
-    
-    private RefDictionary<Type, AttributeUpdateFilter> _updatesByAttributes = new();
-    private RefDictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = new();
+    /// <summary>
+    /// Points to the first element in the linked list of <see cref="EntityTable"/>.
+    /// </summary>
+    /// <remarks>This is similar to how <see href="https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Collections/Generic/Dictionary.cs,32">Dictionary[TKey, TValue]</see> implements it.</remarks>
+    private int _freelist = -1;
+
+    private int _freeListCount;
+
+    private RefDictionary<Type, AttributeUpdateFilter> _updatesByAttributes = [];
+    private RefDictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = [];
     internal int NextEntityID;
 
     internal readonly ushort WorldID;
@@ -125,7 +131,7 @@ public partial class World : IDisposable
     /// <summary>
     /// Gets the current number of entities managed by the world.
     /// </summary>
-    public int EntityCount => NextEntityID - RecycledEntityIds.Count;
+    public int EntityCount => NextEntityID - _freeListCount;
 
     /// <summary>
     /// The current world config.
@@ -245,10 +251,12 @@ public partial class World : IDisposable
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
     {
-        var (id, version) = RecycledEntityIds.TryPop(out var v) ? v : new EntityIDOnly(NextEntityID++, (ushort)0);
-        entityLocation.Version = version;
-        EntityTable[id] = entityLocation;
-        return new Entity(WorldID, version, id);
+        ref EntityLocation slot = ref FindNewEntityLocation(out int entityId);
+        slot.Archetype = entityLocation.Archetype;
+        slot.Index = entityLocation.Index;
+        slot.Flags = entityLocation.Flags;
+
+        return new Entity(WorldID, slot.Version, entityId);
     }
 
     /// <summary>
@@ -537,7 +545,6 @@ public partial class World : IDisposable
 
         _isDisposed = true;
 
-        RecycledEntityIds.Dispose();
         //EntityTable.Dispose();
     }
 
@@ -629,6 +636,30 @@ public partial class World : IDisposable
         Entity result = CreateEntityFromLocation(eloc);
         entity.Init(result);
         return result;
+    }
+
+    /// <summary>
+    /// Finds a free slot in the entity table. <see cref="EntityLocation.Version"/> is the only field that is initalized.
+    /// </summary>
+    internal ref EntityLocation FindNewEntityLocation(out int index)
+    {
+        int free = _freelist;
+        if (free == -1)
+        {
+            int entityId = NextEntityID++;
+            ref EntityLocation slot = ref EntityTable[entityId];
+            index = entityId;
+            return ref slot;
+        }
+        else
+        {
+            ref EntityLocation location = ref EntityTable[free];
+            index = free;
+            _freelist = location.Index /*next*/;
+            _freeListCount--;
+            return ref location;
+        }
+
     }
 
     internal void InvokeEntityCreated(Entity entity)

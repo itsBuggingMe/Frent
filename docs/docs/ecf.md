@@ -17,7 +17,7 @@ Components can contain data and behavior about your game. You can have a compone
 ```csharp
 //only contains X and Y
 record struct Position(float X, float Y);
-record struct Velocity(float DX, float DY) : IUpdateComponent<Position>
+record struct Velocity(float DX, float DY) : IComponent<Position>
 {
     //has its own DX, DY, AND updates the position
     public void Update(ref Position position)

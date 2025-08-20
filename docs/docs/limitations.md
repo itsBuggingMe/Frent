@@ -7,7 +7,4 @@ Frent has a number (ha) of numerical limitations that you hopefully never reach.
 * 65,535 Unique component types
 * 65,535 Unique archetypes
 * 127 Components per entity
-
-Things that do not have limits (within reason) are:
-* Number of `Update` methods on a component
-* Number of filter attributes on a component method
+* 64 Update methods on a component
