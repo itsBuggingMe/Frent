@@ -1,39 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Frent.Components;
 
 namespace Frent.Fuzzing.Runner;
 
-internal record struct S1(Random random)
+internal record struct S1(int value)
 {
-    public int Value = random.Next();
+    public int Value = value;
     public override string ToString() => Value.ToString();
 }
-internal record struct S2(Random random)
+internal record struct S2(int value)
 {
-    public int Value = random.Next();
+    public int Value = value;
     public override string ToString() => Value.ToString();
 }
-internal record struct S3(Random random)
+internal record struct S3(int value) : ISparseComponent
 {
-    public int Value = random.Next();
+    public int Value = value;
     public override string ToString() => Value.ToString();
 }
-
-internal class C1(Random random)
+internal record struct S4(int value)
 {
-    public int Value = random.Next();
+    public int Value = value;
     public override string ToString() => Value.ToString();
 }
-internal class C2(Random random)
+internal class C1(int value)
 {
-    public int Value = random.Next();
+    public int Value = value;
     public override string ToString() => Value.ToString();
 }
-internal class C3(Random random)
+internal class C2(int value)
 {
-    public int Value = random.Next();
+    public int Value = value;
+    public override string ToString() => Value.ToString();
+}
+internal class C3(int value) : ISparseComponent
+{
+    public int Value = value;
+    public override string ToString() => Value.ToString();
+}
+internal class C4(int value) : ISparseComponent
+{
+    public int Value = value;
     public override string ToString() => Value.ToString();
 }

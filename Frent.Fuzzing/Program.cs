@@ -7,7 +7,7 @@ if (args.Length == 0)
 }
 else
 {
-    Assert.Fuzz(args);
+    WorldState.Fuzz(args);
 }
 
 Console.WriteLine("Done!");

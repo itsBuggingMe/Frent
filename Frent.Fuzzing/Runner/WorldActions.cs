@@ -6,6 +6,26 @@ namespace Frent.Fuzzing.Runner;
 
 internal enum WorldActions
 {
+    [Weight(0.1f)] SubscribeWorldCreate = 0,
+    [Weight(0.1f)] SubscribeWorldDelete = 1,
+
+    [Weight(0.25f)] SubscribeAdd = 2,
+    [Weight(0.25f)] SubscribeRemoved = 3,
+
+    [Weight(0.25f)] SubscribeAddGeneric = 4,
+    [Weight(0.25f)] SubscribeRemovedGeneric = 5,
+
+    [Weight(0.1f)] SubscribeWorldAdd = 6,
+    [Weight(0.1f)] SubscribeWorldRemoved = 7,
+
+    [Weight(0.25f)] SubscribeTag = 8,
+    [Weight(0.25f)] SubscribeDetach = 9,
+
+    [Weight(0.1f)] SubscribeWorldTag = 10,
+    [Weight(0.1f)] SubscribeWorldDetach = 11,
+
+    [Weight(0.25f)] SubscribeDelete = 12,
+
     [Weight(6)] CreateGeneric,
     [Weight(2)] CreateHandles,
     [Weight(2)] CreateObjects,
@@ -27,26 +47,6 @@ internal enum WorldActions
     DetachType,
 
     Set,
-
-    [Weight(0.1f)] SubscribeWorldCreate,
-    [Weight(0.1f)] SubscribeWorldDelete,
-
-    [Weight(0.25f)] SubscribeAdd,
-    [Weight(0.25f)] SubscribeRemoved,
-
-    [Weight(0.25f)] SubscribeAddGeneric,
-    [Weight(0.25f)] SubscribeRemovedGeneric,
-
-    [Weight(0.1f)] SubscribeWorldAdd,
-    [Weight(0.1f)] SubscribeWorldRemoved,
-
-    [Weight(0.25f)] SubscribeTag,
-    [Weight(0.25f)] SubscribeDetach,
-
-    [Weight(0.1f)] SubscribeWorldTag,
-    [Weight(0.1f)] SubscribeWorldDetach,
-
-    [Weight(0.25f)] SubscribeDelete,
 }
 
 internal static class WorldActionsHelper

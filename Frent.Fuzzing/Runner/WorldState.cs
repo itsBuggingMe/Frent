@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Frent.Core;
 
@@ -6,6 +7,23 @@ namespace Frent.Fuzzing.Runner;
 
 internal partial class WorldState : IDisposable
 {
+    public static void Fuzz(string[] args)
+    {
+        if (args.Length != 2)
+            throw new ArgumentException("Expecting two arguments corresponding to seed and step count.");
+        if (!int.TryParse(args[0], out int seed))
+            throw new ArgumentException($"Seed value {args[0]} not an integer.");
+        if (!int.TryParse(args[1], out int steps))
+            throw new ArgumentException($"Step value {args[1]} not an integer.");
+
+        using WorldState state = new WorldState(seed);
+
+        for (int i = 0; i < steps; i++)
+        {
+            state.Advance();
+        }
+    }
+
     // record keeping
     private readonly Random _random;
     private readonly List<StepRecord> _actions = [];
@@ -18,20 +36,29 @@ internal partial class WorldState : IDisposable
     // expected state
     private Dictionary<Entity, List<ComponentHandle>> _componentValues = [];
     private IEnumerable<Entity> Entities => _componentValues.Select(kvp => kvp.Key);
-    private List<Entity> _dead = [];
+    private HashSet<Entity> _dead = [];
+
+    private EventRecord[] _expectedEventTable;
+    private int[] _expectedEventSubscriptions;
+
+    private EventRecord[] _actualEventTable;
 
     public WorldState(int seed) : this()
     {
         _seed = seed;
         _random = new Random(seed);
         _worldState = new();
+
+        _expectedEventTable = new EventRecord[13];
+        _expectedEventSubscriptions = new int[13];
+        _actualEventTable = new EventRecord[13];
     }
 
     public void Advance()
     {
         WorldActions thisAction = WorldActionsHelper.SelectWeightedAction(_random);
 
-        _actions.Add(thisAction switch
+        StepRecord stepTaken = thisAction switch
         {
             WorldActions.CreateGeneric => CreateGeneric(),
             WorldActions.CreateHandles => CreateHandles(),
@@ -62,7 +89,9 @@ internal partial class WorldState : IDisposable
             WorldActions.SubscribeWorldDetach => SubscribeWorldDetach(),
             WorldActions.SubscribeDelete => SubscribeDelete(),
             _ => throw new ArgumentOutOfRangeException(nameof(thisAction), thisAction, null)
-        });
+        };
+        _actions.Add(stepTaken);
+        stepTaken.Playback?.Invoke();
 
         EnsureConsistency();
 
@@ -94,11 +123,14 @@ internal partial class WorldState : IDisposable
         TestQuery2<C1, C2>();
         TestQuery2<C2, S1>();
         TestQuery2<S3, S2>();
+
         TestQuery2<S2, S2>();
         TestQuery2<C2, C2>();
 
+        TestQuery2Exclude<C2, C3>();
         TestQuery2Exclude<C2, S1>();
         TestQuery2Exclude<S2, S1>();
+
         TestQuery2Exclude<S1, S1>();
         TestQuery2Exclude<C3, C3>();
 
@@ -108,18 +140,17 @@ internal partial class WorldState : IDisposable
                 .EnumerateWithEntities<T1, T2>()
                 .AsEntityEnumerable()
                 .Declare(out var enumerable)
-                .Declare(l => l.Count(), out int count)
                 .All(d =>
                     d.Entity.Get<T1>()!.Equals(d.C1) &&
                     d.Entity.Get<T2>()!.Equals(d.C2))
                 .Assert(this);
 
-            Assert(count == Entities.Count(e =>
+            Assert(enumerable.Count() == Entities.Count(e =>
                 e.Has<T1>() &&
                 e.Has<T2>()));
 
             Assert(enumerable.DistinctBy(t => t.Entity)
-                .Count() == count);
+                .Count() == enumerable.Count());
         }
 
         void TestQuery2Exclude<T1, T2>()
@@ -147,6 +178,12 @@ internal partial class WorldState : IDisposable
         {
             throw new InconsistencyException(message ?? "<unknown>", _steps, _seed);
         }
+    }
+
+    public void Subscribe(Entity? entity, WorldActions eventKind)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative((int)eventKind);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((int)eventKind, 12);
     }
 
     public void Dispose()
