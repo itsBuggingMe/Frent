@@ -1,6 +1,6 @@
 ﻿namespace Frent.Fuzzing;
 
-internal class InconsistencyException(int failedStep, int seed) : Exception($"Failed at step {failedStep} with seed {seed}")
+internal class InconsistencyException(string message, int failedStep, int seed) : Exception($"Assert {message} failed at step {failedStep} with seed {seed}.")
 {
     public int FailedStep = failedStep;
     public int Seed = seed;
