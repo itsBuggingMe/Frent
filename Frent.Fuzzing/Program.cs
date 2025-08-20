@@ -1,23 +1,12 @@
-﻿using Frent.Fuzzing.Runner;
+﻿using Frent.Fuzzing;
+using Frent.Fuzzing.Runner;
 
-namespace Frent.Fuzzing;
-
-internal class Program
+args = ["0", "1000"];
+if (args.Length == 0)
 {
-    static void Main(string[] args)
-    {
-        if(args.Length == 0)
-        {
-            
-        }
-        else
-        {
-            Assert.Fuzz(args);
-        }
-    }
-
-    private static void LaunchFuzzProcess(int seed, int count)
-    {
-        
-    }
+    Fuzzer.CreateFuzzProcesses();
+}
+else
+{
+    Assert.Fuzz(args);
 }

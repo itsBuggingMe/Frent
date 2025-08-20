@@ -11,7 +11,7 @@ internal static class Assert
         if (!int.TryParse(args[0], out int seed))
             throw new ArgumentException($"Seed value {args[0]} not an integer.");
         if (!int.TryParse(args[1], out int steps))
-            throw new ArgumentException($"Seed value {args[0]} not an integer.");
+            throw new ArgumentException($"Step value {args[1]} not an integer.");
 
         using WorldState state = new WorldState(seed);
 
