@@ -73,6 +73,12 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         }
     }
 
+#if NETSTANDARD
+    public Ref<T> GetUnsafe(int id) => new Ref<T>(Dense, _sparse.UnsafeArrayIndex(id));
+#else
+    public ref T GetUnsafe(int id) => ref Dense.UnsafeArrayIndex(_sparse.UnsafeArrayIndex(id));
+#endif
+
     public override object Get(int id) => Dense[_sparse[id]]!;
 
     public override void InvokeGenericEvent(int id, Entity entity, GenericEvent @event) => @event.Invoke(entity, ref Dense[_sparse[id]]);

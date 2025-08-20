@@ -14,12 +14,12 @@ namespace Frent.Systems;
 public ref struct EntityQueryEnumerator
 {
     private readonly World _world;
-    private Span<Archetype> _archetypes;
+    private readonly Span<Archetype> _archetypes;
     private Span<EntityIDOnly> _entities;
 
 
-    private ref Archetype _currentArchetype => ref _archetypes[_archetypesIndex];
-    private ref EntityIDOnly _currentEntity => ref _entities[_entitiesIndex];
+    private readonly ref Archetype _currentArchetype => ref _archetypes[_archetypesIndex];
+    private readonly ref EntityIDOnly _currentEntity => ref _entities[_entitiesIndex];
 
     private Span<Bitset> _archetypeBitsets;
 
@@ -53,12 +53,12 @@ public ref struct EntityQueryEnumerator
     /// <summary>
     /// The current tuple of component references and the <see cref="Entity"/> instance.
     /// </summary>
-    public Entity Current => _current;
+    public readonly Entity Current => _current;
 
     /// <summary>
     /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
     /// </summary>
-    public void Dispose()
+    public readonly void Dispose()
     {
         _world.ExitDisallowState(null);
     }
@@ -97,6 +97,7 @@ public ref struct EntityQueryEnumerator
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
             }
+            _entities = _currentArchetype.GetEntitySpan();
 
             // point to index -1
             _entitiesIndex = -1;
@@ -110,7 +111,7 @@ public ref struct EntityQueryEnumerator
     /// <summary>
     /// Gets the enumerator over a query.
     /// </summary>
-    public EntityQueryEnumerator GetEnumerator() => this;
+    public readonly EntityQueryEnumerator GetEnumerator() => this;
 }
 
 /// <summary>
@@ -121,12 +122,12 @@ public ref struct EntityQueryEnumerator
 public ref struct EntityQueryEnumerator<T>
 {
     private readonly World _world;
-    private Span<Archetype> _archetypes;
+    private readonly Span<Archetype> _archetypes;
     private Span<EntityIDOnly> _entities;
     private Span<T> _compSpan1;
 
-    private ref Archetype _currentArchetype => ref _archetypes[_archetypesIndex];
-    private ref EntityIDOnly _currentEntity => ref _entities[_entitiesIndex];
+    private readonly ref Archetype _currentArchetype => ref _archetypes[_archetypesIndex];
+    private readonly ref EntityIDOnly _currentEntity => ref _entities[_entitiesIndex];
 
     private Span<Bitset> _archetypeBitsets;
 
@@ -160,12 +161,12 @@ public ref struct EntityQueryEnumerator<T>
     /// <summary>
     /// The current tuple of component references and the <see cref="Entity"/> instance.
     /// </summary>
-    public EntityRefTuple<T> Current => _current;
+    public readonly EntityRefTuple<T> Current => _current;
 
     /// <summary>
     /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
     /// </summary>
-    public void Dispose()
+    public readonly void Dispose()
     {
         _world.ExitDisallowState(null);
     }
@@ -194,7 +195,13 @@ public ref struct EntityQueryEnumerator<T>
             }
 
             _current.Entity = _currentEntity.ToEntity(_world);
-            _current.Item1 = new Ref<T>();
+            int entityId = _current.Entity.EntityID;
+
+            ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(_world.WorldSparseSetTable);
+
+            _current.Item1 = Component<T>.IsSparseComponent
+                ? MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId)
+                : new Ref<T>(_compSpan1, _entitiesIndex);
 
             return true;
         }
@@ -205,6 +212,9 @@ public ref struct EntityQueryEnumerator<T>
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
             }
+
+            _entities = _currentArchetype.GetEntitySpan();
+            if(!Component<T>.IsSparseComponent) _compSpan1 = _currentArchetype.GetComponentSpan<T>();
 
             // point to index -1
             _entitiesIndex = -1;
@@ -403,12 +413,17 @@ public ref struct EntityQueryEnumerator<T>
             }
 
             _current.Entity = _currentEntity.ToEntity(_world);
+            int entityId = _current.Entity.EntityID;
             // get ref to first sparse set
             // then use
 
+            ref ComponentSparseSetBase first = ref (Component<T>.IsSparseComponent)
+                ? ref MemoryMarshal.GetArrayDataReference(_world.WorldSparseSetTable)
+                : ref Unsafe.NullRef<ComponentSparseSetBase>();
+
             _current.Item1.RawRef = Component<T>.IsSparseComponent
-                ? _current.Item1.RawRef = ref Unsafe.Add(ref _current.Item1.RawRef, 1)
-                : _world.WorldSparseSetTable.UnsafeArrayIndex();
+                ? ref Unsafe.Add(ref _current.Item1.RawRef, 1)
+                : ref MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId);
 
             return true;
         }
@@ -427,7 +442,6 @@ public ref struct EntityQueryEnumerator<T>
             _currentEntity = ref Unsafe.Subtract(ref _currentArchetype.GetEntityDataReference(), 1);
 
             if(!Component<T>.IsSparseComponent) _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);
-
 
             goto BeginConsumeEntities;
         }

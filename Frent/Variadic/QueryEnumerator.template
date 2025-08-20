@@ -1,13 +1,52 @@
 arity: 16
 from:
-            _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);
+            _current.Item1.RawRef = Component<T>.IsSparseComponent
+                ? ref Unsafe.Add(ref _current.Item1.RawRef, 1)
+                : ref MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId);
 to:
-|            _current.Item$.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T$>(), 1);
+|            _current.Item$.RawRef = Component<T$>.IsSparseComponent
+                ? ref Unsafe.Add(ref _current.Item$.RawRef, 1)
+                : ref MemoryHelpers.GetSparseSet<T$>(ref first).GetUnsafe(entityId);
 |
 from:
-            _current.Item1.RawRef = ref Unsafe.Add(ref _current.Item1.RawRef, 1);
+            _current.Item1 = Component<T>.IsSparseComponent
+                ? MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId)
+                : new Ref<T>(_compSpan1, _entitiesIndex);
 to:
-|            _current.Item$.RawRef = ref Unsafe.Add(ref _current.Item$.RawRef, 1);
+|            _current.Item$ = Component<T$>.IsSparseComponent
+                ? MemoryHelpers.GetSparseSet<T$>(ref first).GetUnsafe(entityId)
+                : new Ref<T$>(_compSpan$, _entitiesIndex);
+|
+from:
+            ref ComponentSparseSetBase first = ref (Component<T>.IsSparseComponent)
+to:
+            ref ComponentSparseSetBase first = ref (
+|                                                    Component<T$>.IsSparseComponent ||
+|                                                    true)
+from:
+            _compSpan1 = _currentArchetype.GetComponentSpan<T>();
+to:
+|            _compSpan$ = _currentArchetype.GetComponentSpan<T$>();
+|
+from:
+            if(!Component<T>.IsSparseComponent) _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);
+to:
+|            if(!Component<T$>.IsSparseComponent) _current.Item$.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T$>(), 1);
+|
+from:
+            if (!Component<T>.IsSparseComponent) _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);
+to:
+|            if (!Component<T$>.IsSparseComponent) _current.Item$.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T$>(), 1);
+|
+from:
+            if(!Component<T>.IsSparseComponent) _compSpan1 = _currentArchetype.GetComponentSpan<T>();
+to:
+|            if(!Component<T$>.IsSparseComponent) _compSpan$ = _currentArchetype.GetComponentSpan<T$>();
+|
+from:
+    private Span<T> _compSpan1;
+to:
+|    private Span<T$> _compSpan$;
 |
 from:
 <T>

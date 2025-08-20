@@ -142,6 +142,15 @@ internal struct Bitset
 
     public static bool operator !=(Bitset l, Bitset r) =>
         !(l == r);
+
+    public override bool Equals(object obj) => obj is Bitset b && 
+        b._0 == _0 &&
+        b._1 == _1 &&
+        b._2 == _2 &&
+        b._3 == _3
+        ;
+
+    public override int GetHashCode() => (_0 ^ _1 ^ _2 ^ _3).GetHashCode();
 #endif
 
     internal int? TryFindIndexOfBitGreaterThanOrEqualTo(int bitIndex)
