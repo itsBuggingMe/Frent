@@ -60,8 +60,8 @@ public partial class World : IDisposable
 
     private int _freeListCount;
 
-    private RefDictionary<Type, AttributeUpdateFilter> _updatesByAttributes = [];
-    private RefDictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = [];
+    private RefDictionary<Type, AttributeUpdateFilter> _updatesByAttributes = new();
+    private RefDictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = new();
     internal int NextEntityID;
 
     internal readonly ushort WorldID;

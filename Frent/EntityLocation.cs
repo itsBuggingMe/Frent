@@ -79,16 +79,10 @@ internal enum EntityFlags : ushort
 
     Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate,
 
-    HasWorldCommandBufferRemove = 1 << 8,
-
-    HasWorldCommandBufferAdd = 1 << 9,
-
-    HasWorldCommandBufferDelete = 1 << 10,
+    HasSparseComponents = 1 << 8,
 
     HasWorldCommandBufferRemove = 1 << 9,
     HasWorldCommandBufferAdd = 1 << 10,
     HasWorldCommandBufferDelete = 1 << 11,
-    IsUnmergedEntity = 1 << 12,
 
-    HasSparseComponents = 1 << 13,
 }
