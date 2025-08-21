@@ -336,6 +336,12 @@ internal partial class Archetype
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ComponentStorageRecord GetComponentStorage(ComponentID componentId)
+    {
+        return Components.UnsafeArrayIndex(GetComponentIndex(componentId));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetComponentIndex(ComponentID component)
     {
         return ComponentTagTable.UnsafeArrayIndex(component.RawIndex) & GlobalWorldTables.IndexBits;

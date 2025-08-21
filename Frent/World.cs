@@ -6,6 +6,7 @@ using Frent.Core.Structures;
 using Frent.Systems;
 using Frent.Systems.Queries;
 using Frent.Updating;
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -571,15 +572,24 @@ public partial class World : IDisposable
     /// Creates an <see cref="Entity"/> from a set of component handles. The handles are not disposed.
     /// </summary>
     /// <returns>The created entity.</returns>
+    [SkipLocalsInit]
     public Entity CreateFromHandles(ReadOnlySpan<ComponentHandle> componentHandles, ReadOnlySpan<TagID> tags = default)
     {
         if (componentHandles.Length > MemoryHelpers.MaxComponentCount)
             throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
 
         Span<ComponentID> componentIDs = stackalloc ComponentID[componentHandles.Length];
+        Span<int> sparseComponentIndicies = stackalloc int[componentHandles.Length];
+        bool hasSparseComponent = false;
 
         for (int i = 0; i < componentHandles.Length; i++)
-            componentIDs[i] = componentHandles[i].ComponentID;
+        {
+            ComponentID compId = componentHandles[i].ComponentID;
+            componentIDs[i] = compId;
+            int sparseIndex = componentHandles[i].ComponentID.SparseIndex;
+            sparseComponentIndicies[i] = sparseIndex;
+            hasSparseComponent = sparseIndex != 0;
+        }
 
         WorldArchetypeTableItem archetypes = Archetype.CreateOrGetExistingArchetypes(componentIDs, tags, this);
 
@@ -600,24 +610,55 @@ public partial class World : IDisposable
             DeferredCreationEntities.Push(id);
         }
 
-        ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation entityLocation);
+        archetypeEntityRecord.Version = eloc.Version;
+        archetypeEntityRecord.ID = id;
 
-        Entity entity = CreateEntityFromLocation(entityLocation);
-        entityID.Init(entity);
+        #region Set Components & Bits
+        ref Bitset bitset = ref Unsafe.NullRef<Bitset>();
 
-        Span<ComponentStorageRecord> archetypeComponents = archetype.Components.AsSpan();
-        for (int i = 1; i < archetypeComponents.Length; i++)
+        if (hasSparseComponent)
         {
-            archetypeComponents[i].SetAt(null, componentHandles[i - 1], entityLocation.Index);
-        }
-        for (int i = 1; i < archetypeComponents.Length; i++)
-        {
-            archetypeComponents[i].CallIniter(entity, entityLocation.Index);
+            eloc.Flags |= EntityFlags.HasSparseComponents;
+            bitset = ref archetypes.Archetype.GetBitset(eloc.Index);
         }
 
-        EntityCreatedEvent.Invoke(entity);
+        for (int i = 0; i < componentHandles.Length; i++)
+        {
+            int sparseIndex = sparseComponentIndicies[i];
+            if (sparseIndex == 0)
+            {
+                archetypes.Archetype.GetComponentStorage(componentHandles[i].ComponentID)
+                    .SetAt(null, componentHandles[i], eloc.Index);
+            }
+            else
+            {
+                WorldSparseSetTable[sparseIndex].AddOrSet(id, componentHandles[i]);
+                bitset.Set(sparseIndex);
+            }
+        }
+        #endregion
 
-        return entity;
+        Entity concreteEntity = new Entity(WorldID, eloc.Version, id);
+
+        #region Initer
+        for (int i = 0; i < componentHandles.Length; i++)
+        {
+            int sparseIndex = sparseComponentIndicies[i];
+            if (sparseIndex == 0)
+            {
+                archetypes.Archetype.GetComponentStorage(componentHandles[i].ComponentID)
+                    .CallIniter(concreteEntity, eloc.Index);
+            }
+            else
+            {
+                WorldSparseSetTable[sparseIndex].Init(concreteEntity);
+            }
+        }
+        #endregion Initer
+
+        EntityCreatedEvent.Invoke(concreteEntity);
+
+        return concreteEntity;
     }
 
     /// <summary>
