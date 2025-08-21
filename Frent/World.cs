@@ -552,35 +552,19 @@ public partial class World : IDisposable
     /// Creates an <see cref="Entity"/>.
     /// </summary>
     /// <param name="components">The components to use.</param>
+    /// <param name="tags">The tags to use.</param>
     /// <returns>The created entity.</returns>
-    public Entity CreateFromObjects(ReadOnlySpan<object> components)
+    public Entity CreateFromObjects(ReadOnlySpan<object> components, ReadOnlySpan<TagID> tags = default)
     {
         if (components.Length > MemoryHelpers.MaxComponentCount)
             throw new ArgumentException("Max 127 components on an entity", nameof(components));
 
-        Span<ComponentID> types = stackalloc ComponentID[components.Length];
+        Span<ComponentHandle> componentHandles = stackalloc ComponentHandle[components.Length];
 
-        for (int i = 0; i < components.Length; i++)
-            types[i] = Component.GetComponentID(components[i].GetType());
+        for (int i = 0; i < componentHandles.Length; i++)
+            componentHandles[i] = ComponentHandle.CreateFromBoxed(components[i]);
 
-        Archetype archetype = Archetype.CreateOrGetExistingArchetype(types!, [], this);
-
-        ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation loc);
-        Entity entity = CreateEntityFromLocation(loc);
-        entityID.Init(entity);
-
-        Span<ComponentStorageRecord> archetypeComponents = archetype.Components.AsSpan();
-        for (int i = 1; i < archetypeComponents.Length; i++)
-        {
-            archetypeComponents[i].SetAt(null, components[i - 1], loc.Index);
-        }
-        for (int i = 1; i < archetypeComponents.Length; i++)
-        {
-            archetypeComponents[i].CallIniter(entity, loc.Index);
-        }
-
-        EntityCreatedEvent.Invoke(entity);
-        return entity;
+        return CreateFromHandles(componentHandles, tags);
     }
 
     /// <summary>
@@ -597,7 +581,24 @@ public partial class World : IDisposable
         for (int i = 0; i < componentHandles.Length; i++)
             componentIDs[i] = componentHandles[i].ComponentID;
 
-        Archetype archetype = Archetype.CreateOrGetExistingArchetype(componentIDs, tags, this);
+        WorldArchetypeTableItem archetypes = Archetype.CreateOrGetExistingArchetypes(componentIDs, tags, this);
+
+        ref var archetypeEntityRecord = ref Unsafe.NullRef<EntityIDOnly>();
+        ref EntityLocation eloc = ref FindNewEntityLocation(out int id);
+
+        ComponentStorageRecord[] components;
+
+        if (AllowStructualChanges)
+        {
+            components = archetypes.Archetype.Components;
+            archetypeEntityRecord = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
+        }
+        else
+        {
+            // we don't need to manually set flags, they are already zeroed
+            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
+            DeferredCreationEntities.Push(id);
+        }
 
         ref EntityIDOnly entityID = ref archetype.CreateEntityLocation(EntityFlags.None, out EntityLocation entityLocation);
 

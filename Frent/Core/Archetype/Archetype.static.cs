@@ -84,14 +84,20 @@ partial class Archetype
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
         ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
+        return CreateOrGetExistingArchetype(id, world).Archetype;
+    }
+
+    internal static World.WorldArchetypeTableItem CreateOrGetExistingArchetypes(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
+    {
+        ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);
         return CreateOrGetExistingArchetype(id, world);
     }
 
-    internal static Archetype CreateOrGetExistingArchetype(ArchetypeID id, World world)
+    internal static World.WorldArchetypeTableItem CreateOrGetExistingArchetype(ArchetypeID id, World world)
     {
         ref World.WorldArchetypeTableItem archetype = ref world.WorldArchetypeTable[id.RawIndex];
         if (archetype.Archetype is not null)
-            return archetype.Archetype;
+            return archetype;
 
         var types = id.Types;
         ComponentStorageRecord[] componentRunners = new ComponentStorageRecord[types.Length + 1];
@@ -109,7 +115,7 @@ partial class Archetype
         archetype = new World.WorldArchetypeTableItem(normal, tmpCreateArchetype);
         world.ArchetypeAdded(normal, tmpCreateArchetype);
 
-        return archetype.Archetype;
+        return archetype;
     }
 
     internal static Archetype GetAdjacentArchetypeLookup(World world, ArchetypeEdgeKey edge)
