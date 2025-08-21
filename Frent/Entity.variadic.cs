@@ -329,7 +329,7 @@ partial struct Entity
         }
         else
         {
-            return Archetype.CreateOrGetExistingArchetype(new EntityType(cache.Lookup(index)), world);
+            return Archetype.CreateOrGetExistingArchetype(new EntityType(cache.Lookup(index)), world).Archetype;
         }
 
         [SkipLocalsInit]

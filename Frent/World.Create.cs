@@ -43,16 +43,6 @@ partial class World
         archetypeEntityRecord.Version = eloc.Version;
         archetypeEntityRecord.ID = id;
 
-        bool hasSparseComponent = !(!Component<T>.IsSparseComponent && true);
-
-        if (hasSparseComponent)
-        {
-            eloc.Flags |= EntityFlags.HasSparseComponents;
-        }
-
-        archetypeEntityRecord.Version = eloc.Version;
-        archetypeEntityRecord.ID = id;
-
         ref ComponentSparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
 
         //1x array lookup per component
@@ -61,8 +51,11 @@ partial class World
             : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index);
         ref1 = comp;
 
+        bool hasSparseComponent = !(!Component<T>.IsSparseComponent && true);
+
         if (hasSparseComponent)
         {
+            eloc.Flags |= EntityFlags.HasSparseComponents;
             ref Bitset bitset = ref archetypes.Archetype.GetBitset(eloc.Index);
 
             if (Component<T>.IsSparseComponent) bitset.Set(Component<T>.SparseSetComponentIndex);
