@@ -23,6 +23,17 @@ internal partial class Archetype
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
     internal int EntityCount => NextComponentIndex;
     internal ref Bitset GetBitset(int index) => ref MemoryHelpers.GetValueOrResize(ref _sparseBits, index);
+
+    internal void ClearBitset(int index)
+    {
+        var sparseBits = _sparseBits;
+
+        if (!((uint)index < (uint)sparseBits.Length))
+            return;
+
+        sparseBits[index] = default;
+    }
+
 #if NETSTANDARD
     internal Span<Bitset> SparseBitsetSpan() => _sparseBits;
 #else
@@ -70,7 +81,9 @@ internal partial class Archetype
     /// Note! Entity location version is not set! 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, out ComponentStorageRecord[] writeStorage)
+    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, 
+        out ComponentStorageRecord[] writeStorage, 
+        out Archetype inserted)
     {
         if (deferredCreationArchetype.DeferredEntityCount == 0)
             world.DeferredCreationArchetypes.Push(new(this, deferredCreationArchetype, EntityCount));
@@ -83,9 +96,11 @@ internal partial class Archetype
             entityLocation.Index = futureSlot;
             entityLocation.Archetype = this;
             entityLocation.Flags = default;
+            inserted = this;
             return ref _entities.UnsafeArrayIndex(futureSlot);
         }
 
+        inserted = deferredCreationArchetype;
         return ref CreateDeferredEntityLocationTempBuffers(deferredCreationArchetype, futureSlot, ref entityLocation, out writeStorage);
     }
 

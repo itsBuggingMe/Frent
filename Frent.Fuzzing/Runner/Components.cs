@@ -2,24 +2,20 @@
 
 namespace Frent.Fuzzing.Runner;
 
-internal record struct S1(int value)
+internal record struct S1(int Value)
 {
-    public int Value = value;
     public override string ToString() => Value.ToString();
 }
-internal record struct S2(int value)
+internal record struct S2(int Value)
 {
-    public int Value = value;
     public override string ToString() => Value.ToString();
 }
-internal record struct S3(int value) : ISparseComponent
+internal record struct S3(int Value) : ISparseComponent
 {
-    public int Value = value;
     public override string ToString() => Value.ToString();
 }
-internal record struct S4(int value)
+internal record struct S4(int Value) : ISparseComponent
 {
-    public int Value = value;
     public override string ToString() => Value.ToString();
 }
 internal class C1(int value)

@@ -602,17 +602,20 @@ public partial class World : IDisposable
         ref var archetypeEntityRecord = ref Unsafe.NullRef<EntityIDOnly>();
         ref EntityLocation eloc = ref FindNewEntityLocation(out int id);
 
-        ComponentStorageRecord[] components;
 
+        Archetype inserted;
         if (AllowStructualChanges)
         {
-            components = archetypes.Archetype.Components;
+            inserted = archetypes.Archetype;
             archetypeEntityRecord = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
         }
         else
         {
             // we don't need to manually set flags, they are already zeroed
-            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
+            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, 
+                ref eloc, 
+                out _, 
+                out inserted);
             DeferredCreationEntities.Push(id);
         }
 
@@ -625,7 +628,12 @@ public partial class World : IDisposable
         if (hasSparseComponent)
         {
             eloc.Flags |= EntityFlags.HasSparseComponents;
-            bitset = ref archetypes.Archetype.GetBitset(eloc.Index);
+            bitset = ref inserted.GetBitset(eloc.Index);
+            bitset = default;
+        }
+        else
+        {
+            inserted.ClearBitset(eloc.Index);
         }
 
         for (int i = 0; i < componentHandles.Length; i++)

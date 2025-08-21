@@ -48,7 +48,7 @@ internal partial class WorldState : IDisposable
 
     private EventRecord[] _actualEventTable;
 
-    public WorldState(int seed) : this()
+    public WorldState(int seed)
     {
         _seed = seed;
         _random = new Random(seed);
@@ -57,11 +57,13 @@ internal partial class WorldState : IDisposable
         _expectedEventTable = new EventRecord[13];
         _expectedEventSubscriptions = new int[13];
         _actualEventTable = new EventRecord[13];
+
+        Component.RegisterComponent<object>();
     }
 
     public void Advance()
     {
-        if (_actions.Count == 11)
+        if (_actions.Count == 44)
             ;
 
         WorldActions thisAction = WorldActionsHelper.SelectWeightedAction(_random);
@@ -127,7 +129,10 @@ internal partial class WorldState : IDisposable
             (kvp.Key.ComponentTypes.Length == kvp.Value.Count).Assert(this);
             (kvp.Key.World == _worldState).Assert(this);
             (kvp.Value.All(h => kvp.Key.Has(h.ComponentID))).Assert(this);
-            (kvp.Value.All(h => kvp.Key.Get(h.ComponentID).Equals(h.RetrieveBoxed()))).Assert(this);
+            foreach (var h in kvp.Value)
+            {
+                kvp.Key.Get(h.ComponentID).Equals(h.RetrieveBoxed()).Assert(this);
+            }
         }
 
         IEnumerable<Entity> allQueriedEntities = _worldState.CreateQuery()
@@ -143,13 +148,6 @@ internal partial class WorldState : IDisposable
 
         TestQuery2<S2, S2>();
         TestQuery2<C2, C2>();
-
-        TestQuery2Exclude<C2, C3>();
-        TestQuery2Exclude<C2, S1>();
-        TestQuery2Exclude<S2, S1>();
-
-        TestQuery2Exclude<S1, S1>();
-        TestQuery2Exclude<C3, C3>();
 
         void TestQuery2<T1, T2>()
         {
@@ -170,6 +168,13 @@ internal partial class WorldState : IDisposable
                 .Count() == enumerable.Count());
         }
 
+        TestQuery2Exclude<C2, C3>();
+        TestQuery2Exclude<C2, S1>();
+        TestQuery2Exclude<S2, S1>();
+
+        TestQuery2Exclude<S1, S1>();
+        TestQuery2Exclude<C3, C3>();
+
         void TestQuery2Exclude<T1, T2>()
         {
             _worldState
@@ -179,13 +184,15 @@ internal partial class WorldState : IDisposable
                 .Build() // get the actual query
                 .EnumerateWithEntities<T1>() // get ref struct enumerator
                 .AsEntityEnumerable() // evaluate into IEnumerable<T>
-                .Declare(l => l.Count(), out int count) // save count for later
+                .Declare(out var enumerable) // save count for later
                 .All(t => t.Entity.Get<T1>()!.Equals(t.C1)) // check if component values are correct
                 .Assert(this); // throw otherwise
 
-            Assert(count == Entities.Count(e =>
+            Assert(enumerable.Count() == Entities.Where(e =>
                 e.Has<T1>() &&
-                !e.Has<T2>()));
+                !e.Has<T2>())
+                .Declare(out var x)
+                .Count());
         }
     }
 

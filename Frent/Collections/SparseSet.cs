@@ -13,10 +13,6 @@ using Frent.Core.Events;
 
 namespace Frent.Collections;
 
-// TODO: sparse set improvements
-// merge id + dense array for less lookups
-// fix removal
-// make more explicit event/lifetime methods vs modify methods
 internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 {
     internal T[] Dense = new T[InitialCapacity];
@@ -28,9 +24,9 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
             ref var denseIndex = ref EnsureSparseCapacityAndGetIndex(id);
 
             if (denseIndex == -1)
-            {
+            {// creating new
                 denseIndex = _nextIndex++;
-                _ids.UnsafeArrayIndex(denseIndex) = id;
+                MemoryHelpers.GetValueOrResize(ref _ids, denseIndex) = id;
             }
 
             return ref MemoryHelpers.GetValueOrResize(ref Dense, denseIndex);
@@ -46,6 +42,8 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         }
 
         denseIndex = _nextIndex++;
+
+        MemoryHelpers.GetValueOrResize(ref _ids, denseIndex) = id;
         return ref MemoryHelpers.GetValueOrResize(ref Dense, denseIndex);
     }
 
@@ -91,23 +89,31 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
     {
         var sparse = _sparse;
         var dense = Dense;
+        var ids = _ids;
+
         if (!((uint)id < (uint)sparse.Length))
             return;
         ref int denseIndexRef = ref sparse[id];
         int denseIndex = denseIndexRef;
+
         if (!((uint)denseIndex < (uint)dense.Length))
             return;
 
         ref var toRemove = ref dense[denseIndex];
+        ref int toRemoveId = ref ids.UnsafeArrayIndex(denseIndex);
+
         if (call) Component<T>.Destroyer?.Invoke(ref toRemove);
 
         ref var top = ref dense.UnsafeArrayIndex(--_nextIndex);
+        ref var topId = ref ids.UnsafeArrayIndex(_nextIndex);
+
+        sparse[topId] = denseIndex;
         denseIndexRef = -1;
 
-
-
         toRemove = top;
-        if(RuntimeHelpers.IsReferenceOrContainsReferences<T>()) 
+        toRemoveId = topId;
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>()) 
             top = default;
     }
 
@@ -144,28 +150,22 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 
 internal abstract class ComponentSparseSetBase
 {
-    protected int[] _sparse;
-    protected int[] _ids;
+    protected int[] _sparse = [];
+    protected int[] _ids = new int[InitialCapacity];
     protected int _nextIndex;
 
     public int Count => _nextIndex;
 
     protected const int InitialCapacity = 4;
 
-    protected ComponentSparseSetBase()
-    {
-        _sparse = new int[InitialCapacity];
-        _ids = new int[InitialCapacity];
-        _sparse.AsSpan().Fill(-1);
-        _ids.AsSpan().Fill(-1);
-    }
-
     public abstract object Get(int id);
     public abstract void AddOrSet(int id, ComponentHandle value);
     public abstract void Set(Entity e, object value);
     public abstract void Remove(int id, bool callDestroyer);
     public abstract bool TryGet(int id, out object value);
+
     public abstract void Run(World world, ReadOnlySpan<int> ids);
+
     public abstract void Init(Entity id);
     public abstract void InvokeGenericEvent(Entity entity, GenericEvent @event);
 
@@ -181,16 +181,15 @@ internal abstract class ComponentSparseSetBase
         if ((uint)id < (uint)localSparse.Length)
             return ref localSparse[id];
 
-        ref int sparseIndex = ref ResizeArrayAndGet(ref _sparse, ref _ids, id);
+        ref int sparseIndex = ref ResizeArrayAndGet(ref _sparse, id);
 
         return ref sparseIndex;
 
-        static ref int ResizeArrayAndGet(ref int[] sparse, ref int[] ids, int index)
+        static ref int ResizeArrayAndGet(ref int[] sparse, int index)
         {
             int prevLen = sparse.Length;
             int newLen = (int)BitOperations.RoundUpToPowerOf2((uint)index + 1);
             Array.Resize(ref sparse, newLen);
-            Array.Resize(ref ids, newLen);
             sparse.AsSpan(prevLen).Fill(-1);
             return ref sparse[index];
         }
