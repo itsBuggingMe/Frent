@@ -39,7 +39,7 @@ public ref struct EntityQueryEnumerator
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask;
@@ -73,8 +73,6 @@ public ref struct EntityQueryEnumerator
 
         while (++_archetypesIndex < _archetypes.Length)
         {// a okay
-            _sparseIndex++;
-
             if (_sparseIndex >= 0)
             {
                 ref Bitset set = ref (uint)_sparseIndex < (uint)_archetypeBitsets.Length
@@ -83,6 +81,8 @@ public ref struct EntityQueryEnumerator
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
+
+                _sparseIndex++;
             }
 
             _current = _currentEntity.ToEntity(_world);
@@ -95,7 +95,7 @@ public ref struct EntityQueryEnumerator
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
-                _sparseIndex = -1;
+                _sparseIndex = 0;
             }
             _entities = _currentArchetype.GetEntitySpan();
 
@@ -147,7 +147,7 @@ public ref struct EntityQueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask;
@@ -181,8 +181,6 @@ public ref struct EntityQueryEnumerator<T>
 
         while (++_entitiesIndex < _archetypes.Length)
         {// a okay
-            _sparseIndex++;
-
             if (_sparseIndex >= 0)
             {
                 ref Bitset set = ref (uint)_sparseIndex < (uint)_archetypeBitsets.Length
@@ -191,6 +189,8 @@ public ref struct EntityQueryEnumerator<T>
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
+
+                _sparseIndex++;
             }
 
             _current.Entity = _currentEntity.ToEntity(_world);
@@ -210,7 +210,7 @@ public ref struct EntityQueryEnumerator<T>
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
-                _sparseIndex = -1;
+                _sparseIndex = 0;
             }
 
             _entities = _currentArchetype.GetEntitySpan();
@@ -257,7 +257,7 @@ public ref struct EntityQueryEnumerator
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask.AsVector();
@@ -291,7 +291,6 @@ public ref struct EntityQueryEnumerator
 
         while (--_entitiesLeft >= 0)
         {// a okay
-            _sparseIndex++;
 
             _currentEntity = ref Unsafe.Add(ref _currentEntity, 1);
 
@@ -303,6 +302,8 @@ public ref struct EntityQueryEnumerator
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
+
+                _sparseIndex++;
             }
 
             _current = _currentEntity.ToEntity(_world);
@@ -317,7 +318,7 @@ public ref struct EntityQueryEnumerator
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
-                _sparseIndex = -1;
+                _sparseIndex = 0;
             }
 
             // point to index -1
@@ -363,7 +364,7 @@ public ref struct EntityQueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask.AsVector();
@@ -397,8 +398,6 @@ public ref struct EntityQueryEnumerator<T>
 
         while (--_entitiesLeft >= 0)
         {// a okay
-            _sparseIndex++;
-
             _currentEntity = ref Unsafe.Add(ref _currentEntity, 1);
 
             if (_sparseIndex >= 0)
@@ -409,7 +408,10 @@ public ref struct EntityQueryEnumerator<T>
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
+
+                _sparseIndex++;
             }
+
 
             _current.Entity = _currentEntity.ToEntity(_world);
             int entityId = _current.Entity.EntityID;
@@ -434,7 +436,7 @@ public ref struct EntityQueryEnumerator<T>
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
-                _sparseIndex = -1;
+                _sparseIndex = 0;
             }
 
             // point to index -1

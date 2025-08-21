@@ -572,7 +572,6 @@ public partial class World : IDisposable
     /// Creates an <see cref="Entity"/> from a set of component handles. The handles are not disposed.
     /// </summary>
     /// <returns>The created entity.</returns>
-    [SkipLocalsInit]
     public Entity CreateFromHandles(ReadOnlySpan<ComponentHandle> componentHandles, ReadOnlySpan<TagID> tags = default)
     {
         if (componentHandles.Length > MemoryHelpers.MaxComponentCount)
@@ -582,16 +581,23 @@ public partial class World : IDisposable
         Span<int> sparseComponentIndicies = stackalloc int[componentHandles.Length];
         bool hasSparseComponent = false;
 
+        int archetypeicalComponentIdsIndex = 0;
         for (int i = 0; i < componentHandles.Length; i++)
         {
             ComponentID compId = componentHandles[i].ComponentID;
-            componentIDs[i] = compId;
             int sparseIndex = componentHandles[i].ComponentID.SparseIndex;
-            sparseComponentIndicies[i] = sparseIndex;
-            hasSparseComponent = sparseIndex != 0;
+            if (sparseIndex == 0)
+            {
+                componentIDs[archetypeicalComponentIdsIndex++] = compId;
+            }
+            else
+            {
+                sparseComponentIndicies[i] = sparseIndex;
+                hasSparseComponent = true;
+            }
         }
 
-        WorldArchetypeTableItem archetypes = Archetype.CreateOrGetExistingArchetypes(componentIDs, tags, this);
+        WorldArchetypeTableItem archetypes = Archetype.CreateOrGetExistingArchetypes(componentIDs.Slice(0, archetypeicalComponentIdsIndex), tags, this);
 
         ref var archetypeEntityRecord = ref Unsafe.NullRef<EntityIDOnly>();
         ref EntityLocation eloc = ref FindNewEntityLocation(out int id);

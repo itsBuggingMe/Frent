@@ -207,12 +207,12 @@ partial class World
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DeleteEntityWithoutEvents(Entity entity, ref EntityLocation currentLookup)
     {
+        if (currentLookup.HasFlag(EntityFlags.HasSparseComponents))
+            CleanupSparseComponents(entity, ref currentLookup);
+
         // entity is guaranteed to be alive here
         // entity is alive; Archetype is not null
         EntityIDOnly replacedEntity = currentLookup.Archetype!.DeleteEntity(currentLookup.Index);
-
-        if (currentLookup.HasFlag(EntityFlags.HasSparseComponents))
-            CleanupSparseComponents(entity, ref currentLookup);
 
         Debug.Assert(replacedEntity.ID < EntityTable._buffer.Length);
         Debug.Assert(entity.EntityID < EntityTable._buffer.Length);

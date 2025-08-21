@@ -13,6 +13,10 @@ using Frent.Core.Events;
 
 namespace Frent.Collections;
 
+// TODO: sparse set improvements
+// merge id + dense array for less lookups
+// fix removal
+// make more explicit event/lifetime methods vs modify methods
 internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 {
     internal T[] Dense = new T[InitialCapacity];
@@ -96,8 +100,11 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 
         ref var toRemove = ref dense[denseIndex];
         if (call) Component<T>.Destroyer?.Invoke(ref toRemove);
+
         ref var top = ref dense.UnsafeArrayIndex(--_nextIndex);
         denseIndexRef = -1;
+
+
 
         toRemove = top;
         if(RuntimeHelpers.IsReferenceOrContainsReferences<T>()) 

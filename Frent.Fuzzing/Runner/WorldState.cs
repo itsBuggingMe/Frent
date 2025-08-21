@@ -2,7 +2,9 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Frent.Core;
+using Frent.Marshalling;
 
 namespace Frent.Fuzzing.Runner;
 
@@ -28,6 +30,7 @@ internal partial class WorldState : IDisposable
     // record keeping
     private readonly Random _random;
     private readonly List<StepRecord> _actions = [];
+    private readonly Dictionary<Entity, List<StepRecord>> _entityHistory = [];
     private int _steps;
     private int _seed;
 
@@ -36,6 +39,7 @@ internal partial class WorldState : IDisposable
 
     // expected state
     private Dictionary<Entity, List<ComponentHandle>> _componentValues = [];
+
     private IEnumerable<Entity> Entities => _componentValues.Select(kvp => kvp.Key);
     private HashSet<Entity> _dead = [];
 
@@ -97,6 +101,12 @@ internal partial class WorldState : IDisposable
         _actions.Add(stepTaken);
         stepTaken.Playback?.Invoke();
 
+        if (!stepTaken.Entity.IsNull)
+        {
+            (CollectionsMarshal.GetValueRefOrAddDefault(_entityHistory, stepTaken.Entity, out _) ??= [])
+                .Add(stepTaken);
+        }
+
         EnsureConsistency();
 
         _steps++;
@@ -105,6 +115,8 @@ internal partial class WorldState : IDisposable
 
     private void EnsureConsistency()
     {
+        Console.WriteLine($"Validating Step {_steps}: {_actions.Last()}");
+
         _dead.All(e => !e.IsAlive)
             .Assert(this);
 

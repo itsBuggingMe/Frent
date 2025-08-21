@@ -84,7 +84,7 @@ internal partial class WorldState
 
         toDelete.Delete();
 
-        return new StepRecord(WorldActions.Delete, toDelete, new { Skip = "Nothing to delete." }, () =>
+        return new StepRecord(WorldActions.Delete, toDelete, new { Skip = "Deleted" }, () =>
         {
             _componentValues.Remove(toDelete);
             _dead.Add(toDelete)

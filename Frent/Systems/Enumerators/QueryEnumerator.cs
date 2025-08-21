@@ -40,7 +40,7 @@ public ref struct QueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask;
@@ -74,7 +74,6 @@ public ref struct QueryEnumerator<T>
 
         while (++_entitiesIndex < _archetypes.Length)
         {// a okay
-            _sparseIndex++;
 
             if (_sparseIndex >= 0)
             {
@@ -84,6 +83,8 @@ public ref struct QueryEnumerator<T>
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
+
+                _sparseIndex++;
             }
 
             int entityId = _currentEntity.ID;
@@ -102,7 +103,7 @@ public ref struct QueryEnumerator<T>
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
-                _sparseIndex = -1;
+                _sparseIndex = 0;
             }
 
             _entities = _currentArchetype.GetEntitySpan();
@@ -151,7 +152,7 @@ public ref struct QueryEnumerator<T>
         _world = query.World;
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : int.MinValue;
+        _sparseIndex = query.HasSparseRules ? 0 : -1;
         if (query.HasSparseRules)
         {
             _include = query.IncludeMask.AsVector();
@@ -185,8 +186,6 @@ public ref struct QueryEnumerator<T>
 
         while (--_entitiesLeft >= 0)
         {// a okay
-            _sparseIndex++;
-
             _currentEntity = ref Unsafe.Add(ref _currentEntity, 1);
 
             if (_sparseIndex >= 0)
@@ -197,6 +196,8 @@ public ref struct QueryEnumerator<T>
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
+
+                _sparseIndex++;
             }
 
             int entityId = _currentEntity.ID;
@@ -219,7 +220,7 @@ public ref struct QueryEnumerator<T>
             if (_sparseIndex >= 0)
             {
                 _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
-                _sparseIndex = -1;
+                _sparseIndex = 0;
             }
             _currentEntity = ref Unsafe.Subtract(ref _currentArchetype.GetEntityDataReference(), 1);
 
