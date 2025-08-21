@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Frent.Core;
@@ -56,6 +57,9 @@ internal partial class WorldState : IDisposable
 
     public void Advance()
     {
+        if (_actions.Count == 11)
+            ;
+
         WorldActions thisAction = WorldActionsHelper.SelectWeightedAction(_random);
 
         StepRecord stepTaken = thisAction switch
@@ -104,14 +108,15 @@ internal partial class WorldState : IDisposable
         _dead.All(e => !e.IsAlive)
             .Assert(this);
 
-        _componentValues.All(kvp => 
-                    !kvp.Key.IsNull &&
-                    kvp.Key.IsAlive &&
-                    kvp.Key.ComponentTypes.Length == kvp.Value.Count &&
-                    kvp.Key.World == _worldState &&
-                    kvp.Value.All(h => kvp.Key.Has(h.ComponentID)) &&
-                    kvp.Value.All(h => kvp.Key.Get(h.ComponentID).Equals(h.RetrieveBoxed())))
-                    .Assert(this);
+        foreach (var kvp in _componentValues)
+        {
+            (!kvp.Key.IsNull).Assert(this);
+            (kvp.Key.IsAlive).Assert(this);
+            (kvp.Key.ComponentTypes.Length == kvp.Value.Count).Assert(this);
+            (kvp.Key.World == _worldState).Assert(this);
+            (kvp.Value.All(h => kvp.Key.Has(h.ComponentID))).Assert(this);
+            (kvp.Value.All(h => kvp.Key.Get(h.ComponentID).Equals(h.RetrieveBoxed()))).Assert(this);
+        }
 
         IEnumerable<Entity> allQueriedEntities = _worldState.CreateQuery()
             .Build()
@@ -172,6 +177,7 @@ internal partial class WorldState : IDisposable
         }
     }
 
+    [DebuggerHidden]
     public void Assert(bool pass, [CallerArgumentExpression(nameof(pass))] string? message = null)
     {
         if (!pass)

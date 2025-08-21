@@ -96,7 +96,7 @@ internal partial class WorldState
         if (!TryPickEntity(out var toAdd))
             return SkipRecord(WorldActions.AddGeneric);
 
-        PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types);
+        PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types, c => !_componentValues[toAdd].Any(h => h.ComponentID == c));
 
         MethodInfo addComponentMethod = _add[componentParams.Length - 1].MakeGenericMethod(types);
         addComponentMethod.Invoke(toAdd, componentParams);
@@ -115,7 +115,7 @@ internal partial class WorldState
         if (!TryPickEntity(out var toAdd))
             return SkipRecord(WorldActions.AddHandles);
 
-        PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types);
+        PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types, c => !_componentValues[toAdd].Any(h => h.ComponentID == c));
 
         toAdd.AddFromHandles(CollectionsMarshal.AsSpan(handles));
 
@@ -134,6 +134,9 @@ internal partial class WorldState
             return SkipRecord(WorldActions.AddObject);
 
         PrepareComponent(out object component, out ComponentHandle handle, out Type type);
+
+        if(!_componentValues[toAdd].Any(h => h.ComponentID == handle.ComponentID))
+            return new(WorldActions.AddHandles, toAdd, new { Skip = "Already Has Component" });
 
         toAdd.AddBoxed(component);
 
@@ -247,16 +250,22 @@ internal partial class WorldState
         return new(WorldActions.SubscribeDelete, default, "Not implemented");
     }
 
-    private void PrepareComponents(out object[] componentParams, out List<ComponentHandle> componentHandles, out Type[] types)
+    private void PrepareComponents(out object[] componentParams, out List<ComponentHandle> componentHandles, out Type[] types, Func<ComponentID, bool>? selector = null)
     {
         int componentCount = _random.Next(_sharedIDs.Length) + 1;
-        componentParams = new object[componentCount];
-        componentHandles = new(componentCount);
 
         _random.Shuffle(_sharedIDs);
 
+        var filtered = _sharedIDs
+            .Take(componentCount)
+            .Where(entry => selector == null || selector(entry.ID))
+            .ToArray();
+
+        componentParams = new object[filtered.Length];
+        componentHandles = new(filtered.Length);
+
         int index = 0;
-        foreach (var (_, fac) in _sharedIDs.AsSpan(0, componentCount))
+        foreach (var (id, fac) in filtered)
         {
             var handle = fac(_random);
             componentHandles.Add(handle);
@@ -265,6 +274,7 @@ internal partial class WorldState
 
         types = componentParams.Select(o => o.GetType()).ToArray();
     }
+
 
     private void PrepareComponent(out object component, out ComponentHandle handle, out Type type)
     {

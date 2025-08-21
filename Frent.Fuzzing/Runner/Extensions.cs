@@ -1,10 +1,12 @@
 ﻿using Frent.Systems;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace Frent.Fuzzing.Runner;
 
 internal static class Extensions
 {
+    [DebuggerHidden]
     public static void Assert(this bool pass, WorldState state, [CallerArgumentExpression(nameof(pass))] string? message = null)
     {
         state.Assert(pass, message);

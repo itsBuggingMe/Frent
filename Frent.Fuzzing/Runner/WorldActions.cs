@@ -64,7 +64,7 @@ internal static class WorldActionsHelper
 
     public static WorldActions SelectWeightedAction(Random random)
     {
-        float scaled = Random.Shared.NextSingle() * s_sum;
+        float scaled = random.NextSingle() * s_sum;
 
         float cumulative = 0;
         for (int i = 0; i < s_table.Length; i++)

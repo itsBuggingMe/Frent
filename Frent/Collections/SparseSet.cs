@@ -81,7 +81,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
 
     public override object Get(int id) => Dense[_sparse[id]]!;
 
-    public override void InvokeGenericEvent(int id, Entity entity, GenericEvent @event) => @event.Invoke(entity, ref Dense[_sparse[id]]);
+    public override void InvokeGenericEvent(Entity entity, GenericEvent @event) => @event.Invoke(entity, ref Dense[_sparse[entity.EntityID]]);
 
     public override void Remove(int id, bool call)
     {
@@ -131,6 +131,8 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
     }
 
     internal ref T GetComponentDataReference() => ref MemoryMarshal.GetArrayDataReference(Dense);
+
+    public override void Init(Entity entity) => Component<T>.Initer?.Invoke(entity, ref this[entity.EntityID]);
 }
 
 internal abstract class ComponentSparseSetBase
@@ -157,13 +159,14 @@ internal abstract class ComponentSparseSetBase
     public abstract void Remove(int id, bool callDestroyer);
     public abstract bool TryGet(int id, out object value);
     public abstract void Run(World world, ReadOnlySpan<int> ids);
-    public abstract void InvokeGenericEvent(int id, Entity entity, GenericEvent @event);
+    public abstract void Init(Entity id);
+    public abstract void InvokeGenericEvent(Entity entity, GenericEvent @event);
 
     public bool Has(int id)
     {
         int[] arr = _sparse;
         return (uint)id < (uint)arr.Length && arr[id] != -1;
-    }
+   }
 
     protected ref int EnsureSparseCapacityAndGetIndex(int id)
     {

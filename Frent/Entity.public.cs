@@ -264,45 +264,92 @@ partial struct Entity
         
         ArchetypeID finalArchetype = eloc.ArchetypeID;
 
-
         //TODO: setting sparse bits and calling initers.
+        ref Bitset bits = ref eloc.GetBitset();
+
+        bool moveArchetypes = false;
         foreach (var componentHandle in componentHandles)
         {
-            if (componentHandle.ComponentID.IsSparseComponent)
+            int sparseIndex = componentHandle.ComponentID.SparseIndex;
+            if (sparseIndex != 0)
             {
-                world.WorldSparseSetTable.UnsafeArrayIndex(componentHandle.ComponentID.SparseIndex).AddOrSet(eloc.Index, componentHandle);
+                world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).AddOrSet(eloc.Index, componentHandle);
                 eloc.Flags |= EntityFlags.HasSparseComponents;
+                bits.Set(sparseIndex);
             }
             else
             {
-                finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddTag);
+                moveArchetypes = true;
+                finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddComponent);
             }
         }
         
         Archetype destinationArchetype = finalArchetype.Archetype(world);
-        
-        world.MoveEntityToArchetypeAdd(this, ref eloc, out EntityLocation nextLocation, destinationArchetype);
-        
+
+        EntityLocation nextLocation;
+        if (moveArchetypes)
+            world.MoveEntityToArchetypeAdd(this, ref eloc, out nextLocation, destinationArchetype);
+        else
+            nextLocation = eloc;
+
         Span<ComponentStorageRecord> buffer = MemoryHelpers.GetSharedTempComponentStorageBuffer(componentHandles.Length);
 
+        // maybe cache sparse indicies on the stack
         for(int i = 0; i < componentHandles.Length; i++)
         {
-            var storage = destinationArchetype.Components[destinationArchetype.GetComponentIndex(componentHandles[i].ComponentID)];
-            storage.SetAt(null, componentHandles[i], nextLocation.Index);
-            buffer[i] = storage;
+            ComponentID compId = componentHandles[i].ComponentID;
+            int sparseIndex = compId.SparseIndex;
+            if(sparseIndex == 0)
+            {
+                var storage = destinationArchetype.Components[destinationArchetype.GetComponentIndex(compId)];
+                storage.SetAt(null, componentHandles[i], nextLocation.Index);
+                buffer[i] = storage;
+            }
+            else
+            {
+                // set above already
+
+            }
         }
 
         for(int i = 0; i < componentHandles.Length; i++)
         {
-            buffer[i].CallIniter(this, nextLocation.Index);
+            ComponentID compId = componentHandles[i].ComponentID;
+            int sparseIndex = compId.SparseIndex;
+            if (sparseIndex == 0)
+            {
+                buffer[i].CallIniter(this, nextLocation.Index);
+            }
+            else
+            {
+                world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).Init(this);
+            }
         }
+
 
         EventRecord events = world.EventLookup.GetOrAddNew(EntityIDOnly);
 
+        if (!events.Add.HasListeners && !world.ComponentAddedEvent.HasListeners)
+            return;
+
         for (int i = 0; i < componentHandles.Length; i++)
         {
-            events.Add.NormalEvent.Invoke(this, componentHandles[i].ComponentID);
-            buffer[i].InvokeGenericActionWith(events.Add.GenericEvent, this, nextLocation.Index);
+            ComponentID compId = componentHandles[i].ComponentID;
+            int sparseIndex = compId.SparseIndex;
+            events.Add.NormalEvent.Invoke(this, compId);
+            world.ComponentAddedEvent.Invoke(this, compId);
+
+            if (events.Add.GenericEvent is null)
+                continue;
+
+            if (sparseIndex == 0)
+            {
+                buffer[i].InvokeGenericActionWith(events.Add.GenericEvent, this, nextLocation.Index);
+            }
+            else
+            {
+                world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).InvokeGenericEvent(this, events.Add.GenericEvent);
+            }
         }
     }
 

@@ -77,10 +77,9 @@ public ref struct EntityQueryEnumerator
 
             if (_sparseIndex >= 0)
             {
-                if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
-                    continue;
-
-                ref Bitset set = ref _archetypeBitsets[_sparseIndex];
+                ref Bitset set = ref (uint)_sparseIndex < (uint)_archetypeBitsets.Length
+                    ? ref _archetypeBitsets[_sparseIndex]
+                    : ref Bitset.Zero;
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
@@ -186,10 +185,9 @@ public ref struct EntityQueryEnumerator<T>
 
             if (_sparseIndex >= 0)
             {
-                if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
-                    continue;
-
-                ref Bitset set = ref _archetypeBitsets[_sparseIndex];
+                ref Bitset set = ref (uint)_sparseIndex < (uint)_archetypeBitsets.Length
+                    ? ref _archetypeBitsets[_sparseIndex]
+                    : ref Bitset.Zero;
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
@@ -299,10 +297,9 @@ public ref struct EntityQueryEnumerator
 
             if (_sparseIndex >= 0)
             {
-                if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
-                    continue;
-
-                ref Bitset set = ref _archetypeBitsets[_sparseIndex];
+                ref Bitset set = ref (uint)_sparseIndex < (uint)_archetypeBitsets.Length
+                    ? ref _archetypeBitsets[_sparseIndex]
+                    : ref Bitset.Zero;
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
@@ -406,10 +403,9 @@ public ref struct EntityQueryEnumerator<T>
 
             if (_sparseIndex >= 0)
             {
-                if (!((uint)_sparseIndex < (uint)_archetypeBitsets.Length))
-                    continue;
-
-                ref Bitset set = ref _archetypeBitsets[_sparseIndex];
+                ref Bitset set = ref (uint)_sparseIndex < (uint)_archetypeBitsets.Length
+                    ? ref _archetypeBitsets[_sparseIndex]
+                    : ref Bitset.Zero;
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;

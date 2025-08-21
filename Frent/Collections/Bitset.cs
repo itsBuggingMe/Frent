@@ -10,6 +10,8 @@ namespace Frent.Collections;
 
 internal struct Bitset
 {
+    internal static Bitset Zero = default;
+
     public const int Capacity = 256;
     private const ulong HighBit = 1UL << 63;
     private ulong _0;
