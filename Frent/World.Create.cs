@@ -27,16 +27,21 @@ partial class World
         ref EntityLocation eloc = ref FindNewEntityLocation(out int id);
 
         ComponentStorageRecord[] components;
+        Archetype inserted;
 
         if (AllowStructualChanges)
         {
+            inserted = archetypes.Archetype;
             components = archetypes.Archetype.Components;
             archetypeEntityRecord = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
         }
         else
         {
             // we don't need to manually set flags, they are already zeroed
-            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
+            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, 
+                ref eloc, 
+                out components,
+                out inserted);
             DeferredCreationEntities.Push(id);
         }
 
@@ -56,9 +61,15 @@ partial class World
         if (hasSparseComponent)
         {
             eloc.Flags |= EntityFlags.HasSparseComponents;
-            ref Bitset bitset = ref archetypes.Archetype.GetBitset(eloc.Index);
+            ref Bitset bitset = ref inserted.GetBitset(eloc.Index);
+
+            bitset = default;
 
             if (Component<T>.IsSparseComponent) bitset.Set(Component<T>.SparseSetComponentIndex);
+        }
+        else
+        {
+            inserted.ClearBitset(eloc.Index);
         }
 
         // Version is incremented on delete, so we don't need to do anything here

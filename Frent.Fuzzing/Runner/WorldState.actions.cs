@@ -43,12 +43,6 @@ internal partial class WorldState
         (Component<S3>.ID, (rng) => ComponentHandle.Create(new S3(rng.Next()))),
         (Component<S4>.ID, (rng) => ComponentHandle.Create(new S4(rng.Next()))),
         ];
-
-    private WorldState()
-    {
-
-    }
-
     private StepRecord CreateGeneric()
     {
         PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types);
@@ -97,6 +91,9 @@ internal partial class WorldState
             return SkipRecord(WorldActions.AddGeneric);
 
         PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types, c => !_componentValues[toAdd].Any(h => h.ComponentID == c));
+
+        if (componentParams.Length == 0)
+            return new StepRecord(WorldActions.AddGeneric, toAdd, new { Skip = "Not valid for the entity." });
 
         MethodInfo addComponentMethod = _add[componentParams.Length - 1].MakeGenericMethod(types);
         addComponentMethod.Invoke(toAdd, componentParams);
