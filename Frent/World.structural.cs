@@ -24,13 +24,7 @@ partial class World
         Archetype destination = RemoveComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.RemoveComponent)
             .Archetype(this);
 
-#if NETSTANDARD2_1
-        //array is allocated
-        //Span<ComponentHandle> tmpHandleSpan = [default!];
         MoveEntityToArchetypeRemove(entity, ref lookup, destination);
-#else
-        MoveEntityToArchetypeRemove(entity, ref lookup, destination);
-#endif
     }
 
     internal void AddArchetypicalComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID, out EntityLocation entityLocation, out Archetype destination)
@@ -116,8 +110,9 @@ partial class World
 
         for (int i = 0; i < fromComponents.Length;)
         {
-            ComponentID componentToMoveFromFromToTo = fromComponents[i];
-            int toIndex = destMap.UnsafeArrayIndex(componentToMoveFromFromToTo.RawIndex) & GlobalWorldTables.IndexBits;
+            // from -> to
+            ComponentID componentToMove = fromComponents[i];
+            int toIndex = destMap.UnsafeArrayIndex(componentToMove.RawIndex) & GlobalWorldTables.IndexBits;
 
             i++;
 

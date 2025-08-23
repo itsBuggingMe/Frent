@@ -579,6 +579,19 @@ public partial class World : IDisposable
         if (componentHandles.Length > MemoryHelpers.MaxComponentCount)
             throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
 
+        ref EntityLocation loc = ref FindNewEntityLocation(out int id);
+
+        CreateFromHandlesCore(id, ref loc, componentHandles, tags);
+
+        return DefaultWorldEntity with
+        {
+            EntityID = id,
+            EntityVersion = loc.Version,
+        };
+    }
+
+    internal void CreateFromHandlesCore(int id, ref EntityLocation eloc, ReadOnlySpan<ComponentHandle> componentHandles, ReadOnlySpan<TagID> tags = default)
+    {
         Span<ComponentID> componentIDs = stackalloc ComponentID[componentHandles.Length];
         Span<int> sparseComponentIndicies = stackalloc int[componentHandles.Length];
         bool hasSparseComponent = false;
@@ -602,8 +615,6 @@ public partial class World : IDisposable
         WorldArchetypeTableItem archetypes = Archetype.CreateOrGetExistingArchetypes(componentIDs.Slice(0, archetypeicalComponentIdsIndex), tags, this);
 
         ref var archetypeEntityRecord = ref Unsafe.NullRef<EntityIDOnly>();
-        ref EntityLocation eloc = ref FindNewEntityLocation(out int id);
-
 
         Archetype inserted;
         if (AllowStructualChanges)
@@ -614,9 +625,9 @@ public partial class World : IDisposable
         else
         {
             // we don't need to manually set flags, they are already zeroed
-            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, 
-                ref eloc, 
-                out _, 
+            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype,
+                ref eloc,
+                out _,
                 out inserted);
             DeferredCreationEntities.Push(id);
         }

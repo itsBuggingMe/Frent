@@ -67,7 +67,7 @@ internal abstract class ComponentBufferManager
     /// </summary>
     internal abstract void PullComponentFromAndClear(Array buffer, Array otherRunner, int me, int other, int otherRemove);
     /// <summary>
-    /// Copies component from storage without disposing component handle - just copies. Initer called.
+    /// Copies component from storage without disposing component handle - just copies.
     /// </summary>
     internal abstract void PullComponentFrom(Array buffer, IDTable storage, int me, int other);
     /// <summary>
@@ -94,6 +94,10 @@ internal abstract class ComponentBufferManager
     /// Calls the initer at the location.
     /// </summary>
     internal abstract void CallIniter(Array buffer, Entity parent, int index);
+    /// <summary>
+    /// Calls the destroyer at the location.
+    /// </summary>
+    internal abstract void CallDestroyer(Array buffer, int index);
     #endregion
 }
 
@@ -180,6 +184,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     }
 
     internal sealed override void CallIniter(Array buffer, Entity parent, int index) => Component<TComponent>.Initer?.Invoke(parent, ref Index(buffer, index));
+    internal sealed override void CallDestroyer(Array buffer, int index) => Component<TComponent>.Destroyer?.Invoke(ref Index(buffer, index));
     internal sealed override void InvokeGenericActionWith(Array buffer, GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref Index(buffer, index));
     internal sealed override void InvokeGenericActionWith(Array buffer, IGenericAction action, int index) => action?.Invoke(ref Index(buffer, index));
     internal sealed override void PullComponentFromAndClear(Array buffer, Array otherRunnerBuffer, int me, int other, int otherRemoveIndex)
@@ -207,7 +212,8 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     internal sealed override void Delete(Array buffer, DeleteComponentData data)
     {
         ref var from = ref Index(buffer, data.FromIndex);
-        Component<TComponent>.Destroyer?.Invoke(ref from);
+        // we delete separately now
+        // Component<TComponent>.Destroyer?.Invoke(ref from);
         Index(buffer, data.ToIndex) = from;
 
 
