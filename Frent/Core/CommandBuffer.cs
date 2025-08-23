@@ -284,7 +284,7 @@ public class CommandBuffer
             if (createCommand.BufferLength > 0)
             {
                 Span<ComponentHandle> handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
-                _world.CreateFromHandles(handles);
+                _world.CreateFromHandlesCore(concrete.EntityID, ref _world.EntityTable[concrete.EntityID], handles);
             }
         }
 
@@ -322,7 +322,8 @@ public class CommandBuffer
                 else
                 {
                     ComponentStorageRecord componentStorage = record.Archetype.GetComponentStorage(item.ComponentID);
-                    componentStorage.CallDestroyer(record.Index);
+                    // implicitly called by RemoveArchetypicalComponent
+                    // componentStorage.CallDestroyer(record.Index);
                     if (removeEvent is not null)
                         componentStorage.InvokeGenericActionWith(removeEvent, concrete, record.Index);
                     _world.RemoveArchetypicalComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);

@@ -129,8 +129,8 @@ partial struct Entity
 
         }
 
-        // Call Destroyers
-        Component<T>.Destroyer?.Invoke(ref c1ref);
+        // implicitly called by MoveEntityToArchetypeRemove for archetypical components
+        if(Component<T>.IsSparseComponent) Component<T>.Destroyer?.Invoke(ref c1ref);
 
         // Actually move components
 

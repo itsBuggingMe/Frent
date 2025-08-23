@@ -212,8 +212,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     internal sealed override void Delete(Array buffer, DeleteComponentData data)
     {
         ref var from = ref Index(buffer, data.FromIndex);
-        // we delete separately now
-        // Component<TComponent>.Destroyer?.Invoke(ref from);
+        Component<TComponent>.Destroyer?.Invoke(ref from);
         Index(buffer, data.ToIndex) = from;
 
 

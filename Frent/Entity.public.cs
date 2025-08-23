@@ -402,21 +402,17 @@ partial struct Entity
 
             int entityIndex = 0;
 
-            if (EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+            w.ComponentAddedEvent.Invoke(this, componentID);
+
+            if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
-                if (w.ComponentAddedEvent.HasListeners)
-                    w.ComponentAddedEvent.Invoke(this, componentID);
+                ref EventRecord events = ref w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
 
-                if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+                events.Add.NormalEvent.Invoke(this, componentID);
+                if (events.Add.GenericEvent is not null)
                 {
-                    ref EventRecord events = ref w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
-
-                    events.Add.NormalEvent.Invoke(this, componentID);
-                    if(events.Add.GenericEvent is not null)
-                    {
-                        sparseSet?.InvokeGenericEvent(this, events.Add.GenericEvent);
-                        componentRunner?.InvokeGenericActionWith(events.Add.GenericEvent, this, entityIndex);
-                    }
+                    sparseSet?.InvokeGenericEvent(this, events.Add.GenericEvent);
+                    componentRunner?.InvokeGenericActionWith(events.Add.GenericEvent, this, entityIndex);
                 }
             }
         }
@@ -437,14 +433,32 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
+            w.ComponentAddedEvent.Invoke(this, componentID);
+
+            ref EventRecord events = ref Unsafe.NullRef<EventRecord>();
+            if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+            {
+                events = ref w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
+
+                events.Remove.NormalEvent.Invoke(this, componentID);
+            }
+
             int sparseIndex = componentID.SparseIndex;
             if (sparseIndex != 0)
             {
                 lookup.GetBitset().ClearAt(sparseIndex);
-                w.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).Remove(EntityID, true);
+                ComponentSparseSetBase sparseSet = w.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex);
+
+                if (!Unsafe.IsNullRef(ref events) && events.Remove.GenericEvent is { } generic)
+                    sparseSet.InvokeGenericEvent(this, events.Remove.GenericEvent);
+
+                sparseSet.Remove(EntityID, true);
             }
             else
             {
+                if (!Unsafe.IsNullRef(ref events))
+                    lookup.Archetype.GetComponentStorage(componentID).InvokeGenericActionWith(events.Remove.GenericEvent, this, lookup.Index);
+
                 w.RemoveArchetypicalComponent(this, ref lookup, componentID);
             }
         }

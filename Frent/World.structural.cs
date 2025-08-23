@@ -18,7 +18,6 @@ partial class World
      *  These functions take all the data it needs, with no validation that an entity is alive
      */
 
-    //TODO: events for these?
     internal void RemoveArchetypicalComponent(Entity entity, ref EntityLocation lookup, ComponentID componentID)
     {
         Archetype destination = RemoveComponentLookup.FindAdjacentArchetypeID(componentID, lookup.ArchetypeID, this, ArchetypeEdgeType.RemoveComponent)
@@ -83,7 +82,7 @@ partial class World
     }
 
     /// <remarks>
-    /// Does not handle events. Call .Destroy
+    /// Does not handle events. Calls Destroy implicitly
     /// </remarks>>
     [SkipLocalsInit]
     internal void MoveEntityToArchetypeRemove(Entity entity, ref EntityLocation currentLookup, Archetype destination)
