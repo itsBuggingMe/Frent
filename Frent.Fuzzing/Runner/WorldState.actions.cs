@@ -320,59 +320,6 @@ internal partial class WorldState
             _componentValues[e] = componentHandles.Where(h => h.ComponentID != handle.ComponentID).Append(handle).ToList();
         });
     }
-    private StepRecord SubscribeWorldCreate()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeWorldDelete()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeAdd()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeRemoved()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeAddGeneric()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeRemovedGeneric()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeWorldAdd()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeWorldRemoved()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeTag()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeDetach()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeWorldTag()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeWorldDetach()
-    {
-        return new(default, "Not implemented");
-    }
-    private StepRecord SubscribeDelete()
-    {
-        return new(default, "Not implemented");
-    }
-
     private bool HasComponent(Entity entity, ComponentID componentId)
     {
         return _componentValues[entity].Any(c => c.ComponentID == componentId);

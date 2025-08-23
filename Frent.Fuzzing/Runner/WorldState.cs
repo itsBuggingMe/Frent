@@ -108,19 +108,6 @@ internal partial class WorldState : IDisposable
             WorldActions.DetachGeneric => DetachGeneric(),
             WorldActions.DetachType => DetachType(),
             WorldActions.Set => Set(),
-            WorldActions.SubscribeWorldCreate => SubscribeWorldCreate(),
-            WorldActions.SubscribeWorldDelete => SubscribeWorldDelete(),
-            WorldActions.SubscribeAdd => SubscribeAdd(),
-            WorldActions.SubscribeRemoved => SubscribeRemoved(),
-            WorldActions.SubscribeAddGeneric => SubscribeAddGeneric(),
-            WorldActions.SubscribeRemovedGeneric => SubscribeRemovedGeneric(),
-            WorldActions.SubscribeWorldAdd => SubscribeWorldAdd(),
-            WorldActions.SubscribeWorldRemoved => SubscribeWorldRemoved(),
-            WorldActions.SubscribeTag => SubscribeTag(),
-            WorldActions.SubscribeDetach => SubscribeDetach(),
-            WorldActions.SubscribeWorldTag => SubscribeWorldTag(),
-            WorldActions.SubscribeWorldDetach => SubscribeWorldDetach(),
-            WorldActions.SubscribeDelete => SubscribeDelete(),
             _ => throw new ArgumentOutOfRangeException(nameof(thisAction), thisAction, null)
         };
 
