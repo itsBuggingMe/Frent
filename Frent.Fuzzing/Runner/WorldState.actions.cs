@@ -72,11 +72,10 @@ internal partial class WorldState
 
         Entity entity= (Entity)m.Invoke(_worldState, componentParams)!;
 
-        return new StepRecord(entity, new { GenericArguments = types }, () =>
-        {
-            _componentValues.Add(entity, handles);
-            _tagValues.Add(entity, []);
-        });
+        _componentValues.Add(entity, handles);
+        _tagValues.Add(entity, []);
+
+        return new StepRecord(entity, new { GenericArguments = types });
     }
 
     private StepRecord CreateHandles()
@@ -85,11 +84,10 @@ internal partial class WorldState
 
         Entity entity = _worldState.CreateFromHandles(CollectionsMarshal.AsSpan(handles));
 
-        return new StepRecord(entity, new { Types = types }, () => 
-        {
-            _componentValues.Add(entity, handles);
-            _tagValues.Add(entity, []);
-        });
+        _componentValues.Add(entity, handles);
+        _tagValues.Add(entity, []);
+
+        return new StepRecord(entity, new { Types = types });
     }
 
     private StepRecord CreateObjects()
@@ -98,11 +96,10 @@ internal partial class WorldState
 
         Entity entity = _worldState.CreateFromObjects(componentParams);
 
-        return new StepRecord(entity, new { Types = types }, () => 
-        { 
-            _componentValues.Add(entity, handles); 
-            _tagValues.Add(entity, []); 
-        });
+        _componentValues.Add(entity, handles);
+        _tagValues.Add(entity, []);
+
+        return new StepRecord(entity, new { Types = types });
     }
     private StepRecord Delete()
     {
@@ -290,12 +287,38 @@ internal partial class WorldState
 
     private StepRecord DetachType()
     {
-        return new(default, "Not implemented");
+        if (!TryPickEntity(out var e))
+            return SkipRecord();
+
+        var tag = _tags[_random.Next(_tags.Length)];
+
+        if (!e.Tagged(tag))
+            return new(e, new { Skip = "Does not have tag" });
+
+        e.Detach(tag.Type);
+
+        return new(e, new { Detach = tag.Type }, () => _tagValues[e].Remove(tag));
     }
 
     private StepRecord Set()
     {
-        return new(default, "Not implemented");
+        if (!TryPickEntity(out var e))
+            return SkipRecord();
+
+        _random.Shuffle(_sharedIDs);
+
+        if (!_componentValues[e].Any(e => _sharedIDs[0].ID == e.ComponentID))
+            return new(e, new { Skip = "None selected to set." });
+
+        ComponentHandle handle = _sharedIDs[0].Factory(_random);
+        e.Set(handle.ComponentID, handle.RetrieveBoxed());
+
+        return new(e, new { Set = handle.ComponentID.Type }, () =>
+        {
+            List<ComponentHandle> componentHandles = _componentValues[e];
+
+            _componentValues[e] = componentHandles.Where(h => h.ComponentID != handle.ComponentID).Append(handle).ToList();
+        });
     }
     private StepRecord SubscribeWorldCreate()
     {
