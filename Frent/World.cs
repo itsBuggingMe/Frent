@@ -581,16 +581,10 @@ public partial class World : IDisposable
 
         ref EntityLocation loc = ref FindNewEntityLocation(out int id);
 
-        CreateFromHandlesCore(id, ref loc, componentHandles, tags);
-
-        return DefaultWorldEntity with
-        {
-            EntityID = id,
-            EntityVersion = loc.Version,
-        };
+        return CreateFromHandlesCore(id, ref loc, componentHandles, tags);
     }
 
-    internal void CreateFromHandlesCore(int id, ref EntityLocation eloc, ReadOnlySpan<ComponentHandle> componentHandles, ReadOnlySpan<TagID> tags = default)
+    internal Entity CreateFromHandlesCore(int id, ref EntityLocation eloc, ReadOnlySpan<ComponentHandle> componentHandles, ReadOnlySpan<TagID> tags = default)
     {
         Span<ComponentID> componentIDs = stackalloc ComponentID[componentHandles.Length];
         Span<int> sparseComponentIndicies = stackalloc int[componentHandles.Length];

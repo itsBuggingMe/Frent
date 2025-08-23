@@ -176,8 +176,14 @@ public partial struct Entity : IEquatable<Entity>
         return res.MoveToImmutable();
     }
 
+    /// <summary>
+    /// Enumerates the  <see cref="ComponentID"/> of all components on an entity without allocating.
+    /// </summary>
     public ref struct EntityComponentIDEnumerator
     {
+        /// <summary>
+        /// The current <see cref="ComponentID"/> instance.
+        /// </summary>
         public ComponentID Current => _current;
         private ReadOnlySpan<ComponentID> _archetypical;
         private readonly Bitset _bitset;
@@ -211,6 +217,10 @@ public partial struct Entity : IEquatable<Entity>
 #endif
         }
 
+        /// <summary>
+        /// Moves to the next <see cref="ComponentID"/> instance.
+        /// </summary>
+        /// <returns>If enumeration can continue.</returns>
         public bool MoveNext()
         {
             if(_currentVersion != _expectedVersion)

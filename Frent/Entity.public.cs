@@ -830,6 +830,10 @@ partial struct Entity
         }
     }
 
+    /// <summary>
+    /// Gets a <see cref="EntityComponentIDEnumerator"/> that can be used to enumerate all component types on this entity.
+    /// </summary>
+    /// <remarks>Can be used to enumerate sparse and archetypical component types without allocating.</remarks>
     public readonly EntityComponentIDEnumerator GetEnumerator() => new(this);
 
     /// <summary>
