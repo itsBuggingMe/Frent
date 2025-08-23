@@ -396,7 +396,8 @@ partial struct Entity
                 w.AddArchetypicalComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
 
                 componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
-                componentRunner.Value.SetAt(this, component, entityLocation.Index);
+                componentRunner.Value.SetAt(null, component, entityLocation.Index);
+                componentRunner.Value.CallIniter(this, entityLocation.Index);
             }
 
             int entityIndex = 0;
@@ -541,12 +542,27 @@ partial struct Entity
     /// <param name="tagID">The type of tag to remove.</param>
     public readonly bool Detach(TagID tagID)
     {
-        ref var lookup = ref AssertIsAlive(out var w);
+        ref var lookup = ref AssertIsAlive(out var world);
         if (!lookup.Archetype.HasTag(tagID))
             return false;
 
-        ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
-        w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
+        ArchetypeID archetype = world.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
+        world.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(world));
+
+        EntityFlags flags = lookup.Flags | world.WorldEventFlags;
+        if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
+        {
+            world.Detached.Invoke(this, tagID);
+
+            if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
+            {
+                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
+                if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.Detach))
+                {
+                    events.Detach.Invoke(this, tagID);
+                }
+            }
+        }
 
         return true;
     }

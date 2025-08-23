@@ -257,6 +257,8 @@ public partial class World : IDisposable
         slot.Index = entityLocation.Index;
         slot.Flags = entityLocation.Flags;
 
+        entityLocation.Archetype.ClearBitset(entityLocation.Index);
+
         return new Entity(WorldID, slot.Version, entityId);
     }
 
@@ -688,9 +690,9 @@ public partial class World : IDisposable
 
     internal Entity CreateEntityWithoutEvent()
     {
-        ref var entity = ref DefaultArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
+        ref EntityIDOnly entityOnArchetype = ref DefaultArchetype.CreateEntityLocation(EntityFlags.None, out var eloc);
         Entity result = CreateEntityFromLocation(eloc);
-        entity.Init(result);
+        entityOnArchetype.Init(result);
         return result;
     }
 

@@ -231,7 +231,7 @@ partial struct Entity
             if (world.Detached.HasListeners)
                 InvokeTagWorldEvents<T>(ref world.Detached, this);
 
-            if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
+            if (EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.Detach))
             {
                 ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityTagEvents<T>(this, ref events.Detach);
