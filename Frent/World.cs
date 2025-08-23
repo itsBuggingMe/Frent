@@ -25,8 +25,8 @@ namespace Frent;
  * [ ] Systems
  * [x] Deferred Updates
  * [x] Benchmarks
- * [ ] Fuzzer project
- * [ ] Tests for lifetime for sparse + archetypical & for all apis, create, create many, add, remove, tag, detach, delete, world dispose +
+ * [x] Fuzzer project
+ * [x] Tests for lifetime for sparse + archetypical & for all apis, create, create many, add, remove, tag, detach, delete, world dispose +
  */
 
 /// <summary>

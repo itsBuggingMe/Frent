@@ -242,21 +242,26 @@ public partial struct Entity : IEquatable<Entity>
     }
 
     // used for fast acsess in sparse systems
+    /// <summary>
+    /// Also sets version.
+    /// </summary>
     internal EntityLookup GetCachedLookup(World world)
     {
         ref var record = ref world.EntityTable[EntityID];
         Archetype archetype = record.Archetype;
+        EntityVersion = record.Version;
         return new EntityLookup(archetype.ComponentTagTable, archetype.Components, record.Index);
     }
 
     /// <summary>
-    /// expected must not be default
+    /// expected must not be default. Also sets version.
     /// </summary>
     internal EntityLookup GetCachedLookupAndAssertSparseComponent(World world, Bitset expected)
     {
         Debug.Assert(!expected.IsDefault);
         ref var record = ref world.EntityTable[EntityID];
         Archetype archetype = record.Archetype;
+        EntityVersion = record.Version;
         Span<Bitset> bitsets = archetype.SparseBitsetSpan();
 
         int index = record.Index;

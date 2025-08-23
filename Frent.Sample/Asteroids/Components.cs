@@ -15,7 +15,7 @@ using System.Runtime.InteropServices;
 namespace Frent.Sample.Asteroids;
 
 [Editor]
-internal struct DecayTimer(int frames) : IInitable, IComponent
+internal struct DecayTimer(int frames) : IInitable, IComponent, ISparseComponent
 {
     public int Frames = frames;
     private Entity _self;
@@ -47,7 +47,7 @@ internal struct Transform(float x, float y) : IComponentBase
 }
 
 [Editor]
-internal struct Velocity(float dx, float dy) : IComponent<Transform>
+internal struct Velocity(float dx, float dy) : IComponent<Transform>, ISparseComponent
 {
     public float DX { readonly get => DXY.X; set => DXY.X = value; }
     public float DY { readonly get => DXY.Y; set => DXY.Y = value; }
@@ -130,7 +130,7 @@ internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2
 }
 
 [Editor]
-internal struct Line : IUniformComponent<ShapeBatch, Transform>
+internal struct Line : IUniformComponent<ShapeBatch, Transform>, ISparseComponent
 {
     public float Thickness;
     public float Opacity;
@@ -145,7 +145,7 @@ internal struct Line : IUniformComponent<ShapeBatch, Transform>
 }
 
 [Editor]
-internal struct PlayerController : IUniformComponent<World, Transform, Velocity>, IInitable
+internal struct PlayerController : IUniformComponent<World, Transform, Velocity>, IInitable, ISparseComponent
 {
     private int _timeSinceShoot;
     private MouseState _pms;
@@ -288,7 +288,7 @@ internal struct AngularVelocity(float dt) : IComponent<Transform>
 }
 
 [Editor]
-internal struct CircleCollision : IComponentBase
+internal struct CircleCollision : IComponentBase, ISparseComponent
 {
     public float Radius;
     public Entity CollidesWith;

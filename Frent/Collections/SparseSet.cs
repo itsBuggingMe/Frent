@@ -196,13 +196,7 @@ internal abstract class ComponentSparseSetBase
     }
 
     internal ref int GetEntityIDsDataReference() => ref MemoryMarshal.GetArrayDataReference(_ids);
-    internal Span<int> SparseSpan() =>
-#if NETSTANDARD
-        _sparse.AsSpan(0, _nextIndex)
-#else
-        MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_sparse), _nextIndex)
-#endif
-        ;
+    internal Span<int> SparseSpan() => _sparse;
 
     internal Span<int> IDSpan() => _ids;
 }

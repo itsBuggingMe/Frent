@@ -19,7 +19,7 @@ public class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for (int i = length - 1; i >= 0; i--)
+        for (int i = length; i > 0; i--)
         {
             entityIds.SetEntity(ref entity);
             comp.Update(entity, uniform);
@@ -37,9 +37,14 @@ public class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for (int i = sparseSet.Count - 1; i >= 0; i--)
+        for (int i = sparseSet.Count; i > 0; i--)
         {
             entity.EntityID = entityId;
+            // I'm ok with pulling from the entity table
+            // since the fact that they requested the entity implies that they are likely to use it too
+            // not worth adding extra overhead to sparse sets
+            entity.EntityVersion = world.EntityTable[entityId].Version;
+
             component.Update(entity, uniform);
 
             component = ref Unsafe.Add(ref component, 1);
@@ -63,11 +68,12 @@ public class EntityUniformUpdateRunner<TComp, TUniform> : IRunner
             }
             
             entity.EntityID = entityId;
+            entity.EntityVersion = world.EntityTable[entityId].Version;
 
             int denseIndex = map[entityId];
 
             // ids in idsToUpdate are not guarenteed to be in this set
-            if (denseIndex <= 0)
+            if (denseIndex < 0)
             {
                 continue;
             }
@@ -107,12 +113,20 @@ public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
         // This needs to stay in a ymm register on x86
         Bitset includeBits = SparseIncludeBits;
 
-        for (int i = 0; i < length; i++)
+        int end = length + start;
+        for (int i = start; i < end; i++)
         {
             entityIds.SetEntity(ref entity);
-            if (Component<TArg>.IsSparseComponent && (uint)i < (uint)bitsets.Length)
+            if (Component<TArg>.IsSparseComponent)
             {
-                Bitset.AssertHasSparseComponents(ref bitsets[i], ref includeBits);
+                if ((uint)i < (uint)bitsets.Length)
+                {
+                    Bitset.AssertHasSparseComponents(ref bitsets[i], ref includeBits);
+                }
+                else
+                {// has no sparse components, but we expected at least 1
+                    FrentExceptions.Throw_NullReferenceException();
+                }
             }
 
             if (Component<TArg>.IsSparseComponent)
@@ -143,9 +157,11 @@ public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
 
-        for (int i = sparseSet.Count - 1; i >= 0; i--)
+        for (int i = sparseSet.Count; i > 0; i--)
         {
             entity.EntityID = entityId;
+            // entity version set in GetCachedLookup
+
             var entityData = Component<TArg>.IsSparseComponent
                 ? entity.GetCachedLookupAndAssertSparseComponent(world, SparseIncludeBits)
                 : entity.GetCachedLookup(world);
@@ -179,10 +195,13 @@ public class EntityUniformUpdateRunner<TComp, TUniform, TArg> : IRunner
             if (!((uint)entityId < (uint)map.Length))
                 continue;
             int denseIndex = map[entityId];
-            if (denseIndex <= 0)
+
+            if (denseIndex < 0)
                 continue;
 
             entity.EntityID = entityId;
+            // entity version set in GetCachedLookup
+
             var entityData = Component<TArg>.IsSparseComponent
                 ? entity.GetCachedLookupAndAssertSparseComponent(world, SparseIncludeBits)
                 : entity.GetCachedLookup(world);
