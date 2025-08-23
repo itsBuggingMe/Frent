@@ -174,7 +174,7 @@ public partial class AsteroidsGame : Game
             _camera.Position = -cameraControl.Value.Location;
         }
 
-        if(!Paused && _enemyCount < 1 && Random.Shared.Next(60) == 0)
+        if(!Paused && _enemyCount < 20 && Random.Shared.Next(60) == 0)
         {
             _enemyCount++;
             int width = GraphicsDevice.Viewport.Width;

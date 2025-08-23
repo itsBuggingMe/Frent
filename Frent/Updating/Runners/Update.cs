@@ -31,6 +31,8 @@ public class UpdateRunner<TComp> : IRunner
         for (int i = sparseSet.Count; i > 0; i--)
         {
             component.Update();
+
+            component = ref Unsafe.Add(ref component, 1);
         }
     }
 

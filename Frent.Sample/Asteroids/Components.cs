@@ -15,7 +15,7 @@ using System.Runtime.InteropServices;
 namespace Frent.Sample.Asteroids;
 
 [Editor]
-internal struct DecayTimer(int frames) : IInitable, IComponent, ISparseComponent
+internal struct DecayTimer(int frames) : IInitable, IComponent
 {
     public int Frames = frames;
     private Entity _self;
@@ -26,7 +26,9 @@ internal struct DecayTimer(int frames) : IInitable, IComponent, ISparseComponent
     public void Update()
     {
         if (--Frames < 0)
+        {
             _self.Delete();
+        }
     }
 }
 
@@ -47,7 +49,7 @@ internal struct Transform(float x, float y) : IComponentBase
 }
 
 [Editor]
-internal struct Velocity(float dx, float dy) : IComponent<Transform>, ISparseComponent
+internal struct Velocity(float dx, float dy) : IComponent<Transform>
 {
     public float DX { readonly get => DXY.X; set => DXY.X = value; }
     public float DY { readonly get => DXY.Y; set => DXY.Y = value; }
@@ -68,7 +70,7 @@ internal struct Velocity(float dx, float dy) : IComponent<Transform>, ISparseCom
 }
 
 [Editor]
-internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2) : IEnumerable<(Vector2 A, Vector2 B)>, IUniformComponent<ShapeBatch, Transform>
+internal struct Polygon(Vector2 origin, Vector2[] verticies, float thickness = 2) : IEnumerable<(Vector2 A, Vector2 B)>, IUniformComponent<ShapeBatch, Transform>, ISparseComponent
 {
     public float Thickness = thickness;
     public Vector2 Origin = origin;
@@ -245,7 +247,7 @@ internal struct FollowEntity(Entity toFollow, float smoothing = 0.02f) : ICompon
 }
 
 [Editor]
-internal struct CameraControl : IComponent<Transform>
+internal struct CameraControl : IComponent<Transform>, ISparseComponent
 {
     public Vector2 Location;
     [Tick]
@@ -288,7 +290,7 @@ internal struct AngularVelocity(float dt) : IComponent<Transform>
 }
 
 [Editor]
-internal struct CircleCollision : IComponentBase, ISparseComponent
+internal struct CircleCollision : IComponentBase
 {
     public float Radius;
     public Entity CollidesWith;
@@ -298,6 +300,12 @@ internal struct CircleCollision : IComponentBase, ISparseComponent
         float radiiSum = a.Radius + b.Radius;
         return Vector2.DistanceSquared(aPos, bPos) <= radiiSum * radiiSum;
     }
+
+    //[Draw]
+    //public void Update(ShapeBatch sb, ref Transform arg)
+    //{
+    //    sb.DrawCircle(arg.XY, Radius, Color.Transparent, Color.Red);
+    //}
 }
 
 [Editor]
