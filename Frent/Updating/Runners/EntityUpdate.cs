@@ -86,10 +86,6 @@ public class EntityUpdateRunner<TComp> : IRunner
 public class EntityUpdateRunner<TComp, TArg> : IRunner
     where TComp : IEntityComponent<TArg>
 {
-    private static readonly Bitset SparseIncludeBits = new Bitset()
-        .CompSet(Component<TArg>.SparseSetComponentIndex)
-        ;
-
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
@@ -107,7 +103,7 @@ public class EntityUpdateRunner<TComp, TArg> : IRunner
         Span<Bitset> bitsets = b.SparseBitsetSpan();
         // TODO: double check that the jit register promotes this.
         // This needs to stay in a ymm register on x86
-        Bitset includeBits = SparseIncludeBits;
+        Bitset includeBits = BitsetHelper<TArg>.BitsetOf;
 
         int end = length + start;
         for (int i = start; i < end; i++)
@@ -158,7 +154,7 @@ public class EntityUpdateRunner<TComp, TArg> : IRunner
             // entity version set in GetCachedLookup
 
             var entityData = Component<TArg>.IsSparseComponent
-                ? entity.GetCachedLookupAndAssertSparseComponent(world, SparseIncludeBits)
+                ? entity.GetCachedLookupAndAssertSparseComponent(world, BitsetHelper<TArg>.BitsetOf)
                 : entity.GetCachedLookup(world);
 
             ref TArg arg = ref Component<TArg>.IsSparseComponent
@@ -197,7 +193,7 @@ public class EntityUpdateRunner<TComp, TArg> : IRunner
             // entity version set in GetCachedLookup
 
             var entityData = Component<TArg>.IsSparseComponent
-                ? entity.GetCachedLookupAndAssertSparseComponent(world, SparseIncludeBits)
+                ? entity.GetCachedLookupAndAssertSparseComponent(world, BitsetHelper<TArg>.BitsetOf)
                 : entity.GetCachedLookup(world);
 
             ref TArg arg = ref Component<TArg>.IsSparseComponent
