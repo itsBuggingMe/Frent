@@ -1,14 +1,18 @@
 ﻿using Frent.Fuzzing;
 using Frent.Fuzzing.Runner;
 
-args = ["0", "1000"];
+args = ["12", "1000"];
+
 if (args.Length == 0)
 {
     Fuzzer.CreateFuzzProcesses();
 }
 else
 {
-    WorldState.Fuzz(args);
-}
+    InconsistencyException? e = WorldState.Fuzz(args);
 
-Console.WriteLine("Done!");
+    if(e is not null)
+    {
+        Console.WriteLine($"Seed {e.Seed} failed at {e.FailedStep}");
+    }
+}

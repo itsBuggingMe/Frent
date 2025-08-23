@@ -218,8 +218,8 @@ partial class World
         Debug.Assert(entity.EntityID < EntityTable._buffer.Length);
 
         ref var replaced = ref EntityTable.UnsafeIndexNoResize(replacedEntity.ID);
-        replaced = currentLookup;
-        replaced.Version = replacedEntity.Version;
+        replaced.Index = currentLookup.Index;
+        replaced.Archetype = currentLookup.Archetype;
 
         currentLookup.Archetype = null!;
         currentLookup.Version++;

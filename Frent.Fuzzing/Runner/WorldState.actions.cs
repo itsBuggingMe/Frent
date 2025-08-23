@@ -11,14 +11,35 @@ internal partial class WorldState
     private static readonly MethodInfo[] _create = 
         typeof(World)
         .GetMethods()
-        .Where(m => m.Name == "Create")
+        .Where(m => m.Name == nameof(World.Create))
         .Where(m => m.IsGenericMethod)
         .ToArray();
 
     private static readonly MethodInfo[] _add =
         typeof(Entity)
         .GetMethods()
-        .Where(m => m.Name == "Add")
+        .Where(m => m.Name == nameof(Entity.Add))
+        .Where(m => m.IsGenericMethod)
+        .ToArray();
+
+    private static readonly MethodInfo[] _remove =
+        typeof(Entity)
+        .GetMethods()
+        .Where(m => m.Name == nameof(Entity.Remove))
+        .Where(m => m.IsGenericMethod)
+        .ToArray();
+
+    private static readonly MethodInfo[] _tag =
+        typeof(Entity)
+        .GetMethods()
+        .Where(m => m.Name == nameof(Entity.Tag))
+        .Where(m => m.IsGenericMethod)
+        .ToArray();
+
+    private static readonly MethodInfo[] _detach =
+        typeof(Entity)
+        .GetMethods()
+        .Where(m => m.Name == nameof(Entity.Detach))
         .Where(m => m.IsGenericMethod)
         .ToArray();
 
@@ -51,7 +72,11 @@ internal partial class WorldState
 
         Entity entity= (Entity)m.Invoke(_worldState, componentParams)!;
 
-        return new StepRecord(WorldActions.CreateGeneric, entity, new { GenericArguments = types }, () => _componentValues.Add(entity, handles));
+        return new StepRecord(entity, new { GenericArguments = types }, () =>
+        {
+            _componentValues.Add(entity, handles);
+            _tagValues.Add(entity, []);
+        });
     }
 
     private StepRecord CreateHandles()
@@ -60,7 +85,11 @@ internal partial class WorldState
 
         Entity entity = _worldState.CreateFromHandles(CollectionsMarshal.AsSpan(handles));
 
-        return new StepRecord(WorldActions.CreateHandles, entity, new { Types = types }, () => _componentValues.Add(entity, handles));
+        return new StepRecord(entity, new { Types = types }, () => 
+        {
+            _componentValues.Add(entity, handles);
+            _tagValues.Add(entity, []);
+        });
     }
 
     private StepRecord CreateObjects()
@@ -69,18 +98,23 @@ internal partial class WorldState
 
         Entity entity = _worldState.CreateFromObjects(componentParams);
 
-        return new StepRecord(WorldActions.CreateObjects, entity, new { Types = types }, () => _componentValues.Add(entity, handles));
+        return new StepRecord(entity, new { Types = types }, () => 
+        { 
+            _componentValues.Add(entity, handles); 
+            _tagValues.Add(entity, []); 
+        });
     }
     private StepRecord Delete()
     {
         if (!TryPickEntity(out var toDelete))
-            return SkipRecord(WorldActions.Delete);
+            return SkipRecord();
 
         toDelete.Delete();
 
-        return new StepRecord(WorldActions.Delete, toDelete, new { Skip = "Deleted" }, () =>
+        return new StepRecord(toDelete, new { Skip = "Deleted" }, () =>
         {
             _componentValues.Remove(toDelete);
+            _tagValues.Remove(toDelete);
             _dead.Add(toDelete)
                 .Assert(this);
         });
@@ -88,21 +122,18 @@ internal partial class WorldState
     private StepRecord AddGeneric()
     {
         if (!TryPickEntity(out var toAdd))
-            return SkipRecord(WorldActions.AddGeneric);
+            return SkipRecord();
 
-        PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types, c => !_componentValues[toAdd].Any(h => h.ComponentID == c));
+        PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types, c => !HasComponent(toAdd, c));
 
         if (componentParams.Length == 0)
-            return new StepRecord(WorldActions.AddGeneric, toAdd, new { Skip = "Not valid for the entity." });
+            return new StepRecord(toAdd, new { Skip = "Not valid for the entity." });
 
         MethodInfo addComponentMethod = _add[componentParams.Length - 1].MakeGenericMethod(types);
         addComponentMethod.Invoke(toAdd, componentParams);
 
-        return new(WorldActions.AddGeneric, toAdd, new { GenericTypes = types }, () =>
+        return new(toAdd, new { GenericTypes = types }, () =>
         {
-            if (_dead.Contains(toAdd))
-                return;
-
             _componentValues[toAdd].AddRange(handles);
         });
     }
@@ -110,17 +141,14 @@ internal partial class WorldState
     private StepRecord AddHandles()
     {
         if (!TryPickEntity(out var toAdd))
-            return SkipRecord(WorldActions.AddHandles);
+            return SkipRecord();
 
-        PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types, c => !_componentValues[toAdd].Any(h => h.ComponentID == c));
+        PrepareComponents(out object[] componentParams, out List<ComponentHandle> handles, out Type[] types, c => !HasComponent(toAdd, c));
 
         toAdd.AddFromHandles(CollectionsMarshal.AsSpan(handles));
 
-        return new(WorldActions.AddHandles, toAdd, new { Types = types }, () =>
+        return new(toAdd, new { Types = types }, () =>
         {
-            if (_dead.Contains(toAdd))
-                return;
-
             _componentValues[toAdd].AddRange(handles);
         });
     }
@@ -128,20 +156,17 @@ internal partial class WorldState
     private StepRecord AddObject()
     {
         if (!TryPickEntity(out var toAdd))
-            return SkipRecord(WorldActions.AddObject);
+            return SkipRecord();
 
         PrepareComponent(out object component, out ComponentHandle handle, out Type type);
 
-        if(!_componentValues[toAdd].Any(h => h.ComponentID == handle.ComponentID))
-            return new(WorldActions.AddHandles, toAdd, new { Skip = "Already Has Component" });
+        if(HasComponent(toAdd, handle.ComponentID))
+            return new(toAdd, new { Skip = "Already Has Component" });
 
         toAdd.AddBoxed(component);
 
-        return new(WorldActions.AddHandles, toAdd, new { Type = type }, () =>
+        return new(toAdd, new { Type = type }, () =>
         {
-            if (_dead.Contains(toAdd))
-                return;
-
             _componentValues[toAdd].Add(handle);
         });
     }
@@ -149,102 +174,185 @@ internal partial class WorldState
     private StepRecord AddAs()
     {
         if (!TryPickEntity(out var toAdd))
-            return SkipRecord(WorldActions.AddObject);
+            return SkipRecord();
 
         PrepareComponent(out object component, out ComponentHandle handle, out Type type);
         handle.Dispose();
 
+        if(HasComponent(toAdd, Component<object>.ID))
+            return new(toAdd, new { Skip = "Already Has Component" });
+
         toAdd.AddAs(typeof(object), component);
         handle = ComponentHandle.Create<object>(component);
 
-        return new(WorldActions.AddHandles, toAdd, new { Type = type }, () =>
+        return new(toAdd, new { Type = type }, () =>
         {
-            if (_dead.Contains(toAdd))
-                return;
-
             _componentValues[toAdd].Add(handle);
         });
     }
 
     private StepRecord RemoveGeneric()
     {
-        return new(WorldActions.RemoveGeneric, default, "Not implemented");
+        if (!TryPickEntity(out var toAdd))
+            return SkipRecord();
+
+        List<ComponentHandle> comps = _componentValues[toAdd];
+        if (comps.Count == 0)
+            return new StepRecord(toAdd, new { Skip = "Not valid for the entity." });
+
+        var types = comps.Select(h => h.ComponentID.Type).ToArray();
+        _random.Shuffle(types);
+        types = types.Take(_random.Next(1, comps.Count)).ToArray();
+
+        MethodInfo addComponentMethod = _remove[types.Length - 1].MakeGenericMethod(types);
+        addComponentMethod.Invoke(toAdd, []);
+
+        return new(toAdd, new { GenericTypes = types }, () =>
+        {
+            if (_dead.Contains(toAdd))
+                return;
+
+            _componentValues[toAdd].RemoveAll(p => types.Any(t => p.Type == t));
+        });
     }
     private StepRecord RemoveType()
     {
-        return new(WorldActions.RemoveType, default, "Not implemented");
+        if (!TryPickEntity(out var e))
+            return SkipRecord();
+
+        List<ComponentHandle> comps = _componentValues[e];
+        if (comps.Count == 0)
+            return new StepRecord(e, new { Skip = "No components to remove" });
+
+        // Pick a single component type to remove
+        var picked = comps[_random.Next(comps.Count)];
+        var type = picked.ComponentID.Type;
+
+        e.Remove(type);
+
+        return new(e, new { RemovedType = type }, () =>
+        {
+            _componentValues[e].RemoveAll(h => h.Type == type);
+        });
     }
+
     private StepRecord TagGeneric()
     {
-        return new(WorldActions.TagGeneric, default, "Not implemented");
+        if (!TryPickEntity(out var e))
+            return SkipRecord();
+
+        var chosen = _tags.Shuffle(_random).Take(_random.Next(1, 8)).ToArray();
+
+        var newTags = chosen.Where(t => !e.Tagged(t)).ToArray();
+        if (newTags.Length == 0)
+            return new(e, new { Skip = "Already has all chosen tags" });
+
+        MethodInfo tagMethod = _tag[newTags.Length - 1].MakeGenericMethod(newTags.Select(t => t.Type).ToArray());
+        tagMethod.Invoke(e, null);
+
+        return new(e, new { Tags = newTags.Select(t => t.Type).ToArray() }, () => _tagValues[e].AddRange(newTags));
     }
+
     private StepRecord TagType()
     {
-        return new(WorldActions.TagType, default, "Not implemented");
+        if (!TryPickEntity(out var e))
+            return SkipRecord();
+
+        var tag = _tags[_random.Next(_tags.Length)];
+
+        if (e.Tagged(tag))
+            return new(e, new { Skip = "Already has tag" });
+
+        e.Tag(tag.Type);
+
+        return new(e, new { Tag = tag.Type }, () => _tagValues[e].Add(tag));
     }
+
     private StepRecord DetachGeneric()
     {
-        return new(WorldActions.DetachGeneric, default, "Not implemented");
+        if (!TryPickEntity(out var e))
+            return SkipRecord();
+
+        var types = _tags.Select(h => h.Type)
+                         .Shuffle(_random)
+                         .Take(_random.Next(1, 8))
+                         .Where(t => e.Tagged(t))
+                         .ToArray();
+
+        if (types.Length == 0)
+            return new(e, new { Skip = "None selected to remove." });
+
+        MethodInfo detachMethod = _detach[types.Length - 1].MakeGenericMethod(types);
+        detachMethod.Invoke(e, null);
+
+        return new(e, new { Detached = types }, () => _tagValues[e].RemoveAll(p => types.Any(t => p.Type == t)));
     }
+
     private StepRecord DetachType()
     {
-        return new(WorldActions.DetachType, default, "Not implemented");
+        return new(default, "Not implemented");
     }
+
     private StepRecord Set()
     {
-        return new(WorldActions.Set, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeWorldCreate()
     {
-        return new(WorldActions.SubscribeWorldCreate, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeWorldDelete()
     {
-        return new(WorldActions.SubscribeWorldDelete, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeAdd()
     {
-        return new(WorldActions.SubscribeAdd, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeRemoved()
     {
-        return new(WorldActions.SubscribeRemoved, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeAddGeneric()
     {
-        return new(WorldActions.SubscribeAddGeneric, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeRemovedGeneric()
     {
-        return new(WorldActions.SubscribeRemovedGeneric, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeWorldAdd()
     {
-        return new(WorldActions.SubscribeWorldAdd, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeWorldRemoved()
     {
-        return new(WorldActions.SubscribeWorldRemoved, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeTag()
     {
-        return new(WorldActions.SubscribeTag, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeDetach()
     {
-        return new(WorldActions.SubscribeDetach, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeWorldTag()
     {
-        return new(WorldActions.SubscribeWorldTag, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeWorldDetach()
     {
-        return new(WorldActions.SubscribeWorldDetach, default, "Not implemented");
+        return new(default, "Not implemented");
     }
     private StepRecord SubscribeDelete()
     {
-        return new(WorldActions.SubscribeDelete, default, "Not implemented");
+        return new(default, "Not implemented");
+    }
+
+    private bool HasComponent(Entity entity, ComponentID componentId)
+    {
+        return _componentValues[entity].Any(c => c.ComponentID == componentId);
     }
 
     private void PrepareComponents(out object[] componentParams, out List<ComponentHandle> componentHandles, out Type[] types, Func<ComponentID, bool>? selector = null)
@@ -282,9 +390,9 @@ internal partial class WorldState
         type = component.GetType();
     }
 
-    private StepRecord SkipRecord(WorldActions action)
+    private StepRecord SkipRecord()
     {
-        return new StepRecord(action, default, new { Skip = "Nothing to act on." });
+        return new StepRecord(default, new { Skip = "Nothing to act on." });
     }
 
     private bool TryPickEntity(out Entity e)

@@ -1,6 +1,7 @@
 ﻿using Frent.Systems;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.Security.AccessControl;
 
 namespace Frent.Fuzzing.Runner;
 
@@ -50,6 +51,13 @@ internal static class Extensions
         foreach (var tup in enumerator)
             items.Add((tup.Item1.Value, tup.Item2.Value));
         return items;
+    }
+
+    public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> values, Random random)
+    {
+        var result = values.ToArray();
+        random.Shuffle(result);
+        return result;
     }
 
     public static T Declare<T, TResult>(this T item, Func<T, TResult> selector, out TResult variable)

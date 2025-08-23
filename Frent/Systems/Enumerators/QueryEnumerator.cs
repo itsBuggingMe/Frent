@@ -6,124 +6,6 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Systems;
 
-#if NETSTANDARD
-/// <summary>
-/// Enumerates all component references of the specified types and the <see cref="Entity"/> instance for each <see cref="Entity"/> in a query.
-/// </summary>
-/// <variadic />
-[Variadic(AttributeHelpers.QueryEnumerator)]
-public ref struct QueryEnumerator<T>
-{
-    private readonly World _world;
-    private readonly Span<Archetype> _archetypes;
-    private Span<EntityIDOnly> _entities;
-    private Span<T> _compSpan1;
-
-    private readonly ref Archetype _currentArchetype => ref _archetypes[_archetypesIndex];
-    private readonly ref EntityIDOnly _currentEntity => ref _entities[_entitiesIndex];
-
-    private Span<Bitset> _archetypeBitsets;
-
-    private int _archetypesIndex;
-    private int _entitiesIndex;
-
-    private RefTuple<T> _current;
-
-    private readonly Bitset _include;
-    private readonly Bitset _exclude;
-
-    // inverse of _entitiesLeft
-    private int _sparseIndex;
-
-    internal QueryEnumerator(Query query)
-    {
-        _world = query.World;
-        _world.EnterDisallowState();
-
-        _sparseIndex = query.HasSparseRules ? 0 : -1;
-        if (query.HasSparseRules)
-        {
-            _include = query.IncludeMask;
-            _exclude = query.ExcludeMask;
-        }
-
-        _archetypes = query.AsSpan();
-        _archetypesIndex = -1;
-    }
-
-    /// <summary>
-    /// The current tuple of component references and the <see cref="Entity"/> instance.
-    /// </summary>
-    public readonly RefTuple<T> Current => _current;
-
-    /// <summary>
-    /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
-    /// </summary>
-    public readonly void Dispose()
-    {
-        _world.ExitDisallowState(null);
-    }
-
-    /// <summary>
-    /// Moves to the next entity and its components in this enumeration.
-    /// </summary>
-    /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
-    public bool MoveNext()
-    {
-    BeginConsumeEntities:
-
-        while (++_entitiesIndex < _archetypes.Length)
-        {// a okay
-
-            if (_sparseIndex >= 0)
-            {
-                ref Bitset set = ref (uint)_sparseIndex < (uint)_archetypeBitsets.Length
-                    ? ref _archetypeBitsets[_sparseIndex]
-                    : ref Bitset.Zero;
-
-                if (!Bitset.Filter(ref set, _include, _exclude))
-                    continue;
-
-                _sparseIndex++;
-            }
-
-            int entityId = _currentEntity.ID;
-
-            ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(_world.WorldSparseSetTable);
-
-            _current.Item1 = Component<T>.IsSparseComponent
-                ? MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId)
-                : new Ref<T>(_compSpan1, _entitiesIndex);
-
-            return true;
-        }
-
-        if ((uint)++_archetypesIndex < (uint)_archetypes.Length)
-        {
-            if (_sparseIndex >= 0)
-            {
-                _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
-                _sparseIndex = 0;
-            }
-
-            _entities = _currentArchetype.GetEntitySpan();
-            if(!Component<T>.IsSparseComponent) _compSpan1 = _currentArchetype.GetComponentSpan<T>();
-
-            // point to index -1
-            _entitiesIndex = -1;
-
-            goto BeginConsumeEntities;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Gets the enumerator over a query.
-    /// </summary>
-    public QueryEnumerator<T> GetEnumerator() => this;
-}
-#else
 /// <summary>
 /// Enumerates all component references of the specified types for each <see cref="Entity"/> in a query.
 /// </summary>
@@ -132,41 +14,81 @@ public ref struct QueryEnumerator<T>
 public ref struct QueryEnumerator<T>
 {
     private readonly World _world;
-    private ref Archetype _currentArchetype;
     private Span<Bitset> _archetypeBitsets;
-    private ref EntityIDOnly _currentEntity;
+    private Span<Archetype> _archetypes;
+    private Span<EntityIDOnly> _entities;
+    private int _archetypeIndex;
+    private int _entityIndex;
 
-    private int _archetypesLeft;
-    private int _entitiesLeft;
+    private int _currentEntityID;
 
-    private RefTuple<T> _current;
+#if NETSTANDARD
+    private Span<T> _c1Span;
+#else
+    private RefTuple<T> _base;
+#endif
 
+#if NETSTANDARD
+    private Span<ComponentSparseSetBase> _sparseSets;
+#else
+    private ref ComponentSparseSetBase _sparseFirst;
+#endif
+
+
+#if NETSTANDARD
+    private readonly Bitset _include;
+    private readonly Bitset _exclude;
+#else
     private readonly System.Runtime.Intrinsics.Vector256<ulong> _include;
     private readonly System.Runtime.Intrinsics.Vector256<ulong> _exclude;
+#endif
 
-    // inverse of _entitiesLeft
-    private int _sparseIndex;
+    private bool _hasSparseRules;
 
     internal QueryEnumerator(Query query)
     {
         _world = query.World;
+
+#if NETSTANDARD
+        _sparseSets = query.World.WorldSparseSetTable;
+#else
+        _sparseFirst = ref MemoryMarshal.GetArrayDataReference(query.World.WorldSparseSetTable);
+#endif
         _world.EnterDisallowState();
 
-        _sparseIndex = query.HasSparseRules ? 0 : -1;
         if (query.HasSparseRules)
         {
+            _hasSparseRules = true;
+
+#if NETSTANDARD
+            _include = query.IncludeMask;
+            _exclude = query.ExcludeMask;
+#else
             _include = query.IncludeMask.AsVector();
             _exclude = query.ExcludeMask.AsVector();
+#endif
         }
 
-        _currentArchetype = ref Unsafe.Subtract(ref query.GetArchetypeDataReference(), 1);
-        _archetypesLeft = query.ArchetypeCount;
+        _archetypes = query.AsSpan();
+        _entityIndex = int.MaxValue - 1;
+        _archetypeIndex = -1;
     }
 
     /// <summary>
     /// The current tuple of component references.
     /// </summary>
-    public RefTuple<T> Current => _current;
+    public RefTuple<T> Current => new()
+    {
+#if NETSTANDARD
+        Item1 = Component<T>.IsSparseComponent ?
+            MemoryHelpers.GetSparseSet<T>(ref MemoryMarshal.GetReference(_sparseSets)).GetUnsafe(_currentEntityID) :
+            new Ref<T>(_c1Span, _entityIndex),
+#else
+        Item1 = new Ref<T>(ref Component<T>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T>(ref _sparseFirst).GetUnsafe(_currentEntityID) :
+            ref Unsafe.Add(ref _base.Item1.RawRef, _entityIndex)),
+#endif
+    };
 
     /// <summary>
     /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
@@ -177,56 +99,51 @@ public ref struct QueryEnumerator<T>
     }
 
     /// <summary>
-    /// Moves to the component tuple in this enumeration.
+    /// Moves to the next component tuple in this enumeration.
     /// </summary>
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
     public bool MoveNext()
     {
     BeginConsumeEntities:
 
-        while (--_entitiesLeft >= 0)
+        while ((uint)++_entityIndex < (uint)_entities.Length)
         {// a okay
-            _currentEntity = ref Unsafe.Add(ref _currentEntity, 1);
 
-            if (_sparseIndex >= 0)
+            if (_hasSparseRules)
             {
-                ref Bitset set = ref (uint)_sparseIndex < (uint)_archetypeBitsets.Length
-                    ? ref _archetypeBitsets[_sparseIndex]
+                ref Bitset set = ref (uint)_entityIndex < (uint)_archetypeBitsets.Length
+                    ? ref _archetypeBitsets[_entityIndex]
                     : ref Bitset.Zero;
 
                 if (!Bitset.Filter(ref set, _include, _exclude))
                     continue;
-
-                _sparseIndex++;
             }
 
-            int entityId = _currentEntity.ID;
-
-            ref ComponentSparseSetBase first = ref (Component<T>.IsSparseComponent)
-                ? ref MemoryMarshal.GetArrayDataReference(_world.WorldSparseSetTable)
-                : ref Unsafe.NullRef<ComponentSparseSetBase>();
-
-            _current.Item1.RawRef = ref !Component<T>.IsSparseComponent
-                ? ref Unsafe.Add(ref _current.Item1.RawRef, 1)
-                : ref MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(entityId);
+            _currentEntityID = _entities[_entityIndex].ID;
 
             return true;
         }
 
-        if (--_archetypesLeft >= 0)
+        if ((uint)++_archetypeIndex < (uint)_archetypes.Length)
         {
-            _currentArchetype = ref Unsafe.Add(ref _currentArchetype, 1);
-            _entitiesLeft = _currentArchetype.EntityCount;
-            if (_sparseIndex >= 0)
+            var currentArchetype = _archetypes[_archetypeIndex];
+            _entities = currentArchetype.GetEntitySpan();
+            _entityIndex = -1;
+
+            if (_hasSparseRules)
             {
-                _archetypeBitsets = _currentArchetype.SparseBitsetSpan();
-                _sparseIndex = 0;
+                _archetypeBitsets = currentArchetype.SparseBitsetSpan();
             }
-            _currentEntity = ref Unsafe.Subtract(ref _currentArchetype.GetEntityDataReference(), 1);
 
-            // point to index -1
-            if (!Component<T>.IsSparseComponent) _current.Item1.RawRef = ref Unsafe.Subtract(ref _currentArchetype.GetComponentDataReference<T>(), 1);
-
+#if NETSTANDARD
+            _c1Span = Component<T>.IsSparseComponent ?
+                MemoryHelpers.GetSparseSet<T>(ref MemoryMarshal.GetReference(_sparseSets)).Dense :
+                currentArchetype.GetComponentSpan<T>();
+#else
+            _base.Item1.RawRef = ref Component<T>.IsSparseComponent ?
+                ref MemoryHelpers.GetSparseSet<T>(ref _sparseFirst).GetComponentDataReference() :
+                ref currentArchetype.GetComponentDataReference<T>();
+#endif
 
             goto BeginConsumeEntities;
         }
@@ -239,4 +156,3 @@ public ref struct QueryEnumerator<T>
     /// </summary>
     public QueryEnumerator<T> GetEnumerator() => this;
 }
-#endif

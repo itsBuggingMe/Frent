@@ -62,6 +62,7 @@ internal static class WorldActionsHelper
 
     private static readonly float s_sum = s_table.Sum(t => t.Weight);
 
+    [DebuggerStepThrough]
     public static WorldActions SelectWeightedAction(Random random)
     {
         float scaled = random.NextSingle() * s_sum;

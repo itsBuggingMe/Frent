@@ -9,7 +9,7 @@ internal static class Fuzzer
 {
     public static void CreateFuzzProcesses()
     {
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 1000; i++)
         {
             LaunchFuzzProcess(i, 1000);
         }
@@ -34,7 +34,7 @@ internal static class Fuzzer
             StartInfo = startInfo,
         };
 
-        Console.WriteLine($"Starting process with seed {seed} and {count} steps.");
+        Console.WriteLine($"Starting process with seed {seed}:");
 
         runner.Start();
         string stdOutput = runner.StandardOutput.ReadToEnd();
@@ -42,6 +42,5 @@ internal static class Fuzzer
         runner.WaitForExit();
 
         Console.WriteLine($"Process finished with stdout: \n{stdOutput}");
-        Console.WriteLine($"Process finished with stderr: \n{stdErr}");
     }
 }

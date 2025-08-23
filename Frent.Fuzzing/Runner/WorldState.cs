@@ -10,7 +10,7 @@ namespace Frent.Fuzzing.Runner;
 
 internal partial class WorldState : IDisposable
 {
-    public static void Fuzz(string[] args)
+    public static InconsistencyException? Fuzz(string[] args, bool captureException = false)
     {
         if (args.Length != 2)
             throw new ArgumentException("Expecting two arguments corresponding to seed and step count.");
@@ -19,12 +19,37 @@ internal partial class WorldState : IDisposable
         if (!int.TryParse(args[1], out int steps))
             throw new ArgumentException($"Step value {args[1]} not an integer.");
 
+        int i = 0;
         using WorldState state = new WorldState(seed);
 
-        for (int i = 0; i < steps; i++)
+        for (; i < steps; i++)
         {
             state.Advance();
         }
+
+        return null;
+
+        /*
+        try
+        {
+            using WorldState state = new WorldState(seed);
+
+            for (; i < steps; i++)
+            {
+                state.Advance();
+            }
+        }
+        catch (InconsistencyException e) when(captureException)
+        {
+            return e;
+        }
+        catch(Exception e) when (captureException)
+        {
+            return new InconsistencyException($"Unhandled Exception {e.GetType().Name}: {e.Message}", i, seed);
+        }
+
+        return null;
+        */
     }
 
     // record keeping
@@ -39,6 +64,7 @@ internal partial class WorldState : IDisposable
 
     // expected state
     private Dictionary<Entity, List<ComponentHandle>> _componentValues = [];
+    private Dictionary<Entity, List<TagID>> _tagValues = [];
 
     private IEnumerable<Entity> Entities => _componentValues.Select(kvp => kvp.Key);
     private HashSet<Entity> _dead = [];
@@ -63,9 +89,6 @@ internal partial class WorldState : IDisposable
 
     public void Advance()
     {
-        if (_actions.Count == 44)
-            ;
-
         WorldActions thisAction = WorldActionsHelper.SelectWeightedAction(_random);
 
         StepRecord stepTaken = thisAction switch
@@ -100,6 +123,13 @@ internal partial class WorldState : IDisposable
             WorldActions.SubscribeDelete => SubscribeDelete(),
             _ => throw new ArgumentOutOfRangeException(nameof(thisAction), thisAction, null)
         };
+
+        stepTaken = stepTaken with
+        {
+            Action = thisAction,
+            Step = _steps,
+        };
+
         _actions.Add(stepTaken);
         stepTaken.Playback?.Invoke();
 
@@ -135,6 +165,11 @@ internal partial class WorldState : IDisposable
             }
         }
 
+        foreach(var kvp in _tagValues)
+        {
+            kvp.Value.All(kvp.Key.Tagged).Assert(this);
+        }
+
         IEnumerable<Entity> allQueriedEntities = _worldState.CreateQuery()
             .Build()
             .EnumerateWithEntities()
@@ -160,9 +195,11 @@ internal partial class WorldState : IDisposable
                     d.Entity.Get<T2>()!.Equals(d.C2))
                 .Assert(this);
 
-            Assert(enumerable.Count() == Entities.Count(e =>
+            Assert(enumerable.Count() == Entities.Where(e =>
                 e.Has<T1>() &&
-                e.Has<T2>()));
+                e.Has<T2>())
+                .Declare(out var x)
+                .Count());
 
             Assert(enumerable.DistinctBy(t => t.Entity)
                 .Count() == enumerable.Count());

@@ -75,10 +75,10 @@ partial class Archetype
     internal static void CopyBitset(Archetype from, Archetype to, int fromIndex, int toIndex)
     {
         var sparseBits = from.BitsetArray;
-        if (!((uint)fromIndex < (uint)sparseBits.Length))
-            return;
 
-        to.GetBitset(toIndex) = sparseBits[fromIndex];
+        to.GetBitset(toIndex) = (uint)fromIndex < (uint)sparseBits.Length ?
+            sparseBits[fromIndex] :
+            default;// implicit default(Bitset)
     }
 
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)

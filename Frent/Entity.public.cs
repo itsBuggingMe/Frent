@@ -273,7 +273,7 @@ partial struct Entity
             int sparseIndex = componentHandle.ComponentID.SparseIndex;
             if (sparseIndex != 0)
             {
-                world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).AddOrSet(eloc.Index, componentHandle);
+                world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).AddOrSet(EntityID, componentHandle);
                 eloc.Flags |= EntityFlags.HasSparseComponents;
                 bits.Set(sparseIndex);
             }
@@ -374,16 +374,34 @@ partial struct Entity
     /// <exception cref="InvalidCastException"><paramref name="component"/> is not assignable to the type represented by <paramref name="componentID"/>.</exception>
     public readonly void AddAs(ComponentID componentID, object component)
     {
-        //TODO: implement sparse
         ref EntityLocation lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            w.AddArchetypicalComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
-            
-            ComponentStorageRecord componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
-            componentRunner.SetAt(this, component, entityLocation.Index);
+            ComponentStorageRecord? componentRunner = null;
+            ComponentSparseSetBase? sparseSet = null;
 
-            if(EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+            int sparseIndex = componentID.SparseIndex;
+            if (sparseIndex != 0)
+            {
+                sparseSet = w.WorldSparseSetTable[sparseIndex];
+                if (sparseSet.Has(EntityID))
+                    FrentExceptions.Throw_ComponentAlreadyExistsException(componentID.Type);
+                lookup.Flags |= EntityFlags.HasSparseComponents;
+                lookup.GetBitset().Set(sparseIndex);
+                sparseSet.AddOrSet(EntityID, ComponentHandle.CreateFromBoxed(componentID, component));
+                sparseSet.Init(this);
+            }
+            else
+            {
+                w.AddArchetypicalComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
+
+                componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
+                componentRunner.Value.SetAt(this, component, entityLocation.Index);
+            }
+
+            int entityIndex = 0;
+
+            if (EntityLocation.HasEventFlag(lookup.Flags | w.WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
                 if (w.ComponentAddedEvent.HasListeners)
                     w.ComponentAddedEvent.Invoke(this, componentID);
@@ -393,7 +411,11 @@ partial struct Entity
                     ref EventRecord events = ref w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
 
                     events.Add.NormalEvent.Invoke(this, componentID);
-                    componentRunner.InvokeGenericActionWith(events.Add.GenericEvent, this, entityLocation.Index);
+                    if(events.Add.GenericEvent is not null)
+                    {
+                        sparseSet?.InvokeGenericEvent(this, events.Add.GenericEvent);
+                        componentRunner?.InvokeGenericActionWith(events.Add.GenericEvent, this, entityIndex);
+                    }
                 }
             }
         }
@@ -414,9 +436,11 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            if(componentID.IsSparseComponent)
+            int sparseIndex = componentID.SparseIndex;
+            if (sparseIndex != 0)
             {
-                w.WorldSparseSetTable.UnsafeArrayIndex(componentID.RawIndex).Remove(EntityID, true);
+                lookup.GetBitset().ClearAt(sparseIndex);
+                w.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).Remove(EntityID, true);
             }
             else
             {

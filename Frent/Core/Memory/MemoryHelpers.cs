@@ -165,6 +165,12 @@ internal static class MemoryHelpers
         raw.Fill(93);
 #endif
     }
+
+    internal struct RegisterLayout
+    {
+        public uint High;
+        public uint Low;
+    }
 }
 
 internal static class MemoryHelpers<T>
