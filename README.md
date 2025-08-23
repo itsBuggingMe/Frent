@@ -1,4 +1,5 @@
-# [Frent](https://itsbuggingme.github.io/Frent/) 
+# [Frent](https://itsbuggingme.github.io/Frent/)
+
 [![NuGet](https://img.shields.io/nuget/v/Frent.svg)](https://www.nuget.org/packages/Frent/) [![NuGet](https://img.shields.io/nuget/dt/Frent.svg)](https://www.nuget.org/packages/Frent/) ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/m/itsBuggingMe/Frent/master) [![Help](https://img.shields.io/discord/1341196126291759188?label=help&color=5865F2&logo=discord)](https://discord.gg/TPWQQEvtg4) ![GitHub Repo stars](https://img.shields.io/github/stars/ItsBuggingMe/Frent)
 
 A high performance, low memory usage, archetyped based **[EC](https://itsbuggingme.github.io/Frent/docs/ecf.html) framework/[ECS](https://github.com/SanderMertens/ecs-faq)**  library for C#.
@@ -58,6 +59,7 @@ Frent is a lot faster than most C# ECS implementations - [Benchmark](https://git
 - [X] `EntityMarshal` and `WorldMarshal` for even faster speeds!
 
 # Contributing
+
 Wanna help?
 
 Report bugs, suggest APIs, and give general [feedback](https://github.com/itsBuggingMe/Frent/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22open%20for%20feedback%22).

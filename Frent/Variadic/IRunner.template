@@ -1,0 +1,76 @@
+arity: 16
+from:
+        ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
+to:
+|        ref TArg$ sparseFirst$ = ref IRunner.InitSparse<TArg$>(ref first, out Span<int> sparseArgArray$);
+|
+from:
+        ref TArg arg = ref Component<TArg>.IsSparseComponent ?
+            ref Unsafe.NullRef<TArg>()
+            : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+to:
+|        ref TArg$ arg$ = ref Component<TArg$>.IsSparseComponent ?
+            ref Unsafe.NullRef<TArg$>()
+            : ref Unsafe.Add(ref b.GetComponentDataReference<TArg$>(), start);
+|
+from:
+        .CompSet(Component<TArg>.SparseSetComponentIndex)
+to:
+|        .CompSet(Component<TArg$>.SparseSetComponentIndex)
+|
+from:
+            if (Component<TArg>.IsSparseComponent)
+            {
+                int index = sparseArgArray.UnsafeSpanIndex(entity.EntityID);
+                arg = ref Unsafe.Add(ref sparseFirst, index);
+            }
+to:
+|            if (Component<TArg$>.IsSparseComponent)
+            {
+                int index = sparseArgArray$.UnsafeSpanIndex(entity.EntityID);
+                arg$ = ref Unsafe.Add(ref sparseFirst$, index);
+            }
+|
+from:
+            if (Component<TArg>.IsSparseComponent)
+            {
+                int index = sparseArgArray.UnsafeSpanIndex(entityId);
+                arg = ref Unsafe.Add(ref sparseFirst, index);
+            }
+to:
+|            if (Component<TArg$>.IsSparseComponent)
+            {
+                int index = sparseArgArray$.UnsafeSpanIndex(entityId);
+                arg$ = ref Unsafe.Add(ref sparseFirst$, index);
+            }
+|
+from:
+            if (!Component<TArg>.IsSparseComponent) arg = ref Unsafe.Add(ref arg, 1);
+to:
+|            if (!Component<TArg$>.IsSparseComponent) arg$ = ref Unsafe.Add(ref arg$, 1);
+|
+from:
+            if (Component<TArg>.IsSparseComponent)
+to:
+            if (|Component<TArg$>.IsSparseComponent || | false)
+from:
+            ref TArg arg = ref Component<TArg>.IsSparseComponent
+                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
+                : ref entityData.Get<TArg>();
+to:
+|            ref TArg$ arg$ = ref Component<TArg$>.IsSparseComponent
+                ? ref Unsafe.Add(ref sparseFirst$, sparseArgArray$.UnsafeSpanIndex(entity.EntityID))
+                : ref entityData.Get<TArg$>();
+|
+from:
+var entityData = Component<TArg>.IsSparseComponent
+to:
+var entityData = |Component<TArg$>.IsSparseComponent || |false
+from:
+ref arg);
+to:
+|ref arg$, |);
+from:
+TArg>
+to:
+|TArg$, |>

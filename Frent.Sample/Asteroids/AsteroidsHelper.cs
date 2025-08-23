@@ -8,7 +8,7 @@ internal static class AsteroidsHelper
 {
     public static void Shoot(this Entity entity, Vector2 direction, float speed)
     {
-        entity.World.Create<Transform, Velocity, Line, DecayTimer, BulletBehavior, CircleCollision>(
+        var bullet = entity.World.Create<Transform, Velocity, Line, DecayTimer, BulletBehavior, CircleCollision>(
             entity.Get<Transform>().XY,
             direction * speed + entity.Get<Velocity>(),
             new() { A = direction * 7, Thickness = 2, Opacity = 1 },
@@ -16,6 +16,11 @@ internal static class AsteroidsHelper
             new(entity),
             new() { Radius = 12 }
             );
+
+        bullet.OnDelete += e =>
+        {
+
+        };
     }
 
     public static void Explode(this Entity entity)

@@ -1,21 +1,16 @@
-﻿using Frent.Core;
+﻿using Frent.Collections;
+using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
 using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
-[Variadic("        ref T ref1 = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;",
-    "|        ref T$ ref$ = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index); ref$ = comp$;\n|")]
-[Variadic("        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);",
-    "|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);\n|")]
-[Variadic("            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],", "|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],\n|")]
-[Variadic("e<T>", "e<|T$, |>")]
-[Variadic("y<T>", "y<|T$, |>")]
-[Variadic("in T comp", "|in T$ comp$, |")]
-//it just so happens Archetype and Create both end with "e"
+
+[Variadic(nameof(World))]
 partial class World
 {
     /// <summary>
@@ -26,32 +21,59 @@ partial class World
     [SkipLocalsInit]
     public Entity Create<T>(in T comp)
     {
-        var archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
+        WorldArchetypeTableItem archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
 
         ref var archetypeEntityRecord = ref Unsafe.NullRef<EntityIDOnly>();
         ref EntityLocation eloc = ref FindNewEntityLocation(out int id);
 
         ComponentStorageRecord[] components;
+        Archetype inserted;
 
         if (AllowStructualChanges)
         {
+            inserted = archetypes.Archetype;
             components = archetypes.Archetype.Components;
             archetypeEntityRecord = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
         }
         else
         {
             // we don't need to manually set flags, they are already zeroed
-            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, ref eloc, out components);
+            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, 
+                ref eloc, 
+                out components,
+                out inserted);
+            DeferredCreationEntities.Push(id);
         }
 
         archetypeEntityRecord.Version = eloc.Version;
         archetypeEntityRecord.ID = id;
 
+        ref ComponentSparseSetBase start = ref MemoryMarshal.GetArrayDataReference(WorldSparseSetTable);
+
         //1x array lookup per component
-        ref T ref1 = ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index); ref1 = comp;
+        ref T ref1 = ref Component<T>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T>(ref start)[id] 
+            : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index);
+        ref1 = comp;
+
+        bool hasSparseComponent = !(!Component<T>.IsSparseComponent && true);
+
+        if (hasSparseComponent)
+        {
+            eloc.Flags |= EntityFlags.HasSparseComponents;
+            ref Bitset bitset = ref inserted.GetBitset(eloc.Index);
+
+            bitset = default;
+
+            if (Component<T>.IsSparseComponent) bitset.Set(Component<T>.SparseSetComponentIndex);
+        }
+        else
+        {
+            inserted.ClearBitset(eloc.Index);
+        }
 
         // Version is incremented on delete, so we don't need to do anything here
-        Entity concreteEntity = new Entity(ID, eloc.Version, id);
+        Entity concreteEntity = new Entity(WorldID, eloc.Version, id);
         
         Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
         EntityCreatedEvent.Invoke(concreteEntity);
@@ -65,6 +87,7 @@ partial class World
     /// <param name="count">The number of entities to create</param>
     /// <returns>The entities created and their component spans</returns>
     /// <variadic />
+    [Obsolete]
     public ChunkTuple<T> CreateMany<T>(int count)
     {
         if (count < 0)
@@ -87,7 +110,7 @@ partial class World
         
         var chunks = new ChunkTuple<T>()
         {
-            Entities = new EntityEnumerator.EntityEnumerable(this, entities),
+            Entities = new EntityEnumerator(this, entities),
             Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],
         };
         

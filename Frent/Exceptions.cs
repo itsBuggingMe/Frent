@@ -48,6 +48,12 @@ internal class FrentExceptions
     {
         throw new ArgumentOutOfRangeException(message);
     }
+
+    [DoesNotReturn]
+    public static void Throw_NullReferenceException()
+    {
+        throw new NullReferenceException();
+    }
 }
 
 internal class ComponentAlreadyExistsException : Exception

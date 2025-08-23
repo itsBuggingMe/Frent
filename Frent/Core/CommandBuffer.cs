@@ -1,4 +1,5 @@
 using Frent.Collections;
+using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Updating;
 using System.Runtime.CompilerServices;
@@ -264,11 +265,11 @@ public class CommandBuffer
     internal bool PlaybackInternal()
     {
         bool hasItems = 
-            _createEntityBuffer.Count > 0 |
-            _deleteEntityBuffer.Count > 0 |
-            _addComponentBuffer.Count > 0 |
-            _removeComponentBuffer.Count > 0 |
-            _tagEntityBuffer.Count > 0 |
+            _createEntityBuffer.Count > 0 ||
+            _deleteEntityBuffer.Count > 0 ||
+            _addComponentBuffer.Count > 0 ||
+            _removeComponentBuffer.Count > 0 ||
+            _tagEntityBuffer.Count > 0 ||
             _detachTagEntityBuffer.Count > 0
             ;
 
@@ -282,17 +283,9 @@ public class CommandBuffer
 
             if (createCommand.BufferLength > 0)
             {
-                ArchetypeID id = _world.DefaultArchetype.ID;
                 Span<ComponentHandle> handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
-                for (int i = 0; i < handles.Length; i++)
-                {
-                    id = _world.AddComponentLookup.FindAdjacentArchetypeID(handles[i].ComponentID, id, _world, ArchetypeEdgeType.AddComponent);
-                }
-
-                _world.MoveEntityToArchetypeAdd(concrete, ref lookup, out EntityLocation location, id.Archetype(_world)!);
+                _world.CreateFromHandlesCore(concrete.EntityID, ref _world.EntityTable[concrete.EntityID], handles);
             }
-
-            _world.InvokeEntityCreated(concrete);
         }
 
         while (_deleteEntityBuffer.TryPop(out var item))
@@ -308,58 +301,119 @@ public class CommandBuffer
         while (_removeComponentBuffer.TryPop(out var item))
         {
             var id = item.Entity.ID;
+            Entity concrete = item.Entity.ToEntity(_world);
             ref var record = ref _world.EntityTable[id];
+
             if (record.Version == item.Entity.Version)
             {
-                _world.RemoveComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
+                int sparseIndex = item.ComponentID.SparseIndex;
+                _world.ComponentRemovedEvent.Invoke(concrete, item.ComponentID);
+                GenericEvent? removeEvent = record.HasFlag(EntityFlags.RemoveGenericComp) ?
+                    _world.EventLookup.GetValueRefOrNullRef(item.Entity).Remove.GenericEvent :
+                    null;
+
+                if (sparseIndex != 0)
+                {
+                    var set = _world.WorldSparseSetTable[sparseIndex];
+                    if (removeEvent is not null)
+                        set.InvokeGenericEvent(concrete, removeEvent);
+                    set.Remove(id, true);
+                }
+                else
+                {
+                    ComponentStorageRecord componentStorage = record.Archetype.GetComponentStorage(item.ComponentID);
+                    // implicitly called by RemoveArchetypicalComponent
+                    // componentStorage.CallDestroyer(record.Index);
+                    if (removeEvent is not null)
+                        componentStorage.InvokeGenericActionWith(removeEvent, concrete, record.Index);
+                    _world.RemoveArchetypicalComponent(item.Entity.ToEntity(_world), ref record, item.ComponentID);
+                }
             }
         }
 
         while (_addComponentBuffer.TryPop(out var command))
         {
-            var id = command.Entity.ID;
-            ref var record = ref _world.EntityTable[id];
+            //TODO: events
+            Entity concrete = command.Entity.ToEntity(_world);
+            ref var record = ref _world.EntityTable[concrete.EntityID];
+
             if (record.Version == command.Entity.Version)
             {
-                Entity concrete = command.Entity.ToEntity(_world);
+                // init x -> generic events -> entity events -> worldevents x
+                int sparseIndex = command.ComponentHandle.ComponentID.SparseIndex;
+                ComponentStorageRecord? runner = null;
+                ComponentSparseSetBase? sparseSet = null;
+                int archIndex = 0;
 
-                _world.AddComponent(concrete, ref record, command.ComponentHandle.ComponentID, out var location, out var destination);
-
-                var runner = destination.Components[destination.GetComponentIndex(command.ComponentHandle.ComponentID)];
-                runner.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
-
-                if (record.HasEvent(EntityFlags.AddComp))
+                if (sparseIndex != 0)
                 {
-#if NETSTANDARD2_1
-                    var events = _world.EventLookup[command.Entity];
-#else
-                    ref var events = ref CollectionsMarshal.GetValueRefOrNullRef(_world.EventLookup, command.Entity);
-#endif
-                    events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
-                    runner.InvokeGenericActionWith(events.Add.GenericEvent, concrete, location.Index);
+                    sparseSet = _world.WorldSparseSetTable[sparseIndex];
+                    sparseSet.AddOrSet(concrete.EntityID, command.ComponentHandle);
+                    sparseSet.Init(concrete);
+                }
+                else
+                {
+                    _world.AddArchetypicalComponent(concrete, ref record, command.ComponentHandle.ComponentID, out var location, out var destination);
+
+                    runner = destination.Components[destination.GetComponentIndex(command.ComponentHandle.ComponentID)];
+                    runner.Value.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
+
+                    runner.Value.CallIniter(concrete, location.Index);
+
+                    command.ComponentHandle.Dispose();
+
+                    archIndex = location.Index;
                 }
 
-                command.ComponentHandle.Dispose();
+                if (record.HasFlag(EntityFlags.AddComp | EntityFlags.AddGenericComp))
+                {
+                    ref var events = ref _world.EventLookup.GetValueRefOrNullRef(command.Entity);
+
+                    if(events.Add.GenericEvent is not null)
+                    {
+                        runner?.InvokeGenericActionWith(events.Add.GenericEvent, concrete, archIndex);
+                        sparseSet?.InvokeGenericEvent(concrete, events.Add.GenericEvent);
+                    }
+
+                    events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
+                }
+
+                _world.ComponentAddedEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
             }
         }
 
         while (_tagEntityBuffer.TryPop(out var command))
         {
             ref var record = ref _world.EntityTable[command.Entity.ID];
+            Entity concrete = command.Entity.ToEntity(_world);
             if (record.Version == command.Entity.Version)
             {
-                _world.MoveEntityToArchetypeIso(command.Entity.ToEntity(_world), ref record,
+                _world.MoveEntityToArchetypeIso(concrete, ref record,
                     Archetype.GetAdjacentArchetypeLookup(_world, ArchetypeEdgeKey.Tag(command.TagID, record.Archetype.ID, ArchetypeEdgeType.AddTag)));
+
+                _world.Tagged.Invoke(concrete, command.TagID);
+                if(record.HasFlag(EntityFlags.Detach))
+                {
+                    _world.EventLookup.GetValueRefOrNullRef(command.Entity).Tag.Invoke(concrete, command.TagID);
+                }
             }
         }
 
         while (_detachTagEntityBuffer.TryPop(out var command))
         {
             ref var record = ref _world.EntityTable[command.Entity.ID];
+            Entity concrete = command.Entity.ToEntity(_world);
+
             if (record.Version == command.Entity.Version)
             {
                 _world.MoveEntityToArchetypeIso(command.Entity.ToEntity(_world), ref record,
                     Archetype.GetAdjacentArchetypeLookup(_world, ArchetypeEdgeKey.Tag(command.TagID, record.Archetype.ID, ArchetypeEdgeType.RemoveTag)));
+
+                _world.Detached.Invoke(concrete, command.TagID);
+                if (record.HasFlag(EntityFlags.Detach))
+                {
+                    _world.EventLookup.GetValueRefOrNullRef(command.Entity).Detach.Invoke(concrete, command.TagID);
+                }
             }
         }
 

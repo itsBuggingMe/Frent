@@ -1,11 +1,8 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using Frent.Updating.Runners;
 using Frent.Core.Events;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System;
-using System.Net.Security;
 
 namespace Frent.Updating;
 
@@ -30,17 +27,29 @@ internal abstract class ComponentBufferManager
     /// Used only in source generation
     /// </summary>
     internal abstract IDTable CreateTable();
+    /// <summary>
+    /// Used only in source generation
+    /// </summary>
+    internal abstract ComponentSparseSetBase CreateSparseSet();
     #endregion
 
     #region Things That Need Buffer & <T>
     /// <summary>
     /// Calls all Update functions on every component.
     /// </summary>
-    internal abstract void Run(Array buffer, Archetype b, World world);
+    internal abstract void RunArchetypical(Array buffer, Archetype b, World world);
     /// <summary>
     /// Calls all Update functions on the subsection of components.
     /// </summary>
-    internal abstract void Run(Array buffer, Archetype b, World world, int start, int length);
+    internal abstract void RunArchetypical(Array buffer, Archetype b, World world, int start, int length);
+    /// <summary>
+    /// Calls all Update functions on every component.
+    /// </summary>
+    internal abstract void RunSparse(ComponentSparseSetBase sparseSet, World world);
+    /// <summary>
+    /// Calls all Update functions on the subsection of components.
+    /// </summary>
+    internal abstract void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> entityIds);
     /// <summary>
     /// Deletes a component from the storage.
     /// </summary>
@@ -58,7 +67,7 @@ internal abstract class ComponentBufferManager
     /// </summary>
     internal abstract void PullComponentFromAndClear(Array buffer, Array otherRunner, int me, int other, int otherRemove);
     /// <summary>
-    /// Copies component from storage without disposing component handle - just copies. Initer called.
+    /// Copies component from storage without disposing component handle - just copies.
     /// </summary>
     internal abstract void PullComponentFrom(Array buffer, IDTable storage, int me, int other);
     /// <summary>
@@ -85,14 +94,20 @@ internal abstract class ComponentBufferManager
     /// Calls the initer at the location.
     /// </summary>
     internal abstract void CallIniter(Array buffer, Entity parent, int index);
+    /// <summary>
+    /// Calls the destroyer at the location.
+    /// </summary>
+    internal abstract void CallDestroyer(Array buffer, int index);
     #endregion
 }
 
 internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManager
 {
+
     internal sealed override ComponentStorageRecord Create(int capacity) => new(new TComponent[capacity], this);
 
     internal sealed override IDTable CreateTable() => new IDTable<TComponent>();
+    internal sealed override ComponentSparseSetBase CreateSparseSet() => new ComponentSparseSet<TComponent>();
 
     internal sealed override void Release(Array buffer, Archetype archetype, bool isDeferredCreate)
     {
@@ -169,6 +184,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     }
 
     internal sealed override void CallIniter(Array buffer, Entity parent, int index) => Component<TComponent>.Initer?.Invoke(parent, ref Index(buffer, index));
+    internal sealed override void CallDestroyer(Array buffer, int index) => Component<TComponent>.Destroyer?.Invoke(ref Index(buffer, index));
     internal sealed override void InvokeGenericActionWith(Array buffer, GenericEvent? action, Entity e, int index) => action?.Invoke(e, ref Index(buffer, index));
     internal sealed override void InvokeGenericActionWith(Array buffer, IGenericAction action, int index) => action?.Invoke(ref Index(buffer, index));
     internal sealed override void PullComponentFromAndClear(Array buffer, Array otherRunnerBuffer, int me, int other, int otherRemoveIndex)
@@ -208,10 +224,6 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     {
         ref var item = ref Index(buffer, componentIndex);
 
-        //we can't just copy to stack and run the destroyer on it
-        //it is stored
-        Component<TComponent>.Destroyer?.Invoke(ref item);
-
         var handle = ComponentHandle.Create(item);
 
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
@@ -224,19 +236,39 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
         return ref UnsafeExtensions.UnsafeCast<TComponent[]>(buffer).UnsafeArrayIndex(componentIndex);
     }
 
-    internal override void Run(Array buffer, Archetype b, World world)
+    internal override void RunArchetypical(Array buffer, Archetype b, World world)
     {
         foreach(var runner in Component<TComponent>.UpdateMethods)
         {
-            runner.Runner.Run(buffer, b, world);
+            runner.Runner.RunArchetypical(buffer, b, world, 0, b.EntityCount);
         }
     }
 
-    internal override void Run(Array buffer, Archetype b, World world, int start, int length)
+    internal override void RunArchetypical(Array buffer, Archetype b, World world, int start, int length)
     {
         foreach (var runner in Component<TComponent>.UpdateMethods)
         {
-            runner.Runner.Run(buffer, b, world, start, length);
+            runner.Runner.RunArchetypical(buffer, b, world, start, length);
+        }
+    }
+
+    internal override void RunSparse(ComponentSparseSetBase sparseSet, World world)
+    {
+        Debug.Assert(!world.AllowStructualChanges);
+
+        foreach (var runner in Component<TComponent>.UpdateMethods)
+        {
+            runner.Runner.RunSparse(sparseSet, world);
+        }
+    }
+
+    internal override void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> entityIds)
+    {
+        Debug.Assert(!world.AllowStructualChanges);
+
+        foreach (var runner in Component<TComponent>.UpdateMethods)
+        {
+            runner.Runner.RunSparse(sparseSet, world);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using System.Security.AccessControl;
+using Frent.Updating;
 
 namespace Frent.Core.Structures;
 
@@ -54,6 +55,17 @@ internal static class GlobalWorldTables
                         }
                     }
                 }
+            }
+        }
+    }
+
+    internal static void RegisterNewSparseSetComponent(int sparseSetIndex, ComponentBufferManager bufferManager)
+    {
+        foreach (var world in Worlds.AsSpan())
+        {
+            if (world is not null)
+            {
+                MemoryHelpers.GetValueOrResize(ref world.WorldSparseSetTable, sparseSetIndex) = bufferManager.CreateSparseSet();
             }
         }
     }

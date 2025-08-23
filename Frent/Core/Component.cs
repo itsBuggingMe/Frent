@@ -2,7 +2,6 @@
 using Frent.Components;
 using Frent.Core.Structures;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -14,8 +13,6 @@ namespace Frent.Core;
 /// <typeparam name="T">The type of component</typeparam>
 public static class Component<T>
 {
-    internal static ComponentStorageRecord CreateInstance(int capacity) => new ComponentStorageRecord(capacity == 0 ? [] : new T[capacity], BufferManagerInstance);
-
     /// <summary>
     /// The component ID for <typeparamref name="T"/>
     /// </summary>
@@ -25,6 +22,33 @@ public static class Component<T>
     internal static readonly IDTable<T> GeneralComponentStorage;
     internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
     internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
+    private static readonly bool _isSparseComponentAndReference;
+
+    internal static bool IsSparseComponent
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            if(typeof(T).IsValueType)
+            {
+                return default(T) is ISparseComponent;
+            }
+
+            return _isSparseComponentAndReference;
+        }
+    }
+
+    internal static void InitalizeComponentRunnerImpl(ComponentStorageRecord[] runners, ComponentStorageRecord[] tmpStorages, byte[] map)
+    {
+        if (!IsSparseComponent)
+        {
+            int i = map.UnsafeArrayIndex(ID.RawIndex) & GlobalWorldTables.IndexBits;
+            runners[i] = new ComponentStorageRecord(new T[1], BufferManagerInstance);
+            tmpStorages[i] = new ComponentStorageRecord(Array.Empty<T>(), BufferManagerInstance);
+        }
+    }
+
+    internal static readonly int SparseSetComponentIndex;
 
     internal static readonly UpdateMethodData[] UpdateMethods;
     internal static readonly ComponentBufferManager<T> BufferManagerInstance;
@@ -33,7 +57,11 @@ public static class Component<T>
 
     static Component()
     {
-        (_id, GeneralComponentStorage, Initer, Destroyer) = Component.GetExistingOrSetupNewComponent<T>();
+        if (!typeof(T).IsValueType)
+        {
+            //this field is used in Component.GetExistingOrSetupNewComponent<T>()
+            _isSparseComponentAndReference = typeof(ISparseComponent).IsAssignableFrom(typeof(T));
+        }
 
         if(Component.CachedComponentFactories.TryGetValue(typeof(T), out var componentBufferManager))
         {
@@ -44,8 +72,9 @@ public static class Component<T>
             Component.CachedComponentFactories[typeof(T)] = BufferManagerInstance = new ComponentBufferManager<T>();
         }
 
+        (_id, GeneralComponentStorage, Initer, Destroyer, SparseSetComponentIndex) = Component.GetExistingOrSetupNewComponent<T>();
 
-        if(GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var runners))
+        if (GenerationServices.UserGeneratedTypeMap.TryGetValue(typeof(T), out var runners))
         {
             UpdateMethods = runners;
         }
@@ -77,12 +106,14 @@ public static class ComponentDelegates<T>
 public static class Component
 {
     internal static FastStack<ComponentData> ComponentTable = FastStack<ComponentData>.Create(16);
+    internal static FastStack<SparseComponentData> ComponentTableBySparseIndex = FastStack<SparseComponentData>.Create(2);
 
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
 
     internal static readonly Dictionary<Type, ComponentBufferManager> CachedComponentFactories = [];
 
     private static int NextComponentID = -1;
+    private static int NextSparseSetComponentIndex = 0;
 
     internal static ComponentBufferManager GetComponentFactoryFromType(Type t)
     {
@@ -101,7 +132,7 @@ public static class Component
         GenerationServices.RegisterComponent<T>();
     }
 
-    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer) GetExistingOrSetupNewComponent<T>()
+    internal static (ComponentID ComponentID, IDTable<T> Stack, ComponentDelegates<T>.InitDelegate? Initer, ComponentDelegates<T>.DestroyDelegate? Destroyer, int SparseIndex) GetExistingOrSetupNewComponent<T>()
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
@@ -113,7 +144,8 @@ public static class Component
                         componentID, 
                         (IDTable<T>)ComponentTable[componentID.RawIndex].Storage, 
                         (ComponentDelegates<T>.InitDelegate?)ComponentTable[componentID.RawIndex].Initer, 
-                        (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[componentID.RawIndex].Destroyer
+                        (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[componentID.RawIndex].Destroyer,
+                        ComponentTable[componentID.RawIndex].SparseComponentIndex
                     );
             }
 
@@ -129,16 +161,26 @@ public static class Component
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            var initDelegate = (ComponentDelegates<T>.InitDelegate?)(GenerationServices.TypeIniters.TryGetValue(type, out var v) ? v : null);
-            var destroyDelegate = (ComponentDelegates<T>.DestroyDelegate?)(GenerationServices.TypeDestroyers.TryGetValue(type, out var v2) ? v2 : null);
+            var initDelegate = (ComponentDelegates<T>.InitDelegate?)(GenerationServices.TypeIniters.GetValueOrDefault(type));
+            var destroyDelegate = (ComponentDelegates<T>.DestroyDelegate?)(GenerationServices.TypeDestroyers.GetValueOrDefault(type));
+            int sparseIndex = Component<T>.IsSparseComponent ? ++NextSparseSetComponentIndex : 0;
 
             IDTable<T> stack = new IDTable<T>();
-            ComponentTable.Push(new ComponentData(type, stack,
-                GenerationServices.TypeIniters.TryGetValue(type, out var v1) ? initDelegate : null,
-                GenerationServices.TypeDestroyers.TryGetValue(type, out var d) ? destroyDelegate : null,
-                GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : []));
+            var data = new ComponentData(type, stack, GetComponentFactoryFromType(type),
+                initDelegate,
+                destroyDelegate,
+                GenerationServices.UserGeneratedTypeMap.GetValueOrDefault(type) ?? [],
+                sparseIndex
+            );
+            ComponentTable.Push(data);
 
-            return (id, stack, initDelegate, destroyDelegate);
+            if (sparseIndex != 0)
+            {
+                GlobalWorldTables.RegisterNewSparseSetComponent(sparseIndex, CachedComponentFactories[type]);
+                ComponentTableBySparseIndex.Push(new(data.Factory, sparseIndex, id));
+            }
+
+            return (id, stack, initDelegate, destroyDelegate, sparseIndex);
         }
     }
 
@@ -147,16 +189,18 @@ public static class Component
     /// </summary>
     /// <param name="t">The type to get the component ID of</param>
     /// <returns>The component ID</returns>
-    public static ComponentID GetComponentID(Type t)
+    public static ComponentID GetComponentID(Type t) => GetComponentIDCore(t, null);
+
+    private static ComponentID GetComponentIDCore(Type type, IDTable? table)
     {
         lock (GlobalWorldTables.BufferChangeLock)
         {
-            if (ExistingComponentIDs.TryGetValue(t, out ComponentID value))
+            if (ExistingComponentIDs.TryGetValue(type, out ComponentID value))
             {
                 return value;
             }
 
-            EnsureTypeInit(t);
+            EnsureTypeInit(type);
 
             int nextIDInt = ++NextComponentID;
 
@@ -164,14 +208,25 @@ public static class Component
                 throw new InvalidOperationException($"Exceeded maximum unique component type count of 65535");
 
             ComponentID id = new ComponentID((ushort)nextIDInt);
-            ExistingComponentIDs[t] = id;
+            ExistingComponentIDs[type] = id;
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
-            ComponentTable.Push(new ComponentData(t, CreateComponentTable(t),
-                GenerationServices.TypeIniters.TryGetValue(t, out var v) ? v : null,
-                GenerationServices.TypeDestroyers.TryGetValue(t, out var d) ? d : null, 
-                GenerationServices.UserGeneratedTypeMap.TryGetValue(t, out var m) ? m : []));
+            bool isSparseComponent = typeof(ISparseComponent).IsAssignableFrom(type);
+            int sparseIndex = isSparseComponent ? ++NextSparseSetComponentIndex : 0;
+            ComponentData data = new ComponentData(type, table ?? CreateComponentTable(type), type == typeof(void) ? null! : GetComponentFactoryFromType(type),
+                GenerationServices.TypeIniters.GetValueOrDefault(type),
+                GenerationServices.TypeDestroyers.GetValueOrDefault(type),
+                GenerationServices.UserGeneratedTypeMap.TryGetValue(type, out var m) ? m : [],
+                sparseIndex
+            );
+
+            ComponentTable.Push(data);
+            if (isSparseComponent)
+            {
+                GlobalWorldTables.RegisterNewSparseSetComponent(sparseIndex, CachedComponentFactories[type]);
+                ComponentTableBySparseIndex.Push(new(data.Factory, data.SparseComponentIndex, id));
+            }
 
             return id;
         }
@@ -215,5 +270,10 @@ public static class Component
     }
 
     //initalize default(ComponentID) to point to void
-    static Component() => GetComponentID(typeof(void));
+    static Component()
+    {
+        GetComponentID(typeof(void));
+        // offset by one
+        ComponentTableBySparseIndex.Push(default);
+    }
 }

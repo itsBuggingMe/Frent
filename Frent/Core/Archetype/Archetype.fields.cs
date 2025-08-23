@@ -2,10 +2,11 @@
 using Frent.Updating;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Frent.Collections;
 
 namespace Frent.Core;
 
-//46 bytes total - 16 header + mt, 8 comps, 8 entities, 8 table, 6 ids and tracking
+//56 bytes total - 16 header + mt, 8 comps, 8 entities, 8 table, 8 sparse bits, 6 ids and tracking, 2 padding
 partial class Archetype(ArchetypeID archetypeID, ComponentStorageRecord[] components, bool isTempCreateArchetype)
 {
     //8
@@ -22,6 +23,13 @@ partial class Archetype(ArchetypeID archetypeID, ComponentStorageRecord[] compon
     //updated by static methods
     //saves a lookup on hot paths
     internal byte[] ComponentTagTable = GlobalWorldTables.ComponentTagLocationTable[archetypeID.RawIndex];
+
+    // 8
+    // lazy per entity data on what sparse components an entity has based on sparse index.
+    // we store this here since it's used in entity filtering in systems
+    // also get to save some memory
+    // even if it does increase archetype overhead a bit
+    private Bitset[] _sparseBits = [];
     //2
     private readonly ArchetypeID _archetypeID = archetypeID;
     //4

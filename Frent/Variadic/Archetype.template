@@ -1,0 +1,19 @@
+arity: 16
+from:
+        if(!Component<T>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T>.ID;
+to:
+|        if(!Component<T$>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T$>.ID;
+|
+from:
+        Span<ComponentID> ids = stackalloc ComponentID[1];
+to:
+        Span<ComponentID> ids = stackalloc ComponentID[$];
+from:
+            Component<T>.InitalizeComponentRunnerImpl(runners, tmpStorages, map);
+to:
+|            Component<T$>.InitalizeComponentRunnerImpl(runners, tmpStorages, map);
+|
+from:
+Archetype<T>
+to:
+Archetype<|T$, |>

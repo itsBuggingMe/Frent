@@ -29,21 +29,7 @@ public ref struct EntityEnumerator
     public Entity Current => _entities[_index].ToEntity(_world);
 
     /// <summary>
-    /// Proxy struct used to get an <see cref="EntityEnumerator"/>.
+    /// Gets the enumerator over a query.
     /// </summary>
-    public ref struct EntityEnumerable
-    {
-        private World _world;
-        private Span<EntityIDOnly> _entities;
-        internal EntityEnumerable(World world, Span<EntityIDOnly> entities)
-        {
-            _world = world;
-            _entities = entities;
-        }
-
-        /// <summary>
-        /// Gets an <see cref="EntityEnumerator"/> from this <see cref="EntityEnumerable"/>. Allows for the usage of foreach syntax.
-        /// </summary>
-        public EntityEnumerator GetEnumerator() => new EntityEnumerator(_world, _entities);
-    }
+    public EntityEnumerator GetEnumerator() => this;
 }

@@ -37,7 +37,7 @@ internal struct FastLookup()
         }
         //cold path
         Archetype dest = Archetype.GetAdjacentArchetypeCold(world, edgeKey);
-        world.ArchetypeGraphEdges.Add(edgeKey, dest);
+        world.ArchetypeGraphEdges.GetValueRefOrAddDefault(edgeKey, out _) = dest;
         return dest.ID;
     }
 

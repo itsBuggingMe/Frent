@@ -6,6 +6,9 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Frent.Collections;
+using System.Collections;
+using Frent.Updating;
 
 namespace Frent;
 
@@ -61,15 +64,15 @@ public partial struct Entity : IEquatable<Entity>
         internal ushort WorldID;
     }
 
-    internal EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref this).EntityIDOnly;
-    internal long PackedValue => Unsafe.As<Entity, long>(ref this);
-    internal int EntityLow => Unsafe.As<Entity, EntityHighLow>(ref this).EntityLow;
+    internal readonly EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref Unsafe.AsRef(in this)).EntityIDOnly;
+    internal readonly long PackedValue => Unsafe.As<Entity, long>(ref Unsafe.AsRef(in this));
+    internal readonly int EntityLow => Unsafe.As<Entity, EntityHighLow>(ref Unsafe.AsRef(in this)).EntityLow;
     #endregion
 
     #region Internal Helpers
 
     #region IsAlive
-    internal bool InternalIsAlive([NotNullWhen(true)] out World world, out EntityLocation entityLocation)
+    internal readonly bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         if (world is null)
@@ -82,7 +85,7 @@ public partial struct Entity : IEquatable<Entity>
     }
 
     /// <exception cref="InvalidOperationException">This <see cref="Entity"/> has been deleted.</exception>
-    internal ref EntityLocation AssertIsAlive(out World world)
+    internal readonly ref EntityLocation AssertIsAlive(out World world)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         //hardware trap
@@ -94,12 +97,18 @@ public partial struct Entity : IEquatable<Entity>
 
     #endregion IsAlive
 
-    private Ref<T> TryGetCore<T>(out bool exists)
+    private readonly Ref<T> TryGetCore<T>(out bool exists)
     {
-        if (!InternalIsAlive(out var _, out var entityLocation))
+        if (!InternalIsAlive(out var world, out var entityLocation))
             goto doesntExist;
 
-        int compIndex = GlobalWorldTables.ComponentIndex(entityLocation.ArchetypeID, Component<T>.ID);
+        if (Component<T>.IsSparseComponent)
+        {
+            return UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex))
+                .TryGet(EntityID, out exists);
+        }
+
+        int compIndex = entityLocation.Archetype.GetComponentIndex<T>();
 
         if (compIndex == 0)
             goto doesntExist;
@@ -115,6 +124,7 @@ public partial struct Entity : IEquatable<Entity>
         return default;
     }
 
+    [DoesNotReturn]
     private static void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
@@ -146,6 +156,158 @@ public partial struct Entity : IEquatable<Entity>
             }
         }
     }
+
+
+    private readonly ImmutableArray<ComponentID> AllocateComponentTypeArray()
+    {
+        if (!InternalIsAlive(out var world, out var location))
+            Throw_EntityIsDead();
+        if (!location.HasFlag(EntityFlags.HasSparseComponents))
+            return location.Archetype.ArchetypeTypeArray;
+
+        var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length + 
+            location.GetBitset().PopCnt());
+
+        foreach (var componentID in this)
+        {
+            res.Add(componentID);
+        }
+
+        return res.MoveToImmutable();
+    }
+
+    /// <summary>
+    /// Enumerates the  <see cref="ComponentID"/> of all components on an entity without allocating.
+    /// </summary>
+    public ref struct EntityComponentIDEnumerator
+    {
+        /// <summary>
+        /// The current <see cref="ComponentID"/> instance.
+        /// </summary>
+        public ComponentID Current => _current;
+        private ReadOnlySpan<ComponentID> _archetypical;
+        private readonly Bitset _bitset;
+#if NETSTANDARD
+        private ushort _currentVersion => _world.EntityTable[_entityID].Version;
+        private readonly World _world;
+        private int _entityID;
+#else
+        private readonly ref ushort _currentVersion;
+#endif
+        private readonly ushort _expectedVersion;
+        private ComponentID _current;
+        private int _index = 0;
+
+        internal EntityComponentIDEnumerator(Entity entity)
+        {
+            if(!entity.InternalIsAlive(out World? world, out EntityLocation entityLocation))
+                Throw_EntityIsDead();
+
+            _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
+            _bitset = entityLocation.HasFlag(EntityFlags.HasSparseComponents)
+                ? entityLocation.GetBitset()
+                : default;
+
+            _expectedVersion = entity.EntityVersion;
+#if NETSTANDARD
+            _world = world;
+            _entityID = entity.EntityID;
+#else
+            _currentVersion = ref world.EntityTable[entity.EntityID].Version;
+#endif
+        }
+
+        /// <summary>
+        /// Moves to the next <see cref="ComponentID"/> instance.
+        /// </summary>
+        /// <returns>If enumeration can continue.</returns>
+        public bool MoveNext()
+        {
+            if(_currentVersion != _expectedVersion)
+                Throw_EntityIsDead();
+
+            if (!_archetypical.IsEmpty)
+            {
+                if (_index < _archetypical.Length)
+                {
+                    _current = _archetypical[_index++];
+                    return true;
+                }
+
+                _archetypical = default;
+                _index = -1;
+            }
+
+            int? found = _bitset.TryFindIndexOfBitGreaterThanOrEqualTo(_index + 1);
+
+            if (found is { } x)
+            {
+                _index = x;
+                _current = Component.ComponentTableBySparseIndex[_index].ComponentID;
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    // used for fast acsess in sparse systems
+    /// <summary>
+    /// Also sets version.
+    /// </summary>
+    internal EntityLookup GetCachedLookup(World world)
+    {
+        ref var record = ref world.EntityTable[EntityID];
+        Archetype archetype = record.Archetype;
+        EntityVersion = record.Version;
+        return new EntityLookup(archetype.ComponentTagTable, archetype.Components, record.Index);
+    }
+
+    /// <summary>
+    /// expected must not be default. Also sets version.
+    /// </summary>
+    internal EntityLookup GetCachedLookupAndAssertSparseComponent(World world, Bitset expected)
+    {
+        Debug.Assert(!expected.IsDefault);
+        ref var record = ref world.EntityTable[EntityID];
+        Archetype archetype = record.Archetype;
+        EntityVersion = record.Version;
+        Span<Bitset> bitsets = archetype.SparseBitsetSpan();
+
+        int index = record.Index;
+        // match behavior of archetypical component missing
+        if (!((uint)index < (uint)bitsets.Length))
+            FrentExceptions.Throw_NullReferenceException();
+
+        Bitset.AssertHasSparseComponents(ref bitsets[index], ref expected);
+
+        return new EntityLookup(archetype.ComponentTagTable, archetype.Components, record.Index);
+    }
+
+#if NETSTANDARD
+    internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
+    {
+        private byte[] ComponentIndexMap = map;
+        private ComponentStorageRecord[] Components = componentStorageRecord;
+        private readonly nint Index = index;
+
+        public ref T Get<T>() => ref UnsafeExtensions.UnsafeCast<T[]>(Components.UnsafeArrayIndex(ComponentIndexMap.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits).Buffer).UnsafeArrayIndex(Index);
+    }
+#else
+    internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
+    {
+        private ref byte ComponentIndexMap = ref MemoryMarshal.GetArrayDataReference(map);
+        private ref ComponentStorageRecord Components = ref MemoryMarshal.GetArrayDataReference(componentStorageRecord);
+        private readonly nint Index = index;
+
+        public ref T Get<T>()
+        {
+            var index = Unsafe.Add(ref ComponentIndexMap, Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+            T[] buffer = UnsafeExtensions.UnsafeCast<T[]>(Unsafe.Add(ref Components, index).Buffer);
+            return ref buffer.UnsafeArrayIndex(Index);
+        }
+    }
+#endif
     #endregion
 
     #region IEquatable

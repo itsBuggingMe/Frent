@@ -2,6 +2,8 @@
 using Frent.Core;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Systems;
 
@@ -12,22 +14,60 @@ public partial class Query
 {
     internal Span<Archetype> AsSpan() => _archetypes.AsSpan();
 
+    internal int ArchetypeCount => _archetypes.Count;
+
     private FastStack<Archetype> _archetypes = FastStack<Archetype>.Create(2);
-    private ImmutableArray<Rule> _rules;
+    private ImmutableArray<Rule> _archetypicalRules;
+    private ImmutableArray<Rule> _sparseRules;
+
+    private readonly Bitset _hasSparseComponents;
+    private readonly Bitset _excludeSparseComponents;
+    internal readonly bool HasSparseExclusions = false;
+    internal readonly bool HasSparseRules = false;
+
+    internal Bitset ExcludeMask => _excludeSparseComponents;
+    internal Bitset IncludeMask => _hasSparseComponents;
+
     internal World World { get; init; }
     internal bool IncludeDisabled { get; init; }
 
     internal Query(World world, ImmutableArray<Rule> rules)
     {
         World = world;
-        _rules = rules;
+        var builderSparse = ImmutableArray.CreateBuilder<Rule>();
+        var builderArch = ImmutableArray.CreateBuilder<Rule>();
         foreach (var rule in rules)
-            if (rule == Rule.IncludeDisabledRule)
+        {
+            if(rule.IsSparseRule)
             {
-                IncludeDisabled = true;
-                break;
+                HasSparseRules = true;
+
+                builderSparse.Add(rule);
+
+                Debug.Assert(rule.SparseIndex != 0);
+                Debug.Assert(rule.RuleStateValue == Rule.RuleState.HasComponent || 
+                    rule.RuleStateValue == Rule.RuleState.NotComponent);
+                
+                ref Bitset toModify = ref rule.RuleStateValue == Rule.RuleState.HasComponent ?
+                    ref _hasSparseComponents :
+                    ref _excludeSparseComponents;
+                
+                toModify.Set(rule.SparseIndex);
             }
+            else
+                builderArch.Add(rule);
+            IncludeDisabled |= rule == Rule.IncludeDisabledRule;
+        }
+
+        _sparseRules = builderSparse.ToImmutable();
+        _archetypicalRules = builderArch.ToImmutable();
+
+        HasSparseExclusions = !_excludeSparseComponents.IsDefault;
     }
+
+#if !NETSTANDARD
+    internal ref Archetype GetArchetypeDataReference() => ref _archetypes.GetDataReference();
+#endif
 
     internal void TryAttachArchetype(Archetype archetype)
     {
@@ -40,7 +80,7 @@ public partial class Query
 
     private bool ArchetypeSatisfiesQuery(ArchetypeID id)
     {
-        foreach (var rule in _rules)
+        foreach (var rule in _archetypicalRules)
         {
             if (!rule.RuleApplies(id))
             {
@@ -48,6 +88,17 @@ public partial class Query
             }
         }
         return true;
+    }
+
+    internal void AssertHasSparseComponent<T>()
+    {
+        if (!Component<T>.IsSparseComponent)
+            return;
+        if (_hasSparseComponents.IsSet(Component<T>.SparseSetComponentIndex))
+            return;
+
+        // match behavior of when archetypical components are not includes
+        Unsafe.NullRef<int>() = 0;
     }
 }
 
@@ -59,17 +110,17 @@ partial class Query
     /// Enumerates component references for all entities in this query. Intended for use in foreach loops.
     /// </summary>
     /// <variadic />
-    public QueryEnumerator<T>.QueryEnumerable Enumerate<T>() => new(this);
+    public QueryEnumerator<T> Enumerate<T>() => new(this);
     /// <summary>
     /// Enumerates component references and <see cref="Entity"/> instances for all entities in this query. Intended for use in foreach loops.
     /// </summary>
     /// <variadic />
-    public EntityQueryEnumerator<T>.QueryEnumerable EnumerateWithEntities<T>() => new(this);
+    public EntityQueryEnumerator<T> EnumerateWithEntities<T>() => new(this);
     /// <summary>
     /// Enumerates component chunks for all entities in this query. Intended for use in foreach loops.
     /// </summary>
     /// <variadic />
-    public ChunkQueryEnumerator<T>.QueryEnumerable EnumerateChunks<T>() => new(this);
+    public ChunkQueryEnumerator<T> EnumerateChunks<T>() => new(this);
 }
 
 partial class Query
@@ -77,5 +128,5 @@ partial class Query
     /// <summary>
     /// Enumerates <see cref="Entity"/> instances for all entities in this query. Intended for use in foreach loops.
     /// </summary>
-    public EntityQueryEnumerator.QueryEnumerable EnumerateWithEntities() => new(this);
+    public EntityQueryEnumerator EnumerateWithEntities() => new(this);
 }

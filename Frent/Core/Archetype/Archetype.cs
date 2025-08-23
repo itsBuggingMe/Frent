@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Frent.Collections;
 
 namespace Frent.Core;
 
@@ -17,8 +18,27 @@ internal partial class Archetype
     internal ArchetypeID ID => _archetypeID;
     internal ImmutableArray<ComponentID> ArchetypeTypeArray => _archetypeID.Types;
     internal ImmutableArray<TagID> ArchetypeTagArray => _archetypeID.Tags;
+    internal EntityIDOnly[] EntityIDArray => _entities;
+    internal Bitset[] BitsetArray => _sparseBits;
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
     internal int EntityCount => NextComponentIndex;
+    internal ref Bitset GetBitset(int index) => ref MemoryHelpers.GetValueOrResize(ref _sparseBits, index);
+
+    internal void ClearBitset(int index)
+    {
+        var sparseBits = _sparseBits;
+
+        if (!((uint)index < (uint)sparseBits.Length))
+            return;
+
+        sparseBits[index] = default;
+    }
+
+#if NETSTANDARD
+    internal Span<Bitset> SparseBitsetSpan() => _sparseBits;
+#else
+    internal Span<Bitset> SparseBitsetSpan() => MemoryMarshal.CreateSpan(ref MemoryMarshal.GetArrayDataReference(_sparseBits), _sparseBits.Length);
+#endif
     internal Span<T> GetComponentSpan<T>()
     {
         var components = Components;
@@ -61,7 +81,9 @@ internal partial class Archetype
     /// Note! Entity location version is not set! 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, out ComponentStorageRecord[] writeStorage)
+    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, 
+        out ComponentStorageRecord[] writeStorage, 
+        out Archetype inserted)
     {
         if (deferredCreationArchetype.DeferredEntityCount == 0)
             world.DeferredCreationArchetypes.Push(new(this, deferredCreationArchetype, EntityCount));
@@ -74,9 +96,11 @@ internal partial class Archetype
             entityLocation.Index = futureSlot;
             entityLocation.Archetype = this;
             entityLocation.Flags = default;
+            inserted = this;
             return ref _entities.UnsafeArrayIndex(futureSlot);
         }
 
+        inserted = deferredCreationArchetype;
         return ref CreateDeferredEntityLocationTempBuffers(deferredCreationArchetype, futureSlot, ref entityLocation, out writeStorage);
     }
 
@@ -116,11 +140,30 @@ internal partial class Archetype
 
             //we should always have to resize here - after all, no space is left
             Resize((int)BitOperations.RoundUpToPowerOf2((uint)totalCapacityRequired));
+
+
+
             var destination = Components;
             var source = deferredCreationArchetype.Components;
             for (int i = 1; i < destination.Length; i++)
                 Array.Copy(source[i].Buffer, 0, destination[i].Buffer, oldEntitiesLen, deltaFromMaxDeferredInPlace);
-            Array.Copy(deferredCreationArchetype._entities, 0, _entities, oldEntitiesLen, deltaFromMaxDeferredInPlace);
+
+            deferredCreationArchetype._entities
+                .AsSpan(0, deltaFromMaxDeferredInPlace)
+                .CopyTo(_entities.AsSpan(oldEntitiesLen));
+
+            int srcLen = deferredCreationArchetype._sparseBits.Length;
+            int numBitsetsToCopy = Math.Min(deltaFromMaxDeferredInPlace, srcLen);
+
+            // allocate just enough for bitsets
+            Array.Resize(
+                ref _sparseBits,
+                Math.Max(_sparseBits.Length, oldEntitiesLen + numBitsetsToCopy)
+            );
+
+            deferredCreationArchetype._sparseBits.AsSpan(0, numBitsetsToCopy)
+                .CopyTo(_sparseBits.AsSpan(oldEntitiesLen));
+
         }
 
         NextComponentIndex += deferredCreationArchetype.DeferredEntityCount;
@@ -203,10 +246,12 @@ internal partial class Archetype
     /// <summary>
     /// This method doesn't modify component storages
     /// </summary>
-    internal EntityIDOnly DeleteEntityFromStorage(int index, out int deletedIndex)
+    internal EntityIDOnly DeleteEntityFromEntityArray(int index, out int deletedIndex)
     {
         Debug.Assert(NextComponentIndex > 0);
         deletedIndex = --NextComponentIndex;
+
+        CopyBitset(this, this, NextComponentIndex, index);
         return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(NextComponentIndex);
     }
 
@@ -262,6 +307,7 @@ internal partial class Archetype
 
     end:
 
+        CopyBitset(this, this, args.FromIndex, args.ToIndex);
         return _entities.UnsafeArrayIndex(args.ToIndex) = _entities.UnsafeArrayIndex(args.FromIndex);
     }
 
@@ -302,6 +348,12 @@ internal partial class Archetype
     internal ComponentStorageRecord GetComponentStorage<T>()
     {
         return Components.UnsafeArrayIndex(GetComponentIndex<T>());
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ComponentStorageRecord GetComponentStorage(ComponentID componentId)
+    {
+        return Components.UnsafeArrayIndex(GetComponentIndex(componentId));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

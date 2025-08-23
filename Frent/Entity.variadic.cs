@@ -1,8 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
-using Frent.Updating;
-using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
@@ -10,28 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace Frent;
 
-#if NETSTANDARD2_1
-[Variadic("[null!]", "MemoryHelpers.SharedTempComponentStorageBuffer.AsSpan(0, $)", 8)]
-#else
-[Variadic("[null!]", "[|null!, |]", 8)]
-#endif
-[Variadic("        events.GenericEvent!.Invoke(entity, ref component);", "|        events.GenericEvent!.Invoke(entity, ref component$);\n|", 8)]
-[Variadic("        events.NormalEvent.Invoke(entity, Component<T>.ID);", "|        events.NormalEvent.Invoke(entity, Component<T$>.ID);\n|")]
-[Variadic("            world.WorldUpdateCommandBuffer.AddComponent(this, c1);", "|            world.WorldUpdateCommandBuffer.AddComponent(this, c$);\n|")]
-[Variadic("            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T>.ID);", "|            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T$>.ID);\n|")]
-[Variadic("ref T component", "|ref T$ component$, |")]
-[Variadic("in T c1", "|in T$ c$, |")]
-[Variadic("stackalloc ComponentHandle[1]", "stackalloc ComponentHandle[$]")]
-[Variadic("        @event.InvokeInternal(entity, Component<T>.ID);", "|        @event.InvokeInternal(entity, Component<T$>.ID);\n|")]
-[Variadic("        @event.InvokeInternal(entity, Core.Tag<T>.ID);", "|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);\n|")]
-[Variadic("        events.Invoke(entity, Core.Tag<T>.ID);", "|        events.Invoke(entity, Core.Tag<T$>.ID);\n|")]
-[Variadic("        Component<T>.Initer?.Invoke(this, ref c1ref);", "|        Component<T$>.Initer?.Invoke(this, ref c$ref);\n|")]
-[Variadic("        ref var c1ref = ref to.GetComponentStorage<T>().UnsafeIndex<T>(nextLocation.Index); c1ref = c1;", "|        ref var c$ref = ref to.GetComponentStorage<T$>().UnsafeIndex<T$>(nextLocation.Index); c$ref = c$;|")]
-[Variadic("            world.WorldUpdateCommandBuffer.Tag<T>(this);", "|            world.WorldUpdateCommandBuffer.Tag<T$>(this);\n|")]
-[Variadic("            world.WorldUpdateCommandBuffer.Detach<T>(this);", "|            world.WorldUpdateCommandBuffer.Detach<T$>(this);\n|")]
-[Variadic("Core.Tag<T>.ID", "[|Core.Tag<T$>.ID, |]")]
-[Variadic("Component<T>.ID", "[|Component<T$>.ID, |]")]
-[Variadic("<T>", "<|T$, |>")]
+[Variadic(nameof(Entity))]
 partial struct Entity
 {
     // traversing archetype graph strategy:
@@ -56,15 +33,40 @@ partial struct Entity
             return;
         }
 
-        Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
-            world,
-            ref NeighborCache<T>.Add.Lookup,
-            ref thisLookup,
-            true);
+        Unsafe.SkipInit(out int archIndex);
+        MemoryHelpers.Poison(ref archIndex);
+        Archetype? to = null;
 
-        world.MoveEntityToArchetypeAdd(this, ref thisLookup, out EntityLocation nextLocation, to);
+        ref ComponentSparseSetBase sparseSets = ref NeighborCache<T>.HasAnySparseComponents ? 
+            ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable) :
+            ref Unsafe.NullRef<ComponentSparseSetBase>();
 
-        ref var c1ref = ref to.GetComponentStorage<T>().UnsafeIndex<T>(nextLocation.Index); c1ref = c1;
+        if (NeighborCache<T>.HasAnyArchetypicalComponents)
+        {
+            to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
+                world,
+                ref NeighborCache<T>.Add.Lookup,
+                ref thisLookup,
+                true);
+
+            world.MoveEntityToArchetypeAdd(this, ref thisLookup, out EntityLocation nextLocation, to);
+            archIndex = nextLocation.Index;
+        }
+
+        ref var c1ref = ref Component<T>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T>(ref sparseSets).AddComponent(EntityID) :
+            ref to!.GetComponentStorage<T>().UnsafeIndex<T>(archIndex);
+        c1ref = c1;
+
+        if (NeighborCache<T>.HasAnySparseComponents)
+        {
+            thisLookup.Flags |= EntityFlags.HasSparseComponents;
+            ref Bitset set = ref NeighborCache<T>.HasAnyArchetypicalComponents ?
+                ref to!.GetBitset(archIndex) : // guarded by HasAnyArchetypicalComponents
+                ref thisLookup.Archetype.GetBitset(thisLookup.Index);
+
+            if(Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
+        }
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
 
@@ -76,11 +78,7 @@ partial struct Entity
 
             if (EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
             {
-#if NETSTANDARD2_1
-                EventRecord events = world.EventLookup[EntityIDOnly];
-#else
-                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
-#endif
+                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityEvents(this, EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.AddGenericComp), ref events.Add, ref c1ref);
             }
         }
@@ -102,15 +100,67 @@ partial struct Entity
             return;
         }
 
-        Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
-            world,
-            ref NeighborCache<T>.Remove.Lookup,
-            ref thisLookup,
-            false);
+        
+        // get comp refs for events & destroyer calling
+        ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
+        Archetype from = thisLookup.Archetype;
+        ref T c1ref = ref Component<T>.Destroyer is null ?
+            ref Unsafe.NullRef<T>() : 
+            ref Component<T>.IsSparseComponent ? 
+                ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : 
+                ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
 
-        Span<ComponentHandle> runners = stackalloc ComponentHandle[1];
-        world.MoveEntityToArchetypeRemove(runners, this, ref thisLookup, to);
-        //world.MoveEntityToArchetypeRemove invokes the events for us
+
+        if (EntityLocation.HasEventFlag(thisLookup.Flags | world.WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
+        {
+            if (world.ComponentRemovedEvent.HasListeners)
+                InvokeComponentWorldEvents<T>(ref world.ComponentRemovedEvent, this);
+
+            if (EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
+            {
+                // fill in the gaps
+                if (Component<T>.Destroyer is null) c1ref = ref Component<T>.IsSparseComponent ?
+                        ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] :
+                        ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
+
+                ref var events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
+                InvokePerEntityEvents(this, EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.RemoveGenericComp), ref events.Remove, ref c1ref);
+            }
+
+        }
+
+        // implicitly called by MoveEntityToArchetypeRemove for archetypical components
+        if(Component<T>.IsSparseComponent) Component<T>.Destroyer?.Invoke(ref c1ref);
+
+        // Actually move components
+
+        ref Bitset bits = ref Unsafe.NullRef<Bitset>();
+        ref ComponentSparseSetBase start = ref Unsafe.NullRef<ComponentSparseSetBase>();
+        if (NeighborCache<T>.HasAnySparseComponents)
+        {
+            bits = ref thisLookup.Archetype.GetBitset(thisLookup.Index);
+
+            start = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
+        }
+
+        // set sparse components and bits
+
+        if (Component<T>.IsSparseComponent)
+        {
+            bits.ClearAt(Component<T>.SparseSetComponentIndex);
+            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID, false);
+        }
+
+        if (NeighborCache<T>.HasAnyArchetypicalComponents)
+        {   
+            Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
+                world,
+                ref NeighborCache<T>.Remove.Lookup,
+                ref thisLookup,
+                false);
+
+            world.MoveEntityToArchetypeRemove(this, ref thisLookup, to);
+        }
     }
 
     /// <summary>
@@ -145,11 +195,7 @@ partial struct Entity
 
             if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
             {
-#if NETSTANDARD2_1
-                EventRecord events = world.EventLookup[EntityIDOnly];
-#else
-                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
-#endif
+                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityTagEvents<T>(this, ref events.Tag);
             }
         }
@@ -185,13 +231,9 @@ partial struct Entity
             if (world.Detached.HasListeners)
                 InvokeTagWorldEvents<T>(ref world.Detached, this);
 
-            if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
+            if (EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.Detach))
             {
-#if NETSTANDARD2_1
-                EventRecord events = world.EventLookup[EntityIDOnly];
-#else
-                ref EventRecord events = ref CollectionsMarshal.GetValueRefOrNullRef(world.EventLookup, EntityIDOnly);
-#endif
+                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityTagEvents<T>(this, ref events.Detach);
             }
         }
@@ -224,28 +266,21 @@ partial struct Entity
 
     private struct NeighborCache<T> : IArchetypeGraphEdge
     {
-        public void ModifyTags(ref ImmutableArray<TagID> tags, bool add)
+        public static bool HasAnyArchetypicalComponents => !Component<T>.IsSparseComponent;
+        public static bool HasAnySparseComponents => Component<T>.IsSparseComponent;
+
+        public void WriteComponentIDs(ref Span<ComponentID> ids)
         {
-            if (add)
-            {
-                tags = MemoryHelpers.Concat(tags, Core.Tag<T>.ID);
-            }
-            else
-            {
-                tags = MemoryHelpers.Remove(tags, Core.Tag<T>.ID);
-            }
+            //id.Length == 8
+            ids.UnsafeSpanIndex(0) = Component<T>.ID;
+            ids = ids.Slice(0, 1);
         }
 
-        public void ModifyComponents(ref ImmutableArray<ComponentID> components, bool add)
+        public void WriteTagIDs(ref Span<TagID> ids)
         {
-            if (add)
-            {
-                components = MemoryHelpers.Concat(components, Component<T>.ID);
-            }
-            else
-            {
-                components = MemoryHelpers.Remove(components, Component<T>.ID);
-            }
+            //id.Length == 8
+            ids.UnsafeSpanIndex(0) = Core.Tag<T>.ID;
+            ids = ids.Slice(0, 1);
         }
 
         //separate into individual classes to avoid creating uneccecary static classes.
@@ -274,6 +309,8 @@ partial struct Entity
 
 partial struct Entity
 {
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void M() { }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Archetype TraverseThroughCacheOrCreate<T, TEdge>(
         World world,
@@ -292,9 +329,10 @@ partial struct Entity
         }
         else
         {
-            return Archetype.CreateOrGetExistingArchetype(new EntityType(cache.Lookup(index)), world);
+            return Archetype.CreateOrGetExistingArchetype(new EntityType(cache.Lookup(index)), world).Archetype;
         }
 
+        [SkipLocalsInit]
         static Archetype NotInCache(World world, ref ArchetypeNeighborCache cache, ArchetypeID archetypeFromID, bool add)
         {
             ImmutableArray<ComponentID> componentIDs = archetypeFromID.Types;
@@ -302,11 +340,25 @@ partial struct Entity
 
             if (typeof(T) == typeof(ComponentID))
             {
-                default(TEdge).ModifyComponents(ref componentIDs, add);
+                Span<ComponentID> componentsSpecified = stackalloc ComponentID[8];
+                default(TEdge).WriteComponentIDs(ref componentsSpecified);
+                Span<ComponentID> archetypicals = stackalloc ComponentID[8];
+
+                int index = 0;
+                foreach (var maybeDelta in componentsSpecified)
+                    if (!maybeDelta.IsSparseComponent)
+                        archetypicals[index++] = maybeDelta;
+                archetypicals = archetypicals.Slice(0, index);
+
+                componentIDs = add ? MemoryHelpers.Concat(componentIDs, archetypicals)
+                    : MemoryHelpers.Remove(componentIDs, archetypicals);
             }
             else
             {
-                default(TEdge).ModifyTags(ref tagIDs, add);
+                Span<TagID> delta = stackalloc TagID[8];
+                default(TEdge).WriteTagIDs(ref delta);
+                tagIDs = add ? MemoryHelpers.Concat(tagIDs, delta) 
+                    : MemoryHelpers.Remove(tagIDs, delta);
             }
 
             Archetype archetype = Archetype.CreateOrGetExistingArchetype(
@@ -324,7 +376,7 @@ partial struct Entity
 
     internal interface IArchetypeGraphEdge
     {
-        void ModifyTags(ref ImmutableArray<TagID> tags, bool add);
-        void ModifyComponents(ref ImmutableArray<ComponentID> components, bool add);
+        void WriteComponentIDs(ref Span<ComponentID> ids);
+        void WriteTagIDs(ref Span<TagID> ids);
     }
 }

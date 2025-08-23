@@ -1,0 +1,45 @@
+arity: 16
+from:
+        ref T ref1 = ref Component<T>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T>(ref start)[id] 
+            : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index);
+        ref1 = comp;
+to:
+|        ref T$ ref$ = ref Component<T$>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T$>(ref start)[id] 
+            : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T$>.Index).UnsafeIndex<T$>(eloc.Index);
+        ref$ = comp$;
+|
+from:
+e<T>
+to:
+e<|T$, |>
+from:
+y<T>
+to:
+y<|T$, |>
+from:
+in T comp
+to:
+|in T$ comp$, |
+from:
+!Component<T>.IsSparseComponent &&
+to:
+|!Component<T$>.IsSparseComponent &&
+            |
+from:
+        Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
+to:
+|        Component<T$>.Initer?.Invoke(concreteEntity, ref ref$);
+|
+
+from:
+            if (Component<T>.IsSparseComponent) bitset.Set(Component<T>.SparseSetComponentIndex);
+to:
+|            if (Component<T$>.IsSparseComponent) bitset.Set(Component<T$>.SparseSetComponentIndex);
+|
+from:
+            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],
+to:
+|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],
+|

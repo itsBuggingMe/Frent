@@ -1,0 +1,199 @@
+arity: 8
+from:
+            ids.UnsafeSpanIndex(0) = Core.Tag<T>.ID;
+to:
+|            ids.UnsafeSpanIndex($ - 1) = Core.Tag<T$>.ID;
+|
+from:
+            ids.UnsafeSpanIndex(0) = Component<T>.ID;
+to:
+|            ids.UnsafeSpanIndex($ - 1) = Component<T$>.ID;
+|
+
+from:
+HasAnySparseComponents => Component<T>.IsSparseComponent;
+to:
+HasAnySparseComponents => !(|!Component<T$>.IsSparseComponent && |true);
+
+from:
+HasAnyArchetypicalComponents => !Component<T>.IsSparseComponent;
+to:
+HasAnyArchetypicalComponents => !(|Component<T$>.IsSparseComponent && |true);
+
+from:
+        events.Invoke(entity, Core.Tag<T>.ID);
+to:
+|        events.Invoke(entity, Core.Tag<T$>.ID);
+|
+
+from:
+        @event.InvokeInternal(entity, Core.Tag<T>.ID);
+to:
+|        @event.InvokeInternal(entity, Core.Tag<T$>.ID);
+|
+
+from:
+Events<T>
+to:
+Events<|T$, |>
+
+from:
+        @event.InvokeInternal(entity, Component<T>.ID);
+to:
+|        @event.InvokeInternal(entity, Component<T$>.ID);
+|
+
+from:
+        events.NormalEvent.Invoke(entity, Component<T>.ID);
+to:
+|        events.NormalEvent.Invoke(entity, Component<T$>.ID);
+|
+
+from:
+            world.WorldUpdateCommandBuffer.Detach<T>(this);
+to:
+|            world.WorldUpdateCommandBuffer.Detach<T$>(this);
+|
+
+from:
+            world.WorldUpdateCommandBuffer.Tag<T>(this);
+to:
+|            world.WorldUpdateCommandBuffer.Tag<T$>(this);
+|
+
+from:
+, ref T component)
+to:
+, |ref T$ component$, |)
+
+from:
+        events.GenericEvent!.Invoke(entity, ref component);
+to:
+|        events.GenericEvent!.Invoke(entity, ref component$);
+|
+
+
+
+from:
+in T c1
+to:
+|in T$ c$, |
+
+from:
+NeighborCache<T>
+to:
+NeighborCache<|T$, |>
+
+from:
+        ref var c1ref = ref Component<T>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T>(ref sparseSets).AddComponent(EntityID) :
+            ref to!.GetComponentStorage<T>().UnsafeIndex<T>(archIndex);
+        c1ref = c1;
+to:
+|        ref var c$ref = ref Component<T$>.IsSparseComponent ?
+            ref MemoryHelpers.GetSparseSet<T$>(ref sparseSets).AddComponent(EntityID) :
+            ref to!.GetComponentStorage<T$>().UnsafeIndex<T$>(archIndex);
+        c$ref = c$;
+|
+
+from:
+        ref T c1ref = ref Component<T>.Destroyer is null ?
+            ref Unsafe.NullRef<T>() : 
+            ref Component<T>.IsSparseComponent ? 
+                ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : 
+                ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
+to:
+|        ref T$ c$ref = ref Component<T$>.Destroyer is null ?
+            ref Unsafe.NullRef<T$>() : 
+            ref Component<T$>.IsSparseComponent ? 
+                ref MemoryHelpers.GetSparseSet<T$>(ref first)[EntityID] : 
+                ref Unsafe.Add(ref from.GetComponentDataReference<T$>(), thisLookup.Index);
+|
+
+from:
+            if(Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
+to:
+|            if(Component<T$>.IsSparseComponent) set.Set(Component<T$>.SparseSetComponentIndex);
+|
+
+from:
+        Component<T>.Initer?.Invoke(this, ref c1ref);
+to:
+|        Component<T$>.Initer?.Invoke(this, ref c$ref);
+|
+
+from:
+        if(Component<T>.IsSparseComponent) Component<T>.Destroyer?.Invoke(ref c1ref);
+to:
+|        if(Component<T$>.IsSparseComponent) Component<T$>.Destroyer?.Invoke(ref c$ref);
+|
+from:
+InvokeComponentWorldEvents<T>
+to:
+InvokeComponentWorldEvents<|T$, |>
+
+from:
+ref events.Remove, ref c1ref);
+to:
+ref events.Remove, |ref c$ref, |);
+
+
+from:
+ref events.Add, ref c1ref);
+to:
+ref events.Add, |ref c$ref, |);
+
+
+from:
+            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T>.ID);
+to:
+|            world.WorldUpdateCommandBuffer.RemoveComponent(this, Component<T$>.ID);
+|
+
+from:
+                if (Component<T>.Destroyer is null) c1ref = ref Component<T>.IsSparseComponent ?
+                        ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] :
+                        ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
+to:
+|                if (Component<T$>.Destroyer is null) c$ref = ref Component<T$>.IsSparseComponent ?
+                        ref MemoryHelpers.GetSparseSet<T$>(ref first)[EntityID] :
+                        ref Unsafe.Add(ref from.GetComponentDataReference<T$>(), thisLookup.Index);
+|
+from:
+        if (Component<T>.IsSparseComponent)
+        {
+            bits.ClearAt(Component<T>.SparseSetComponentIndex);
+            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(Unsafe.Add(ref start, Component<T>.SparseSetComponentIndex)).Remove(EntityID, false);
+        }
+to:
+|        if (Component<T$>.IsSparseComponent)
+        {
+            bits.ClearAt(Component<T$>.SparseSetComponentIndex);
+            UnsafeExtensions.UnsafeCast<ComponentSparseSet<T$>>(Unsafe.Add(ref start, Component<T$>.SparseSetComponentIndex)).Remove(EntityID, false);
+        }
+|
+from:
+Add<T>
+to:
+Add<|T$, |>
+
+
+from:
+Remove<T>
+to:
+Remove<|T$, |>
+
+from:
+Tag<T>
+to:
+Tag<|T$, |>
+
+from:
+Detach<T>
+to:
+Detach<|T$, |>
+
+from:
+            ids = ids.Slice(0, 1);
+to:
+            ids = ids.Slice(0, $);

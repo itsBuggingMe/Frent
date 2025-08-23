@@ -67,7 +67,7 @@ public static class RegistryHelpers
 
     public static bool IsSpecialComponentInterface(this INamedTypeSymbol namedTypeSymbol) => namedTypeSymbol is
     {
-        Name: TargetInterfaceName or InitableInterfaceName or DestroyableInterfaceName,
+        Name: TargetInterfaceName or InitableInterfaceName or DestroyableInterfaceName or SparseInterfaceName,
         ContainingNamespace:
         {
             Name: "Components",
@@ -103,6 +103,7 @@ public static class RegistryHelpers
     public const string TargetInterfaceName = "IComponentBase";
     public const string InitableInterfaceName = "IInitable";
     public const string DestroyableInterfaceName = "IDestroyable";
+    public const string SparseInterfaceName = "ISparseComponent";
 
     public const string FrentComponentNamespace = "Frent.Components";
 }

@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Frent.Collections;
 
 namespace Frent;
 
@@ -37,7 +38,7 @@ internal struct EntityLocation
     public static EntityLocation Default { get; } = new EntityLocation(null!, int.MaxValue);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly bool HasEvent(EntityFlags entityFlags)
+    public readonly bool HasFlag(EntityFlags entityFlags)
     {
         var res = (Flags & entityFlags) != EntityFlags.None;
         return res;
@@ -49,6 +50,11 @@ internal struct EntityLocation
         var res = (entityFlags & target) != EntityFlags.None;
         return res;
     }
+
+    /// <remarks>
+    /// May resize the internal bitset buffer
+    /// </remarks>
+    public ref Bitset GetBitset() => ref Archetype.GetBitset(Index);
 }
 
 [Flags]
@@ -73,11 +79,10 @@ internal enum EntityFlags : ushort
 
     Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate,
 
-    HasWorldCommandBufferRemove = 1 << 8,
+    HasSparseComponents = 1 << 8,
 
-    HasWorldCommandBufferAdd = 1 << 9,
+    HasWorldCommandBufferRemove = 1 << 9,
+    HasWorldCommandBufferAdd = 1 << 10,
+    HasWorldCommandBufferDelete = 1 << 11,
 
-    HasWorldCommandBufferDelete = 1 << 10,
-
-    IsUnmergedEntity = 1 << 11,
 }
