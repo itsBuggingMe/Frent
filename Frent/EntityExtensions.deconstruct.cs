@@ -1,9 +1,10 @@
-﻿using Frent.Core;
+﻿using Frent.Collections;
+using Frent.Core;
 using Frent.Core.Structures;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -12,8 +13,10 @@ namespace Frent;
 /// </summary>
 [Variadic("Deconstruct<T>", "Deconstruct<|T$, |>", 8)]
 [Variadic("out Ref<T> comp", "|out Ref<T$> comp$, |")]
-[Variadic("        comp = GetComp<T>(archetypeTable, comps, eloc.Index);",
-    "|        comp$ = GetComp<T$>(archetypeTable, comps, eloc.Index);\n|")]
+[Variadic("        comp = Component<T>.IsSparseComponent ? MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(e.EntityID) : GetComp<T>(archetypeTable, comps, eloc.Index);",
+    "|        comp$ = Component<T$>.IsSparseComponent ? MemoryHelpers.GetSparseSet<T$>(ref first).GetUnsafe(e.EntityID) : GetComp<T$>(archetypeTable, comps, eloc.Index);\n|")]
+[Variadic("if(Component<T>.IsSparseComponent)", "if(|Component<T$>.IsSparseComponent || |false)")]
+[Variadic("<T>", "<|T$, |>")]
 public static partial class EntityExtensions
 {
     /// <summary>
@@ -24,12 +27,19 @@ public static partial class EntityExtensions
     /// <variadic />
     public static void Deconstruct<T>(this Entity e, out Ref<T> comp)
     {
-        EntityLocation eloc = e.AssertIsAlive(out _);
+        EntityLocation eloc = e.AssertIsAlive(out World w);
 
         ComponentStorageRecord[] comps = eloc.Archetype.Components;
         byte[] archetypeTable = eloc.Archetype.ComponentTagTable;
 
-        comp = GetComp<T>(archetypeTable, comps, eloc.Index);
+        ref ComponentSparseSetBase first = ref Unsafe.NullRef<ComponentSparseSetBase>();
+        if(Component<T>.IsSparseComponent)
+        {
+            first = ref MemoryMarshal.GetArrayDataReference(w.WorldSparseSetTable);
+            Bitset.AssertHasSparseComponents(ref eloc.GetBitset(), ref Unsafe.AsRef(in BitsetHelper<T>.BitsetOf));
+        }
+
+        comp = Component<T>.IsSparseComponent ? MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(e.EntityID) : GetComp<T>(archetypeTable, comps, eloc.Index);
     }
 }
 

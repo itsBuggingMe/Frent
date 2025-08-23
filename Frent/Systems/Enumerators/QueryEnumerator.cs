@@ -84,9 +84,9 @@ public ref struct QueryEnumerator<T>
             MemoryHelpers.GetSparseSet<T>(ref MemoryMarshal.GetReference(_sparseSets)).GetUnsafe(_currentEntityID) :
             new Ref<T>(_c1Span, _entityIndex),
 #else
-        Item1 = new Ref<T>(ref Component<T>.IsSparseComponent ?
-            ref MemoryHelpers.GetSparseSet<T>(ref _sparseFirst).GetUnsafe(_currentEntityID) :
-            ref Unsafe.Add(ref _base.Item1.RawRef, _entityIndex)),
+        Item1 = Component<T>.IsSparseComponent ?
+            MemoryHelpers.GetSparseSet<T>(ref _sparseFirst).GetUnsafe(_currentEntityID) :
+            new Ref<T>(ref Unsafe.Add(ref _base.Item1.RawRef, _entityIndex)),
 #endif
     };
 

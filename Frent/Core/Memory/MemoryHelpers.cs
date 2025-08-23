@@ -1,6 +1,7 @@
 ﻿using Frent.Buffers;
 using Frent.Collections;
 using Frent.Updating;
+using Frent.Variadic.Generator;
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -165,12 +166,15 @@ internal static class MemoryHelpers
         raw.Fill(93);
 #endif
     }
+}
 
-    internal struct RegisterLayout
-    {
-        public uint High;
-        public uint Low;
-    }
+[Variadic("        .CompSet(Component<T>.SparseSetComponentIndex)", "|        .CompSet(Component<T$>.SparseSetComponentIndex)\n|")]
+[Variadic("<T>", "<|T$, |>")]
+internal static class BitsetHelper<T>
+{
+    public static readonly Bitset BitsetOf = new Bitset()
+        .CompSet(Component<T>.SparseSetComponentIndex)
+        ;
 }
 
 internal static class MemoryHelpers<T>

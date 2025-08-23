@@ -209,7 +209,7 @@ public ref struct EntityQueryEnumerator<T>
             new Ref<T>(_c1Span, _entityIndex),
 #else
         Item1 = new Ref<T>(ref Component<T>.IsSparseComponent ?
-            ref MemoryHelpers.GetSparseSet<T>(ref _sparseFirst).GetUnsafe(_current.EntityID) :
+            ref MemoryHelpers.GetSparseSet<T>(ref _sparseFirst).GetUnsafe(_current.EntityID).RawRef :
             ref Unsafe.Add(ref _base.Item1.RawRef, _entityIndex)),
 #endif
     };
