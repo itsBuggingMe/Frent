@@ -119,8 +119,9 @@ internal static class MemoryHelpers
 
     public static ref T GetValueOrResize<T>(scoped ref T[] arr, int index)
     {
-        if((uint)index < (uint)arr.Length)
-            return ref arr[index];
+        var arrLoc = arr;
+        if((uint)index < (uint)arrLoc.Length)
+            return ref arrLoc[index];
         return ref ResizeAndGet(ref arr, index);
     }
 
