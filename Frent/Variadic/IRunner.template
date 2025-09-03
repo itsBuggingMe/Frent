@@ -1,4 +1,4 @@
-arity: 16
+arity: 14
 from:
         ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
 to:

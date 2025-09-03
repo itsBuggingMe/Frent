@@ -1,4 +1,4 @@
-arity: 16
+arity: 14
 from:
         ref T ref1 = ref Component<T>.IsSparseComponent ?
             ref MemoryHelpers.GetSparseSet<T>(ref start)[id] 

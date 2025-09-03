@@ -1,4 +1,4 @@
-﻿arity: 16
+﻿arity: 14
 from:
                     if (!Component<T>.IsSparseComponent) c1 = ref Unsafe.Add(ref c1, 1);
 to:

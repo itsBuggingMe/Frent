@@ -22,7 +22,7 @@ internal class VariadicAttribute : Attribute
     private readonly string _path;
     private readonly int _count;
 
-    public VariadicAttribute(string from, string pattern, int count = 16)
+    public VariadicAttribute(string from, string pattern, int count = 14)
     {
         _from = from;
         _pattern = pattern;

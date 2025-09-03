@@ -1,4 +1,4 @@
-arity: 16
+arity: 14
 from:
         if(!Component<T>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T>.ID;
 to:

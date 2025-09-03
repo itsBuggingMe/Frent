@@ -1,4 +1,4 @@
-arity: 16
+arity: 14
 from:
     private Span<T> _c1Span;
 to:
