@@ -309,8 +309,6 @@ partial struct Entity
 
 partial struct Entity
 {
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void M() { }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Archetype TraverseThroughCacheOrCreate<T, TEdge>(
         World world,
