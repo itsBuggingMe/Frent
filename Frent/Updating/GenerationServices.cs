@@ -19,7 +19,7 @@ public static class GenerationServices
     internal static readonly Dictionary<Type, UpdateMethodData[]> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
-    internal static readonly Dictionary<Type, (JsonTypeInfo DefaultTypeInfo, Func<JsonSerializerOptions, JsonTypeInfo> Factory)> JsonSerializers = new();
+    internal static readonly Dictionary<Type, Func<JsonSerializerOptions, JsonTypeInfo>> JsonTypeInfoFactories = new();
 
     // string name for deserialization
     internal static readonly Dictionary<string, Type> SerializableTypesMap = new();

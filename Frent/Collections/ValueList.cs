@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.HighPerformance;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Frent.Collections;
 internal ref struct ValueStack<T>

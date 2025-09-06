@@ -2,6 +2,8 @@
 using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,32 +13,62 @@ namespace Frent.Serialization;
 
 public class JsonWorldSerializer
 {
-    private readonly JsonSerializerOptions _options;
-    private Stack<string> _componentMetadataNames = [];
-    private Stack<string?> _derivedMetadataNames = [];
-    private bool _ignoreNonSerializableComponents;
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static JsonWorldSerializer CreateSerializerSingleton()
+    {
+        var instance = new JsonWorldSerializer();
+        return Interlocked.CompareExchange(ref s_default, instance, null) ?? instance;
+    }
 
-    /// <summary>
-    /// The JsonTypeInfo objects we get from the framework have JsonSerializerOptions.Default as their option. If our _options is different, we need to create new copies.
-    /// </summary>
-    private Dictionary<ComponentID, JsonTypeInfo>? _typeInfoCache;
+    private static JsonWorldSerializer? s_default;
+    public static JsonWorldSerializer Default
+    {
+        get
+        {
+            if (s_default != null)
+                return s_default;
+            return s_default = CreateSerializerSingleton();
+        }
+    }
+
+    private readonly JsonSerializerOptions _options;
+
+    private readonly Queue<string> _componentMetadataNames = [];
+    private readonly Queue<string?> _derivedMetadataNames = [];
+
+    private bool _ignoreNonSerializableComponents;
+    private int _nextEntityId;
+    private RefDictionary<int, int> _entityMap = new();
+
+    private World? _activeWorld;
 
     public JsonWorldSerializer(JsonSerializerOptions? options = null, bool ignoreNonSerializableComponents = true)
     {
-        _options = options ?? JsonSerializerOptions.Default;
+        _options = options ?? new JsonSerializerOptions(JsonSerializerOptions.Default);
+
         _options.Converters.Add(new EntityJsonConverter(this));
         _options.Converters.Add(TagIDJsonConverter.Instance);
         _options.Converters.Add(ComponentIDJsonConverter.Instance);
         _options.Converters.Add(ArchetypeIDJsonConverter.Instance);
 
+        _options.TypeInfoResolverChain.Add(new SourceGeneratedTypeInfoResolver());
+
+        _options.MakeReadOnly();
+
         _ignoreNonSerializableComponents = ignoreNonSerializableComponents;
     }
 
-    public void Serialize(Stream stream, World world, Query? query)
+    public void Serialize(Stream stream, World world, Query? query = null)
     {
+        _entityMap.Clear();
+
+        _activeWorld = world;
+
         using Utf8JsonWriter writer = new Utf8JsonWriter(stream);
 
-        SerializerState state = new SerializerState(writer, _componentMetadataNames, _derivedMetadataNames, _ignoreNonSerializableComponents);
+        writer.WriteStartArray();
+
+        SerializerState state = new SerializerState(writer, this);
 
         foreach(Entity e in (query ?? world.CreateQuery().Build())
             .EnumerateWithEntities())
@@ -46,7 +78,7 @@ public class JsonWorldSerializer
 
             writer.WriteStartObject();
 
-            writer.WriteNumber("Id", e.EntityID);
+            writer.WriteNumber("Id", MapEntityWrite(e));
 
             writer.WritePropertyName("Components");
             writer.WriteStartArray();
@@ -59,81 +91,123 @@ public class JsonWorldSerializer
             writer.WritePropertyName("Types");
             writer.WriteStartArray();
 
-            while (_componentMetadataNames.TryPop(out string? s))
+            while (_componentMetadataNames.TryDequeue(out string? s))
             {
                 writer.WriteStringValue(s);
             }
 
             writer.WriteEndArray();
 
-            writer.WritePropertyName("Impl");
-                writer.WriteStartArray();
             if (state.HasDerivedComponent)
             {
-                while (_componentMetadataNames.TryPop(out string? s))
+                writer.WritePropertyName("Impl");
+                writer.WriteStartArray();
+                while (_componentMetadataNames.TryDequeue(out string? s))
                 {
                     writer.WriteStringValue(s);
                 }
+                writer.WriteEndArray();
             }
-
-            writer.WriteEndArray();
+            else
+            {
+                _componentMetadataNames.Clear();
+            }
 
             writer.WriteEndObject();
         }
+
+        writer.WriteEndArray();
+
+        _activeWorld = null;
     }
 
     private int MapEntityWrite(Entity entity)
     {
-
+        ref int id = ref _entityMap.GetValueRefOrAddDefault(entity.EntityID, out bool exists);
+        if(!exists)
+            id = _nextEntityId++;
+        return id;
     }
+
     private Entity MapEntityRead(int entityId)
     {
-
+        return new Entity(_activeWorld!.WorldID, 0, entityId);
     }
 
     private struct SerializerState(
         Utf8JsonWriter jsonWriter, 
-        Stack<string> componentMetadataNames, 
-        Stack<string?> derivedMetadataNames, 
-        JsonSerializerOptions options,
-        Dictionary<ComponentID, JsonTypeInfo>? typeInfoCache,
-        bool ignoreAndDontThrow) : IGenericAction
+        JsonWorldSerializer serializer) : IGenericAction
     {
         public Entity Entity;
         public bool HasDerivedComponent;
+
         public void Invoke<T>(ref T component)
         {
             Type actualComponentType = typeof(T);
+            bool componentIsDerivedType = false;
 
-            bool componentIsDerivedType = !(typeof(T).IsValueType ||
-                typeof(T).IsSealed ||
-                component is null ||
-                typeof(T) == (actualComponentType = component.GetType()));
-
-            HasDerivedComponent |= componentIsDerivedType;
-
-            if (!options.TryGetTypeInfo(actualComponentType, out JsonTypeInfo? typeInfoToUse))
+            if (!(typeof(T).IsValueType || typeof(T).IsSealed || component is null))
             {
-                typeInfoToUse = componentIsDerivedType ?
-                    GenerationServices.JsonSerializers.GetValueOrDefault(actualComponentType) :
-                    Component<T>.DefaultJsonTypeInfo; // fast path
+                actualComponentType = component.GetType();
+                componentIsDerivedType = actualComponentType != typeof(T);
             }
 
+            serializer._options.TryGetTypeInfo(actualComponentType, out JsonTypeInfo? typeInfoToUse);
+            
+            // we manually get type info so we can choose whether or not to throw
             if (typeInfoToUse is null)
             {
-                if (ignoreAndDontThrow)
+                if (serializer._ignoreNonSerializableComponents)
                     return;
 
                 FrentExceptions.Throw_InvalidOperationException($"{typeof(T).Name} is not serializable.");
             }
 
             // RuntimeType caches the name string, so its fine to call .ToString
-            componentMetadataNames.Push(typeof(T).ToString());
+            serializer._componentMetadataNames.Enqueue(typeof(T).ToString());
 
-            derivedMetadataNames.Push(
+            serializer._derivedMetadataNames.Enqueue(
                 componentIsDerivedType ?
                 component!.GetType().ToString() :
                 null);
+
+            HasDerivedComponent |= componentIsDerivedType;
+
+            // serialize
+            if(componentIsDerivedType)
+            {
+                JsonSerializer.Serialize(jsonWriter, component, typeInfoToUse);
+            }
+            else
+            {
+                // prevent excess boxing
+                JsonSerializer.Serialize(jsonWriter, component, (JsonTypeInfo<T>)typeInfoToUse);
+            }
+        }
+    }
+
+    private class SourceGeneratedTypeInfoResolver : IJsonTypeInfoResolver
+    {
+        private readonly Dictionary<Type, JsonTypeInfo> _cachedTypeInfo = [];
+#if DEBUG
+        private JsonSerializerOptions? _parent;
+#endif
+        public JsonTypeInfo? GetTypeInfo(Type t, JsonSerializerOptions options)
+        {
+#if DEBUG
+            _parent ??= options;
+            Debug.Assert(_parent == options);
+#endif
+
+            if (_cachedTypeInfo.TryGetValue(t, out JsonTypeInfo? value))
+                return value;
+
+            if (!GenerationServices.JsonTypeInfoFactories.TryGetValue(t, out var factory))
+                return null;
+
+            var info = factory(options);
+            _cachedTypeInfo.Add(t, info);
+            return info;
         }
     }
 
