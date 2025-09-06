@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Code">
-    <TargetFrameworks>net9.0;net8.0;net7.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net9.0;net8.0;netstandard2.1</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>Latest</LangVersion>
@@ -38,10 +38,12 @@
     <PackageReference Include="System.Memory" Version="4.6.0" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
     <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
+    <PackageReference Include="System.Text.Json" Version="9.0.8" />
   </ItemGroup>
   
   <ItemGroup>
     <AdditionalFiles Include="**\*.template" />
   </ItemGroup>
+
   
 </Project>

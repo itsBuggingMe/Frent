@@ -3,6 +3,8 @@ using Frent.Core;
 using Frent.Updating.Runners;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Frent.Updating;
 
@@ -17,6 +19,10 @@ public static class GenerationServices
     internal static readonly Dictionary<Type, UpdateMethodData[]> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
+    internal static readonly Dictionary<Type, (JsonTypeInfo DefaultTypeInfo, Func<JsonSerializerOptions, JsonTypeInfo> Factory)> JsonSerializers = new();
+
+    // string name for deserialization
+    internal static readonly Dictionary<string, Type> SerializableTypesMap = new();
 
     /// <inheritdoc cref="GenerationServices"/>
     public static void RegisterInit<T>()

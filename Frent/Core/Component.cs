@@ -4,6 +4,7 @@ using Frent.Core.Structures;
 using Frent.Updating;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Frent.Core;
 
@@ -22,6 +23,7 @@ public static class Component<T>
     internal static readonly IDTable<T> GeneralComponentStorage;
     internal static readonly ComponentDelegates<T>.InitDelegate? Initer;
     internal static readonly ComponentDelegates<T>.DestroyDelegate? Destroyer;
+    internal static readonly JsonTypeInfo<T>? DefaultJsonTypeInfo; // TODO: init
     private static readonly bool _isSparseComponentAndReference;
 
     internal static bool IsSparseComponent
