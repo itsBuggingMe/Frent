@@ -106,5 +106,7 @@ public static class RegistryHelpers
     public const string SparseInterfaceName = "ISparseComponent";
 
     public const string FrentComponentNamespace = "Frent.Components";
+
+    public const string ComponentJsonSerializerContextAttributeMetadataName = "Frent.Serialization.ComponentJsonSerializerContextAttribute";
 }
 
