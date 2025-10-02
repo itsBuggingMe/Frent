@@ -19,49 +19,6 @@ public class Program
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
-        Component.RegisterComponent<int>();
-        Component.RegisterComponent<double>();
-        Component.RegisterComponent<float>();
-
-        const string Json =
-            """
-            [
-              {
-                "Id": 0,
-                "Components": [
-                  99,
-                  0,
-                  5
-                ],
-                "Types": [
-                  "System.Int32",
-                  "System.Double",
-                  "System.Single"
-                ]
-              },
-              {
-                "Id": 1,
-                "Components": [
-                  2,
-                  3,
-                  4
-                ],
-                "Types": [
-                  "System.Int32",
-                  "System.Double",
-                  "System.Single"
-                ]
-              }
-            ]
-            """;
-
-        JsonWorldSerializer jsonWorldSerializer = new();
-        var w = jsonWorldSerializer.Deserialize(new ChunkedStream(new MemoryStream(Encoding.UTF8.GetBytes(Json)), 64));
-
-        w.Query<int, double, float>()
-            .Delegate((ref int a, ref double b, ref float c) => Console.WriteLine($"{a} {b} {c}"));
-
-        return;
         JitTest(disasmCall);
 
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||

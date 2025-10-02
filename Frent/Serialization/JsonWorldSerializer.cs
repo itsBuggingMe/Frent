@@ -14,6 +14,9 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace Frent.Serialization;
 
+/// <summary>
+/// Provides functionality for serializing and deserializing a World instance to and from JSON.
+/// </summary>
 public class JsonWorldSerializer
 {
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -23,6 +26,10 @@ public class JsonWorldSerializer
         return Interlocked.CompareExchange(ref s_default, instance, null) ?? instance;
     }
 
+    /// <summary>
+    /// Gets the default instance of the serializer used for serializing and deserializing world data in JSON format.
+    /// </summary>
+    /// <remarks><see cref="JsonSerializerOptions.Default"/> is used along with converters for Frent specific types.</remarks>
     public static JsonWorldSerializer Default => s_default ?? CreateSerializerSingleton();
     private static JsonWorldSerializer? s_default;
 
@@ -47,6 +54,12 @@ public class JsonWorldSerializer
 
     private World? _activeWorld;
 
+    /// <summary>
+    /// Initializes a new instance of the JsonWorldSerializer class, which is used to serialize and deserialize World instances to and from JSON.
+    /// </summary>
+    /// <param name="options">The JsonSerializerOptions to use for customizing JSON serialization behavior. If null, default options are used.</param>
+    /// <param name="ignoreNonSerializableComponents">Indicates whether to skip components that cannot be serialized or throw an exception.</param>
+    /// <param name="addGeneratedTypeInfoResolvers">Specifies whether to add source generated type resolvers to this serializer.</param>
     public JsonWorldSerializer(JsonSerializerOptions? options = null, bool ignoreNonSerializableComponents = true, bool addGeneratedTypeInfoResolvers = true)
     {
         _options = options ?? new JsonSerializerOptions(JsonSerializerOptions.Default);
@@ -67,7 +80,18 @@ public class JsonWorldSerializer
         _ignoreNonSerializableComponents = ignoreNonSerializableComponents;
     }
 
+    /// <summary>
+    /// Deserializes a JSON string into a new instance of the World class.
+    /// </summary>
+    public World Deserialize(string json, bool invokeIniters = false, IUniformProvider? uniformProvider = null, Config? config = null)
+    {
+        byte[] utf8Bytes = Encoding.UTF8.GetBytes(json);
+        return Deserialize(new MemoryStream(utf8Bytes), invokeIniters, uniformProvider, config);
+    }
 
+    /// <summary>
+    /// Deserializes a world and its entities from the specified JSON stream.
+    /// </summary>
     public World Deserialize(Stream stream, bool invokeIniters = false, IUniformProvider? uniformProvider = null, Config? config = null)
     {
         _entityMap.Clear();
@@ -157,6 +181,12 @@ public class JsonWorldSerializer
     }
 
     #region Serialize
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="world"></param>
+    /// <param name="query"></param>
+    /// <returns></returns>
     public string Serialize(World world, Query? query = null)
     {
         AssertQueryFromWorld(world, query);
@@ -165,6 +195,12 @@ public class JsonWorldSerializer
         return Encoding.UTF8.GetString(stream.GetBuffer().AsSpan(0/*_origin is 0 since we didn't provide it*/, (int)stream.Length));
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <param name="world"></param>
+    /// <param name="query"></param>
     public void Serialize(Stream stream, World world, Query? query = null)
     {
         AssertQueryFromWorld(world, query);
@@ -172,6 +208,12 @@ public class JsonWorldSerializer
         Serialize(writer, world, query);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="world"></param>
+    /// <param name="query"></param>
     public void Serialize(Utf8JsonWriter writer, World world, Query? query = null)
     {
         AssertQueryFromWorld(world, query);
