@@ -7,7 +7,7 @@ if (args.Length == 0)
 }
 else
 {
-    InconsistencyException? e = WorldState.Fuzz(args);
+    InconsistencyException? e = WorldState.Fuzz(args, true);
 
     if(e is not null)
     {

@@ -20,16 +20,6 @@ internal partial class WorldState : IDisposable
             throw new ArgumentException($"Step value {args[1]} not an integer.");
 
         int i = 0;
-        using WorldState state = new WorldState(seed);
-
-        for (; i < steps; i++)
-        {
-            state.Advance();
-        }
-
-        return null;
-
-        /*
         try
         {
             using WorldState state = new WorldState(seed);
@@ -49,7 +39,6 @@ internal partial class WorldState : IDisposable
         }
 
         return null;
-        */
     }
 
     // record keeping
@@ -134,8 +123,6 @@ internal partial class WorldState : IDisposable
 
     private void EnsureConsistency()
     {
-        Console.WriteLine($"Validating Step {_steps}: {_actions.Last()}");
-
         _dead.All(e => !e.IsAlive)
             .Assert(this);
 

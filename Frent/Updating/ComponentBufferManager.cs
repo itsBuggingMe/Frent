@@ -206,14 +206,15 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     internal sealed override void PullComponentFrom(Array buffer, IDTable storage, int me, int other)
     {
         ref var item = ref ((IDTable<TComponent>)storage).Buffer[other];
-        Index(buffer, me) = item;
+        Index(buffer, me) = item;   
     }
 
     internal sealed override void Delete(Array buffer, DeleteComponentData data)
     {
+        ref var to = ref Index(buffer, data.ToIndex);
+        Component<TComponent>.Destroyer?.Invoke(ref to);
         ref var from = ref Index(buffer, data.FromIndex);
-        Component<TComponent>.Destroyer?.Invoke(ref from);
-        Index(buffer, data.ToIndex) = from;
+        to = from;
 
 
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())

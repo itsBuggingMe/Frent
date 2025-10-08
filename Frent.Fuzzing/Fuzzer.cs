@@ -41,6 +41,9 @@ internal static class Fuzzer
         string stdErr = runner.StandardError.ReadToEnd();
         runner.WaitForExit();
 
-        Console.WriteLine($"Process finished with stdout: \n{stdOutput}");
+        if (!string.IsNullOrWhiteSpace(stdOutput))
+            Console.WriteLine($"Process finished with stdout: \n{stdOutput}");
+        if (!string.IsNullOrWhiteSpace(stdErr))
+            Console.WriteLine($"Process finished with stderr: \n{stdErr}");
     }
 }
