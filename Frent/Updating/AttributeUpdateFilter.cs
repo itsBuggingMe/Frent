@@ -81,6 +81,9 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         World world = _world;
         foreach (var (archetype, start, length) in _matchedArchtypes.AsSpan())
         {
+            if(archetype.EntityCount == 0)
+                continue;
+
             ref ComponentStorageRecord archetypeFirst = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
             foreach (ref var item in records.Slice(start, length))
             {
@@ -94,6 +97,9 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         foreach (SparseUpdateMethod method in sparseUpdates)
         {
+            if (method.SparseSet.Count == 0)
+                continue;
+
             method.Runner.RunSparse(method.SparseSet, world);
         }
     }
@@ -109,7 +115,11 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         for (int i = 0; i < archetypes.Length; i++)
         {
             var record = archetypes[i];
-            if (record.Archetype.EntityCount > LargeArchetypeThreshold)
+            if(record.Archetype.EntityCount == 0)
+            {
+                continue;
+            }
+            else if (record.Archetype.EntityCount > LargeArchetypeThreshold)
             {
                 _largeArchetypeRecords!.Push(record);
                 largeCount += record.Archetype.EntityCount;
@@ -142,6 +152,9 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         for (int i = 0; i < sparseMethods.Length; i++)
         {
             ComponentSparseSetBase set = sparseMethods[i].SparseSet;
+            if(set.Count == 0)
+                continue;
+
             int start = i;
             do
             {

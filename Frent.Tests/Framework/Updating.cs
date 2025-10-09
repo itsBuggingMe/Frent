@@ -1,6 +1,7 @@
 ﻿using Frent.Components;
 using Frent.Core;
 using Frent.Tests.Helpers;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using static NUnit.Framework.Assert;
 
@@ -218,6 +219,18 @@ internal class Updating
 
         That(comp.Count1, Is.EqualTo(2));
         That(comp.Count2, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Update_SkipsEmptyArchetype()
+    {
+        using World world = new();
+
+        Entity e = world.Create(new DependencyComponent());
+        e.Delete();
+
+        world.Update();
+        world.Update<FilterAttribute1>();
     }
 
     [Test]
