@@ -9,7 +9,7 @@ using static Frent.AttributeHelpers;
 namespace Frent.Updating.Runners;
 
 /// <inheritdoc cref="GenerationServices"/>
-public class EntityUpdateRunner<TComp> : IRunner
+public class EntityUpdateRunner<TComp>(Delegate? f) : RunnerBase(f), IRunner
     where TComp : IEntityComponent
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
@@ -83,7 +83,7 @@ public class EntityUpdateRunner<TComp> : IRunner
 
 /// <inheritdoc cref="GenerationServices"/>
 [Variadic(nameof(IRunner))]
-public class EntityUpdateRunner<TComp, TArg> : IRunner
+public class EntityUpdateRunner<TComp, TArg>(Delegate? f) : RunnerBase(f), IRunner
     where TComp : IEntityComponent<TArg>
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)

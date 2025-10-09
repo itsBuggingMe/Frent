@@ -92,6 +92,11 @@ public static class RegistryHelpers
         }
     };
 
+    public static bool IsUniformComponentInterface(this INamedTypeSymbol type) => type is
+    {
+        Name: UniformComponentInterfaceName or EntityUniformComponentInterfaceName,
+    };
+
     public const string UpdateTypeAttributeName = "Frent.Updating.UpdateTypeAttribute";
     public const string UpdateOrderInterfaceName = "Frent.Updating.IComponentUpdateOrderAttribute";
     public const string UpdateMethodName = "Update";
@@ -104,6 +109,9 @@ public static class RegistryHelpers
     public const string InitableInterfaceName = "IInitable";
     public const string DestroyableInterfaceName = "IDestroyable";
     public const string SparseInterfaceName = "ISparseComponent";
+
+    public const string UniformComponentInterfaceName = "IUniformComponent";
+    public const string EntityUniformComponentInterfaceName = "IEntityUniformComponent";
 
     public const string FrentComponentNamespace = "Frent.Components";
 }

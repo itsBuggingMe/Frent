@@ -759,8 +759,7 @@ public partial class World : IDisposable
         [DebuggerHidden]
         public T GetUniform<T>()
         {
-            FrentExceptions.Throw_InvalidOperationException("Initialize the world with an IUniformProvider in order to use uniforms");
-            return default!;
+            throw new InvalidOperationException("Initialize the world with an IUniformProvider in order to use uniforms");
         }
     }
 }

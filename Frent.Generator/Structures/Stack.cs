@@ -30,5 +30,10 @@ internal ref struct Stack<T>
         _array[_index++] = val;
     }
 
-    public T[] ToArray() => _array?.Length == _index ? _array : _array.AsSpan().Slice(0, _index).ToArray();
+    public T[] ToArray()
+    {
+        if (_index == 0)
+            return [];
+        return _array?.Length == _index ? _array : _array.AsSpan().Slice(0, _index).ToArray();
+    }
 }

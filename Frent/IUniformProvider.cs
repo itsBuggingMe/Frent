@@ -1,4 +1,6 @@
 ﻿using Frent.Components;
+using Frent.Core;
+using System.Diagnostics;
 
 namespace Frent;
 

@@ -8,14 +8,14 @@ using System.Runtime.InteropServices;
 namespace Frent.Updating.Runners;
 
 /// <inheritdoc cref="GenerationServices"/>
-public class UniformUpdateRunner<TComp, TUniform> : IRunner
+public class UniformUpdateRunner<TComp, TUniform>(Delegate? f) : RunnerBase(f), IRunner
     where TComp : IUniformComponent<TUniform>
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
         for (int i = length; i > 0; i--)
         {
@@ -29,7 +29,7 @@ public class UniformUpdateRunner<TComp, TUniform> : IRunner
     {
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
 
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
         for (int i = sparseSet.Count; i > 0; i--)
         {
@@ -44,7 +44,7 @@ public class UniformUpdateRunner<TComp, TUniform> : IRunner
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
         ReadOnlySpan<int> map = sparseSet.SparseSpan();
 
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
         foreach (var entityId in idsToUpdate)
         {
@@ -68,7 +68,7 @@ public class UniformUpdateRunner<TComp, TUniform> : IRunner
 
 /// <inheritdoc cref="GenerationServices"/>
 [Variadic(nameof(IRunner))]
-public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
+public class UniformUpdateRunner<TComp, TUniform, TArg>(Delegate? f) : RunnerBase(f), IRunner
     where TComp : IUniformComponent<TUniform, TArg>
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
@@ -84,7 +84,7 @@ public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
             : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
 
         int entityId = 0;
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
         Span<Bitset> bitsets = b.SparseBitsetSpan();
         // TODO: double check that the jit register promotes this.
@@ -133,7 +133,7 @@ public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
         ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
 
         Entity entity = world.DefaultWorldEntity;
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
         for (int i = sparseSet.Count; i > 0; i--)
         {
@@ -166,7 +166,7 @@ public class UniformUpdateRunner<TComp, TUniform, TArg> : IRunner
         ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
 
         Entity entity = world.DefaultWorldEntity;
-        TUniform uniform = world.UniformProvider.GetUniform<TUniform>();
+        TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
         foreach (var entityId in idsToUpdate)
         {

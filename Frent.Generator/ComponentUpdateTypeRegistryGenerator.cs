@@ -16,7 +16,7 @@ namespace Frent.Generator;
 [Generator(LanguageNames.CSharp)]
 public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 {
-    public const string Version = "0.5.4.3";
+    public const string Version = "0.5.9";
 
     private static SymbolDisplayFormat? _symbolDisplayFormat;
     private static SymbolDisplayFormat FullyQualifiedTypeNameFormat => _symbolDisplayFormat ??= new(
@@ -120,9 +120,21 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                 PushUpdateTypeAttributes(ref attributes, componentTypeDeclarationSyntax, @interface, gsc.SemanticModel);
 
+                Stack<string> uniformTupleTypes = new Stack<string>();
+
+                if (potentialInterface.IsUniformComponentInterface() && 
+                    @interface.TypeArguments[0] is INamedTypeSymbol { IsTupleType: true, IsValueType: true, TypeArguments.Length: >= 2 } tuple)
+                {
+                    foreach (var element in tuple.TypeArguments)
+                    {
+                        uniformTupleTypes.Push(element.ToDisplayString(FullyQualifiedTypeNameFormat));
+                    }
+                }
+
                 updateMethods.Push(new UpdateMethodModel(
                     ImplInterface: @interface.Name,
                     GenericArguments: new(genericArguments),
+                    UniformTupleTypes: new(uniformTupleTypes.ToArray()),
                     Attributes: new(attributes.ToArray())
                 ));
             }
@@ -350,7 +362,21 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             foreach (var item in updateMethodModel.GenericArguments)
                 cb.Append(", ").Append(item);
 
-            cb.Append(">(), ");
+            if(updateMethodModel.UniformTupleTypes.Length >= 2)
+            {
+                cb
+                .Append(">((global::Frent.IUniformProvider p) => (")
+                .Foreach(updateMethodModel.UniformTupleTypes.Items, CancellationToken.None, (in string typeName, CodeBuilder builder, CancellationToken _) =>
+                {
+                    builder.Append("p.GetUniform<global::").Append(typeName).Append(">(), ");
+                })
+                .RemoveLastComma()
+                .Append(")), ");
+            }
+            else
+            {
+                cb.Append(">(null), ");
+            }
 
             if (updateMethodModel.Attributes.Length == 0)
             {
@@ -382,6 +408,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .Append("global::").Append(model.FullName)
             .AppendLine(">();");
         }
+
         if (model.HasFlag(UpdateModelFlags.Destroyable))
         {
             cb.Append("GenerationServices.RegisterDestroy<")
