@@ -97,8 +97,13 @@ public static class RegistryHelpers
         Name: UniformComponentInterfaceName or EntityUniformComponentInterfaceName,
     };
 
+    public const string IncludesComponentsAttributeName = "Frent.Updating.IncludesComponentsAttribute";
+    public const string ExcludesComponentsAttributeName = "Frent.Updating.ExcludesComponentsAttribute";
+    public const string IncludesTagsAttributeName = "Frent.Updating.IncludesTagsAttribute";
+    public const string ExcludesTagsAttributeName = "Frent.Updating.ExcludesTagsAttribute";
+
     public const string UpdateTypeAttributeName = "Frent.Updating.UpdateTypeAttribute";
-    public const string UpdateOrderInterfaceName = "Frent.Updating.IComponentUpdateOrderAttribute";
+
     public const string UpdateMethodName = "Update";
     public const string FileName = "ComponentUpdateTypeRegistry.g.cs";
     public const string FullyQualifiedTargetInterfaceName = "Frent.Components.IComponentBase";

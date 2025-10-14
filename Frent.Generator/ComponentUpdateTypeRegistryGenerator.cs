@@ -8,8 +8,10 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading;
+using System.Xml;
 
 namespace Frent.Generator;
 
@@ -116,9 +118,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     genericArguments = Array.Empty<string>();
                 }
 
-                Stack<string> attributes = new Stack<string>();
+                Stack<string> updateAttributes = new Stack<string>();
 
-                PushUpdateTypeAttributes(ref attributes, componentTypeDeclarationSyntax, @interface, gsc.SemanticModel);
+                PushUpdateTypeAttributes(ref updateAttributes, out TypeFilterModel componentsAttribute, out TypeFilterModel tagsAttributes, componentTypeDeclarationSyntax, @interface, gsc.SemanticModel);
 
                 Stack<string> uniformTupleTypes = new Stack<string>();
 
@@ -135,7 +137,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     ImplInterface: @interface.Name,
                     GenericArguments: new(genericArguments),
                     UniformTupleTypes: new(uniformTupleTypes.ToArray()),
-                    Attributes: new(attributes.ToArray())
+                    Components: componentsAttribute,
+                    Tags: tagsAttributes,
+                    Attributes: new(updateAttributes.ToArray())
                 ));
             }
         }
@@ -213,23 +217,25 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         }
     }
 
-    private static void PushUpdateTypeAttributes(ref Stack<string> attributes, TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol @interface, SemanticModel semanticModel)
+    private static void PushUpdateTypeAttributes(ref Stack<string> updateAttributes, out TypeFilterModel componentsAttributes, out TypeFilterModel tagsAttributes, TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol @interface, SemanticModel semanticModel)
     {
         bool isBoth = @interface.Name is "IEntityUniformComponent";
         bool isUniform = isBoth || @interface.Name is "IUniformComponent";
         bool isEntity = isBoth || @interface.Name is "IEntityComponent";
 
+        componentsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
+        tagsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
+
         foreach (var item in typeDeclarationSyntax.Members)
         {
             if (item is not MethodDeclarationSyntax method || method.AttributeLists.Count == 0 || method.Identifier.ToString() != RegistryHelpers.UpdateMethodName)
                 continue;
-
+            
             // we have a update method, not sure if it is the right one though
 
             // if its entity, there will always be +1 argument compared to generic arguments.
             if (method.ParameterList.Parameters.Count != @interface.TypeArguments.Length + (isEntity ? 1 : 0))
                 continue;
-
 
             bool match = true;
             int genericArgumentIndex = 0;
@@ -257,19 +263,56 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             if (!match)
                 continue;
 
-            foreach (var attrList in method.AttributeLists)
+            if (semanticModel.GetDeclaredSymbol(method) is not IMethodSymbol symbol)
+                continue;
+            Stack<string> includeComponentsAttributes = new();
+            Stack<string> excludeComponentsAttributes = new();
+
+            Stack<string> includeTagsAttributes = new();
+            Stack<string> excludeTagsAttributes = new();
+
+            foreach (var attrData in symbol.GetAttributes())
             {
-                foreach (var attr in attrList.Attributes)
+                string? attrName = attrData.AttributeClass?.ToDisplayString(FullyQualifiedTypeNameFormat);
+                if (attrName is null)
+                    continue;
+
+                switch(attrName)
                 {
-                    if (semanticModel.GetSymbolInfo(attr).Symbol is IMethodSymbol attrCtor)
+                    case RegistryHelpers.IncludesComponentsAttributeName:
+                        PushArgumentTypes(ref includeComponentsAttributes);
+                        break;
+                    case RegistryHelpers.ExcludesComponentsAttributeName:
+                        PushArgumentTypes(ref excludeComponentsAttributes);
+                        break;
+                    case RegistryHelpers.IncludesTagsAttributeName:
+                        PushArgumentTypes(ref includeTagsAttributes);
+                        break;
+                    case RegistryHelpers.ExcludesTagsAttributeName:
+                        PushArgumentTypes(ref excludeTagsAttributes);
+                        break;
+                    default:
+                        if(!InheritsFromBase(attrData.AttributeClass, RegistryHelpers.UpdateTypeAttributeName))
+                            break;
+                        updateAttributes.Push(attrName);
+                        break;
+                }
+
+                void PushArgumentTypes(ref Stack<string> attributes)
+                {
+                    if (attrData.ConstructorArguments.Length == 0)
+                        return;
+                    var typedConstant = attrData.ConstructorArguments[0];
+                    foreach(var v in typedConstant.Values)
                     {
-                        if (InheritsFromBase(attrCtor.ContainingType, RegistryHelpers.UpdateTypeAttributeName))
-                        {
-                            attributes.Push(attrCtor.ContainingType.ToString());
-                        }
+                        if(v.Value is INamedTypeSymbol n)
+                            attributes.Push(n.ToDisplayString(FullyQualifiedTypeNameFormat));
                     }
                 }
             }
+
+            componentsAttributes = new TypeFilterModel(new(includeComponentsAttributes.ToArray()), new(excludeComponentsAttributes.ToArray()));
+            tagsAttributes = new TypeFilterModel(new(includeTagsAttributes.ToArray()), new(excludeTagsAttributes.ToArray()));
         }
 
         ITypeSymbol? GetTypeSymbol(MethodDeclarationSyntax method, int parameterIndex)
@@ -349,7 +392,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             }
 
 
-            //new UpdateMethod(, new Type[] {  })
+            //new UpdateMethod(, new Type[] {  }, new TypeFilterRecord())
 
             cb
                 .Append("new global::Frent.Updating.UpdateMethodData(")
@@ -378,21 +421,26 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 cb.Append(">(null), ");
             }
 
-            if (updateMethodModel.Attributes.Length == 0)
+            AppendArray(updateMethodModel.Attributes.Items);
+
+            // type filters
+            if ( updateMethodModel.Tags.Allow.Length > 0 || 
+                updateMethodModel.Tags.Disallow.Length > 0 ||
+                updateMethodModel.Components.Allow.Length > 0 ||
+                updateMethodModel.Components.Allow.Length > 0
+                )
             {
-                cb.Append("global::System.Array.Empty<global::System.Type>()");
+                cb.Append("new global::Frent.Updating.TypeFilterRecord(");
+                AppendArray(updateMethodModel.Tags.Allow.Items);
+                AppendArray(updateMethodModel.Tags.Disallow.Items);
+                AppendArray(updateMethodModel.Components.Allow.Items);
+                AppendArray(updateMethodModel.Components.Allow.Items);
+                cb.RemoveLastComma()
+                    .Append(')');
             }
             else
             {
-                cb.Append("new global::System.Type[] { ");
-                foreach (var attrType in updateMethodModel.Attributes)
-                {
-                    cb
-                    .Append("typeof(")
-                    .Append("global::").Append(attrType)
-                    .Append("), ");
-                }
-                cb.Append("}");
+                cb.Append("global::Frent.Updating.TypeFilterRecord.None");
             }
 
             cb.Append("), ");
@@ -421,6 +469,26 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         static (int Start, int Count) ExtractUpdaterName(string interfaceName)
         {
             return (1, interfaceName.Length - "IComponent".Length);
+        }
+
+        void AppendArray(string[] typeNames)
+        {
+            if (typeNames.Length == 0)
+            {
+                cb.Append("global::System.Array.Empty<global::System.Type>(), ");
+            }
+            else
+            {
+                cb.Append("new global::System.Type[] { ");
+                foreach (var attrType in typeNames)
+                {
+                    cb
+                    .Append("typeof(")
+                    .Append("global::").Append(attrType)
+                    .Append("), ");
+                }
+                cb.Append("}, ");
+            }
         }
     }
 
