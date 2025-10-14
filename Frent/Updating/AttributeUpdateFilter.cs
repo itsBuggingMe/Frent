@@ -9,6 +9,8 @@ using System.IO.Pipes;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+using System.Text;
 using static Frent.Updating.AttributeUpdateFilter;
 
 namespace Frent.Updating;
@@ -35,7 +37,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private SparseUpdateMethod[] _sparseMethods = new SparseUpdateMethod[4];
     private int _sparseMethodsCount;
 
-    private Dictionary<ComponentID, FrugalRunnerArray> _matchedArchetypicalComponentMethods = [];
+    private Dictionary<ComponentID, MatchedMethodData> _matchedArchetypicalComponentMethods = [];
     private ulong _componentBloomFilter;
 
     private readonly StrongBox<int>? _updateCount;
@@ -201,13 +203,15 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 // store which update methods match for this component
 
                 _componentBloomFilter |= 1UL << (i & 63);// set bloom filter bit
-                FrugalRunnerArray frugalRunnerArray = default;
+                MatchedMethodData frugalRunnerArray = default;
                 IRunner[]? runners = null;
+                ComponentIDTypeFilter[]? filters = null;
 
-                if(matchedMethodsCount > 1)
+                if (matchedMethodsCount > 1)
                 {
                     runners = new IRunner[matchedMethodsCount];
-                    frugalRunnerArray = new FrugalRunnerArray(runners);
+                    filters = new ComponentIDTypeFilter[matchedMethodsCount];
+                    frugalRunnerArray = new MatchedMethodData(runners, filters);
                 }
 
                 int k = 0;
@@ -219,16 +223,18 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                     }
 
                     var runnerToSave = methods[j].Runner;
+                    var filterToSave = methods[j].TypeFilterRecord;
 
                     // index j has runner
                     if (matchedMethodsCount == 1)
                     {
-                        frugalRunnerArray = new FrugalRunnerArray(runnerToSave);
+                        frugalRunnerArray = new MatchedMethodData(runnerToSave, filterToSave);
                         break;
                     }
                     else
                     {
                         runners![k++] = runnerToSave;
+                        filters![k++] = filterToSave;
                     }
                 }
 
@@ -257,17 +263,22 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             if ((mask & _componentBloomFilter) == 0 || !_matchedArchetypicalComponentMethods.TryGetValue(components[i], out var runners))
                 continue;
 
-            runners.GetOneOrOther(out IRunner[]? arr, out IRunner? single);
+            runners.GetOneOrOther(out IRunner[]? arr, out IRunner? single,
+                out ComponentIDTypeFilter[]? arrF, out ComponentIDTypeFilter? singleF);
+
+
 
             if (single is not null)
             {
-                PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(single, i + 1 /*offset by one to account for tombstone at [0]*/));
+                if(singleF!.FilterArchetype(archetype))
+                    PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(single, i + 1 /*offset by one to account for tombstone at [0]*/));
             }
             else
             {
-                foreach (var runner in arr!)
+                for(int j = 0; j < arr!.Length; j++)
                 {
-                    PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(runner, i + 1));
+                    if (arrF![j].FilterArchetype(archetype))
+                        PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(arr[i], i + 1));
                 }
             }
         }
@@ -343,19 +354,22 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         }
     }
 
-    internal readonly struct FrugalRunnerArray
+    internal readonly struct MatchedMethodData
     {
-        public FrugalRunnerArray(IRunner only)
+        public MatchedMethodData(IRunner only, ComponentIDTypeFilter typeFilterRecord)
         {
             _root = only;
+            _filterRoot = typeFilterRecord;
         }
 
-        public FrugalRunnerArray(IRunner[] runners)
+        public MatchedMethodData(IRunner[] runners, ComponentIDTypeFilter[] typeFilterRecord)
         {
             _root = runners;
+            _filterRoot = typeFilterRecord;
         }
 
         private readonly object _root;
+        private readonly object _filterRoot;
 
         public readonly int Length
         {
@@ -372,16 +386,21 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        public void GetOneOrOther(out IRunner[]? runners, out IRunner? runner)
+        public void GetOneOrOther(out IRunner[]? runners, out IRunner? runner,
+            out ComponentIDTypeFilter[]? typeFilterRecords, out ComponentIDTypeFilter? typeFilterRecord)
         {
             if (_root.GetType() == typeof(IRunner[]))
             {// n > 1
                 runners = UnsafeExtensions.UnsafeCast<IRunner[]>(_root);
                 runner = default;
+                typeFilterRecords = UnsafeExtensions.UnsafeCast<ComponentIDTypeFilter[]>(_filterRoot);
+                typeFilterRecord = default;
                 return;
             }
             runners = default;
-            runner = UnsafeExtensions.UnsafeCast<IRunner>(_root); 
+            runner = UnsafeExtensions.UnsafeCast<IRunner>(_root);
+            typeFilterRecords = default;
+            typeFilterRecord = UnsafeExtensions.UnsafeCast<ComponentIDTypeFilter>(_filterRoot);
         }
     }
 }

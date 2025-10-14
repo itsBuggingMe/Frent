@@ -1,6 +1,7 @@
 ﻿using Frent.Components;
 using Frent.Core;
 using Frent.Tests.Helpers;
+using Frent.Updating;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using static NUnit.Framework.Assert;
@@ -241,6 +242,16 @@ internal class Updating
         world.Create<NoMatch>(new(world));
 
         world.Update<FilterAttribute2>();
+    }
+}
+
+internal struct TypeFilter : IComponent
+{
+    [IncludesComponents(typeof(int))]
+    [ExcludesComponents(typeof(float))]
+    public void Update()
+    {
+
     }
 }
 

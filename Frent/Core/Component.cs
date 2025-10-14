@@ -2,6 +2,7 @@
 using Frent.Components;
 using Frent.Core.Structures;
 using Frent.Updating;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -51,6 +52,7 @@ public static class Component<T>
     internal static readonly int SparseSetComponentIndex;
 
     internal static readonly UpdateMethodData[] UpdateMethods;
+    internal static readonly ComponentIDTypeFilter[] TypeFilters;
     internal static readonly ComponentBufferManager<T> BufferManagerInstance;
 
     internal static readonly bool IsDestroyable = typeof(T).IsValueType ? default(T) is IDestroyable : typeof(IDestroyable).IsAssignableFrom(typeof(T));
@@ -82,6 +84,8 @@ public static class Component<T>
         {
             UpdateMethods = [];
         }
+
+        TypeFilters = Component.CreateComponentIDFilter(UpdateMethods);
     }
 }
 
@@ -114,6 +118,41 @@ public static class Component
 
     private static int NextComponentID = -1;
     private static int NextSparseSetComponentIndex = 0;
+
+    internal static ComponentIDTypeFilter[] CreateComponentIDFilter(UpdateMethodData[] methods)
+    {
+        ComponentIDTypeFilter[] componentIDTypeFilter = new ComponentIDTypeFilter[methods.Length];
+        
+        for(int i = 0; i < componentIDTypeFilter.Length; i++)
+        {
+            var toConvert = methods[i].TypeFilterRecord;
+            componentIDTypeFilter[i] = ReferenceEquals(toConvert, TypeFilterRecord.None)
+                ? ComponentIDTypeFilter.None
+                : new(
+                    ConvertArrayComponentID(toConvert.IncludeComponents), 
+                    ConvertArrayComponentID(toConvert.ExcludeComponents), 
+                    ConvertArrayTagID(toConvert.IncludeTags), 
+                    ConvertArrayTagID(toConvert.ExcludeTags));
+        }
+
+        static ComponentID[] ConvertArrayComponentID(Type[] types)
+        {
+            ComponentID[] componentIds = new ComponentID[types.Length];
+            for(int i = 0; i < componentIds.Length; i++)
+                componentIds[i] = GetComponentID(types[i]);
+            return componentIds;
+        }
+
+        static TagID[] ConvertArrayTagID(Type[] types)
+        {
+            TagID[] componentIds = new TagID[types.Length];
+            for (int i = 0; i < componentIds.Length; i++)
+                componentIds[i] = Tag.GetTagID(types[i]);
+            return componentIds;
+        }
+
+        return componentIDTypeFilter;
+    }
 
     internal static ComponentBufferManager GetComponentFactoryFromType(Type t)
     {

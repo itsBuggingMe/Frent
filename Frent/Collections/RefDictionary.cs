@@ -40,6 +40,24 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         internal int NextIndex;
     }
 
+    public bool ContainsKey(TKey key)
+    {
+        ref Entry entry = ref FindEntry(key);
+        return !Unsafe.IsNullRef(ref entry);
+    }
+
+    public TValue? GetValueOrDefault(TKey key)
+    {
+        ref Entry entry = ref FindEntry(key);
+
+        if (Unsafe.IsNullRef(ref entry))
+        {
+            return default;
+        }
+
+        return entry.Value;
+    }
+
     public bool TryGetValue(TKey key, out TValue value)
     {
         ref Entry entry = ref FindEntry(key);
