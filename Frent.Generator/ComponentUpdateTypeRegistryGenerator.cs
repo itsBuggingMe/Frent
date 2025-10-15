@@ -375,6 +375,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     
     private static void AppendInitalizationMethodBody(CodeBuilder cb, in ComponentUpdateItemModel model)
     {
+        Stack<string> componentsToRegister = new();
+
         cb.Append("GenerationServices.RegisterComponent<global::").Append(model.FullName).AppendLine(">();");
 
         cb
@@ -431,12 +433,18 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 )
             {
                 cb.Append("new global::Frent.Updating.TypeFilterRecord(");
+                AppendArray(updateMethodModel.Components.Allow.Items);
+                AppendArray(updateMethodModel.Components.Disallow.Items);
                 AppendArray(updateMethodModel.Tags.Allow.Items);
                 AppendArray(updateMethodModel.Tags.Disallow.Items);
-                AppendArray(updateMethodModel.Components.Allow.Items);
-                AppendArray(updateMethodModel.Components.Allow.Items);
+
                 cb.RemoveLastComma()
                     .Append(')');
+
+                foreach (var component in updateMethodModel.Components.Allow.Items)
+                    componentsToRegister.Push(component);
+                foreach (var component in updateMethodModel.Components.Disallow.Items)
+                    componentsToRegister.Push(component);
             }
             else
             {
@@ -462,6 +470,13 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             cb.Append("GenerationServices.RegisterDestroy<")
             .Append("global::").Append(model.FullName)
             .AppendLine(">();");
+        }
+
+        foreach(var name in componentsToRegister.AsSpan())
+        {
+            cb.Append("_ = Frent.Core.Component<global::")
+                .Append(name)
+                .AppendLine(">.ID;");
         }
 
         cb.AppendLine();

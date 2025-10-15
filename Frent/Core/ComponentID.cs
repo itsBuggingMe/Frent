@@ -23,6 +23,7 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
 
     ushort ITypeID.Value => RawIndex;
     internal readonly UpdateMethodData[] Methods => Component.ComponentTable[RawIndex].UpdateMethods;
+    internal readonly IDTypeFilter[] MethodFilters => Component.ComponentTable[RawIndex].UpdateMethodFilters;
     internal readonly int SparseIndex => Component.ComponentTable[RawIndex].SparseComponentIndex;
     internal readonly bool IsSparseComponent => SparseIndex != 0;
 

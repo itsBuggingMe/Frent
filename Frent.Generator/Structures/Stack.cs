@@ -8,6 +8,8 @@ internal ref struct Stack<T>
     private int _index;
     public int Count => _index;
 
+    public Span<T> AsSpan() => _array.AsSpan(0, _index);
+
     public Stack(int len)
     {
         _array = len == 0 ? [] : new T[len];

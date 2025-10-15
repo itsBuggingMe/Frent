@@ -4,14 +4,7 @@ using Frent.Updating.Runners;
 using Frent.Updating.Threading;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.IO.Pipes;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
-using System.Text;
-using static Frent.Updating.AttributeUpdateFilter;
 
 namespace Frent.Updating;
 
@@ -178,6 +171,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             ulong matchedMethods = default;
             int matchedMethodsCount = 0;
             UpdateMethodData[] methods = thisID.Methods;
+            IDTypeFilter[] typeFilters = thisID.MethodFilters;
 
             for (int j = 0; j < methods.Length; j++)
             {
@@ -205,12 +199,12 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 _componentBloomFilter |= 1UL << (i & 63);// set bloom filter bit
                 MatchedMethodData frugalRunnerArray = default;
                 IRunner[]? runners = null;
-                ComponentIDTypeFilter[]? filters = null;
+                IDTypeFilter[]? filters = null;
 
                 if (matchedMethodsCount > 1)
                 {
                     runners = new IRunner[matchedMethodsCount];
-                    filters = new ComponentIDTypeFilter[matchedMethodsCount];
+                    filters = new IDTypeFilter[matchedMethodsCount];
                     frugalRunnerArray = new MatchedMethodData(runners, filters);
                 }
 
@@ -223,7 +217,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                     }
 
                     var runnerToSave = methods[j].Runner;
-                    var filterToSave = methods[j].TypeFilterRecord;
+                    var filterToSave = j < typeFilters.Length ? typeFilters[j] : IDTypeFilter.None;
 
                     // index j has runner
                     if (matchedMethodsCount == 1)
@@ -233,7 +227,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                     }
                     else
                     {
-                        runners![k++] = runnerToSave;
+                        runners![k] = runnerToSave;
                         filters![k++] = filterToSave;
                     }
                 }
@@ -264,7 +258,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 continue;
 
             runners.GetOneOrOther(out IRunner[]? arr, out IRunner? single,
-                out ComponentIDTypeFilter[]? arrF, out ComponentIDTypeFilter? singleF);
+                out IDTypeFilter[]? arrF, out IDTypeFilter? singleF);
 
 
 
@@ -278,7 +272,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 for(int j = 0; j < arr!.Length; j++)
                 {
                     if (arrF![j].FilterArchetype(archetype))
-                        PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(arr[i], i + 1));
+                        PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(arr[j], i + 1));
                 }
             }
         }
@@ -356,13 +350,13 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
     internal readonly struct MatchedMethodData
     {
-        public MatchedMethodData(IRunner only, ComponentIDTypeFilter typeFilterRecord)
+        public MatchedMethodData(IRunner only, IDTypeFilter typeFilterRecord)
         {
             _root = only;
             _filterRoot = typeFilterRecord;
         }
 
-        public MatchedMethodData(IRunner[] runners, ComponentIDTypeFilter[] typeFilterRecord)
+        public MatchedMethodData(IRunner[] runners, IDTypeFilter[] typeFilterRecord)
         {
             _root = runners;
             _filterRoot = typeFilterRecord;
@@ -387,20 +381,20 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         }
 
         public void GetOneOrOther(out IRunner[]? runners, out IRunner? runner,
-            out ComponentIDTypeFilter[]? typeFilterRecords, out ComponentIDTypeFilter? typeFilterRecord)
+            out IDTypeFilter[]? typeFilterRecords, out IDTypeFilter? typeFilterRecord)
         {
             if (_root.GetType() == typeof(IRunner[]))
             {// n > 1
                 runners = UnsafeExtensions.UnsafeCast<IRunner[]>(_root);
                 runner = default;
-                typeFilterRecords = UnsafeExtensions.UnsafeCast<ComponentIDTypeFilter[]>(_filterRoot);
+                typeFilterRecords = UnsafeExtensions.UnsafeCast<IDTypeFilter[]>(_filterRoot);
                 typeFilterRecord = default;
                 return;
             }
             runners = default;
             runner = UnsafeExtensions.UnsafeCast<IRunner>(_root);
             typeFilterRecords = default;
-            typeFilterRecord = UnsafeExtensions.UnsafeCast<ComponentIDTypeFilter>(_filterRoot);
+            typeFilterRecord = UnsafeExtensions.UnsafeCast<IDTypeFilter>(_filterRoot);
         }
     }
 }
