@@ -5,6 +5,7 @@ using Frent.Updating.Threading;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
 

@@ -35,22 +35,6 @@ internal abstract class ComponentBufferManager
 
     #region Things That Need Buffer & <T>
     /// <summary>
-    /// Calls all Update functions on every component.
-    /// </summary>
-    internal abstract void RunArchetypical(Array buffer, Archetype b, World world);
-    /// <summary>
-    /// Calls all Update functions on the subsection of components.
-    /// </summary>
-    internal abstract void RunArchetypical(Array buffer, Archetype b, World world, int start, int length);
-    /// <summary>
-    /// Calls all Update functions on every component.
-    /// </summary>
-    internal abstract void RunSparse(ComponentSparseSetBase sparseSet, World world);
-    /// <summary>
-    /// Calls all Update functions on the subsection of components.
-    /// </summary>
-    internal abstract void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> entityIds);
-    /// <summary>
     /// Deletes a component from the storage.
     /// </summary>
     internal abstract void Delete(Array buffer, DeleteComponentData deleteComponentData);
@@ -235,41 +219,5 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     private static ref TComponent Index(Array buffer, int componentIndex)
     {
         return ref UnsafeExtensions.UnsafeCast<TComponent[]>(buffer).UnsafeArrayIndex(componentIndex);
-    }
-
-    internal override void RunArchetypical(Array buffer, Archetype b, World world)
-    {
-        foreach(var runner in Component<TComponent>.UpdateMethods)
-        {
-            runner.Runner.RunArchetypical(buffer, b, world, 0, b.EntityCount);
-        }
-    }
-
-    internal override void RunArchetypical(Array buffer, Archetype b, World world, int start, int length)
-    {
-        foreach (var runner in Component<TComponent>.UpdateMethods)
-        {
-            runner.Runner.RunArchetypical(buffer, b, world, start, length);
-        }
-    }
-
-    internal override void RunSparse(ComponentSparseSetBase sparseSet, World world)
-    {
-        Debug.Assert(!world.AllowStructualChanges);
-
-        foreach (var runner in Component<TComponent>.UpdateMethods)
-        {
-            runner.Runner.RunSparse(sparseSet, world);
-        }
-    }
-
-    internal override void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> entityIds)
-    {
-        Debug.Assert(!world.AllowStructualChanges);
-
-        foreach (var runner in Component<TComponent>.UpdateMethods)
-        {
-            runner.Runner.RunSparse(sparseSet, world);
-        }
     }
 }
