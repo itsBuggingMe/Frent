@@ -8,6 +8,8 @@ public class Config
     /// <summary>
     /// Whether or not to multithread.
     /// </summary>
+    /// 
+    [Obsolete("Multithreading is controlled through update attributes.")]
     public bool MultiThreadedUpdate { get; init; }
 
     /// <summary>

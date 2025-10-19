@@ -88,7 +88,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     {
                         RegistryHelpers.FullyQualifiedInitableInterfaceName => UpdateModelFlags.Initable,
                         RegistryHelpers.FullyQualifiedDestroyableInterfaceName => UpdateModelFlags.Destroyable,
-                        // handle sparse component if needed in the future
+                        RegistryHelpers.FullyQualifiedSparseInterfaceName => UpdateModelFlags.IsSparse,
                         _ => UpdateModelFlags.None,
                     };
                 }
@@ -393,6 +393,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 continue;
             }
 
+            bool hasTypeFilters = updateMethodModel.Tags.Allow.Length > 0 ||
+                updateMethodModel.Tags.Disallow.Length > 0 ||
+                updateMethodModel.Components.Allow.Length > 0 ||
+                updateMethodModel.Components.Allow.Length > 0;
 
             //new UpdateMethod(, new Type[] {  }, new TypeFilterRecord())
 
@@ -402,7 +406,83 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append(updateMethodModel.ImplInterface, span.Start, span.Count)
                 .Append("UpdateRunner")
                 .Append('<')
-                .Append("global::").Append(model.FullName);
+                .Append("global::Frent.Updating.");
+
+            if(hasTypeFilters)
+            {
+                cb.Append("JoinPredicate<global::Frent.Updating.");
+                if(updateMethodModel.Components.Allow.Length == 0)
+                {
+                    cb.Append("NonePredicate");
+                }
+                else
+                {
+                    cb
+                        .Append(model.IsSparse ? "Sparse" : "Archetypical")
+                        .Append("IncludeComponentFilterPredicate");
+                    AppendTypeParams(updateMethodModel.Components.Allow);
+                }
+
+                cb
+                    .Append(", global::Frent.Updating.");
+
+                if (updateMethodModel.Components.Disallow.Length == 0)
+                {
+                    cb.Append("NonePredicate");
+                }
+                else
+                {
+                    cb
+                        .Append(model.IsSparse ? "Sparse" : "Archetypical")
+                        .Append("ExcludeComponentFilterPredicate");
+                    AppendTypeParams(updateMethodModel.Components.Disallow);
+                }
+
+                cb
+                    .Append(", global::Frent.Updating.");
+
+                if (updateMethodModel.Components.Allow.Length == 0)
+                {
+                    cb.Append("NonePredicate");
+                }
+                else
+                {
+                    cb
+                        .Append("IncludeTagsPredicate");
+                    AppendTypeParams(updateMethodModel.Tags.Allow);
+                }
+
+                cb
+                    .Append(", global::Frent.Updating.");
+
+                if (updateMethodModel.Components.Disallow.Length == 0)
+                {
+                    cb.Append("NonePredicate");
+                }
+                else
+                {
+                    cb
+                        .Append("ExcludeTagsPredicate");
+                    AppendTypeParams(updateMethodModel.Components.Disallow);
+                }
+
+                cb.Append('>');
+
+                void AppendTypeParams(EquatableArray<string> types)
+                {
+                    cb.Append('<');
+                    foreach (var type in types)
+                        cb.Append(type).Append(", ");
+                    cb.RemoveLastComma().Append('>');
+                }
+            }
+            else
+            {
+                cb.Append("NonePredicate");
+            }
+
+            cb
+                .Append(", global::").Append(model.FullName);
 
             foreach (var item in updateMethodModel.GenericArguments)
                 cb.Append(", ").Append(item);
@@ -426,11 +506,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             AppendArray(updateMethodModel.Attributes.Items);
 
             // type filters
-            if ( updateMethodModel.Tags.Allow.Length > 0 || 
-                updateMethodModel.Tags.Disallow.Length > 0 ||
-                updateMethodModel.Components.Allow.Length > 0 ||
-                updateMethodModel.Components.Allow.Length > 0
-                )
+            if (hasTypeFilters)
             {
                 cb.Append("new global::Frent.Updating.TypeFilterRecord(");
                 AppendArray(updateMethodModel.Components.Allow.Items);

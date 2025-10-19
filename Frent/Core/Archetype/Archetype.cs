@@ -23,6 +23,16 @@ internal partial class Archetype
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
     internal int EntityCount => NextComponentIndex;
     internal ref Bitset GetBitset(int index) => ref MemoryHelpers.GetValueOrResize(ref _sparseBits, index);
+    internal ref readonly Bitset GetBitsetNoLazy(int index)
+    {
+        var arr = _sparseBits;
+        if ((uint)index < (uint)arr.Length)
+        {
+            return ref arr[index];
+        }
+
+        return ref Bitset.Zero;
+    }
 
     internal void ClearBitset(int index)
     {
@@ -309,24 +319,6 @@ internal partial class Archetype
 
         CopyBitset(this, this, args.FromIndex, args.ToIndex);
         return _entities.UnsafeArrayIndex(args.ToIndex) = _entities.UnsafeArrayIndex(args.FromIndex);
-    }
-
-    internal void Update(World world)
-    {
-        if (NextComponentIndex == 0)
-            return;
-        var comprunners = Components;
-        for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Run(this, world);
-    }
-
-    internal void Update(World world, int start, int length)
-    {
-        if (NextComponentIndex == 0)
-            return;
-        var comprunners = Components;
-        for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Run(this, world, start, length);
     }
 
     internal void ReleaseArrays(bool isDeferredCreate)

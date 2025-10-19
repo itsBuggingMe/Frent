@@ -244,8 +244,6 @@ internal class WorldState : IDisposable
             {
                 var exp = comp.RetrieveBoxed();
                 var res = entity.Get(comp.ComponentID);
-                if (res is null)
-                    ;
                 That(res, Is.EqualTo(exp));
                 That(entity.Has(comp.ComponentID));
             }

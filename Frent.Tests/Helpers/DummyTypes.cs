@@ -42,9 +42,6 @@ internal class BaseClass;
 
 partial struct GenericComponent<T>() : IComponent
 {
-    public static readonly int x;
-
-    public T? Value;
     public int CalledCount;
     public void Update() => CalledCount++;
 }

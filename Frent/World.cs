@@ -269,32 +269,17 @@ public partial class World : IDisposable
     {
         EnterDisallowState();
         EnterWorldUpdateMethod();
+        AttributeUpdateFilter? appliesTo = default;
         try
         {
-            if (CurrentConfig.MultiThreadedUpdate)
-            {
-                throw new NotSupportedException();
-            }
-            else
-            {
-                foreach (var element in EnabledArchetypes.AsSpan())
-                {
-                    element.Archetype(this)!.Update(this);
-                }
-
-                foreach (ComponentSparseSetBase set in WorldSparseSetTable.AsSpan(1, Component.ComponentTableBySparseIndex.Count - 1))
-                {
-                    if(set.Count == 0)
-                        continue;
-                    set.Run(this, set.SparseSpan());
-                }
-            }
+            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(typeof(void), out _) ??= new AttributeUpdateFilter(this, typeof(void), true);
+            appliesTo.Update();
         }
         finally
         {
             ExitWorldUpdateMethod();
-            ExitDisallowState(null, CurrentConfig.UpdateDeferredCreationEntities);
-        }   
+            ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
+        }
     }
 
     /// <summary>
@@ -314,7 +299,7 @@ public partial class World : IDisposable
         AttributeUpdateFilter? appliesTo = default;
         try
         {
-            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(attributeType, out _) ??= new AttributeUpdateFilter(this, attributeType);
+            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(attributeType, out _) ??= new AttributeUpdateFilter(this, attributeType, false);
             appliesTo.Update();
         }
         finally
@@ -426,6 +411,7 @@ public partial class World : IDisposable
             {
                 if (updateDeferredEntities)
                 {
+                    Debug.Assert(filterUsed is not null);
                     ResolveUpdateDeferredCreationEntities(filterUsed);
                 }
                 else
@@ -445,7 +431,7 @@ public partial class World : IDisposable
         }
     }
 
-    private void ResolveUpdateDeferredCreationEntities(IComponentUpdateFilter? filterUsed)
+    private void ResolveUpdateDeferredCreationEntities(IComponentUpdateFilter filterUsed)
     {
         Span<ArchetypeDeferredUpdateRecord> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
         Span<int> resolveEntities = DeferredCreationEntities.AsSpan();
@@ -463,25 +449,7 @@ public partial class World : IDisposable
             DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
             DeferredCreationEntities.Clear();
 
-            if (filterUsed is not null)
-            {
-                filterUsed?.UpdateSubset(resolveArchetypes, resolveEntities);
-            }
-            else
-            {
-                foreach (var (archetype, _, start) in resolveArchetypes)
-                {
-                    archetype.Update(this, start, archetype.EntityCount - start);
-                }
-
-                foreach (var sparseSet in WorldSparseSetTable.AsSpan(1, Component.ComponentTableBySparseIndex.Count - 1))
-                {
-                    if(sparseSet.Count == 0)
-                        continue;
-
-                    sparseSet.Run(this, resolveEntities);
-                }
-            }
+            filterUsed.UpdateSubset(resolveArchetypes, resolveEntities);
 
             resolveArchetypes = DeferredCreationArchetypes.AsSpan();
             resolveEntities = DeferredCreationEntities.AsSpan();

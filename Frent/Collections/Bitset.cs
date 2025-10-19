@@ -103,6 +103,29 @@ internal struct Bitset
         // remaining bits == fail
         return (include & self) == include && (exclude & self) == Vector256<ulong>.Zero;
     }
+    public static bool FilterInclude(ref readonly Bitset self, Vector256<ulong> include)
+    {
+        Vector256<ulong> a = Vector256.LoadUnsafe(ref Unsafe.AsRef(in self._0));
+
+        if (Avx.IsSupported)
+        {
+            return Avx.TestC(a, include);
+        }
+
+        return (include & a) == include;
+    }
+
+    public static bool FilterExclude(ref readonly Bitset self, Vector256<ulong> exclude)
+    {
+        Vector256<ulong> a = Vector256.LoadUnsafe(ref Unsafe.AsRef(in self._0));
+
+        if (Avx.IsSupported)
+        {
+            return Avx.TestZ(a, exclude);
+        }
+
+        return (exclude & a) == Vector256<ulong>.Zero;
+    }
 
     public static void AssertHasSparseComponents(ref Bitset sparseBits, ref Bitset include)
     {
@@ -115,12 +138,24 @@ internal struct Bitset
         FrentExceptions.Throw_NullReferenceException();
     }
 #else
-    public static bool Filter(ref Bitset self, Bitset include, Bitset exclude)
+    public Bitset AsVector() => this;
+
+    public static bool FilterInclude(ref readonly Bitset self, Bitset include)
+    {
+        return (include & self) == include;
+    }
+
+    public static bool FilterExclude(ref readonly Bitset self, Bitset exclude)
+    {
+        return (exclude & self) == default;
+    }
+
+    public static bool Filter(ref readonly Bitset self, Bitset include, Bitset exclude)
     {
         return (include & self) == include && (exclude & self) == default;
     }
 
-    public static void AssertHasSparseComponents(ref Bitset sparseBits, ref Bitset include)
+    public static void AssertHasSparseComponents(ref readonly Bitset sparseBits, ref Bitset include)
     {
         if ((include & sparseBits) == include)
             return;

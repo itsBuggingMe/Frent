@@ -276,6 +276,33 @@ internal class Updating
     }
 
     [Test]
+    public void IncludesComponents_ExcludesEntities_Sparse()
+    {
+        using World w = new();
+        int invoke = 0;
+        Action increment = () => invoke++;
+
+        w.Create<FilterRulesSparse, Struct1>(new(increment), default);
+        w.Create<FilterRulesSparse, Struct1, Struct2>(new(increment), default, default);
+
+        w.Update<FilterAttribute1>();
+    }
+
+    [Test]
+    public void ExcludesComponents_PreventsUpdate_Sparse()
+    {
+        using World w = new();
+        int invoke = 0;
+        Action increment = () => invoke++;
+
+        w.Create<FilterRulesSparse, Struct1, Struct2, Struct3>(new(increment), default, default, default);
+
+        w.Update<FilterAttribute1>();
+
+        That(invoke, Is.Zero);
+    }
+
+    [Test]
     public void IncludesTags_RequiredForUpdate_Archetypical()
     {
         using World w = new();
@@ -331,6 +358,36 @@ internal struct NoMatch(World world) : IComponent
 }
 
 internal struct FilterRules(Action update1) : IComponent, IComponent<Struct1>, IInitable
+{
+    private Entity _self;
+    public void Init(Entity self)
+    {
+        _self = self;
+    }
+
+    [IncludesComponents(typeof(Struct1), typeof(Struct2))]
+    [ExcludesComponents(typeof(Struct3))]
+    [IncludesTags(typeof(Class1), typeof(Class2))]
+    [ExcludesTags(typeof(Class3))]
+    [FilterAttribute1]
+    public void Update()
+    {
+        That(_self.Has<Struct1>());
+        That(_self.Has<Struct2>());
+        That(!_self.Has<Struct3>());
+        update1();
+    }
+
+    [ExcludesTags(typeof(Class3))]
+    [FilterAttribute1]
+    public void Update(ref Struct1 arg)
+    {
+
+    }
+}
+
+
+internal struct FilterRulesSparse(Action update1) : IComponent, IComponent<Struct1>, IInitable, ISparseComponent
 {
     private Entity _self;
     public void Init(Entity self)

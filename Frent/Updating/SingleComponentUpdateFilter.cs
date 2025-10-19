@@ -1,6 +1,7 @@
 using Frent.Collections;
 using Frent.Core;
 using Frent.Updating.Runners;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -17,7 +18,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
     private IRunner[] _filteredRunnersPerArchetype = [];
 
     // sparse
-
+    public readonly ComponentSparseSetBase _sparseSet;
 
     // shared
     private readonly World _world;
@@ -25,6 +26,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
 
     private readonly IRunner[] _normalRunners;
     private readonly (IDTypeFilter Filter, IRunner Runner)[] _filteredRunners;
+    private readonly IRunner[] _allRunners;
 
     // bloom filter
     // used to check if a (Archetype, Runner) pair is in the set of matches
@@ -41,7 +43,9 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
         _isArchetypical = !component.IsSparseComponent;
         UpdateMethodData[] methods = component.Methods;
         IDTypeFilter[] filters = component.MethodFilters;
+        _sparseSet = world.WorldSparseSetTable[component.SparseIndex];
 
+        _allRunners = new IRunner[methods.Length];
         _normalRunners = new IRunner[methods.Length - filters.Length];
         _filteredRunners = filters.Length == 0 ? [] : new (IDTypeFilter Filter, IRunner Runner)[filters.Length];
 
@@ -49,10 +53,16 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
         int fIndex = 0;
         for(int i = 0; i < methods.Length; i++)
         {
+            _allRunners[i] = methods[i].Runner;
             if ((uint)i < (uint)filters.Length && filters[i] is { } f && f != IDTypeFilter.None)
                 _filteredRunners[fIndex++] = (f, methods[i].Runner);
             else
                 _normalRunners[nIndex++] = methods[i].Runner;
+        }
+
+        foreach(var archetype in world.EnabledArchetypes)
+        {
+            ArchetypeAdded(archetype.Archetype(world));
         }
     }
 
@@ -72,15 +82,23 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
         }
         else
         {
-            throw new NotImplementedException();
+            var set = _sparseSet;
+            var world = _world;
+            foreach (var runner in _allRunners)
+            {
+                runner.RunSparse(set, world);
+            }
         }
 
         void SimpleArchetypicalUpdate()
         {
             World world = _world;
 
-            foreach (var method in _archetypes)
+            foreach (var method in _archetypes.AsSpan(0, _archetypesNext))
             {
+                if (method.Archetype.EntityCount == 0)
+                    continue;
+
                 Array buffer = method.Archetype.Components.UnsafeArrayIndex(method.StorageIndex).Buffer;
 
                 foreach (var runner in _normalRunners)
@@ -95,10 +113,13 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
             World world = _world;
             ref IRunner current = ref MemoryMarshal.GetArrayDataReference(_filteredRunnersPerArchetype);
 
-            foreach ((Archetype archetype, int storageIndex, int length) in _archetypes)
+            foreach ((Archetype archetype, int storageIndex, int length) in _archetypes.AsSpan(0, _archetypesNext))
             {
-                Array buffer = archetype.Components.UnsafeArrayIndex(storageIndex).Buffer;
                 int entityCount = archetype.EntityCount;
+                if (entityCount == 0)
+                    continue;
+
+                Array buffer = archetype.Components.UnsafeArrayIndex(storageIndex).Buffer;
 
                 // average joe methods
                 foreach (var runner in _normalRunners)
@@ -122,7 +143,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
             return;
 
         int componentIndex = archetype.GetComponentIndex(_componentID);
-        if (componentIndex is not 0)
+        if (componentIndex is 0)
             return;
 
         int length = 0;
@@ -131,7 +152,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
         {
             if (filter.FilterArchetype(archetype))
             {
-                MemoryHelpers.GetValueOrResize(ref _filteredRunnersPerArchetype, _filteredRunnersPerArchetypeNext) = runner;
+                MemoryHelpers.GetValueOrResize(ref _filteredRunnersPerArchetype, _filteredRunnersPerArchetypeNext++) = runner;
                 length++;
 
                 // k == 1
@@ -139,8 +160,15 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        MemoryHelpers.GetValueOrResize(ref _archetypes, _archetypesNext++)
-            = new ArchetypeRecord(archetype, componentIndex, length);
+        foreach (IRunner runner in _normalRunners)
+        {
+            MemoryHelpers.GetValueOrResize(ref _filteredRunnersPerArchetype, _filteredRunnersPerArchetypeNext++) = runner;
+            length++;
+        }
+
+        if (length != 0)
+            MemoryHelpers.GetValueOrResize(ref _archetypes, _archetypesNext++)
+                = new ArchetypeRecord(archetype, componentIndex, length);
     }
 
     private ulong BloomBit(IRunner runner, Archetype archetype)

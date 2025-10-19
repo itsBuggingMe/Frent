@@ -1,4 +1,7 @@
-﻿using Frent.Updating;
+﻿using Frent.Collections;
+using Frent.Updating;
+using System.Numerics;
+using System.Reflection;
 
 namespace Frent.Core;
 
@@ -10,35 +13,37 @@ internal class IDTypeFilter(
 {
     public static readonly IDTypeFilter None = new([], [], [], []);
 
-    private readonly ComponentID[] _includeC = includeComponents;
-    private readonly ComponentID[] _excludeC = excludeComponents;
-    private readonly TagID[] _includeT = includeTags;
-    private readonly TagID[] _excludeT = excludeTags;
+    public readonly ComponentID[] IncludeC = includeComponents;
+    public readonly Bitset IncludedSparseComponents;
+    public readonly ComponentID[] ExcludeC = excludeComponents;
+    public readonly Bitset ExcludedSparseComponents;
+    public readonly TagID[] IncludeT = includeTags;
+    public readonly TagID[] ExcludeT = excludeTags;
 
     public bool FilterArchetype(Archetype archetype)
     {
         if (ReferenceEquals(this, None))
             return true;
 
-        foreach (var comp in _includeC)
+        foreach (var comp in IncludeC)
         {
             if (archetype.GetComponentIndex(comp) == 0)
                 return false;
         }
 
-        foreach (var comp in _excludeC)
+        foreach (var comp in ExcludeC)
         {
             if (archetype.GetComponentIndex(comp) != 0)
                 return false;
         }
 
-        foreach (var tag in _includeT)
+        foreach (var tag in IncludeT)
         {
             if (!archetype.HasTag(tag))
                 return false;
         }
 
-        foreach (var tag in _excludeT)
+        foreach (var tag in ExcludeT)
         {
             if (archetype.HasTag(tag))
                 return false;

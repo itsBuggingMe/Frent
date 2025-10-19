@@ -117,8 +117,6 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
             top = default;
     }
 
-    public override void Run(World world, ReadOnlySpan<int> ids) => Component<T>.BufferManagerInstance.RunSparse(this, world, ids);
-
     public override bool TryGet(int id, out object value)
     {
         var res = TryGet(id, out bool exists);
@@ -163,9 +161,6 @@ internal abstract class ComponentSparseSetBase
     public abstract void Set(Entity e, object value);
     public abstract void Remove(int id, bool callDestroyer);
     public abstract bool TryGet(int id, out object value);
-
-    public abstract void Run(World world, ReadOnlySpan<int> ids);
-
     public abstract void Init(Entity id);
     public abstract void InvokeGenericEvent(Entity entity, GenericEvent @event);
 

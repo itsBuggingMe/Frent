@@ -38,12 +38,14 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private readonly Stack<ArchetypeUpdateSpan>? _smallArchetypeUpdateRecords;
     private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
     private readonly bool _isMultithread;
+    private readonly bool _matchAll;
 
-    public AttributeUpdateFilter(World world, Type attributeType)
+    public AttributeUpdateFilter(World world, Type attributeType, bool overrideMatchAll)
     {
         _isMultithread = typeof(MultithreadUpdateTypeAttribute).IsAssignableFrom(attributeType);
         _attributeType = attributeType;
         _world = world;
+        _matchAll = overrideMatchAll;
 
         foreach (var archetype in world.EnabledArchetypes.AsSpan())
             ArchetypeAdded(archetype.Archetype(world)!);
@@ -176,7 +178,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
             for (int j = 0; j < methods.Length; j++)
             {
-                if (methods[j].AttributeIsDefined(_attributeType))
+                if (_matchAll || methods[j].AttributeIsDefined(_attributeType))
                 {
                     matchedMethodsCount++;
                     matchedMethods |= 1UL << j;
