@@ -9,6 +9,12 @@ namespace Frent.Generator;
 
 public static class RegistryHelpers
 {
+    private static SymbolDisplayFormat? _symbolDisplayFormat;
+    public static SymbolDisplayFormat FullyQualifiedTypeNameFormat => _symbolDisplayFormat ??= new(
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
+        );
+
     public static StringBuilder AppendNamespace(this StringBuilder sb, string @namespace)
     {
         if (@namespace == string.Empty)

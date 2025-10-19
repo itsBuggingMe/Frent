@@ -20,12 +20,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 {
     public const string Version = "0.5.9";
 
-    private static SymbolDisplayFormat? _symbolDisplayFormat;
-    private static SymbolDisplayFormat FullyQualifiedTypeNameFormat => _symbolDisplayFormat ??= new(
-        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
-        );
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var models = context.SyntaxProvider.CreateSyntaxProvider(
@@ -110,7 +104,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     for (int i = 0; i < @interface.TypeArguments.Length; i++)
                     {
                         ITypeSymbol namedTypeSymbol = @interface.TypeArguments[i];
-                        genericArguments[i] = namedTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
+                        genericArguments[i] = namedTypeSymbol.ToDisplayString(RegistryHelpers.FullyQualifiedTypeNameFormat);
                     }
                 }
                 else
@@ -129,7 +123,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 {
                     foreach (var element in tuple.TypeArguments)
                     {
-                        uniformTupleTypes.Push(element.ToDisplayString(FullyQualifiedTypeNameFormat));
+                        uniformTupleTypes.Push(element.ToDisplayString(RegistryHelpers.FullyQualifiedTypeNameFormat));
                     }
                 }
 
@@ -273,7 +267,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
             foreach (var attrData in symbol.GetAttributes())
             {
-                string? attrName = attrData.AttributeClass?.ToDisplayString(FullyQualifiedTypeNameFormat);
+                string? attrName = attrData.AttributeClass?.ToDisplayString(RegistryHelpers.FullyQualifiedTypeNameFormat);
                 if (attrName is null)
                     continue;
 
@@ -306,7 +300,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     foreach(var v in typedConstant.Values)
                     {
                         if(v.Value is INamedTypeSymbol n)
-                            attributes.Push(n.ToDisplayString(FullyQualifiedTypeNameFormat));
+                            attributes.Push(n.ToDisplayString(RegistryHelpers.FullyQualifiedTypeNameFormat));
                     }
                 }
             }
