@@ -39,15 +39,15 @@ public class MultithreadBenchmark
     }
 }
 
-internal struct SomeComponent : IComponent<int>
+public struct SomeComponent : IComponent<int>
 {
-    InlineArray16 _buf;
+    public InlineArray16 Buffer;
 
     [Multithread]
     [Singlethread]
     public void Update(ref int arg)
     {
-        foreach (ref var value in _buf)
+        foreach (ref var value in Buffer)
         {
             value += arg;
         }
@@ -58,7 +58,7 @@ internal class Multithread : MultithreadUpdateTypeAttribute;
 internal class Singlethread : UpdateTypeAttribute;
 
 [InlineArray(16)]
-internal struct InlineArray16
+public struct InlineArray16
 {
     int _0;
 }

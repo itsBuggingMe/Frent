@@ -17,9 +17,6 @@ public class Program
     #region Bench Helpers
     private static void RunBenchmark<T>(Action<T> disasmCall)
     {
-        JitTest(disasmCall);
-
-        return;
         if (Environment.GetEnvironmentVariable("DISASM") == "TRUE" ||
 #if DEBUG
             true

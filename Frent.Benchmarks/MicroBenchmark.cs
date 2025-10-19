@@ -21,10 +21,8 @@ public class MicroBenchmark
 
     private World _world;
     private Entity _entity;
-    private Query _query;
 
     private Entity[] _entities;
-    private int[] _raw;
 
     //[Params(1, 100, 10_000, 100_000)]
     public int Count { get; set; } = 100_000;
