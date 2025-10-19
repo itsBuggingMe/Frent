@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.Diagnostics;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using System;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Linq;
@@ -17,10 +16,12 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
 
     static GeneratorAnalyzer()
     {
-        var b = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(3);
+        var b = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(5);
         b.Add(NonPartialGenericComponent);
         b.Add(NonPartialOuterInaccessibleType);
         b.Add(NonPartialNestedInaccessibleType);
+        b.Add(TooManyFilterComponents);
+        b.Add(TooManyFilterTags);
         _supportedDiagnostics = b.MoveToImmutable();
     }
 
@@ -61,7 +62,7 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
 
         // type filter analyzer
 
-        foreach(var member in namedTypeSymbol.GetMembers())
+        foreach (var member in namedTypeSymbol.GetMembers())
         {
             if(member is not IMethodSymbol method)
                 continue;
@@ -74,7 +75,11 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
                 if (attrName is null)
                     continue;
 
-                if (attribute.ConstructorArguments.Length <= 8)
+                if (attribute.ConstructorArguments.Length != 1)
+                    continue;
+                if (attribute.ConstructorArguments[0] is not { Type.TypeKind: TypeKind.Array } c)
+                    continue;
+                if (c.Values.Length <= 8)
                     continue;
 
                 switch (attrName)
@@ -162,7 +167,7 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor TooManyFilterComponents = new(
         id: "FR0003",
         title: "Too Many Filter Components",
-        messageFormat: "Component '{0}' has more than 8 component types specified when {}",
+        messageFormat: "Component '{0}' has more than 8 component types specified when {1}",
         category: "Source Generation",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -170,7 +175,7 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor TooManyFilterTags = new(
         id: "FR0003",
         title: "Too Many Filter Tags",
-        messageFormat: "Component '{0}' has more than 8 tag types specified when {}",
+        messageFormat: "Component '{0}' has more than 8 tag types specified when {1}",
         category: "Source Generation",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
