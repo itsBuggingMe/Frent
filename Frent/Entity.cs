@@ -287,7 +287,7 @@ public partial struct Entity : IEquatable<Entity>
 #if NETSTANDARD
     internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
     {
-        public ref byte MapRef => ref MemoryMarshal.GetReference(ComponentIndexMap);
+        public ref byte MapRef => ref MemoryMarshal.GetArrayDataReference(ComponentIndexMap);
 
         public byte[] ComponentIndexMap = map;
         public ComponentStorageRecord[] Components = componentStorageRecord;
