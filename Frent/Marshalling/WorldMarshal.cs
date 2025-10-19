@@ -71,4 +71,26 @@ public static class WorldMarshal
         sparse = set.SparseSpan();
         return set.Count;
     }
+
+    /// <summary>
+    /// Creates an entity with a specific ID. 
+    /// </summary>
+    /// <remarks>Can create holes in the entity table!</remarks>
+    /// <returns>An <see cref="Entity"/> instance.</returns>
+    public static Entity CreateEntityWithID(World world, int entityId)
+    {
+        ref EntityLocation entityLoc = ref world.EntityTable[entityId];
+
+        if (entityLoc.Archetype is not null)
+            throw new InvalidOperationException("Entity with this Id exists already.");
+
+        world.NextEntityID = Math.Max(world.NextEntityID, entityId + 1);
+
+        ref EntityIDOnly archetypeRecord = ref world.DefaultArchetype.CreateEntityLocation(EntityFlags.None, out entityLoc);
+
+        Entity result = new(world.WorldID, entityLoc.Version, entityId);
+        archetypeRecord.Init(result);
+
+        return result;
+    }
 }
