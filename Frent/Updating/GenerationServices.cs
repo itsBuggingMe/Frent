@@ -49,7 +49,7 @@ public static class GenerationServices
             FrentExceptions.Throw_InvalidOperationException("Components cannot have more than 64 update methods.");
 
         ref UpdateMethodData[]? data = ref UserGeneratedTypeMap.GetValueRefOrAddDefault(type, out bool exists);
-        if(!exists)
+        if (!exists)
         {
             data = methods;
         }

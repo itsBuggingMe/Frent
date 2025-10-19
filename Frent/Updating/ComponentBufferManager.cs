@@ -1,7 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Updating;
@@ -190,7 +189,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     internal sealed override void PullComponentFrom(Array buffer, IDTable storage, int me, int other)
     {
         ref var item = ref ((IDTable<TComponent>)storage).Buffer[other];
-        Index(buffer, me) = item;   
+        Index(buffer, me) = item;
     }
 
     internal sealed override void Delete(Array buffer, DeleteComponentData data)

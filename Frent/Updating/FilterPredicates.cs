@@ -2,7 +2,6 @@
 using Frent.Core;
 using Frent.Variadic.Generator;
 using static Frent.Core.Structures.GlobalWorldTables;
-using static Frent.Entity;
 
 namespace Frent.Updating;
 
@@ -71,7 +70,7 @@ public readonly struct SparseIncludeComponentFilterPredicate<T1> : IFilterPredic
     {
         // precondition of being in an IRunner's sparse update method
 
-        if((Component<T1>.IsSparseComponent)
+        if ((Component<T1>.IsSparseComponent)
             && !Bitset.FilterInclude(in sparseBits, BitsetHelper<T1>.BitsetOf.AsVector()))
         {
             return true;

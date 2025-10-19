@@ -20,8 +20,8 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
     private readonly World _world;
     private readonly Type _attributeType;
-    
-    
+
+
     private int _lastRegisteredComponentID;
     private ShortSparseSet<ArchetypeUpdateSpan> _matchedArchtypes = new();
 
@@ -50,7 +50,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         foreach (var archetype in world.EnabledArchetypes.AsSpan())
             ArchetypeAdded(archetype.Archetype(world)!);
 
-        if(_isMultithread)
+        if (_isMultithread)
         {
             _updateCount = new StrongBox<int>();
             _smallArchetypeUpdateRecords = new Stack<ArchetypeUpdateSpan>();
@@ -79,7 +79,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         World world = _world;
         foreach (var (archetype, start, length) in _matchedArchtypes.AsSpan())
         {
-            if(archetype.EntityCount == 0)
+            if (archetype.EntityCount == 0)
                 continue;
 
             ref ComponentStorageRecord archetypeFirst = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
@@ -113,7 +113,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         for (int i = 0; i < archetypes.Length; i++)
         {
             var record = archetypes[i];
-            if(record.Archetype.EntityCount == 0)
+            if (record.Archetype.EntityCount == 0)
             {
                 continue;
             }
@@ -150,7 +150,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         for (int i = 0; i < sparseMethods.Length; i++)
         {
             ComponentSparseSetBase set = sparseMethods[i].SparseSet;
-            if(set.Count == 0)
+            if (set.Count == 0)
                 continue;
 
             int start = i;
@@ -185,7 +185,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 }
             }
 
-            if(matchedMethodsCount > 0)
+            if (matchedMethodsCount > 0)
             {// something matched
                 if (thisID.IsSparseComponent)
                 {
@@ -254,7 +254,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         int start = _methodsCount;
         int length = 0;
 
-        for(int i = 0; i < components.Length; i++)
+        for (int i = 0; i < components.Length; i++)
         {
             ulong mask = 1UL << (components[i].RawIndex & 63);
             if ((mask & _componentBloomFilter) == 0 || !_matchedArchetypicalComponentMethods.TryGetValue(components[i], out var runners))
@@ -267,12 +267,12 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
             if (single is not null)
             {
-                if(singleF!.FilterArchetype(archetype))
+                if (singleF!.FilterArchetype(archetype))
                     PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(single, i + 1 /*offset by one to account for tombstone at [0]*/));
             }
             else
             {
-                for(int j = 0; j < arr!.Length; j++)
+                for (int j = 0; j < arr!.Length; j++)
                 {
                     if (arrF![j].FilterArchetype(archetype))
                         PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(arr[j], i + 1));
@@ -280,7 +280,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        if(length != 0)
+        if (length != 0)
         {
             _matchedArchtypes[archetype.ID.RawIndex] = new(archetype, start, length);
         }
@@ -316,7 +316,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        foreach(var sparseMethod in _sparseMethods.AsSpan(0, _sparseMethodsCount))
+        foreach (var sparseMethod in _sparseMethods.AsSpan(0, _sparseMethodsCount))
         {
             sparseMethod.Runner.RunSparseSubset(sparseMethod.SparseSet, world, ids);
         }
@@ -374,7 +374,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             {
                 Debug.Assert(_root is not null);
 
-                if(_root.GetType() == typeof(IRunner[]))
+                if (_root.GetType() == typeof(IRunner[]))
                 {// n > 1
                     return UnsafeExtensions.UnsafeCast<IRunner[]>(_root).Length;
                 }

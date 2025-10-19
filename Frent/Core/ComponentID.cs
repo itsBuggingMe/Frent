@@ -13,9 +13,9 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
     {
         RawIndex = id;
     }
-     
+
     internal readonly ushort RawIndex;
-     
+
     /// <summary>
     /// The type of component this <see cref="ComponentID"/> represents.
     /// </summary>

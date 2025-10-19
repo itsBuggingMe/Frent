@@ -98,22 +98,22 @@ to:
 
 from:
         ref T c1ref = ref Component<T>.Destroyer is null ?
-            ref Unsafe.NullRef<T>() : 
-            ref Component<T>.IsSparseComponent ? 
-                ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : 
+            ref Unsafe.NullRef<T>() :
+            ref Component<T>.IsSparseComponent ?
+                ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] :
                 ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
 to:
 |        ref T$ c$ref = ref Component<T$>.Destroyer is null ?
-            ref Unsafe.NullRef<T$>() : 
-            ref Component<T$>.IsSparseComponent ? 
-                ref MemoryHelpers.GetSparseSet<T$>(ref first)[EntityID] : 
+            ref Unsafe.NullRef<T$>() :
+            ref Component<T$>.IsSparseComponent ?
+                ref MemoryHelpers.GetSparseSet<T$>(ref first)[EntityID] :
                 ref Unsafe.Add(ref from.GetComponentDataReference<T$>(), thisLookup.Index);
 |
 
 from:
-            if(Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
+            if (Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
 to:
-|            if(Component<T$>.IsSparseComponent) set.Set(Component<T$>.SparseSetComponentIndex);
+|            if (Component<T$>.IsSparseComponent) set.Set(Component<T$>.SparseSetComponentIndex);
 |
 
 from:
@@ -123,9 +123,9 @@ to:
 |
 
 from:
-        if(Component<T>.IsSparseComponent) Component<T>.Destroyer?.Invoke(ref c1ref);
+        if (Component<T>.IsSparseComponent) Component<T>.Destroyer?.Invoke(ref c1ref);
 to:
-|        if(Component<T$>.IsSparseComponent) Component<T$>.Destroyer?.Invoke(ref c$ref);
+|        if (Component<T$>.IsSparseComponent) Component<T$>.Destroyer?.Invoke(ref c$ref);
 |
 from:
 InvokeComponentWorldEvents<T>

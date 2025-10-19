@@ -37,7 +37,7 @@ partial struct Entity
         MemoryHelpers.Poison(ref archIndex);
         Archetype? to = null;
 
-        ref ComponentSparseSetBase sparseSets = ref NeighborCache<T>.HasAnySparseComponents ? 
+        ref ComponentSparseSetBase sparseSets = ref NeighborCache<T>.HasAnySparseComponents ?
             ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable) :
             ref Unsafe.NullRef<ComponentSparseSetBase>();
 
@@ -65,7 +65,7 @@ partial struct Entity
                 ref to!.GetBitset(archIndex) : // guarded by HasAnyArchetypicalComponents
                 ref thisLookup.Archetype.GetBitset(thisLookup.Index);
 
-            if(Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
+            if (Component<T>.IsSparseComponent) set.Set(Component<T>.SparseSetComponentIndex);
         }
 
         Component<T>.Initer?.Invoke(this, ref c1ref);
@@ -100,14 +100,14 @@ partial struct Entity
             return;
         }
 
-        
+
         // get comp refs for events & destroyer calling
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
         Archetype from = thisLookup.Archetype;
         ref T c1ref = ref Component<T>.Destroyer is null ?
-            ref Unsafe.NullRef<T>() : 
-            ref Component<T>.IsSparseComponent ? 
-                ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] : 
+            ref Unsafe.NullRef<T>() :
+            ref Component<T>.IsSparseComponent ?
+                ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] :
                 ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
 
 
@@ -130,7 +130,7 @@ partial struct Entity
         }
 
         // implicitly called by MoveEntityToArchetypeRemove for archetypical components
-        if(Component<T>.IsSparseComponent) Component<T>.Destroyer?.Invoke(ref c1ref);
+        if (Component<T>.IsSparseComponent) Component<T>.Destroyer?.Invoke(ref c1ref);
 
         // Actually move components
 
@@ -152,7 +152,7 @@ partial struct Entity
         }
 
         if (NeighborCache<T>.HasAnyArchetypicalComponents)
-        {   
+        {
             Archetype to = TraverseThroughCacheOrCreate<ComponentID, NeighborCache<T>>(
                 world,
                 ref NeighborCache<T>.Remove.Lookup,
@@ -173,7 +173,7 @@ partial struct Entity
     {
         ref EntityLocation thisLookup = ref AssertIsAlive(out World world);
 
-        if(!world.AllowStructualChanges)
+        if (!world.AllowStructualChanges)
         {
             world.WorldUpdateCommandBuffer.Tag<T>(this);
             return;
@@ -357,7 +357,7 @@ partial struct Entity
             {
                 Span<TagID> delta = stackalloc TagID[8];
                 default(TEdge).WriteTagIDs(ref delta);
-                tagIDs = add ? MemoryHelpers.Concat(tagIDs, delta) 
+                tagIDs = add ? MemoryHelpers.Concat(tagIDs, delta)
                     : MemoryHelpers.Remove(tagIDs, delta);
             }
 

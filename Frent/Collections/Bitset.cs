@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 #if !NETSTANDARD
 using System.Runtime.Intrinsics;
@@ -96,7 +95,7 @@ internal struct Bitset
     {
         Vector256<ulong> self = Vector256.LoadUnsafe(ref set._0);
 
-        if(Avx.IsSupported)
+        if (Avx.IsSupported)
         {
             return Avx.TestC(self, include) && Avx.TestZ(self, exclude);
         }
@@ -180,7 +179,7 @@ internal struct Bitset
     public static bool operator !=(Bitset l, Bitset r) =>
         !(l == r);
 
-    public override bool Equals(object obj) => obj is Bitset b && 
+    public override bool Equals(object obj) => obj is Bitset b &&
         b._0 == _0 &&
         b._1 == _1 &&
         b._2 == _2 &&
@@ -238,7 +237,7 @@ internal struct Bitset
         public bool MoveNext()
         {
             int? index = _set.TryFindIndexOfBitGreaterThanOrEqualTo(_index);
-            if(index is int x)
+            if (index is int x)
             {
                 _index = x + 1;
                 return true;

@@ -2,7 +2,6 @@
 using Frent.Components;
 using Frent.Core.Structures;
 using Frent.Updating;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -30,7 +29,7 @@ public static class Component<T>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if(typeof(T).IsValueType)
+            if (typeof(T).IsValueType)
             {
                 return default(T) is ISparseComponent;
             }
@@ -65,7 +64,7 @@ public static class Component<T>
             _isSparseComponentAndReference = typeof(ISparseComponent).IsAssignableFrom(typeof(T));
         }
 
-        if(Component.CachedComponentFactories.TryGetValue(typeof(T), out var componentBufferManager))
+        if (Component.CachedComponentFactories.TryGetValue(typeof(T), out var componentBufferManager))
         {
             BufferManagerInstance = (ComponentBufferManager<T>)componentBufferManager;
         }
@@ -134,11 +133,11 @@ public static class Component
         GenerationServices.RegisterComponent<T>();
     }
 
-    internal static 
-        (ComponentID ComponentID, 
-        IDTable<T> Stack, 
-        ComponentDelegates<T>.InitDelegate? Initer, 
-        ComponentDelegates<T>.DestroyDelegate? Destroyer, 
+    internal static
+        (ComponentID ComponentID,
+        IDTable<T> Stack,
+        ComponentDelegates<T>.InitDelegate? Initer,
+        ComponentDelegates<T>.DestroyDelegate? Destroyer,
         int SparseIndex,
         IDTypeFilter[] TypeFilters)
         GetExistingOrSetupNewComponent<T>()
@@ -148,11 +147,11 @@ public static class Component
             var type = typeof(T);
             if (ExistingComponentIDs.TryGetValue(type, out ComponentID componentID))
             {
-                return 
+                return
                     (
-                        componentID, 
-                        (IDTable<T>)ComponentTable[componentID.RawIndex].Storage, 
-                        (ComponentDelegates<T>.InitDelegate?)ComponentTable[componentID.RawIndex].Initer, 
+                        componentID,
+                        (IDTable<T>)ComponentTable[componentID.RawIndex].Storage,
+                        (ComponentDelegates<T>.InitDelegate?)ComponentTable[componentID.RawIndex].Initer,
                         (ComponentDelegates<T>.DestroyDelegate?)ComponentTable[componentID.RawIndex].Destroyer,
                         ComponentTable[componentID.RawIndex].SparseComponentIndex,
                         ComponentTable[componentID.RawIndex].UpdateMethodFilters

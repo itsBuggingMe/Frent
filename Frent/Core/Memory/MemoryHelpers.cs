@@ -20,7 +20,7 @@ internal static class MemoryHelpers
 
     public static Span<ComponentStorageRecord> GetSharedTempComponentStorageBuffer(int minimumLength)
     {
-        if(minimumLength > s_sharedTempComponentStorageBuffer.Length)
+        if (minimumLength > s_sharedTempComponentStorageBuffer.Length)
             s_sharedTempComponentStorageBuffer = new ComponentStorageRecord[minimumLength];
         return s_sharedTempComponentStorageBuffer.AsSpan(0, minimumLength);
     }
@@ -120,7 +120,7 @@ internal static class MemoryHelpers
     public static ref T GetValueOrResize<T>(scoped ref T[] arr, int index)
     {
         var arrLoc = arr;
-        if((uint)index < (uint)arrLoc.Length)
+        if ((uint)index < (uint)arrLoc.Length)
             return ref arrLoc[index];
         return ref ResizeAndGet(ref arr, index);
     }
@@ -160,7 +160,7 @@ internal static class MemoryHelpers
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             return;
-            //throw new NotSupportedException("Cleared anyways");
+        //throw new NotSupportedException("Cleared anyways");
 
 #if NET6_0_OR_GREATER
         Span<byte> raw = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), Unsafe.SizeOf<T>());

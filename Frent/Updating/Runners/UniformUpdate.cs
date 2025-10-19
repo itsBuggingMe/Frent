@@ -2,10 +2,8 @@
 using Frent.Components;
 using Frent.Core;
 using Frent.Variadic.Generator;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.AccessControl;
 
 namespace Frent.Updating.Runners;
 
@@ -33,7 +31,7 @@ public class UniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f) : Run
 
     void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world)
     {
-        ref int entityId = ref typeof(TPredicate) != typeof(NonePredicate) ? 
+        ref int entityId = ref typeof(TPredicate) != typeof(NonePredicate) ?
             ref sparseSet.GetEntityIDsDataReference() :
             ref Unsafe.NullRef<int>();
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();

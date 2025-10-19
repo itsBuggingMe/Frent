@@ -6,11 +6,9 @@ using Frent.Core.Structures;
 using Frent.Systems;
 using Frent.Systems.Queries;
 using Frent.Updating;
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Frent.Tests")]
 namespace Frent;
@@ -73,7 +71,7 @@ public partial class World : IDisposable
 
     internal void EnterWorldUpdateMethod()
     {
-        if(_worldUpdateMethodCalled)
+        if (_worldUpdateMethodCalled)
             FrentExceptions.Throw_InvalidOperationException("Nested World.Update calls are not supported!");
         _worldUpdateMethodCalled = true;
     }
@@ -322,7 +320,7 @@ public partial class World : IDisposable
         try
         {
             singleComponent = _singleComponentUpdates.GetValueRefOrAddDefault(componentType, out _) ??= new(this, componentType);
-            singleComponent.Update();  
+            singleComponent.Update();
         }
         finally
         {
@@ -339,7 +337,7 @@ public partial class World : IDisposable
             qkvp.TryAttachArchetype(archetype);
         foreach (var fkvp in _updatesByAttributes)
             fkvp.Value.ArchetypeAdded(archetype);
-        foreach(var fkvp in _singleComponentUpdates)
+        foreach (var fkvp in _singleComponentUpdates)
             fkvp.Value.ArchetypeAdded(archetype);
     }
 
@@ -395,19 +393,19 @@ public partial class World : IDisposable
 
     internal void EnterDisallowState()
     {
-        if(Interlocked.Increment(ref _allowStructuralChanges) == 0)
+        if (Interlocked.Increment(ref _allowStructuralChanges) == 0)
         {
             Interlocked.Increment(ref _allowStructuralChanges);
         }
     }
-    
+
     const int DeferredEntityOperationRecursionLimit = 200;
 
     internal void ExitDisallowState(IComponentUpdateFilter? filterUsed, bool updateDeferredEntities = false)
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
-            if(DeferredCreationArchetypes.Count > 0)
+            if (DeferredCreationArchetypes.Count > 0)
             {
                 if (updateDeferredEntities)
                 {
@@ -426,7 +424,7 @@ public partial class World : IDisposable
 
             int count = 0;
             while (WorldUpdateCommandBuffer.Playback())
-                if(++count > DeferredEntityOperationRecursionLimit)
+                if (++count > DeferredEntityOperationRecursionLimit)
                     FrentExceptions.Throw_InvalidOperationException("Deferred entity creation recursion limit exceeded! Are your component events creating command buffer items? (which create more command buffer items...)?");
         }
     }
@@ -493,7 +491,7 @@ public partial class World : IDisposable
 
         foreach (ref var item in WorldArchetypeTable.AsSpan())
         {
-            if(item.Archetype is not null)
+            if (item.Archetype is not null)
             {
                 item.Archetype.ReleaseArrays(false);
                 item.DeferredCreationArchetype.ReleaseArrays(true);
@@ -501,7 +499,7 @@ public partial class World : IDisposable
         }
 
         Span<EntityLocation> tableItems = EntityTable.AsSpan();
-        for(int i = 0; i < tableItems.Length; i++)
+        for (int i = 0; i < tableItems.Length; i++)
         {
             ref EntityLocation item = ref tableItems[i];
             if (item.Archetype is null)

@@ -68,7 +68,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
         //they won't get null from the stack
         ref var slot = ref _buffer.UnsafeArrayIndex(--_nextIndex)!;
         value = slot;
-        if(RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             slot = default;
         return true;
     }

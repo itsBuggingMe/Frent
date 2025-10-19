@@ -1,13 +1,12 @@
 ﻿using Frent.Buffers;
+using Frent.Collections;
 using Frent.Core.Structures;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Frent.Collections;
 
 namespace Frent.Core;
 
@@ -91,8 +90,8 @@ internal partial class Archetype
     /// Note! Entity location version is not set! 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, 
-        out ComponentStorageRecord[] writeStorage, 
+    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation,
+        out ComponentStorageRecord[] writeStorage,
         out Archetype inserted)
     {
         if (deferredCreationArchetype.DeferredEntityCount == 0)

@@ -2,7 +2,6 @@
 using Frent.Core;
 using Frent.Systems;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -38,8 +37,8 @@ partial class World
         else
         {
             // we don't need to manually set flags, they are already zeroed
-            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype, 
-                ref eloc, 
+            archetypeEntityRecord = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype,
+                ref eloc,
                 out components,
                 out inserted);
             DeferredCreationEntities.Push(id);
@@ -52,7 +51,7 @@ partial class World
 
         //1x array lookup per component
         ref T ref1 = ref Component<T>.IsSparseComponent ?
-            ref MemoryHelpers.GetSparseSet<T>(ref start)[id] 
+            ref MemoryHelpers.GetSparseSet<T>(ref start)[id]
             : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index);
         ref1 = comp;
 
@@ -74,7 +73,7 @@ partial class World
 
         // Version is incremented on delete, so we don't need to do anything here
         Entity concreteEntity = new Entity(WorldID, eloc.Version, id);
-        
+
         Component<T>.Initer?.Invoke(concreteEntity, ref ref1);
         EntityCreatedEvent.Invoke(concreteEntity);
 
@@ -97,23 +96,23 @@ partial class World
 
         var archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
         int initalEntityCount = archetypes.Archetype.EntityCount;
-        
+
         EntityTable.EnsureCapacity(EntityCount + count);
-        
+
         Span<EntityIDOnly> entities = archetypes.Archetype.CreateEntityLocations(count, this);
-        
+
         if (EntityCreatedEvent.HasListeners)
         {
             foreach (var entity in entities)
                 EntityCreatedEvent.Invoke(entity.ToEntity(this));
         }
-        
+
         var chunks = new ChunkTuple<T>()
         {
             Entities = new EntityEnumerator(this, entities),
             Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],
         };
-        
+
         return chunks;
     }
 }

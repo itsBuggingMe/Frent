@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 
 namespace Frent.Core;
+
 [StructLayout(LayoutKind.Sequential, Pack = 2)]
 //TODO: rename this?
 internal struct EntityIDOnly(int id, ushort version) : IEquatable<EntityIDOnly>

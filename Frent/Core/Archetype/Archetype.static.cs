@@ -18,7 +18,7 @@ internal static class Archetype<T>
         Span<ComponentID> ids = stackalloc ComponentID[1];
         int index = 0;
 
-        if(!Component<T>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T>.ID;
+        if (!Component<T>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T>.ID;
 
         return ImmutableArray.Create(ids.Slice(0, index));
     }
@@ -30,7 +30,7 @@ internal static class Archetype<T>
     {
         var index = ID.RawIndex;
         ref World.WorldArchetypeTableItem archetypes = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
-        if(archetypes.Archetype is null)
+        if (archetypes.Archetype is null)
         {
             archetypes = CreateArchetypes(world);
         }

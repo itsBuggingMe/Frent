@@ -1,14 +1,12 @@
-﻿using Frent.Core;
-using System.Diagnostics;
+﻿using Frent.Collections;
+using Frent.Core;
 using Frent.Core.Structures;
-using Frent.Updating.Runners;
+using Frent.Updating;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Frent.Collections;
-using System.Collections;
-using Frent.Updating;
 
 namespace Frent;
 
@@ -165,7 +163,7 @@ public partial struct Entity : IEquatable<Entity>
         if (!location.HasFlag(EntityFlags.HasSparseComponents))
             return location.Archetype.ArchetypeTypeArray;
 
-        var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length + 
+        var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length +
             location.GetBitset().PopCnt());
 
         foreach (var componentID in this)
@@ -200,7 +198,7 @@ public partial struct Entity : IEquatable<Entity>
 
         internal EntityComponentIDEnumerator(Entity entity)
         {
-            if(!entity.InternalIsAlive(out World? world, out EntityLocation entityLocation))
+            if (!entity.InternalIsAlive(out World? world, out EntityLocation entityLocation))
                 Throw_EntityIsDead();
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
@@ -223,7 +221,7 @@ public partial struct Entity : IEquatable<Entity>
         /// <returns>If enumeration can continue.</returns>
         public bool MoveNext()
         {
-            if(_currentVersion != _expectedVersion)
+            if (_currentVersion != _expectedVersion)
                 Throw_EntityIsDead();
 
             if (!_archetypical.IsEmpty)
@@ -294,7 +292,7 @@ public partial struct Entity : IEquatable<Entity>
         public readonly nint Index = index;
 
         public ref T Get<T>() => ref UnsafeExtensions.UnsafeCast<T[]>(Components.UnsafeArrayIndex(ComponentIndexMap.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits).Buffer).UnsafeArrayIndex(Index);
-        
+
         public bool HasComponent<T>()
         {
             var index = ComponentIndexMap.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;

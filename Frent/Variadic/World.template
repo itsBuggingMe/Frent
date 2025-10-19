@@ -1,7 +1,7 @@
 arity: 16
 from:
         ref T ref1 = ref Component<T>.IsSparseComponent ?
-            ref MemoryHelpers.GetSparseSet<T>(ref start)[id] 
+            ref MemoryHelpers.GetSparseSet<T>(ref start)[id]
             : ref components.UnsafeArrayIndex(Archetype<T>.OfComponent<T>.Index).UnsafeIndex<T>(eloc.Index);
         ref1 = comp;
 to:

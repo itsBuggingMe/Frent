@@ -3,11 +3,9 @@ using Frent.Core;
 using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Frent;
 
@@ -37,7 +35,7 @@ partial struct Entity
     public readonly bool Has<T>()
     {
         ref EntityLocation entityLocation = ref AssertIsAlive(out World world);
-        if(Component<T>.IsSparseComponent)
+        if (Component<T>.IsSparseComponent)
             return world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex).Has(EntityID);
         return entityLocation.Archetype.GetComponentIndex<T>() != 0;
     }
@@ -56,9 +54,9 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public readonly bool TryHas(ComponentID componentID)
     {
-        if(InternalIsAlive(out World? world, out EntityLocation entityLocation))
+        if (InternalIsAlive(out World? world, out EntityLocation entityLocation))
         {
-            if(componentID.IsSparseComponent)
+            if (componentID.IsSparseComponent)
             {
                 return world.WorldSparseSetTable.UnsafeArrayIndex(componentID.SparseIndex).Has(EntityID);
             }
@@ -116,7 +114,7 @@ partial struct Entity
         //2x
         ref var lookup = ref AssertIsAlive(out var world);
 
-        if(Component<T>.IsSparseComponent)
+        if (Component<T>.IsSparseComponent)
         {
             var set = world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex);
             return ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(set)[EntityID];
@@ -143,7 +141,7 @@ partial struct Entity
     {
         ref var lookup = ref AssertIsAlive(out var world);
 
-        if(id.IsSparseComponent)
+        if (id.IsSparseComponent)
         {
             var set = world.WorldSparseSetTable.UnsafeArrayIndex(id.SparseIndex);
             return set.Get(EntityID);
@@ -229,7 +227,7 @@ partial struct Entity
 
         ComponentID componentId = Component.GetComponentID(type);
 
-        if(componentId.IsSparseComponent)
+        if (componentId.IsSparseComponent)
         {
             var set = world.WorldSparseSetTable.UnsafeArrayIndex(componentId.SparseIndex);
             return set.TryGet(EntityID, out value);
@@ -258,10 +256,10 @@ partial struct Entity
     public readonly void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out var world);
-        
+
         if (componentHandles.Length + eloc.Archetype.ComponentTypeCount > MemoryHelpers.MaxComponentCount)
             throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
-        
+
         ArchetypeID finalArchetype = eloc.ArchetypeID;
 
         //TODO: setting sparse bits and calling initers.
@@ -283,7 +281,7 @@ partial struct Entity
                 finalArchetype = world.AddComponentLookup.FindAdjacentArchetypeID(componentHandle.ComponentID, finalArchetype, world, ArchetypeEdgeType.AddComponent);
             }
         }
-        
+
         Archetype destinationArchetype = finalArchetype.Archetype(world);
 
         EntityLocation nextLocation;
@@ -295,11 +293,11 @@ partial struct Entity
         Span<ComponentStorageRecord> buffer = MemoryHelpers.GetSharedTempComponentStorageBuffer(componentHandles.Length);
 
         // maybe cache sparse indicies on the stack
-        for(int i = 0; i < componentHandles.Length; i++)
+        for (int i = 0; i < componentHandles.Length; i++)
         {
             ComponentID compId = componentHandles[i].ComponentID;
             int sparseIndex = compId.SparseIndex;
-            if(sparseIndex == 0)
+            if (sparseIndex == 0)
             {
                 var storage = destinationArchetype.Components[destinationArchetype.GetComponentIndex(compId)];
                 storage.SetAt(null, componentHandles[i], nextLocation.Index);
@@ -312,7 +310,7 @@ partial struct Entity
             }
         }
 
-        for(int i = 0; i < componentHandles.Length; i++)
+        for (int i = 0; i < componentHandles.Length; i++)
         {
             ComponentID compId = componentHandles[i].ComponentID;
             int sparseIndex = compId.SparseIndex;

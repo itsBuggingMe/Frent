@@ -15,7 +15,7 @@ namespace Frent;
 [Variadic("out Ref<T> comp", "|out Ref<T$> comp$, |")]
 [Variadic("        comp = Component<T>.IsSparseComponent ? MemoryHelpers.GetSparseSet<T>(ref first).GetUnsafe(e.EntityID) : GetComp<T>(archetypeTable, comps, eloc.Index);",
     "|        comp$ = Component<T$>.IsSparseComponent ? MemoryHelpers.GetSparseSet<T$>(ref first).GetUnsafe(e.EntityID) : GetComp<T$>(archetypeTable, comps, eloc.Index);\n|")]
-[Variadic("if(Component<T>.IsSparseComponent)", "if(|Component<T$>.IsSparseComponent || |false)")]
+[Variadic("if (Component<T>.IsSparseComponent)", "if (|Component<T$>.IsSparseComponent || |false)")]
 [Variadic("<T>", "<|T$, |>")]
 public static partial class EntityExtensions
 {
@@ -33,7 +33,7 @@ public static partial class EntityExtensions
         byte[] archetypeTable = eloc.Archetype.ComponentTagTable;
 
         ref ComponentSparseSetBase first = ref Unsafe.NullRef<ComponentSparseSetBase>();
-        if(Component<T>.IsSparseComponent)
+        if (Component<T>.IsSparseComponent)
         {
             first = ref MemoryMarshal.GetArrayDataReference(w.WorldSparseSetTable);
             Bitset.AssertHasSparseComponents(ref eloc.GetBitset(), ref Unsafe.AsRef(in BitsetHelper<T>.BitsetOf));

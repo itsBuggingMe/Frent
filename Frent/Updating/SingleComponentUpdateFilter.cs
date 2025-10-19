@@ -1,11 +1,8 @@
 using Frent.Collections;
 using Frent.Core;
 using Frent.Updating.Runners;
-using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
 
 namespace Frent.Updating;
 
@@ -51,7 +48,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
 
         int nIndex = 0;
         int fIndex = 0;
-        for(int i = 0; i < methods.Length; i++)
+        for (int i = 0; i < methods.Length; i++)
         {
             _allRunners[i] = methods[i].Runner;
             if ((uint)i < (uint)filters.Length && filters[i] is { } f && f != IDTypeFilter.None)
@@ -60,7 +57,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
                 _normalRunners[nIndex++] = methods[i].Runner;
         }
 
-        foreach(var archetype in world.EnabledArchetypes)
+        foreach (var archetype in world.EnabledArchetypes)
         {
             ArchetypeAdded(archetype.Archetype(world));
         }
@@ -69,9 +66,9 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
 
     public void Update()
     {
-        if(_isArchetypical)
+        if (_isArchetypical)
         {
-            if(_filteredRunners.Length == 0)
+            if (_filteredRunners.Length == 0)
             {
                 SimpleArchetypicalUpdate();
             }
@@ -148,7 +145,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
 
         int length = 0;
 
-        foreach((IDTypeFilter filter, IRunner runner) in _filteredRunners)
+        foreach ((IDTypeFilter filter, IRunner runner) in _filteredRunners)
         {
             if (filter.FilterArchetype(archetype))
             {
@@ -182,9 +179,9 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
         ComponentID componentID = _componentID;
         World world = _world;
 
-        if(_isArchetypical)
+        if (_isArchetypical)
         {
-            foreach((Archetype archetype, Archetype _, int initalEntityCount) in archetypes)
+            foreach ((Archetype archetype, Archetype _, int initalEntityCount) in archetypes)
             {
                 Array buffer = archetype.Components.UnsafeArrayIndex(archetype.GetComponentIndex(componentID)).Buffer;
                 int entityCount = archetype.EntityCount;

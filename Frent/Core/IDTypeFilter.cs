@@ -1,7 +1,5 @@
 ﻿using Frent.Collections;
 using Frent.Updating;
-using System.Numerics;
-using System.Reflection;
 
 namespace Frent.Core;
 
@@ -74,8 +72,8 @@ internal class IDTypeFilter(
     private static IDTypeFilter CreateFromRecordCore(in TypeFilterRecord typeFilterRecord)
     {
         return new IDTypeFilter(
-            ConvertComponents(typeFilterRecord.IncludeComponents), 
-            ConvertComponents(typeFilterRecord.ExcludeComponents), 
+            ConvertComponents(typeFilterRecord.IncludeComponents),
+            ConvertComponents(typeFilterRecord.ExcludeComponents),
             ConvertTags(typeFilterRecord.IncludeTags),
             ConvertTags(typeFilterRecord.ExcludeTags));
 

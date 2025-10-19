@@ -2,10 +2,8 @@
 using Frent.Components;
 using Frent.Core;
 using Frent.Variadic.Generator;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static Frent.AttributeHelpers;
 
 namespace Frent.Updating.Runners;
 
@@ -114,7 +112,7 @@ public class EntityUpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerBa
             : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
 
         Entity entity = world.DefaultWorldEntity;
-        
+
         Span<Bitset> bitsets = b.SparseBitsetSpan();
         // TODO: double check that the jit register promotes this.
         // This needs to stay in a ymm register on x86

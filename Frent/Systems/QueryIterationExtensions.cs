@@ -2,10 +2,8 @@
 using Frent.Core;
 using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 
 namespace Frent.Systems;
 
@@ -41,7 +39,7 @@ public static partial class QueryIterationExtensions
 
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(query.World.WorldSparseSetTable);
 
-        if(!query.HasSparseExclusions)
+        if (!query.HasSparseExclusions)
         {
             ref T sparseFirst = ref IRunner.InitSparse<T>(ref first, out Span<int> sparseArgArray);
 

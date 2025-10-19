@@ -2,7 +2,6 @@
 using Frent.Components;
 using Frent.Core;
 using Frent.Variadic.Generator;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -73,11 +72,11 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f)
 
         foreach (var entityId in idsToUpdate)
         {
-            if(!((uint)entityId < (uint)map.Length))
+            if (!((uint)entityId < (uint)map.Length))
             {
                 continue;
             }
-            
+
             entity.EntityID = entityId;
             ref var record = ref world.EntityTable[entityId];
             entity.EntityVersion = record.Version;
@@ -146,7 +145,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
                 }
             }
             // get bitset manually
-            else if(typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(b.ComponentTagTable), in b.GetBitsetNoLazy(i)))
+            else if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(b.ComponentTagTable), in b.GetBitsetNoLazy(i)))
             {
                 continue;
             }
