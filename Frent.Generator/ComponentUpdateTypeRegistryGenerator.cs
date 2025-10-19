@@ -435,7 +435,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 cb
                     .Append(", global::Frent.Updating.");
 
-                if (updateMethodModel.Components.Allow.Length == 0)
+                if (updateMethodModel.Tags.Allow.Length == 0)
                 {
                     cb.Append("NonePredicate");
                 }
@@ -449,7 +449,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 cb
                     .Append(", global::Frent.Updating.");
 
-                if (updateMethodModel.Components.Disallow.Length == 0)
+                if (updateMethodModel.Tags.Disallow.Length == 0)
                 {
                     cb.Append("NonePredicate");
                 }
@@ -457,7 +457,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 {
                     cb
                         .Append("ExcludeTagsPredicate");
-                    AppendTypeParams(updateMethodModel.Components.Disallow);
+                    AppendTypeParams(updateMethodModel.Tags.Disallow);
                 }
 
                 cb.Append('>');

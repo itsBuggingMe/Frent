@@ -189,9 +189,11 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             {// something matched
                 if (thisID.IsSparseComponent)
                 {
-                    foreach (var method in methods)
+                    for (int j = 0; j < methods.Length; j++)
                     {
-                        MemoryHelpers.GetValueOrResize(ref _sparseMethods, _sparseMethodsCount++) = new SparseUpdateMethod(method.Runner, _world.WorldSparseSetTable[thisID.SparseIndex]);
+                        if(((1UL << j) & matchedMethods) != 0)
+                            MemoryHelpers.GetValueOrResize(ref _sparseMethods, _sparseMethodsCount++) = 
+                                new SparseUpdateMethod(methods[j].Runner, _world.WorldSparseSetTable[thisID.SparseIndex]);
                     }
                     continue;
                 }
