@@ -7,10 +7,14 @@ if (args.Length == 0)
 }
 else
 {
-    InconsistencyException? e = WorldState.Fuzz(args, true);
+    InconsistencyException? e = WorldState.Fuzz(args, true, out int seed);
 
     if(e is not null)
     {
-        Console.WriteLine($"Seed {e.Seed} failed at {e.FailedStep}");
+        Console.Write($"Seed {e.Seed} failed at {e.FailedStep}");
+    }
+    else
+    {
+        Console.Write($"Seed {seed} passed");
     }
 }

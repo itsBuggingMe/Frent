@@ -10,11 +10,11 @@ namespace Frent.Fuzzing.Runner;
 
 internal partial class WorldState : IDisposable
 {
-    public static InconsistencyException? Fuzz(string[] args, bool captureException = false)
+    public static InconsistencyException? Fuzz(string[] args, bool captureException, out int seed)
     {
         if (args.Length != 2)
             throw new ArgumentException("Expecting two arguments corresponding to seed and step count.");
-        if (!int.TryParse(args[0], out int seed))
+        if (!int.TryParse(args[0], out seed))
             throw new ArgumentException($"Seed value {args[0]} not an integer.");
         if (!int.TryParse(args[1], out int steps))
             throw new ArgumentException($"Step value {args[1]} not an integer.");

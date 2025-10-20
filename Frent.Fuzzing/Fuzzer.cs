@@ -34,8 +34,6 @@ internal static class Fuzzer
             StartInfo = startInfo,
         };
 
-        Console.WriteLine($"Starting process with seed {seed}:");
-
         runner.Start();
         string stdOutput = runner.StandardOutput.ReadToEnd();
         string stdErr = runner.StandardError.ReadToEnd();
