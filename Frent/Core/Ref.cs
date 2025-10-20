@@ -1,8 +1,4 @@
-﻿using Frent.Updating;
-using Frent.Updating.Runners;
-using System.Runtime.InteropServices;
-
-namespace Frent.Core;
+﻿namespace Frent.Core;
 
 /// <summary>
 /// A wrapper ref struct over a reference to a <typeparamref name="T"/>

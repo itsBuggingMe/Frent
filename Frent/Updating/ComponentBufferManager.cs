@@ -1,7 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Events;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Updating;
@@ -34,22 +33,6 @@ internal abstract class ComponentBufferManager
     #endregion
 
     #region Things That Need Buffer & <T>
-    /// <summary>
-    /// Calls all Update functions on every component.
-    /// </summary>
-    internal abstract void RunArchetypical(Array buffer, Archetype b, World world);
-    /// <summary>
-    /// Calls all Update functions on the subsection of components.
-    /// </summary>
-    internal abstract void RunArchetypical(Array buffer, Archetype b, World world, int start, int length);
-    /// <summary>
-    /// Calls all Update functions on every component.
-    /// </summary>
-    internal abstract void RunSparse(ComponentSparseSetBase sparseSet, World world);
-    /// <summary>
-    /// Calls all Update functions on the subsection of components.
-    /// </summary>
-    internal abstract void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> entityIds);
     /// <summary>
     /// Deletes a component from the storage.
     /// </summary>
@@ -211,9 +194,10 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
 
     internal sealed override void Delete(Array buffer, DeleteComponentData data)
     {
+        ref var to = ref Index(buffer, data.ToIndex);
+        Component<TComponent>.Destroyer?.Invoke(ref to);
         ref var from = ref Index(buffer, data.FromIndex);
-        Component<TComponent>.Destroyer?.Invoke(ref from);
-        Index(buffer, data.ToIndex) = from;
+        to = from;
 
 
         if (RuntimeHelpers.IsReferenceOrContainsReferences<TComponent>())
@@ -234,41 +218,5 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
     private static ref TComponent Index(Array buffer, int componentIndex)
     {
         return ref UnsafeExtensions.UnsafeCast<TComponent[]>(buffer).UnsafeArrayIndex(componentIndex);
-    }
-
-    internal override void RunArchetypical(Array buffer, Archetype b, World world)
-    {
-        foreach(var runner in Component<TComponent>.UpdateMethods)
-        {
-            runner.Runner.RunArchetypical(buffer, b, world, 0, b.EntityCount);
-        }
-    }
-
-    internal override void RunArchetypical(Array buffer, Archetype b, World world, int start, int length)
-    {
-        foreach (var runner in Component<TComponent>.UpdateMethods)
-        {
-            runner.Runner.RunArchetypical(buffer, b, world, start, length);
-        }
-    }
-
-    internal override void RunSparse(ComponentSparseSetBase sparseSet, World world)
-    {
-        Debug.Assert(!world.AllowStructualChanges);
-
-        foreach (var runner in Component<TComponent>.UpdateMethods)
-        {
-            runner.Runner.RunSparse(sparseSet, world);
-        }
-    }
-
-    internal override void RunSparse(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> entityIds)
-    {
-        Debug.Assert(!world.AllowStructualChanges);
-
-        foreach (var runner in Component<TComponent>.UpdateMethods)
-        {
-            runner.Runner.RunSparse(sparseSet, world);
-        }
     }
 }

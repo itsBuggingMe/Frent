@@ -6,11 +6,9 @@ using Frent.Core.Structures;
 using Frent.Systems;
 using Frent.Systems.Queries;
 using Frent.Updating;
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Frent.Tests")]
 namespace Frent;
@@ -73,7 +71,7 @@ public partial class World : IDisposable
 
     internal void EnterWorldUpdateMethod()
     {
-        if(_worldUpdateMethodCalled)
+        if (_worldUpdateMethodCalled)
             FrentExceptions.Throw_InvalidOperationException("Nested World.Update calls are not supported!");
         _worldUpdateMethodCalled = true;
     }
@@ -269,32 +267,17 @@ public partial class World : IDisposable
     {
         EnterDisallowState();
         EnterWorldUpdateMethod();
+        AttributeUpdateFilter? appliesTo = default;
         try
         {
-            if (CurrentConfig.MultiThreadedUpdate)
-            {
-                throw new NotSupportedException();
-            }
-            else
-            {
-                foreach (var element in EnabledArchetypes.AsSpan())
-                {
-                    element.Archetype(this)!.Update(this);
-                }
-
-                foreach (ComponentSparseSetBase set in WorldSparseSetTable.AsSpan(1, Component.ComponentTableBySparseIndex.Count - 1))
-                {
-                    if(set.Count == 0)
-                        continue;
-                    set.Run(this, set.SparseSpan());
-                }
-            }
+            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(typeof(void), out _) ??= new AttributeUpdateFilter(this, typeof(void), true);
+            appliesTo.Update();
         }
         finally
         {
             ExitWorldUpdateMethod();
-            ExitDisallowState(null, CurrentConfig.UpdateDeferredCreationEntities);
-        }   
+            ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
+        }
     }
 
     /// <summary>
@@ -314,7 +297,7 @@ public partial class World : IDisposable
         AttributeUpdateFilter? appliesTo = default;
         try
         {
-            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(attributeType, out _) ??= new AttributeUpdateFilter(this, attributeType);
+            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(attributeType, out _) ??= new AttributeUpdateFilter(this, attributeType, false);
             appliesTo.Update();
         }
         finally
@@ -337,7 +320,7 @@ public partial class World : IDisposable
         try
         {
             singleComponent = _singleComponentUpdates.GetValueRefOrAddDefault(componentType, out _) ??= new(this, componentType);
-            singleComponent.Update();  
+            singleComponent.Update();
         }
         finally
         {
@@ -354,7 +337,7 @@ public partial class World : IDisposable
             qkvp.TryAttachArchetype(archetype);
         foreach (var fkvp in _updatesByAttributes)
             fkvp.Value.ArchetypeAdded(archetype);
-        foreach(var fkvp in _singleComponentUpdates)
+        foreach (var fkvp in _singleComponentUpdates)
             fkvp.Value.ArchetypeAdded(archetype);
     }
 
@@ -410,22 +393,23 @@ public partial class World : IDisposable
 
     internal void EnterDisallowState()
     {
-        if(Interlocked.Increment(ref _allowStructuralChanges) == 0)
+        if (Interlocked.Increment(ref _allowStructuralChanges) == 0)
         {
             Interlocked.Increment(ref _allowStructuralChanges);
         }
     }
-    
+
     const int DeferredEntityOperationRecursionLimit = 200;
 
     internal void ExitDisallowState(IComponentUpdateFilter? filterUsed, bool updateDeferredEntities = false)
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
-            if(DeferredCreationArchetypes.Count > 0)
+            if (DeferredCreationArchetypes.Count > 0)
             {
                 if (updateDeferredEntities)
                 {
+                    Debug.Assert(filterUsed is not null);
                     ResolveUpdateDeferredCreationEntities(filterUsed);
                 }
                 else
@@ -440,12 +424,12 @@ public partial class World : IDisposable
 
             int count = 0;
             while (WorldUpdateCommandBuffer.Playback())
-                if(++count > DeferredEntityOperationRecursionLimit)
+                if (++count > DeferredEntityOperationRecursionLimit)
                     FrentExceptions.Throw_InvalidOperationException("Deferred entity creation recursion limit exceeded! Are your component events creating command buffer items? (which create more command buffer items...)?");
         }
     }
 
-    private void ResolveUpdateDeferredCreationEntities(IComponentUpdateFilter? filterUsed)
+    private void ResolveUpdateDeferredCreationEntities(IComponentUpdateFilter filterUsed)
     {
         Span<ArchetypeDeferredUpdateRecord> resolveArchetypes = DeferredCreationArchetypes.AsSpan();
         Span<int> resolveEntities = DeferredCreationEntities.AsSpan();
@@ -463,25 +447,7 @@ public partial class World : IDisposable
             DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
             DeferredCreationEntities.Clear();
 
-            if (filterUsed is not null)
-            {
-                filterUsed?.UpdateSubset(resolveArchetypes, resolveEntities);
-            }
-            else
-            {
-                foreach (var (archetype, _, start) in resolveArchetypes)
-                {
-                    archetype.Update(this, start, archetype.EntityCount - start);
-                }
-
-                foreach (var sparseSet in WorldSparseSetTable.AsSpan(1, Component.ComponentTableBySparseIndex.Count - 1))
-                {
-                    if(sparseSet.Count == 0)
-                        continue;
-
-                    sparseSet.Run(this, resolveEntities);
-                }
-            }
+            filterUsed.UpdateSubset(resolveArchetypes, resolveEntities);
 
             resolveArchetypes = DeferredCreationArchetypes.AsSpan();
             resolveEntities = DeferredCreationEntities.AsSpan();
@@ -525,7 +491,7 @@ public partial class World : IDisposable
 
         foreach (ref var item in WorldArchetypeTable.AsSpan())
         {
-            if(item.Archetype is not null)
+            if (item.Archetype is not null)
             {
                 item.Archetype.ReleaseArrays(false);
                 item.DeferredCreationArchetype.ReleaseArrays(true);
@@ -533,7 +499,7 @@ public partial class World : IDisposable
         }
 
         Span<EntityLocation> tableItems = EntityTable.AsSpan();
-        for(int i = 0; i < tableItems.Length; i++)
+        for (int i = 0; i < tableItems.Length; i++)
         {
             ref EntityLocation item = ref tableItems[i];
             if (item.Archetype is null)
@@ -759,8 +725,7 @@ public partial class World : IDisposable
         [DebuggerHidden]
         public T GetUniform<T>()
         {
-            FrentExceptions.Throw_InvalidOperationException("Initialize the world with an IUniformProvider in order to use uniforms");
-            return default!;
+            throw new InvalidOperationException("Initialize the world with an IUniformProvider in order to use uniforms");
         }
     }
 }

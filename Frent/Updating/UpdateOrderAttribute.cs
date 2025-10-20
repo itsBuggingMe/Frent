@@ -1,4 +1,5 @@
 ﻿namespace Frent.Updating;
+
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
 [Obsolete("Unused")]
 #pragma warning disable CS9113 // Parameter is unread.

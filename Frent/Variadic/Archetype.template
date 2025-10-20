@@ -1,8 +1,8 @@
 arity: 16
 from:
-        if(!Component<T>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T>.ID;
+        if (!Component<T>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T>.ID;
 to:
-|        if(!Component<T$>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T$>.ID;
+|        if (!Component<T$>.IsSparseComponent) ids.UnsafeSpanIndex(index++) = Component<T$>.ID;
 |
 from:
         Span<ComponentID> ids = stackalloc ComponentID[1];

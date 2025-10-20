@@ -1,6 +1,4 @@
-﻿using Frent.Collections;
-
-namespace Frent.Systems.Queries;
+﻿namespace Frent.Systems.Queries;
 
 /// <summary>
 /// A variadic type for building queries. Should not be implemented manually.

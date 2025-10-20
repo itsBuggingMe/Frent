@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 #if !NETSTANDARD
 using System.Runtime.Intrinsics;
@@ -96,12 +95,35 @@ internal struct Bitset
     {
         Vector256<ulong> self = Vector256.LoadUnsafe(ref set._0);
 
-        if(Avx.IsSupported)
+        if (Avx.IsSupported)
         {
             return Avx.TestC(self, include) && Avx.TestZ(self, exclude);
         }
         // remaining bits == fail
         return (include & self) == include && (exclude & self) == Vector256<ulong>.Zero;
+    }
+    public static bool FilterInclude(ref readonly Bitset self, Vector256<ulong> include)
+    {
+        Vector256<ulong> a = Vector256.LoadUnsafe(ref Unsafe.AsRef(in self._0));
+
+        if (Avx.IsSupported)
+        {
+            return Avx.TestC(a, include);
+        }
+
+        return (include & a) == include;
+    }
+
+    public static bool FilterExclude(ref readonly Bitset self, Vector256<ulong> exclude)
+    {
+        Vector256<ulong> a = Vector256.LoadUnsafe(ref Unsafe.AsRef(in self._0));
+
+        if (Avx.IsSupported)
+        {
+            return Avx.TestZ(a, exclude);
+        }
+
+        return (exclude & a) == Vector256<ulong>.Zero;
     }
 
     public static void AssertHasSparseComponents(ref Bitset sparseBits, ref Bitset include)
@@ -115,12 +137,24 @@ internal struct Bitset
         FrentExceptions.Throw_NullReferenceException();
     }
 #else
-    public static bool Filter(ref Bitset self, Bitset include, Bitset exclude)
+    public Bitset AsVector() => this;
+
+    public static bool FilterInclude(ref readonly Bitset self, Bitset include)
+    {
+        return (include & self) == include;
+    }
+
+    public static bool FilterExclude(ref readonly Bitset self, Bitset exclude)
+    {
+        return (exclude & self) == default;
+    }
+
+    public static bool Filter(ref readonly Bitset self, Bitset include, Bitset exclude)
     {
         return (include & self) == include && (exclude & self) == default;
     }
 
-    public static void AssertHasSparseComponents(ref Bitset sparseBits, ref Bitset include)
+    public static void AssertHasSparseComponents(ref readonly Bitset sparseBits, ref Bitset include)
     {
         if ((include & sparseBits) == include)
             return;
@@ -145,7 +179,7 @@ internal struct Bitset
     public static bool operator !=(Bitset l, Bitset r) =>
         !(l == r);
 
-    public override bool Equals(object obj) => obj is Bitset b && 
+    public override bool Equals(object obj) => obj is Bitset b &&
         b._0 == _0 &&
         b._1 == _1 &&
         b._2 == _2 &&
@@ -203,7 +237,7 @@ internal struct Bitset
         public bool MoveNext()
         {
             int? index = _set.TryFindIndexOfBitGreaterThanOrEqualTo(_index);
-            if(index is int x)
+            if (index is int x)
             {
                 _index = x + 1;
                 return true;

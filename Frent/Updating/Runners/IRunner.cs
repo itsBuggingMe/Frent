@@ -1,6 +1,5 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -29,5 +28,21 @@ public interface IRunner
 
         sparseArgArray = default;
         return ref Unsafe.NullRef<T>();
+    }
+}
+
+/// <inheritdoc cref="GenerationServices"/>
+public abstract class RunnerBase(Delegate? uniformFactory)
+{
+    private protected readonly Delegate? _uniformFactory = uniformFactory;
+
+    internal T GetUniformOrValueTuple<T>(IUniformProvider provider)
+    {
+        if (_uniformFactory is { } f)
+        {
+            return ((Func<IUniformProvider, T>)f)(provider);
+        }
+
+        return provider.GetUniform<T>();
     }
 }

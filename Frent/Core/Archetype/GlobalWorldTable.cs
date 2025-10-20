@@ -1,5 +1,4 @@
 ﻿using Frent.Collections;
-using System.Security.AccessControl;
 using Frent.Updating;
 
 namespace Frent.Core.Structures;
@@ -48,7 +47,7 @@ internal static class GlobalWorldTables
                     if (world is not null)
                     {
                         ref var tableItem = ref world.WorldArchetypeTable[i];
-                        if(tableItem.Archetype is not null)
+                        if (tableItem.Archetype is not null)
                         {
                             tableItem.Archetype.ComponentTagTable = componentsForArchetype;
                             tableItem.DeferredCreationArchetype.ComponentTagTable = componentsForArchetype;
@@ -72,4 +71,6 @@ internal static class GlobalWorldTables
 
     public static int ComponentIndex(ArchetypeID archetype, ComponentID component) => ComponentTagLocationTable.UnsafeArrayIndex(archetype.RawIndex).UnsafeArrayIndex(component.RawIndex) & IndexBits;
     public static bool HasTag(ArchetypeID archetype, TagID tag) => (ComponentTagLocationTable.UnsafeArrayIndex(archetype.RawIndex).UnsafeArrayIndex(tag.RawValue) & HasTagMask) != 0;
+    public static bool HasTag<T>(ref byte table) => (System.Runtime.CompilerServices.Unsafe.Add(ref table, Tag<T>.ID.RawValue) & HasTagMask) != 0;
+    public static bool HasComponent<T>(ref byte table) => (System.Runtime.CompilerServices.Unsafe.Add(ref table, Component<T>.ID.RawIndex) & IndexBits) != 0;
 }

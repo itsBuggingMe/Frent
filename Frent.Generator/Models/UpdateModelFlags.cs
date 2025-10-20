@@ -13,4 +13,5 @@ internal enum UpdateModelFlags
     Destroyable = 1 << 4,
     IsRecord = 1 << 5,
     IsSelfInit = 1 << 6,
+    IsSparse = 1 << 7,
 }

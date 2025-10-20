@@ -20,7 +20,7 @@ internal unsafe struct NativeTable<T> : IDisposable where T : struct
         get
         {
 #if DEBUG
-            if(index < 0)
+            if (index < 0)
                 throw new ArgumentOutOfRangeException();
 #endif
             if (index >= _length)
@@ -38,7 +38,7 @@ internal unsafe struct NativeTable<T> : IDisposable where T : struct
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             throw new InvalidOperationException("Cannot store managed objects in native code");
-        if(initalCapacity < 1)
+        if (initalCapacity < 1)
             throw new ArgumentOutOfRangeException();
 
         _length = initalCapacity;

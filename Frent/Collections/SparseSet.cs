@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using Frent.Core;
+using Frent.Core.Events;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks; 
-using Frent.Core;
-using Frent.Core.Events;
 
 namespace Frent.Collections;
 
@@ -55,10 +48,10 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         var dense = Dense;
         var sparse = _sparse;
 
-        if(!((uint)e.EntityID < (uint)sparse.Length))
+        if (!((uint)e.EntityID < (uint)sparse.Length))
             FrentExceptions.Throw_ComponentNotFoundException($"Component of type {typeof(T).Name} does not exist on this entity.");
         int index = sparse[e.EntityID];
-        if(!((uint)index < (uint)dense.Length))
+        if (!((uint)index < (uint)dense.Length))
             FrentExceptions.Throw_ComponentNotFoundException($"Component of type {typeof(T).Name} does not exist on this entity.");
 
         ref T toSet = ref dense[index];
@@ -113,11 +106,9 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         toRemove = top;
         toRemoveId = topId;
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>()) 
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             top = default;
     }
-
-    public override void Run(World world, ReadOnlySpan<int> ids) => Component<T>.BufferManagerInstance.RunSparse(this, world, ids);
 
     public override bool TryGet(int id, out object value)
     {
@@ -163,9 +154,6 @@ internal abstract class ComponentSparseSetBase
     public abstract void Set(Entity e, object value);
     public abstract void Remove(int id, bool callDestroyer);
     public abstract bool TryGet(int id, out object value);
-
-    public abstract void Run(World world, ReadOnlySpan<int> ids);
-
     public abstract void Init(Entity id);
     public abstract void InvokeGenericEvent(Entity entity, GenericEvent @event);
 
@@ -173,7 +161,7 @@ internal abstract class ComponentSparseSetBase
     {
         int[] arr = _sparse;
         return (uint)id < (uint)arr.Length && arr[id] != -1;
-   }
+    }
 
     protected ref int EnsureSparseCapacityAndGetIndex(int id)
     {

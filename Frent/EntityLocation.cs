@@ -1,7 +1,7 @@
-﻿using Frent.Core;
+﻿using Frent.Collections;
+using Frent.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Frent.Collections;
 
 namespace Frent;
 
@@ -68,7 +68,7 @@ internal enum EntityFlags : ushort
     AddComp = 1 << 2,
 
     AddGenericComp = 1 << 3,
-    
+
     RemoveComp = 1 << 4,
 
     RemoveGenericComp = 1 << 5,

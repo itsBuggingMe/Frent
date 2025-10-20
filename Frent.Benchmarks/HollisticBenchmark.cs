@@ -28,7 +28,6 @@ internal class HollisticBenchmark
 
     private Func<Entity>[] BuildEntityCreationDelegates(Random random)
     {
-        throw new NotImplementedException();
         var x = typeof(World).GetMethods();
         MethodInfo[] method = typeof(World).GetMethods().Where(m => m.Name == "CreateNoArgs").ToArray();
         Type[] componentTypes = _componentTypes;

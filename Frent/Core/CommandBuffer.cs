@@ -3,7 +3,6 @@ using Frent.Core.Events;
 using Frent.Core.Structures;
 using Frent.Updating;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Frent.Core;
 
@@ -264,7 +263,7 @@ public class CommandBuffer
 
     internal bool PlaybackInternal()
     {
-        bool hasItems = 
+        bool hasItems =
             _createEntityBuffer.Count > 0 ||
             _deleteEntityBuffer.Count > 0 ||
             _addComponentBuffer.Count > 0 ||
@@ -369,7 +368,7 @@ public class CommandBuffer
                 {
                     ref var events = ref _world.EventLookup.GetValueRefOrNullRef(command.Entity);
 
-                    if(events.Add.GenericEvent is not null)
+                    if (events.Add.GenericEvent is not null)
                     {
                         runner?.InvokeGenericActionWith(events.Add.GenericEvent, concrete, archIndex);
                         sparseSet?.InvokeGenericEvent(concrete, events.Add.GenericEvent);
@@ -392,7 +391,7 @@ public class CommandBuffer
                     Archetype.GetAdjacentArchetypeLookup(_world, ArchetypeEdgeKey.Tag(command.TagID, record.Archetype.ID, ArchetypeEdgeType.AddTag)));
 
                 _world.Tagged.Invoke(concrete, command.TagID);
-                if(record.HasFlag(EntityFlags.Detach))
+                if (record.HasFlag(EntityFlags.Detach))
                 {
                     _world.EventLookup.GetValueRefOrNullRef(command.Entity).Tag.Invoke(concrete, command.TagID);
                 }

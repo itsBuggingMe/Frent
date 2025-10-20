@@ -16,7 +16,7 @@ internal struct ArchetypeNeighborCache
     {
         //my simd code is garbage
         //#if NET7_0_OR_GREATER
-        //        if(Vector256.IsHardwareAccelerated)
+        //        if (Vector256.IsHardwareAccelerated)
         //        {
         //            Vector256<ushort> bits = Vector256.Equals(Vector256.LoadUnsafe(ref _keysAndValues._0), Vector256.Create(value));
         //            int index = BitOperations.TrailingZeroCount(bits.ExtractMostSignificantBits());

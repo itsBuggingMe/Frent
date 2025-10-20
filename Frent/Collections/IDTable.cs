@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
+
 internal abstract class IDTable
 {
     protected Array _buffer;

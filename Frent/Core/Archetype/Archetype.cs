@@ -1,13 +1,12 @@
 ﻿using Frent.Buffers;
+using Frent.Collections;
 using Frent.Core.Structures;
 using Frent.Updating;
-using Frent.Updating.Runners;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Frent.Collections;
 
 namespace Frent.Core;
 
@@ -23,6 +22,16 @@ internal partial class Archetype
     internal string DebuggerDisplayString => $"Archetype Count: {EntityCount} Types: {string.Join(", ", ArchetypeTypeArray.Select(t => t.Type.Name))} Tags: {string.Join(", ", ArchetypeTagArray.Select(t => t.Type.Name))}";
     internal int EntityCount => NextComponentIndex;
     internal ref Bitset GetBitset(int index) => ref MemoryHelpers.GetValueOrResize(ref _sparseBits, index);
+    internal ref readonly Bitset GetBitsetNoLazy(int index)
+    {
+        var arr = _sparseBits;
+        if ((uint)index < (uint)arr.Length)
+        {
+            return ref arr[index];
+        }
+
+        return ref Bitset.Zero;
+    }
 
     internal void ClearBitset(int index)
     {
@@ -81,8 +90,8 @@ internal partial class Archetype
     /// Note! Entity location version is not set! 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation, 
-        out ComponentStorageRecord[] writeStorage, 
+    internal ref EntityIDOnly CreateDeferredEntityLocation(World world, Archetype deferredCreationArchetype, scoped ref EntityLocation entityLocation,
+        out ComponentStorageRecord[] writeStorage,
         out Archetype inserted)
     {
         if (deferredCreationArchetype.DeferredEntityCount == 0)
@@ -309,24 +318,6 @@ internal partial class Archetype
 
         CopyBitset(this, this, args.FromIndex, args.ToIndex);
         return _entities.UnsafeArrayIndex(args.ToIndex) = _entities.UnsafeArrayIndex(args.FromIndex);
-    }
-
-    internal void Update(World world)
-    {
-        if (NextComponentIndex == 0)
-            return;
-        var comprunners = Components;
-        for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Run(this, world);
-    }
-
-    internal void Update(World world, int start, int length)
-    {
-        if (NextComponentIndex == 0)
-            return;
-        var comprunners = Components;
-        for (int i = 1; i < comprunners.Length; i++)
-            comprunners[i].Run(this, world, start, length);
     }
 
     internal void ReleaseArrays(bool isDeferredCreate)

@@ -1,11 +1,8 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using System.Diagnostics;
-using System.IO.Pipes;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.AccessControl;
-using System.Threading;
 using static Frent.Updating.AttributeUpdateFilter;
 
 namespace Frent.Updating.Threading;
@@ -29,7 +26,7 @@ internal static class FrentMultithread
 
         public static void UnsafeQueueWork(World world, ArraySegment<SparseUpdateMethod> method, StrongBox<int> counter)
         {
-            if(method.Count == 0)
+            if (method.Count == 0)
                 return;
 
             Interlocked.Increment(ref counter.Value);
@@ -109,7 +106,7 @@ internal static class FrentMultithread
 
                 World world = workItem._world!;
 
-                while(workItem._archetypes!.TryPop(out var record))
+                while (workItem._archetypes!.TryPop(out var record))
                 {
                     (Archetype archetype, int start, int count) = record;
 
@@ -166,7 +163,7 @@ internal static class FrentMultithread
             int count)
         {
             Interlocked.Increment(ref counter.Value);
-             
+
             SingleArchetypeWorkItem workItem;
 
             lock (s_poolLock)

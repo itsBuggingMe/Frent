@@ -1,14 +1,12 @@
-﻿using Frent.Core;
-using System.Diagnostics;
+﻿using Frent.Collections;
+using Frent.Core;
 using Frent.Core.Structures;
-using Frent.Updating.Runners;
+using Frent.Updating;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Frent.Collections;
-using System.Collections;
-using Frent.Updating;
 
 namespace Frent;
 
@@ -165,7 +163,7 @@ public partial struct Entity : IEquatable<Entity>
         if (!location.HasFlag(EntityFlags.HasSparseComponents))
             return location.Archetype.ArchetypeTypeArray;
 
-        var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length + 
+        var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length +
             location.GetBitset().PopCnt());
 
         foreach (var componentID in this)
@@ -200,7 +198,7 @@ public partial struct Entity : IEquatable<Entity>
 
         internal EntityComponentIDEnumerator(Entity entity)
         {
-            if(!entity.InternalIsAlive(out World? world, out EntityLocation entityLocation))
+            if (!entity.InternalIsAlive(out World? world, out EntityLocation entityLocation))
                 Throw_EntityIsDead();
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
@@ -223,7 +221,7 @@ public partial struct Entity : IEquatable<Entity>
         /// <returns>If enumeration can continue.</returns>
         public bool MoveNext()
         {
-            if(_currentVersion != _expectedVersion)
+            if (_currentVersion != _expectedVersion)
                 Throw_EntityIsDead();
 
             if (!_archetypical.IsEmpty)
@@ -255,23 +253,23 @@ public partial struct Entity : IEquatable<Entity>
     /// <summary>
     /// Also sets version.
     /// </summary>
-    internal EntityLookup GetCachedLookup(World world)
+    internal EntityLookup GetCachedLookup(World world, out Archetype archetype)
     {
         ref var record = ref world.EntityTable[EntityID];
-        Archetype archetype = record.Archetype;
         EntityVersion = record.Version;
+        archetype = record.Archetype;
         return new EntityLookup(archetype.ComponentTagTable, archetype.Components, record.Index);
     }
 
     /// <summary>
     /// expected must not be default. Also sets version.
     /// </summary>
-    internal EntityLookup GetCachedLookupAndAssertSparseComponent(World world, Bitset expected)
+    internal EntityLookup GetCachedLookupAndAssertSparseComponent(World world, Bitset expected, out Archetype archetype)
     {
         Debug.Assert(!expected.IsDefault);
         ref var record = ref world.EntityTable[EntityID];
-        Archetype archetype = record.Archetype;
         EntityVersion = record.Version;
+        archetype = record.Archetype;
         Span<Bitset> bitsets = archetype.SparseBitsetSpan();
 
         int index = record.Index;
@@ -287,24 +285,50 @@ public partial struct Entity : IEquatable<Entity>
 #if NETSTANDARD
     internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
     {
-        private byte[] ComponentIndexMap = map;
-        private ComponentStorageRecord[] Components = componentStorageRecord;
-        private readonly nint Index = index;
+        public ref byte MapRef => ref MemoryMarshal.GetArrayDataReference(ComponentIndexMap);
+
+        public byte[] ComponentIndexMap = map;
+        public ComponentStorageRecord[] Components = componentStorageRecord;
+        public readonly nint Index = index;
 
         public ref T Get<T>() => ref UnsafeExtensions.UnsafeCast<T[]>(Components.UnsafeArrayIndex(ComponentIndexMap.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits).Buffer).UnsafeArrayIndex(Index);
+
+        public bool HasComponent<T>()
+        {
+            var index = ComponentIndexMap.UnsafeArrayIndex(Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+            return index != 0;
+        }
+
+        public bool HasTag<T>()
+        {
+            return (ComponentIndexMap.UnsafeArrayIndex(Core.Tag<T>.ID.RawValue) & GlobalWorldTables.HasTagMask) != 0;
+        }
     }
 #else
     internal ref struct EntityLookup(byte[] map, ComponentStorageRecord[] componentStorageRecord, nint index)
     {
-        private ref byte ComponentIndexMap = ref MemoryMarshal.GetArrayDataReference(map);
-        private ref ComponentStorageRecord Components = ref MemoryMarshal.GetArrayDataReference(componentStorageRecord);
-        private readonly nint Index = index;
+        public ref byte MapRef => ref ComponentIndexMap;
+
+        public ref byte ComponentIndexMap = ref MemoryMarshal.GetArrayDataReference(map);
+        public ref ComponentStorageRecord Components = ref MemoryMarshal.GetArrayDataReference(componentStorageRecord);
+        public readonly nint Index = index;
 
         public ref T Get<T>()
         {
             var index = Unsafe.Add(ref ComponentIndexMap, Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
             T[] buffer = UnsafeExtensions.UnsafeCast<T[]>(Unsafe.Add(ref Components, index).Buffer);
             return ref buffer.UnsafeArrayIndex(Index);
+        }
+
+        public bool HasComponent<T>()
+        {
+            var index = Unsafe.Add(ref ComponentIndexMap, Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
+            return index != 0;
+        }
+
+        public bool HasTag<T>()
+        {
+            return (Unsafe.Add(ref ComponentIndexMap, Core.Tag<T>.ID.RawValue) & GlobalWorldTables.HasTagMask) != 0;
         }
     }
 #endif

@@ -2,4 +2,4 @@
 
 namespace Frent.Generator.Models;
 
-internal record struct UpdateMethodModel(EquatableArray<string> Attributes, EquatableArray<string> GenericArguments, string ImplInterface);
+internal record struct UpdateMethodModel(EquatableArray<string> Attributes, EquatableArray<string> GenericArguments, EquatableArray<string> UniformTupleTypes, TypeFilterModel Components, TypeFilterModel Tags, string ImplInterface);

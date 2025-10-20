@@ -8,6 +8,8 @@ public class Config
     /// <summary>
     /// Whether or not to multithread.
     /// </summary>
+    /// 
+    [Obsolete("Multithreading is controlled through update attributes.")]
     public bool MultiThreadedUpdate { get; init; }
 
     /// <summary>
@@ -18,9 +20,10 @@ public class Config
     /// <summary>
     /// The default multithreaded config.
     /// </summary>
+    [Obsolete("Multithreading is controlled through update attributes.")]
     public static Config Multithreaded { get; } = new Config() { MultiThreadedUpdate = true };
     /// <summary>
     /// The default singlethreaded config.
     /// </summary>
-    public static Config Singlethreaded { get; } = new Config() { MultiThreadedUpdate = false };
+    public static Config Singlethreaded { get; } = new Config();
 }

@@ -1,14 +1,8 @@
 ﻿using Frent.Core;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Net.Http.Headers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Frent.Collections;
 
@@ -38,6 +32,24 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         internal TKey Key;
         internal TValue Value;
         internal int NextIndex;
+    }
+
+    public bool ContainsKey(TKey key)
+    {
+        ref Entry entry = ref FindEntry(key);
+        return !Unsafe.IsNullRef(ref entry);
+    }
+
+    public TValue? GetValueOrDefault(TKey key)
+    {
+        ref Entry entry = ref FindEntry(key);
+
+        if (Unsafe.IsNullRef(ref entry))
+        {
+            return default;
+        }
+
+        return entry.Value;
     }
 
     public void Clear()
@@ -102,7 +114,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
             connectedFrom = ref current.NextIndex;
             next = connectedFrom;
         }
-        
+
         Unsafe.SkipInit(out value);
         MemoryHelpers.Poison(ref value);
         return false;
@@ -193,7 +205,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         _entries = new Entry[_entries.Length * 2];
         Entry[] entries = _entries;
 
-        for(int i = 0; i < entries.Length; i++)
+        for (int i = 0; i < entries.Length; i++)
         {
             ref var entry = ref entries[i];
             entry.NextIndex = -2;
@@ -231,7 +243,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
 
         public bool MoveNext()
         {
-            for(_index++; _index < _count; _index++)
+            for (_index++; _index < _count; _index++)
             {
                 ref Entry entry = ref _entries[_index];
                 if (entry.NextIndex != -2)

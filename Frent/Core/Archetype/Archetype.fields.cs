@@ -1,8 +1,8 @@
-﻿using Frent.Core.Structures;
+﻿using Frent.Collections;
+using Frent.Core.Structures;
 using Frent.Updating;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Frent.Collections;
 
 namespace Frent.Core;
 

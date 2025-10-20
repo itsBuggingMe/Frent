@@ -38,20 +38,20 @@ public partial class Query
         var builderArch = ImmutableArray.CreateBuilder<Rule>();
         foreach (var rule in rules)
         {
-            if(rule.IsSparseRule)
+            if (rule.IsSparseRule)
             {
                 HasSparseRules = true;
 
                 builderSparse.Add(rule);
 
                 Debug.Assert(rule.SparseIndex != 0);
-                Debug.Assert(rule.RuleStateValue == Rule.RuleState.HasComponent || 
+                Debug.Assert(rule.RuleStateValue == Rule.RuleState.HasComponent ||
                     rule.RuleStateValue == Rule.RuleState.NotComponent);
-                
+
                 ref Bitset toModify = ref rule.RuleStateValue == Rule.RuleState.HasComponent ?
                     ref _hasSparseComponents :
                     ref _excludeSparseComponents;
-                
+
                 toModify.Set(rule.SparseIndex);
             }
             else

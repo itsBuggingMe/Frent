@@ -9,6 +9,12 @@ namespace Frent.Generator;
 
 public static class RegistryHelpers
 {
+    private static SymbolDisplayFormat? _symbolDisplayFormat;
+    public static SymbolDisplayFormat FullyQualifiedTypeNameFormat => _symbolDisplayFormat ??= new(
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
+        );
+
     public static StringBuilder AppendNamespace(this StringBuilder sb, string @namespace)
     {
         if (@namespace == string.Empty)
@@ -92,18 +98,32 @@ public static class RegistryHelpers
         }
     };
 
+    public static bool IsUniformComponentInterface(this INamedTypeSymbol type) => type is
+    {
+        Name: UniformComponentInterfaceName or EntityUniformComponentInterfaceName,
+    };
+
+    public const string IncludesComponentsAttributeName = "Frent.Updating.IncludesComponentsAttribute";
+    public const string ExcludesComponentsAttributeName = "Frent.Updating.ExcludesComponentsAttribute";
+    public const string IncludesTagsAttributeName = "Frent.Updating.IncludesTagsAttribute";
+    public const string ExcludesTagsAttributeName = "Frent.Updating.ExcludesTagsAttribute";
+
     public const string UpdateTypeAttributeName = "Frent.Updating.UpdateTypeAttribute";
-    public const string UpdateOrderInterfaceName = "Frent.Updating.IComponentUpdateOrderAttribute";
+
     public const string UpdateMethodName = "Update";
     public const string FileName = "ComponentUpdateTypeRegistry.g.cs";
     public const string FullyQualifiedTargetInterfaceName = "Frent.Components.IComponentBase";
     public const string FullyQualifiedInitableInterfaceName = "Frent.Components.IInitable";
     public const string FullyQualifiedDestroyableInterfaceName = "Frent.Components.IDestroyable";
+    public const string FullyQualifiedSparseInterfaceName = "Frent.Components.ISparseComponent";
 
     public const string TargetInterfaceName = "IComponentBase";
     public const string InitableInterfaceName = "IInitable";
     public const string DestroyableInterfaceName = "IDestroyable";
     public const string SparseInterfaceName = "ISparseComponent";
+
+    public const string UniformComponentInterfaceName = "IUniformComponent";
+    public const string EntityUniformComponentInterfaceName = "IEntityUniformComponent";
 
     public const string FrentComponentNamespace = "Frent.Components";
 

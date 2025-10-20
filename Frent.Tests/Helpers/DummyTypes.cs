@@ -28,14 +28,20 @@ internal class FilteredBehavior2(Action onUpdate) : IComponent
     public void Update() => onUpdate();
 }
 
+internal struct DependencyComponent : IComponent<int>
+{
+    [FilterAttribute1]
+    public void Update(ref int arg)
+    {
+
+    }
+}
+
 internal class ChildClass : BaseClass;
 internal class BaseClass;
 
 partial struct GenericComponent<T>() : IComponent
 {
-    public static readonly int x;
-
-    public T? Value;
     public int CalledCount;
     public void Update() => CalledCount++;
 }

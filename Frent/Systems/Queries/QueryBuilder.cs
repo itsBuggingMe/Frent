@@ -1,6 +1,4 @@
-﻿using Frent.Collections;
-using Frent.Core;
-using static System.Net.Mime.MediaTypeNames;
+﻿using Frent.Core;
 
 namespace Frent.Systems.Queries;
 
@@ -190,5 +188,5 @@ public readonly struct QueryUntagged<T, TRest>(World world) : IQueryBuilder
 
 
     /// <inheritdoc cref="IQueryBuilder"/>
-    public readonly Query Build() => World.BuildQuery<QueryUntagged<T,TRest>>();
+    public readonly Query Build() => World.BuildQuery<QueryUntagged<T, TRest>>();
 }
