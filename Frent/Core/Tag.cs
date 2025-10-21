@@ -22,6 +22,16 @@ public class Tag<T>
 public class Tag
 {
     private static readonly Dictionary<Type, TagID> ExistingTagIDs = [];
+    private static readonly Dictionary<string, TagID> ExistingTagIDsByName = [];
+
+    internal static TagID? GetTagType(string tagType)
+    {
+        lock (GlobalWorldTables.BufferChangeLock)
+        {
+            return ExistingTagIDsByName.TryGetValue(tagType, out var value) ? value : null;
+        }
+    }
+
     internal static FastStack<Type> TagTable = FastStack<Type>.Create(4);
 
     private static int _nextTagID = -1;
@@ -50,6 +60,7 @@ public class Tag
 
             TagID newID = new TagID((ushort)id);
             ExistingTagIDs[type] = newID;
+            ExistingTagIDsByName[type.ToString()] = newID;
             TagTable.Push(type);
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(newID.RawValue);
@@ -57,4 +68,10 @@ public class Tag
             return newID;
         }
     }
+
+    /// <summary>
+    /// Register a tag type and its associated metadata.
+    /// </summary>
+    /// <param name="type">The type of tag to register.</param>
+    public static void RegisterTag(Type type) => _ = GetTagID(type);
 }

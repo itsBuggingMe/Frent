@@ -527,13 +527,79 @@ partial struct Entity
     public readonly bool Tag(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var w);
+
+        if (!w.AllowStructualChanges)
+        {
+            w.WorldUpdateCommandBuffer.Tag(this, tagID);
+            return !lookup.Archetype.HasTag(tagID);
+        }
+
         if (lookup.Archetype.HasTag(tagID))
             return false;
 
         ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.AddTag);
         w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
 
+        EntityFlags flags = lookup.Flags | w.WorldEventFlags;
+        if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+        {
+            if (w.Tagged.HasListeners)
+                w.Tagged.Invoke(this, tagID);
+
+            if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+                w.EventLookup.GetValueRefOrNullRef(EntityIDOnly).Tag.Invoke(this, tagID); ;
+        }
+
         return true;
+    }
+
+    /// <summary>
+    /// Adds a set of tags to this entity.
+    /// </summary>
+    /// <param name="tagIds">The tag types to add.</param>
+    /// <remarks>You can get a <see cref="TagID"/> by using <see cref="TagTypes" /> or <see cref="Tag.GetTagID(System.Type)"/></remarks>
+    public readonly void TagFromIDs(ReadOnlySpan<TagID> tagIds)
+    {
+        ref var lookup = ref AssertIsAlive(out var w);
+
+        if (tagIds.Length == 0)
+            return;
+
+        if (!w.AllowStructualChanges)
+        {
+            foreach(var tagId in tagIds)
+                w.WorldUpdateCommandBuffer.Tag(this, tagId);
+            return;
+        }
+
+        ImmutableArray<TagID> pTags = lookup.ArchetypeID.Tags;
+        ImmutableArray<ComponentID> components = lookup.ArchetypeID.Types;
+        Span<TagID> newIds = stackalloc TagID[tagIds.Length + pTags.Length];
+
+        tagIds.CopyTo(newIds);
+        pTags.AsSpan().CopyTo(newIds[tagIds.Length..]);
+
+        Archetype dest = Archetype.CreateOrGetExistingArchetype(components.AsSpan(), newIds, w, components);
+
+        w.MoveEntityToArchetypeIso(this, ref lookup, dest);
+
+        EntityFlags flags = lookup.Flags | w.WorldEventFlags;
+        if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+        {
+            if (w.Tagged.HasListeners)
+            {
+                foreach(var tag in tagIds)
+                    w.Tagged.Invoke(this, tag);
+            }
+
+
+            if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+            {
+                var @event = w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
+                foreach(var tag in tagIds)
+                    @event.Tag.Invoke(this, tag);
+            }
+        }
     }
     #endregion
 

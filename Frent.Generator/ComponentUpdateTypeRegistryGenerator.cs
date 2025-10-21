@@ -51,7 +51,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 if (ctx.SemanticModel.GetDeclaredSymbol(ctx.TargetNode) is not INamedTypeSymbol classTypeSymbol)
                     return default;
 
-                return classTypeSymbol.ToDisplayString(FullyQualifiedTypeNameFormat);
+                return classTypeSymbol.ToDisplayString(RegistryHelpers.FullyQualifiedTypeNameFormat);
             })
             .Where(n => n is not null)
             .Collect()

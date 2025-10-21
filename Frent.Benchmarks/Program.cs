@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using static Frent.Benchmarks.Program;
+using System.Text.Json;
 
 namespace Frent.Benchmarks;
 

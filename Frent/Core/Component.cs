@@ -112,6 +112,7 @@ public static class Component
     internal static FastStack<SparseComponentData> ComponentTableBySparseIndex = FastStack<SparseComponentData>.Create(2);
 
     private static Dictionary<Type, ComponentID> ExistingComponentIDs = [];
+    private static Dictionary<string, ComponentID> ExistingComponentIDsByName = [];
 
     internal static readonly Dictionary<Type, ComponentBufferManager> CachedComponentFactories = [];
 
@@ -169,6 +170,7 @@ public static class Component
 
             ComponentID id = new ComponentID((ushort)nextIDInt);
             ExistingComponentIDs[type] = id;
+            ExistingComponentIDsByName[type.ToString()] = id;
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
             var initDelegate = (ComponentDelegates<T>.InitDelegate?)(GenerationServices.TypeIniters.GetValueOrDefault(type));
@@ -223,6 +225,7 @@ public static class Component
 
             ComponentID id = new ComponentID((ushort)nextIDInt);
             ExistingComponentIDs[type] = id;
+            ExistingComponentIDsByName[type.ToString()] = id;
 
             GlobalWorldTables.GrowComponentTagTableIfNeeded(id.RawIndex);
 
@@ -244,6 +247,14 @@ public static class Component
             }
 
             return id;
+        }
+    }
+
+    internal static ComponentID? GetComponentByString(string name)
+    {
+        lock(GlobalWorldTables.BufferChangeLock)
+        {
+            return ExistingComponentIDsByName.TryGetValue(name, out var id) ? id : null;
         }
     }
 
