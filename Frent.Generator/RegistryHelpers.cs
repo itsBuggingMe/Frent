@@ -116,7 +116,8 @@ public static class RegistryHelpers
     public const string FullyQualifiedInitableInterfaceName = "Frent.Components.IInitable";
     public const string FullyQualifiedDestroyableInterfaceName = "Frent.Components.IDestroyable";
     public const string FullyQualifiedSparseInterfaceName = "Frent.Components.ISparseComponent";
-
+    public const string FullyQualifiedTagInterfaceName = "Frent.Components.ITag";
+    
     public const string TargetInterfaceName = "IComponentBase";
     public const string InitableInterfaceName = "IInitable";
     public const string DestroyableInterfaceName = "IDestroyable";
