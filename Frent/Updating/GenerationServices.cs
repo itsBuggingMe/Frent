@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Serialization;
 using Frent.Updating.Runners;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -25,6 +26,8 @@ public static class GenerationServices
     internal static readonly RefDictionary<Type, UpdateMethodData[]> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
+    internal static readonly Dictionary<Type, Delegate> TypeSerialize = new();
+    internal static readonly Dictionary<Type, Delegate> TypeDeserialize = new();
     internal static readonly List<IJsonTypeInfoResolver> GeneratedJsonTypeInfoResolvers = new();
 
     // string name for deserialization
@@ -42,6 +45,20 @@ public static class GenerationServices
         where T : IDestroyable
     {
         TypeDestroyers[typeof(T)] = (ComponentDelegates<T>.DestroyDelegate)([method: DebuggerHidden, DebuggerStepThrough] static (ref T c) => c.Destroy());
+    }
+
+    /// <inheritdoc cref="GenerationServices"/>
+    public static void RegisterSerialize<T>()
+        where T : IOnSerialize
+    {
+        TypeSerialize[typeof(T)] = (ComponentDelegates<T>.OnSerialize)([method: DebuggerHidden, DebuggerStepThrough] static (ref T c) => c.OnSerialize());
+    }
+
+    /// <inheritdoc cref="GenerationServices"/>
+    public static void RegisterDeserialize<T>()
+        where T : IOnDeserialize
+    {
+        TypeDeserialize[typeof(T)] = (ComponentDelegates<T>.OnDeserialize)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.OnDeserialize(e));
     }
 
     /// <inheritdoc cref="GenerationServices"/>

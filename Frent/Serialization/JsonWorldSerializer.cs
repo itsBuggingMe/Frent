@@ -192,6 +192,27 @@ public class JsonWorldSerializer
 
         _activeWorld = null;
         jsonStreamReader.Dispose();
+
+        Query everything = world.CreateQuery()
+                .Build();
+
+        // todo: optimize by adding this to the archetype?
+        foreach (var entity in everything
+            .EnumerateWithEntities())
+        {
+            entity.EnumerateComponents(default(OnSerializedInvokerState));
+        }
+
+
+        if (invokeIniters)
+        {
+            foreach(var entity in everything
+                .EnumerateWithEntities())
+            {
+                entity.EnumerateComponents(new OnDeserializedIniterInvokerState(entity));
+            }
+        }
+
         return world;
     }
 
@@ -232,6 +253,15 @@ public class JsonWorldSerializer
     public void Serialize(Utf8JsonWriter writer, World world, Query? query = null)
     {
         AssertQueryFromWorld(world, query);
+
+        Query everything = world.CreateQuery()
+            .Build();
+
+        foreach (var entity in everything
+            .EnumerateWithEntities())
+        {
+            entity.EnumerateComponents(default(OnSerializedInvokerState));
+        }
 
         _entityMap.Clear();
 
@@ -354,6 +384,30 @@ public class JsonWorldSerializer
         entityId = serializedId;
 
         return created;
+    }
+
+    private struct OnDeserializedInvokerState(Entity self) : IGenericAction
+    {
+        public void Invoke<T>(ref T type)
+        {
+            Component<T>.OnDeserialize?.Invoke(self, ref type);
+        }
+    }
+
+    private struct OnDeserializedIniterInvokerState(Entity self) : IGenericAction
+    {
+        public void Invoke<T>(ref T type)
+        {
+            Component<T>.Initer?.Invoke(self, ref type);
+        }
+    }
+
+    private struct OnSerializedInvokerState : IGenericAction
+    {
+        public void Invoke<T>(ref T type)
+        {
+            Component<T>.OnSerialize?.Invoke(ref type);
+        }
     }
 
     private struct SerializerState(

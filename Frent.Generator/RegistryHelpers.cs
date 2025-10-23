@@ -48,6 +48,20 @@ public static class RegistryHelpers
         return false;
     }
 
+    public static bool IsTag(this INamedTypeSymbol symbol) => symbol is
+    {
+        Name: TagInterfaceName,
+        ContainingNamespace:
+        {
+            Name: "Components",
+            ContainingNamespace:
+            {
+                Name: "Frent",
+                ContainingNamespace.IsGlobalNamespace: true
+            }
+        }
+    };
+
     public static bool IsIComponentBase(this INamedTypeSymbol symbol) => symbol is
     {
         Name: TargetInterfaceName,
@@ -122,6 +136,7 @@ public static class RegistryHelpers
     public const string InitableInterfaceName = "IInitable";
     public const string DestroyableInterfaceName = "IDestroyable";
     public const string SparseInterfaceName = "ISparseComponent";
+    public const string TagInterfaceName = "ITag";
 
     public const string UniformComponentInterfaceName = "IUniformComponent";
     public const string EntityUniformComponentInterfaceName = "IEntityUniformComponent";

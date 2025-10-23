@@ -84,6 +84,12 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         {
             ct.ThrowIfCancellationRequested();
 
+            if(potentialInterface.IsTag())
+            {
+                needsRegistering = true;
+                flags |= UpdateModelFlags.IsTag;
+            }
+
             if (!potentialInterface.IsOrExtendsIComponentBase())
                 continue;
             //potentialInterface is some kind of IComponentBase
@@ -428,6 +434,18 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     
     private static void AppendInitalizationMethodBody(CodeBuilder cb, in ComponentUpdateItemModel model)
     {
+        if(model.IsTag)
+        {
+            cb
+                .Append("global::Frent.Core.Tag.RegisterTag(typeof(")
+                .Append("global::").Append(model.FullName)
+                .AppendLine("));");
+        }
+
+
+        if (!model.IsComponent)
+            return;
+
         Stack<string> componentsToRegister = new();
 
         cb.Append("GenerationServices.RegisterComponent<global::").Append(model.FullName).AppendLine(">();");
@@ -601,7 +619,21 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             .AppendLine(">();");
         }
 
-        foreach(var name in componentsToRegister.AsSpan())
+        if (model.HasFlag(UpdateModelFlags.HasSerializeCallback))
+        {
+            cb.Append("GenerationServices.RegisterSerialize<")
+            .Append("global::").Append(model.FullName)
+            .AppendLine(">();");
+        }
+
+        if (model.HasFlag(UpdateModelFlags.HasDeserializeCallback))
+        {
+            cb.Append("GenerationServices.RegisterDeserialize<")
+            .Append("global::").Append(model.FullName)
+            .AppendLine(">();");
+        }
+
+        foreach (var name in componentsToRegister.AsSpan())
         {
             cb.Append("_ = Frent.Core.Component<global::")
                 .Append(name)
