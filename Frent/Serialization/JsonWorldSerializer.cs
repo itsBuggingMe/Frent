@@ -116,49 +116,43 @@ public class JsonWorldSerializer
             {
                 AssertJsonToken(ref reader, JsonTokenType.PropertyName);
 
-                switch (true)
+                if (reader.ValueTextEquals(Props.Id))
                 {
-                    // Id
-                    case true when reader.ValueTextEquals(Props.Id):
-                        ReadAssert(ref jsonStreamReader, JsonTokenType.Number);
-                        entity = MapEntityRead(reader.GetInt32());
-                        break;
+                    ReadAssert(ref jsonStreamReader, JsonTokenType.Number);
+                    entity = MapEntityRead(reader.GetInt32());
+                }
+                else if (reader.ValueTextEquals(Props.Components))
+                {
+                    jsonStreamReader.Capture();
+                }
+                else if (reader.ValueTextEquals(Props.Types))
+                {
+                    ReadAssert(ref reader, JsonTokenType.StartArray);
 
-                    // Components
-                    case true when reader.ValueTextEquals(Props.Components):
-                        jsonStreamReader.Capture();
-                        break;
+                    hasTags = true;
+                    _readTags.Clear();
+                    while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                        _componentMetadataNames.Enqueue(reader.GetString() ?? "");
+                }
+                else if (reader.ValueTextEquals(Props.Tags))
+                {
+                    ReadAssert(ref reader, JsonTokenType.StartArray);
 
-                    // Types
-                    case true when reader.ValueTextEquals(Props.Types):
-                        ReadAssert(ref reader, JsonTokenType.StartArray);
+                    while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                    {
+                        string tagTypeName = reader.GetString() ?? "";
 
-                        hasTags = true;
-                        _readTags.Clear();
-                        while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
-                            _componentMetadataNames.Enqueue(reader.GetString() ?? "");
+                        var tagId = Tag.GetTagType(tagTypeName);
 
-                        break;
-
-
-                    case true when reader.ValueTextEquals(Props.Tags):
-                        ReadAssert(ref reader, JsonTokenType.StartArray);
-
-                        while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
-                        {
-                            string tagTypeName = reader.GetString() ?? "";
-
-                            var tagId = Tag.GetTagType(tagTypeName);
-
-                            if(tagId is not { } t)
-                                FrentExceptions.Throw_InvalidOperationException($"{tagTypeName} is not serializable.");
-                            else
-                                _readTags.Push(t);
-                        }
-                        break;
-                    default:
-                        reader.Skip();
-                        break;
+                        if (tagId is not { } t)
+                            FrentExceptions.Throw_InvalidOperationException($"{tagTypeName} is not serializable.");
+                        else
+                            _readTags.Push(t);
+                    }
+                }
+                else
+                {
+                    reader.Skip();
                 }
             }
 
