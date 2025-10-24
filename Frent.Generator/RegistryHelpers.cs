@@ -99,6 +99,20 @@ public static class RegistryHelpers
         }
     };
 
+    public static bool IsSerializeComponentInterface(this INamedTypeSymbol type) => type is
+    {
+        Name: IOnSerializeInterfaceName or IOnDeserializeInterfaceName,
+        ContainingNamespace:
+        {
+            Name: "Serialization",
+            ContainingNamespace:
+            {
+                Name: "Frent",
+                ContainingNamespace.IsGlobalNamespace: true
+            }
+        }
+    };
+
     public static bool IsFrentComponentInterface(this INamedTypeSymbol type) => type is
     {
         ContainingNamespace:
@@ -126,17 +140,24 @@ public static class RegistryHelpers
 
     public const string UpdateMethodName = "Update";
     public const string FileName = "ComponentUpdateTypeRegistry.g.cs";
+
     public const string FullyQualifiedTargetInterfaceName = "Frent.Components.IComponentBase";
     public const string FullyQualifiedInitableInterfaceName = "Frent.Components.IInitable";
     public const string FullyQualifiedDestroyableInterfaceName = "Frent.Components.IDestroyable";
     public const string FullyQualifiedSparseInterfaceName = "Frent.Components.ISparseComponent";
     public const string FullyQualifiedTagInterfaceName = "Frent.Components.ITag";
-    
+
+    public const string FullyQualifiedIOnSerializeInterfaceName = "Frent.Serialization.IOnSerialize";
+    public const string FullyQualifiedIOnDeserializeInterfaceName = "Frent.Serialization.IOnDeserialize";
+
     public const string TargetInterfaceName = "IComponentBase";
     public const string InitableInterfaceName = "IInitable";
     public const string DestroyableInterfaceName = "IDestroyable";
     public const string SparseInterfaceName = "ISparseComponent";
     public const string TagInterfaceName = "ITag";
+
+    public const string IOnSerializeInterfaceName = "IOnSerialize";
+    public const string IOnDeserializeInterfaceName = "IOnDeserialize";
 
     public const string UniformComponentInterfaceName = "IUniformComponent";
     public const string EntityUniformComponentInterfaceName = "IEntityUniformComponent";

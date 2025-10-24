@@ -92,6 +92,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
             if (!potentialInterface.IsOrExtendsIComponentBase())
                 continue;
+
+            flags |= UpdateModelFlags.IsComponent;
+
             //potentialInterface is some kind of IComponentBase
 
             string name = potentialInterface.ToString();
@@ -114,6 +117,15 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 {
                     // where IComponentBase is the target interface
                 }
+            }
+            else if(potentialInterface.IsSerializeComponentInterface())
+            {
+                flags |= name switch
+                {
+                    RegistryHelpers.FullyQualifiedIOnSerializeInterfaceName => UpdateModelFlags.HasSerializeCallback,
+                    RegistryHelpers.FullyQualifiedIOnDeserializeInterfaceName => UpdateModelFlags.HasDeserializeCallback,
+                    _ => UpdateModelFlags.None,
+                };
             }
             else if(potentialInterface.IsFrentComponentInterface())
             {
@@ -439,7 +451,8 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             cb
                 .Append("global::Frent.Core.Tag.RegisterTag(typeof(")
                 .Append("global::").Append(model.FullName)
-                .AppendLine("));");
+                .AppendLine("));")
+                .AppendLine();
         }
 
 

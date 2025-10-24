@@ -1,6 +1,8 @@
-﻿namespace Frent.Serialization;
+﻿using Frent.Components;
 
-public interface IOnSerialize
+namespace Frent.Serialization;
+
+public interface IOnSerialize : IComponentBase
 {
     public void OnSerialize();
 }

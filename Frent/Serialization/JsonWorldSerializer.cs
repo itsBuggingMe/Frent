@@ -23,7 +23,10 @@ public class JsonWorldSerializer
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static JsonWorldSerializer CreateSerializerSingleton()
     {
-        var instance = new JsonWorldSerializer();
+        var instance = new JsonWorldSerializer(new JsonSerializerOptions(JsonSerializerOptions.Default)
+        {
+            IncludeFields = true,
+        });
         return Interlocked.CompareExchange(ref s_default, instance, null) ?? instance;
     }
 
@@ -200,7 +203,7 @@ public class JsonWorldSerializer
         foreach (var entity in everything
             .EnumerateWithEntities())
         {
-            entity.EnumerateComponents(default(OnSerializedInvokerState));
+            entity.EnumerateComponents(default(OnDeserializedInvokerState));
         }
 
 
@@ -457,7 +460,10 @@ public class JsonWorldSerializer
     private static Type ReadSerializableType(ref Utf8JsonReader reader)
     {
         string name = reader.GetString() ?? string.Empty;
-        Type? type = GenerationServices.SerializableTypesMap.GetValueOrDefault(name);
+        Type? type = 
+            GenerationServices.SerializableTypesMap.GetValueOrDefault(name) ?? 
+            Component.GetComponentByString(name)?.Type ??
+            Tag.GetTagType(name)?.Type;
         return type is null ? throw new SerializationException($"Type {name} not marked as serializable.") : type;
     }
 
@@ -522,13 +528,11 @@ public class JsonWorldSerializer
             ValueStack<ComponentID> componentIdBuffer = new(stackalloc ComponentID[16]);
             ValueStack<TagID> tagIdBuffer = new(stackalloc TagID[16]);
 
-            ReadAssert(ref reader, JsonTokenType.StartObject);
+            AssertJsonToken(ref reader, JsonTokenType.StartObject);
             {
-                ReadAssert(ref reader, JsonTokenType.PropertyName);
                 while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
                 {
-                    if (reader.TokenType != JsonTokenType.PropertyName)
-                        throw new JsonException($"Unexpected token {reader.TokenType}, expected PropertyName");
+                    AssertJsonToken(ref reader, JsonTokenType.PropertyName);
 
                     if (reader.ValueTextEquals(Props.Components))
                     {
@@ -542,13 +546,13 @@ public class JsonWorldSerializer
                         while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
                             tagIdBuffer.Push(Tag.GetTagID(ReadSerializableType(ref reader)));
                     }
-                    else                    {
-
+                    else
+                    {
                         reader.Skip();
                     }
                 }
             }
-            ReadAssert(ref reader, JsonTokenType.EndObject);
+            AssertJsonToken(ref reader, JsonTokenType.EndObject);
 
             return Archetype.GetArchetypeID(componentIdBuffer.AsSpan(), tagIdBuffer.AsSpan());
         }

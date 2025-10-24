@@ -20,8 +20,10 @@ internal ref struct ValueStack<T>
         {
             _buffer[_nextIndex++] = value;
         }
-
-        ResizeAndPush(value);
+        else
+        {
+            ResizeAndPush(value);
+        }
     }
 
     private void ResizeAndPush(T value)
