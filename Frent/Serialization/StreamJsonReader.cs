@@ -109,6 +109,7 @@ internal ref struct StreamJsonReader
             if (destEnd > streamJsonReader._capturedBuffer.Length)
             {
                 var newBuffer = ArrayPool<byte>.Shared.Rent((int)BitOperations.RoundUpToPowerOf2((uint)(destEnd + 1)));
+                ArrayPool<byte>.Shared.Return(streamJsonReader._capturedBuffer);
                 streamJsonReader._capturedBuffer.AsSpan().CopyTo(newBuffer);
                 streamJsonReader._capturedBuffer = newBuffer;
             }
