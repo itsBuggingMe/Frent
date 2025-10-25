@@ -263,9 +263,9 @@ public static class Component
     {
         if (CachedComponentFactories.TryGetValue(type, out ComponentBufferManager? factory))
             return factory.CreateTable();
-        if (type == typeof(void))
-            return null!;
-        Throw_ComponentTypeNotInit(type);
+
+        if (type != typeof(void))
+            Throw_ComponentTypeNotInit(type);
         return null!;
     }
 
