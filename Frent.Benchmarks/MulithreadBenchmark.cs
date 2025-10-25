@@ -39,7 +39,7 @@ public class MultithreadBenchmark
     }
 }
 
-public struct SomeComponent : IComponent<int>
+public struct SomeComponent : IUpdate<int>
 {
     public InlineArray16 Buffer;
 

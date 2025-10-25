@@ -50,7 +50,7 @@ partial class StressTestOuter<T1>
 {
     internal partial struct Something
     {
-        internal partial class Component<T2> : InterfacePackAlias, IComponent<T2>, IDestroyable
+        internal partial class Component<T2> : InterfacePackAlias, IUpdate<T2>, IDestroyable
         {
             public int Update2Count;
             public int DestroyCount;
@@ -69,7 +69,7 @@ partial class StressTestOuter<T1>
     }
 }
 
-internal partial class InterfacePack : IInitable, IComponent
+internal partial class InterfacePack : IInitable, IUpdate
 {
     public int UpdateCount;
     public int InitCount;
@@ -85,7 +85,7 @@ internal partial class InterfacePack : IInitable, IComponent
     }
 }
 
-struct ValueTupleUniform : IUniformComponent<(string, int), (int, string)>
+struct ValueTupleUniform : IUniformUpdate<(string, int), (int, string)>
 {
     public void Update((string, int) uniform, ref (int, string) arg)
     {

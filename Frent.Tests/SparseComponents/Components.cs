@@ -2,7 +2,7 @@
 
 namespace Frent.Tests.SparseComponents;
 
-internal struct SparseComponent(Action? OnUpdate, object Data) : ISparseComponent, IComponent
+internal struct SparseComponent(Action? OnUpdate, object Data) : ISparseComponent, IUpdate
 {
     public object Data { get; } = Data;
 

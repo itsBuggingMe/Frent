@@ -40,7 +40,7 @@ internal class SparseComponentQueryTests
         }
     }
     
-    internal struct SparseUpdateQueryComponent : ISparseComponent, IComponent
+    internal struct SparseUpdateQueryComponent : ISparseComponent, IUpdate
     {
         public int UpdateCount;
         

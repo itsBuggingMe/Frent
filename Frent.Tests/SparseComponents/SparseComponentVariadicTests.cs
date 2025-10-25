@@ -9,7 +9,7 @@ internal class SparseComponentVariadicTests
 {
     #region Test Components
     
-    internal struct SparseVariadicComponent1 : ISparseComponent, IComponent<RegularComponent1>
+    internal struct SparseVariadicComponent1 : ISparseComponent, IUpdate<RegularComponent1>
     {
         public int UpdateCount;
         public int LastValue1;
@@ -35,7 +35,7 @@ internal class SparseComponentVariadicTests
         }
     }
     
-    internal struct SparseEntityVariadicComponent1 : ISparseComponent, IEntityComponent<RegularComponent1>
+    internal struct SparseEntityVariadicComponent1 : ISparseComponent, IEntityUpdate<RegularComponent1>
     {
         public int UpdateCount;
         public Entity LastEntity;
@@ -65,7 +65,7 @@ internal class SparseComponentVariadicTests
         }
     }
     
-    internal struct SparseUniformVariadicComponent1 : ISparseComponent, IUniformComponent<TestUniform, RegularComponent1>
+    internal struct SparseUniformVariadicComponent1 : ISparseComponent, IUniformUpdate<TestUniform, RegularComponent1>
     {
         public int UpdateCount;
         public int LastUniformValue;
@@ -95,7 +95,7 @@ internal class SparseComponentVariadicTests
         }
     }
     
-    internal struct SparseEntityUniformVariadicComponent1 : ISparseComponent, IEntityUniformComponent<TestUniform, RegularComponent1>
+    internal struct SparseEntityUniformVariadicComponent1 : ISparseComponent, IEntityUniformUpdate<TestUniform, RegularComponent1>
     {
         public int UpdateCount;
         public Entity LastEntity;
@@ -111,7 +111,7 @@ internal class SparseComponentVariadicTests
         }
     }
     
-    internal struct SparseEntityUniformVariadicComponent2 : ISparseComponent, IEntityUniformComponent<TestUniform, RegularComponent1, RegularComponent2>
+    internal struct SparseEntityUniformVariadicComponent2 : ISparseComponent, IEntityUniformUpdate<TestUniform, RegularComponent1, RegularComponent2>
     {
         public int UpdateCount;
         public Entity LastEntity;
@@ -385,7 +385,7 @@ internal class SparseComponentVariadicTests
         That(regularComponent.UpdateCount, Is.EqualTo(1));
     }
     
-    internal struct RegularVariadicUpdateComponent : IComponent
+    internal struct RegularVariadicUpdateComponent : IUpdate
     {
         public int UpdateCount;
         
@@ -417,7 +417,7 @@ internal class SparseComponentVariadicTests
         That(selfRefComponent.UpdateCount, Is.EqualTo(1));
     }
     
-    internal struct SparseVariadicSelfReferenceComponent : ISparseComponent, IComponent<SparseVariadicSelfReferenceComponent>
+    internal struct SparseVariadicSelfReferenceComponent : ISparseComponent, IUpdate<SparseVariadicSelfReferenceComponent>
     {
         public int UpdateCount;
         

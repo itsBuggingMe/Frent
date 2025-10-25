@@ -49,7 +49,7 @@ internal class SparseComponentTestSuite
     }
 
     // Sparse component with basic update
-    internal struct SparseUpdateComponent : ISparseComponent, IComponent
+    internal struct SparseUpdateComponent : ISparseComponent, IUpdate
     {
         public int UpdateCount;
         
@@ -60,7 +60,7 @@ internal class SparseComponentTestSuite
     }
     
     // Sparse component with entity update
-    internal struct SparseEntityUpdateComponent : ISparseComponent, IEntityComponent
+    internal struct SparseEntityUpdateComponent : ISparseComponent, IEntityUpdate
     {
         public int UpdateCount;
         public Entity LastEntity;
@@ -73,7 +73,7 @@ internal class SparseComponentTestSuite
     }
     
     // Sparse component with uniform update
-    internal struct SparseUniformUpdateComponent : ISparseComponent, IUniformComponent<TestUniform>
+    internal struct SparseUniformUpdateComponent : ISparseComponent, IUniformUpdate<TestUniform>
     {
         public int UpdateCount;
         public int LastUniformValue;
@@ -86,7 +86,7 @@ internal class SparseComponentTestSuite
     }
     
     // Sparse component with entity uniform update
-    internal struct SparseEntityUniformUpdateComponent : ISparseComponent, IEntityUniformComponent<TestUniform>
+    internal struct SparseEntityUniformUpdateComponent : ISparseComponent, IEntityUniformUpdate<TestUniform>
     {
         public int UpdateCount;
         public Entity LastEntity;
@@ -101,7 +101,7 @@ internal class SparseComponentTestSuite
     }
     
     // Sparse component with component reference update
-    internal struct SparseComponentUpdateComponent : ISparseComponent, IComponent<RegularComponent>
+    internal struct SparseComponentUpdateComponent : ISparseComponent, IUpdate<RegularComponent>
     {
         public int UpdateCount;
         public int LastComponentValue;
@@ -114,7 +114,7 @@ internal class SparseComponentTestSuite
     }
     
     // Sparse component with entity and component reference update
-    internal struct SparseEntityComponentUpdateComponent : ISparseComponent, IEntityComponent<RegularComponent>
+    internal struct SparseEntityComponentUpdateComponent : ISparseComponent, IEntityUpdate<RegularComponent>
     {
         public int UpdateCount;
         public Entity LastEntity;
@@ -129,7 +129,7 @@ internal class SparseComponentTestSuite
     }
     
     // Sparse component with uniform and component reference update
-    internal struct SparseUniformComponentUpdateComponent : ISparseComponent, IUniformComponent<TestUniform, RegularComponent>
+    internal struct SparseUniformComponentUpdateComponent : ISparseComponent, IUniformUpdate<TestUniform, RegularComponent>
     {
         public int UpdateCount;
         public int LastUniformValue;
@@ -144,7 +144,7 @@ internal class SparseComponentTestSuite
     }
     
     // Sparse component with entity, uniform and component reference update
-    internal struct SparseEntityUniformComponentUpdateComponent : ISparseComponent, IEntityUniformComponent<TestUniform, RegularComponent>
+    internal struct SparseEntityUniformComponentUpdateComponent : ISparseComponent, IEntityUniformUpdate<TestUniform, RegularComponent>
     {
         public int UpdateCount;
         public Entity LastEntity;
@@ -161,7 +161,7 @@ internal class SparseComponentTestSuite
     }
     
     // Filtered sparse components
-    internal struct SparseFilteredComponent1 : ISparseComponent, IComponent
+    internal struct SparseFilteredComponent1 : ISparseComponent, IUpdate
     {
         public int UpdateCount;
         
@@ -172,7 +172,7 @@ internal class SparseComponentTestSuite
         }
     }
     
-    internal struct SparseFilteredComponent2 : ISparseComponent, IComponent
+    internal struct SparseFilteredComponent2 : ISparseComponent, IUpdate
     {
         public int UpdateCount;
         
@@ -195,7 +195,7 @@ internal class SparseComponentTestSuite
     }
     
     // Regular archetype component with update
-    internal struct RegularUpdateComponent : IComponent
+    internal struct RegularUpdateComponent : IUpdate
     {
         public int UpdateCount;
         

@@ -120,7 +120,7 @@ internal partial class FilterTests
     struct Tag3;
 
     partial struct FilterComponent(Action onUpdate)
-        : IComponent, IComponent<Struct1>, IInitable
+        : IUpdate, IUpdate<Struct1>, IInitable
     {
         private Entity _self;
 
@@ -145,7 +145,7 @@ internal partial class FilterTests
     }
 
     partial struct FilterComponentSparse(Action onUpdate)
-        : IComponent, IComponent<Struct1>, IInitable, ISparseComponent
+        : IUpdate, IUpdate<Struct1>, IInitable, ISparseComponent
     {
         private Entity _self;
 

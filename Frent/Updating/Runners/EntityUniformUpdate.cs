@@ -10,7 +10,7 @@ namespace Frent.Updating.Runners;
 /// <inheritdoc cref="GenerationServices"/>
 public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f) : RunnerBase(f), IRunner
     where TPredicate : IFilterPredicate
-    where TComp : IEntityUniformComponent<TUniform>
+    where TComp : IEntityUniformUpdate<TUniform>
 {
 
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
@@ -102,7 +102,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f)
 [Variadic(nameof(IRunner))]
 public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delegate? f) : RunnerBase(f), IRunner
     where TPredicate : IFilterPredicate
-    where TComp : IEntityUniformComponent<TUniform, TArg>
+    where TComp : IEntityUniformUpdate<TUniform, TArg>
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {

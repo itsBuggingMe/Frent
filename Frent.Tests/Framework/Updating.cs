@@ -245,13 +245,13 @@ internal class Updating
     }
 }
 
-internal partial struct LazyComponent<T>(Action a) : IComponent
+internal partial struct LazyComponent<T>(Action a) : IUpdate
 {
     [FilterAttribute1]
     public void Update() => a();
 }
 
-internal struct MultipleUpdateComponent : IComponent, IComponent<MultipleUpdateComponent>
+internal struct MultipleUpdateComponent : IUpdate, IUpdate<MultipleUpdateComponent>
 {
     public int Count1;
     public int Count2;
@@ -261,7 +261,7 @@ internal struct MultipleUpdateComponent : IComponent, IComponent<MultipleUpdateC
     public void Update(ref MultipleUpdateComponent _) => Count2++;
 }
 
-internal struct NoMatch(World world) : IComponent
+internal struct NoMatch(World world) : IUpdate
 {
     [FilterAttribute2]
     public void Update()

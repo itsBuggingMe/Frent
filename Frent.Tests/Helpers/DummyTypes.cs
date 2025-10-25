@@ -9,12 +9,12 @@ internal record struct Struct1(int Value);
 internal record struct Struct2(int Value);
 internal record struct Struct3(int Value);
 
-internal class DelegateBehavior(Action onUpdate) : IComponent
+internal class DelegateBehavior(Action onUpdate) : IUpdate
 {
     public void Update() => onUpdate();
 }
 
-internal class FilteredBehavior1(Action onUpdate, Action<Entity>? onInit = null, Action? onDestroy = null) : IComponent, IInitable, IDestroyable
+internal class FilteredBehavior1(Action onUpdate, Action<Entity>? onInit = null, Action? onDestroy = null) : IUpdate, IInitable, IDestroyable
 {
     public void Init(Entity self) => onInit?.Invoke(self);
     public void Destroy() => onDestroy?.Invoke();
@@ -22,13 +22,13 @@ internal class FilteredBehavior1(Action onUpdate, Action<Entity>? onInit = null,
     public void Update() => onUpdate();
 }
 
-internal class FilteredBehavior2(Action onUpdate) : IComponent
+internal class FilteredBehavior2(Action onUpdate) : IUpdate
 {
     [FilterAttribute2]
     public void Update() => onUpdate();
 }
 
-internal struct DependencyComponent : IComponent<int>
+internal struct DependencyComponent : IUpdate<int>
 {
     [FilterAttribute1]
     public void Update(ref int arg)
@@ -40,7 +40,7 @@ internal struct DependencyComponent : IComponent<int>
 internal class ChildClass : BaseClass;
 internal class BaseClass;
 
-partial struct GenericComponent<T>() : IComponent
+partial struct GenericComponent<T>() : IUpdate
 {
     public int CalledCount;
     public void Update() => CalledCount++;

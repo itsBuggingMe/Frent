@@ -6,9 +6,9 @@ namespace Frent.Components;
 /// <summary>
 /// Indicates a component should be updated with a uniform of type <typeparamref name="TUniform"/>
 /// </summary>
-public interface IUniformComponent<TUniform> : IComponentBase
+public interface IUniformUpdate<TUniform> : IComponentBase
 {
-    /// <inheritdoc cref="IComponent.Update"/>
+    /// <inheritdoc cref="IUpdate.Update"/>
     void Update(TUniform uniform);
 }
 
@@ -18,8 +18,8 @@ public interface IUniformComponent<TUniform> : IComponentBase
 /// <variadic />
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
-public interface IUniformComponent<TUniform, TArg> : IComponentBase
+public interface IUniformUpdate<TUniform, TArg> : IComponentBase
 {
-    /// <inheritdoc cref="IComponent.Update"/>
+    /// <inheritdoc cref="IUpdate.Update"/>
     void Update(TUniform uniform, ref TArg arg);
 }

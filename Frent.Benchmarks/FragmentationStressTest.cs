@@ -39,35 +39,35 @@ public class FragmentationStressTest
     }
 
     [StructLayout((ushort)0, Size = 16)]
-    internal record struct C1 : IComponent<C1>
+    internal record struct C1 : IUpdate<C1>
     {
         [Tick]
         public void Update(ref C1 arg) { }
     }
 
     [StructLayout((ushort)0, Size = 16)]
-    internal record struct C2 : IComponent<C2>
+    internal record struct C2 : IUpdate<C2>
     {
         [Tick]
         public void Update(ref C2 arg) { }
     }
 
     [StructLayout((ushort)0, Size = 16)]
-    internal record struct C3 : IComponent<C3>
+    internal record struct C3 : IUpdate<C3>
     {
         [Tick]
         public void Update(ref C3 arg) { }
     }
 
     [StructLayout((ushort)0, Size = 16)]
-    internal record struct C4 : IComponent<C4>
+    internal record struct C4 : IUpdate<C4>
     {
         [Tick]
         public void Update(ref C4 arg) { }
     }
 
     [StructLayout((ushort)0, Size = 16)]
-    internal record struct C5 : IComponent<C5>
+    internal record struct C5 : IUpdate<C5>
     {
         [Tick]
         public void Update(ref C5 arg) { }

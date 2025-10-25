@@ -213,9 +213,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
     private static void PushUpdateTypeAttributes(ref Stack<string> updateAttributes, out TypeFilterModel componentsAttributes, out TypeFilterModel tagsAttributes, TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol @interface, SemanticModel semanticModel)
     {
-        bool isBoth = @interface.Name is "IEntityUniformComponent";
-        bool isUniform = isBoth || @interface.Name is "IUniformComponent";
-        bool isEntity = isBoth || @interface.Name is "IEntityComponent";
+        bool isBoth = @interface.Name is "IEntityUniformUpdate";
+        bool isUniform = isBoth || @interface.Name is "IUniformUpdate";
+        bool isEntity = isBoth || @interface.Name is "IEntityUpdate";
 
         componentsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
         tagsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
@@ -553,7 +553,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         static (int Start, int Count) ExtractUpdaterName(string interfaceName)
         {
-            return (1, interfaceName.Length - "IComponent".Length);
+            return (1, interfaceName.Length - "IUpdate".Length);
         }
 
         void AppendArray(string[] typeNames)

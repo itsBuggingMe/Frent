@@ -6,9 +6,9 @@ namespace Frent.Components;
 /// <summary>
 /// Indicates a component should be updated with itself as an argument
 /// </summary>
-public interface IEntityComponent : IComponentBase
+public interface IEntityUpdate : IComponentBase
 {
-    /// <inheritdoc cref="IComponent.Update"/>
+    /// <inheritdoc cref="IUpdate.Update"/>
     void Update(Entity self);
 }
 
@@ -18,8 +18,8 @@ public interface IEntityComponent : IComponentBase
 /// <variadic />
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
-public interface IEntityComponent<TArg> : IComponentBase
+public interface IEntityUpdate<TArg> : IComponentBase
 {
-    /// <inheritdoc cref="IComponent.Update"/>
+    /// <inheritdoc cref="IUpdate.Update"/>
     void Update(Entity self, ref TArg arg);
 }
