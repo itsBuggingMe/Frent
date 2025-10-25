@@ -16,6 +16,4 @@ internal enum UpdateModelFlags
     IsSparse = 1 << 7,
     IsTag = 1 << 8,
     IsComponent = 1 << 9,
-    HasSerializeCallback = 1 << 10,
-    HasDeserializeCallback = 1 << 11,
 }

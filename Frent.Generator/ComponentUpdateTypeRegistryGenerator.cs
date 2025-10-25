@@ -118,15 +118,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     // where IComponentBase is the target interface
                 }
             }
-            else if(potentialInterface.IsSerializeComponentInterface())
-            {
-                flags |= name switch
-                {
-                    RegistryHelpers.FullyQualifiedIOnSerializeInterfaceName => UpdateModelFlags.HasSerializeCallback,
-                    RegistryHelpers.FullyQualifiedIOnDeserializeInterfaceName => UpdateModelFlags.HasDeserializeCallback,
-                    _ => UpdateModelFlags.None,
-                };
-            }
             else if(potentialInterface.IsFrentComponentInterface())
             {
                 // this is the IComponent<T...> or whatever interface it implements.
@@ -628,20 +619,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         if (model.HasFlag(UpdateModelFlags.Destroyable))
         {
             cb.Append("GenerationServices.RegisterDestroy<")
-            .Append("global::").Append(model.FullName)
-            .AppendLine(">();");
-        }
-
-        if (model.HasFlag(UpdateModelFlags.HasSerializeCallback))
-        {
-            cb.Append("GenerationServices.RegisterSerialize<")
-            .Append("global::").Append(model.FullName)
-            .AppendLine(">();");
-        }
-
-        if (model.HasFlag(UpdateModelFlags.HasDeserializeCallback))
-        {
-            cb.Append("GenerationServices.RegisterDeserialize<")
             .Append("global::").Append(model.FullName)
             .AppendLine(">();");
         }

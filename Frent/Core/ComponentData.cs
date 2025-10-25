@@ -12,8 +12,6 @@ internal record struct ComponentData(
     ComponentBufferManager Factory,
     Delegate? Initer,
     Delegate? Destroyer,
-    Delegate? OnSerialize,
-    Delegate? OnDeserialize,
     UpdateMethodData[] UpdateMethods,
     IDTypeFilter[] UpdateMethodFilters,
     int SparseComponentIndex);

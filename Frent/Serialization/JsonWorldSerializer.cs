@@ -197,15 +197,7 @@ public class JsonWorldSerializer
         jsonStreamReader.Dispose();
 
         Query everything = world.CreateQuery()
-                .Build();
-
-        // todo: optimize by adding this to the archetype?
-        foreach (var entity in everything
-            .EnumerateWithEntities())
-        {
-            entity.EnumerateComponents(default(OnDeserializedInvokerState));
-        }
-
+            .Build();
 
         if (invokeIniters)
         {
@@ -259,12 +251,6 @@ public class JsonWorldSerializer
 
         Query everything = world.CreateQuery()
             .Build();
-
-        foreach (var entity in everything
-            .EnumerateWithEntities())
-        {
-            entity.EnumerateComponents(default(OnSerializedInvokerState));
-        }
 
         _entityMap.Clear();
 
@@ -389,27 +375,11 @@ public class JsonWorldSerializer
         return created;
     }
 
-    private struct OnDeserializedInvokerState(Entity self) : IGenericAction
-    {
-        public void Invoke<T>(ref T type)
-        {
-            Component<T>.OnDeserialize?.Invoke(self, ref type);
-        }
-    }
-
     private struct OnDeserializedIniterInvokerState(Entity self) : IGenericAction
     {
         public void Invoke<T>(ref T type)
         {
             Component<T>.Initer?.Invoke(self, ref type);
-        }
-    }
-
-    private struct OnSerializedInvokerState : IGenericAction
-    {
-        public void Invoke<T>(ref T type)
-        {
-            Component<T>.OnSerialize?.Invoke(ref type);
         }
     }
 
