@@ -52,6 +52,22 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         return entry.Value;
     }
 
+    public void Clear()
+    {
+        _free = -1;
+        _next = 0;
+        foreach (ref var entry in _entries.AsSpan())
+        {
+            entry.NextIndex = -2;
+            entry.BucketIndex = -1;
+
+            if(RuntimeHelpers.IsReferenceOrContainsReferences<TKey>())
+                entry.Key = default!;
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<TValue>())
+                entry.Value = default!;
+        }
+    }
+
     public bool TryGetValue(TKey key, out TValue value)
     {
         ref Entry entry = ref FindEntry(key);

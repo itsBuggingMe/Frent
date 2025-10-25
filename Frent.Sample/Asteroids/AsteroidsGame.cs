@@ -2,6 +2,7 @@
 using Frent.Core;
 using Frent.Marshalling;
 using Frent.Sample.Asteroids.Editor.UI;
+using Frent.Serialization;
 using Frent.Systems;
 using FrentSandbox;
 using ImGuiNET;
@@ -11,6 +12,7 @@ using Microsoft.Xna.Framework.Input;
 using System.Collections.Frozen;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 
 namespace Frent.Sample.Asteroids;
 
@@ -172,6 +174,20 @@ public partial class AsteroidsGame : Game
         if(_cameraController.TryGet(out Ref<CameraControl> cameraControl))
         {
             _camera.Position = -cameraControl.Value.Location;
+        }
+
+        if(InputHelper.RisingEdge(Keys.P))
+        {
+            MemoryStream memoryStream = new MemoryStream();
+
+            JsonWorldSerializer serializer = new(new(JsonSerializerOptions.Default)
+            {
+                IncludeFields = true,
+            });
+
+            serializer.Serialize(memoryStream, _world);
+
+            string json = Encoding.UTF8.GetString(memoryStream.ToArray());
         }
 
         if(!Paused && _enemyCount < 20 && Random.Shared.Next(60) == 0)

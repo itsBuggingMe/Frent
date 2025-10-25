@@ -6,7 +6,6 @@ global using RuntimeHelpers = System.Runtime.CompilerServices.RuntimeHelpers;
 
 #region Attributes
 using CommunityToolkit.HighPerformance;
-using Frent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 

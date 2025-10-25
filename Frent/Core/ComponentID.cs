@@ -26,6 +26,7 @@ public readonly struct ComponentID : ITypeID, IEquatable<ComponentID>
     internal readonly IDTypeFilter[] MethodFilters => Component.ComponentTable[RawIndex].UpdateMethodFilters;
     internal readonly int SparseIndex => Component.ComponentTable[RawIndex].SparseComponentIndex;
     internal readonly bool IsSparseComponent => SparseIndex != 0;
+    internal ref ComponentData Metadata => ref Component.ComponentTable[RawIndex];
 
     /// <summary>
     /// Checks if this <see cref="ComponentID"/> instance represents the same ID as <paramref name="other"/>.

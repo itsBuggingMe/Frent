@@ -6,7 +6,7 @@ namespace Frent.Core.Structures;
 internal static class GlobalWorldTables
 {
     //we accsess by archetype first because i think we access different comps from the same archetype more
-    public static byte[/*archetype id*/][/*component id*/] ComponentTagLocationTable = [];
+    public static byte[/*component id*/][/*archetype id*/] ComponentTagLocationTable = [];
     internal static int ComponentTagTableBufferSize { get; set; }//reps the length of the second dimension
     internal static Table<World> Worlds = new Table<World>(2);
 

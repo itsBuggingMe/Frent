@@ -99,6 +99,9 @@ namespace Frent.Sample
 
             _world.Update();
 
+            _world.Query<Velocity, Friction>()
+                .Delegate((ref Velocity v, ref Friction f) => v.DXY *= f.Coefficient);
+
             Vector256<float> deltaTime = Vector256.Create(1f);
 
             foreach((Span<Position> positions, Span<Velocity> velocities) in _world

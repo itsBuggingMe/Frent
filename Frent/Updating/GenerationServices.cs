@@ -1,9 +1,14 @@
 ﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Serialization;
 using Frent.Updating.Runners;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Frent.Updating;
 
@@ -21,6 +26,12 @@ public static class GenerationServices
     internal static readonly RefDictionary<Type, UpdateMethodData[]> UserGeneratedTypeMap = new();
     internal static readonly Dictionary<Type, Delegate> TypeIniters = new();
     internal static readonly Dictionary<Type, Delegate> TypeDestroyers = new();
+    internal static readonly Dictionary<Type, Delegate> TypeSerialize = new();
+    internal static readonly Dictionary<Type, Delegate> TypeDeserialize = new();
+    internal static readonly List<IJsonTypeInfoResolver> GeneratedJsonTypeInfoResolvers = new();
+
+    // string name for deserialization
+    internal static readonly Dictionary<string, Type> SerializableTypesMap = new();
 
     /// <inheritdoc cref="GenerationServices"/>
     public static void RegisterInit<T>()
@@ -37,9 +48,29 @@ public static class GenerationServices
     }
 
     /// <inheritdoc cref="GenerationServices"/>
+    public static void RegisterSerialize<T>()
+        where T : IOnSerialize
+    {
+        TypeSerialize[typeof(T)] = (ComponentDelegates<T>.OnSerialize)([method: DebuggerHidden, DebuggerStepThrough] static (ref T c) => c.OnSerialize());
+    }
+
+    /// <inheritdoc cref="GenerationServices"/>
+    public static void RegisterDeserialize<T>()
+        where T : IOnDeserialize
+    {
+        TypeDeserialize[typeof(T)] = (ComponentDelegates<T>.OnDeserialize)([method: DebuggerHidden, DebuggerStepThrough] static (Entity e, ref T c) => c.OnDeserialize(e));
+    }
+
+    /// <inheritdoc cref="GenerationServices"/>
     public static void RegisterComponent<T>()
     {
         Core.Component.CachedComponentFactories.TryAdd(typeof(T), new ComponentBufferManager<T>());
+    }
+
+    /// <inheritdoc cref="GenerationServices"/>
+    public static void RegisterJsonTypeInfoResolver(IJsonTypeInfoResolver resolver)
+    {
+        GeneratedJsonTypeInfoResolvers.Add(resolver);
     }
 
     /// <inheritdoc cref="GenerationServices"/>
