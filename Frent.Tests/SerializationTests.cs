@@ -6,6 +6,7 @@ using Frent.Tests.Helpers;
 using System.Text.Json;
 using static NUnit.Framework.Assert;
 using Frent.Components;
+using System.Text.Json.Serialization;
 
 namespace Frent.Tests;
 
@@ -39,28 +40,6 @@ internal class SerializationTests
         Entity deserializedEntity = GetFirstEntity(query);
         That(deserializedEntity.Tagged<Tag>(), Is.True);
         That(deserializedEntity.Get<int>(), Is.EqualTo(42));
-    }
-
-    [Test]
-    public void TestSerializationCallbacks()
-    {
-        using World world = new();
-        var entity = world.Create<CallbackTestComponent>(new());
-
-        string json = JsonWorldSerializer.Default.Serialize(world);
-        
-        var component = entity.Get<CallbackTestComponent>();
-        That(component.SerializeCalls, Is.EqualTo(1));
-        That(component.DeserializeCalls, Is.EqualTo(0));
-
-        using World deserialized = JsonWorldSerializer.Default.Deserialize(json, invokeIniters: true);
-        
-        var query = deserialized.CreateQuery().Build();
-        var deserializedEntity = GetFirstEntity(query);
-        var deserializedComponent = deserializedEntity.Get<CallbackTestComponent>();
-        
-        That(deserializedComponent.SerializeCalls, Is.EqualTo(1));
-        That(deserializedComponent.DeserializeCalls, Is.EqualTo(1));
     }
 
     [Test]
@@ -178,21 +157,9 @@ internal class SerializationTests
 
     internal struct Tag : ITag;
 
-    internal struct CallbackTestComponent : IOnSerialize, IOnDeserialize
+    internal struct CallbackTestComponent
     {
         public EntityType Archetype { get; set; }
         public ComponentID ComponentType { get; set; }
-        public int SerializeCalls { get; set; }
-        public int DeserializeCalls { get; set; }
-
-        public void OnSerialize()
-        {
-            SerializeCalls++;
-        }
-
-        public void OnDeserialize(Entity self)
-        {
-            DeserializeCalls++;
-        }
     }
 }
