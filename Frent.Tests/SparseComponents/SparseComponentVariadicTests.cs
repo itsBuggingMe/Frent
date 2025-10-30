@@ -20,8 +20,8 @@ internal class SparseComponentVariadicTests
             LastValue1 = component.Value;
         }
     }
-    
-    internal struct SparseVariadicComponent2 : ISparseComponent, IComponent<RegularComponent1, RegularComponent2>
+        
+    internal struct SparseVariadicComponent2 : ISparseComponent, IUpdate<RegularComponent1, RegularComponent2>
     {
         public int UpdateCount;
         public int LastValue1;
@@ -49,7 +49,7 @@ internal class SparseComponentVariadicTests
         }
     }
     
-    internal struct SparseEntityVariadicComponent2 : ISparseComponent, IEntityComponent<RegularComponent1, RegularComponent2>
+    internal struct SparseEntityVariadicComponent2 : ISparseComponent, IEntityUpdate<RegularComponent1, RegularComponent2>
     {
         public int UpdateCount;
         public Entity LastEntity;
@@ -79,7 +79,7 @@ internal class SparseComponentVariadicTests
         }
     }
     
-    internal struct SparseUniformVariadicComponent2 : ISparseComponent, IUniformComponent<TestUniform, RegularComponent1, RegularComponent2>
+    internal struct SparseUniformVariadicComponent2 : ISparseComponent, IUniformUpdate<TestUniform, RegularComponent1, RegularComponent2>
     {
         public int UpdateCount;
         public int LastUniformValue;
