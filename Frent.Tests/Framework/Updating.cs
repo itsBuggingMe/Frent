@@ -126,10 +126,7 @@ internal class Updating
     public void Update_DeferredEntityCreationUpdate_UpdatesDeferredEntities()
     {
         int count = 0;
-        using World world = new(null, new Config()
-        {
-            UpdateDeferredCreationEntities = true
-        });
+        using World world = new(null, true);
 
         world.Create(new DelegateBehavior(() =>
         {
@@ -151,10 +148,7 @@ internal class Updating
     [Test]
     public void Update_DeferredEntityCreationUpdate_HitsRecursionLimit()
     {
-        using World world = new(null, new Config()
-        {
-            UpdateDeferredCreationEntities = true
-        });
+        using World world = new(null, true);
 
         world.Create(new DelegateBehavior(() =>
         {
@@ -176,10 +170,7 @@ internal class Updating
     public void Update_FilteredDeferredEntityCreationUpdate_UpdatesDeferredEntities()
     {
         int count = 0;
-        using World world = new(null, new Config()
-        {
-            UpdateDeferredCreationEntities = true
-        });
+        using World world = new(null, true);
 
         world.Create(new FilteredBehavior1(() =>
         {

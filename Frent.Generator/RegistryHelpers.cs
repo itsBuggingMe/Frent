@@ -122,8 +122,8 @@ public static class RegistryHelpers
     public const string DestroyableInterfaceName = "IDestroyable";
     public const string SparseInterfaceName = "ISparseComponent";
 
-    public const string UniformComponentInterfaceName = "IUniformComponent";
-    public const string EntityUniformComponentInterfaceName = "IEntityUniformComponent";
+    public const string UniformComponentInterfaceName = "IUniformUpdate";
+    public const string EntityUniformComponentInterfaceName = "IEntityUniformUpdate";
 
     public const string FrentComponentNamespace = "Frent.Components";
 }

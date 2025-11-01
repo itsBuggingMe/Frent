@@ -228,9 +228,11 @@ public partial class World : IDisposable
     /// Creates a world with zero entities and a uniform provider.
     /// </summary>
     /// <param name="uniformProvider">The initial uniform provider to be used.</param>
-    public World(IUniformProvider? uniformProvider = null)
+    /// <param name="updateDeferredCreationEntities">When <see langword="true"/>, entities created during <see cref="World.Update()"/>, <see cref="World.Update(Type)"/>, and <see cref="World.Update{T}()"/> will also be updated during the same update.</param>
+    public World(IUniformProvider? uniformProvider = null, bool updateDeferredCreationEntities = false)
     {
         _uniformProvider = uniformProvider ?? NullUniformProvider.Instance;
+        UpdateDeferredCreationEntities = updateDeferredCreationEntities;
         WorldID = _nextWorldID++;
 
         GlobalWorldTables.Worlds[WorldID] = this;
