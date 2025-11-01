@@ -313,20 +313,20 @@ public partial struct Entity : IEquatable<Entity>
         public ref ComponentStorageRecord Components = ref MemoryMarshal.GetArrayDataReference(componentStorageRecord);
         public readonly nint Index = index;
 
-        public ref T Get<T>()
+        public readonly ref T Get<T>()
         {
             var index = Unsafe.Add(ref ComponentIndexMap, Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
             T[] buffer = UnsafeExtensions.UnsafeCast<T[]>(Unsafe.Add(ref Components, index).Buffer);
             return ref buffer.UnsafeArrayIndex(Index);
         }
 
-        public bool HasComponent<T>()
+        public readonly bool HasComponent<T>()
         {
             var index = Unsafe.Add(ref ComponentIndexMap, Component<T>.ID.RawIndex) & GlobalWorldTables.IndexBits;
             return index != 0;
         }
 
-        public bool HasTag<T>()
+        public readonly bool HasTag<T>()
         {
             return (Unsafe.Add(ref ComponentIndexMap, Core.Tag<T>.ID.RawValue) & GlobalWorldTables.HasTagMask) != 0;
         }

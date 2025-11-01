@@ -99,9 +99,7 @@ public class UpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerBase(f),
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
 
         ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
-        ref TArg arg = ref Component<TArg>.IsSparseComponent ?
-            ref Unsafe.NullRef<TArg>()
-            : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+        ref TArg arg = ref VariadicHelpers.ArchetypeRefOrNullRef<TArg>(b, start);
 
         Span<Bitset> bitsets = b.SparseBitsetSpan();
         // TODO: double check that the jit register promotes this.
@@ -169,9 +167,7 @@ public class UpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerBase(f),
                 ? entity.GetCachedLookupAndAssertSparseComponent(world, BitsetHelper<TArg>.BitsetOf, out Archetype archetype)
                 : entity.GetCachedLookup(world, out archetype);
 
-            ref TArg arg = ref Component<TArg>.IsSparseComponent
-                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
-                : ref entityData.Get<TArg>();
+            ref TArg arg = ref VariadicHelpers.GetRefSparseOrArchetypical(ref sparseFirst, sparseArgArray, in entity, in entityData);
 
             if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref entityData.MapRef, in archetype.GetBitset(i)))
                 continue;
@@ -211,9 +207,7 @@ public class UpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerBase(f),
                 ? entity.GetCachedLookupAndAssertSparseComponent(world, BitsetHelper<TArg>.BitsetOf, out Archetype archetype)
                 : entity.GetCachedLookup(world, out archetype);
 
-            ref TArg arg = ref Component<TArg>.IsSparseComponent
-                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
-                : ref entityData.Get<TArg>();
+            ref TArg arg = ref VariadicHelpers.GetRefSparseOrArchetypical(ref sparseFirst, sparseArgArray, in entity, in entityData);
 
             if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(archetype.ComponentTagTable), in archetype.GetBitset((int)entityData.Index)))
                 continue;

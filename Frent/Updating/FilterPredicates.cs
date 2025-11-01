@@ -51,7 +51,7 @@ public readonly struct IncludeTagsPredicate<T1> : IFilterPredicate
 }
 
 /// <inheritdoc cref="GenerationServices"/>
-[Variadic("!HasTag<T1>(ref e)", "|!HasTag<T$>(ref e) || |false", 8)]
+[Variadic("HasTag<T1>(ref e)", "|HasTag<T$>(ref e) || |false", 8)]
 [Variadic("BitsetHelper<T1>", "BitsetHelper<|T$, |>")]
 [Variadic("Predicate<T1>", "Predicate<|T$, |>")]
 public readonly struct ExcludeTagsPredicate<T1> : IFilterPredicate

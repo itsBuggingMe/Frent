@@ -112,9 +112,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
 
         ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
-        ref TArg arg = ref Component<TArg>.IsSparseComponent ?
-            ref Unsafe.NullRef<TArg>()
-            : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+        ref TArg arg = ref VariadicHelpers.ArchetypeRefOrNullRef<TArg>(b, start);
 
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
@@ -188,9 +186,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
                 ? entity.GetCachedLookupAndAssertSparseComponent(world, BitsetHelper<TArg>.BitsetOf, out archetype)
                 : entity.GetCachedLookup(world, out archetype);
 
-            ref TArg arg = ref Component<TArg>.IsSparseComponent
-                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
-                : ref entityData.Get<TArg>();
+            ref TArg arg = ref VariadicHelpers.GetRefSparseOrArchetypical(ref sparseFirst, sparseArgArray, in entity, in entityData);
 
             if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref entityData.MapRef, in archetype.GetBitset(i)))
                 continue;
@@ -232,9 +228,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
                 ? entity.GetCachedLookupAndAssertSparseComponent(world, BitsetHelper<TArg>.BitsetOf, out archetype)
                 : entity.GetCachedLookup(world, out archetype);
 
-            ref TArg arg = ref Component<TArg>.IsSparseComponent
-                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
-                : ref entityData.Get<TArg>();
+            ref TArg arg = ref VariadicHelpers.GetRefSparseOrArchetypical(ref sparseFirst, sparseArgArray, in entity, in entityData);
 
             if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(archetype.ComponentTagTable), in archetype.GetBitset((int)entityData.Index)))
                 continue;
