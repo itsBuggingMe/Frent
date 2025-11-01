@@ -128,14 +128,14 @@ public partial class World : IDisposable
     private IUniformProvider _uniformProvider;
 
     /// <summary>
+    /// When <see langword="true"/>, entities created during <see cref="World.Update()"/>, <see cref="World.Update(Type)"/>, and <see cref="World.Update{T}()"/> will also be updated during the same update.
+    /// </summary>
+    public bool UpdateDeferredCreationEntities { get; set; }
+
+    /// <summary>
     /// Gets the current number of entities managed by the world.
     /// </summary>
     public int EntityCount => NextEntityID - _freeListCount;
-
-    /// <summary>
-    /// The current world config.
-    /// </summary>
-    public Config CurrentConfig { get; set; }
 
     internal RefDictionary<EntityIDOnly, EventRecord> EventLookup = new();
     internal readonly Archetype DefaultArchetype;
@@ -228,10 +228,8 @@ public partial class World : IDisposable
     /// Creates a world with zero entities and a uniform provider.
     /// </summary>
     /// <param name="uniformProvider">The initial uniform provider to be used.</param>
-    /// <param name="config">The inital config to use. If not provided, <see cref="Config.Singlethreaded"/> is used.</param>
-    public World(IUniformProvider? uniformProvider = null, Config? config = null)
+    public World(IUniformProvider? uniformProvider = null)
     {
-        CurrentConfig = config ?? Config.Singlethreaded;
         _uniformProvider = uniformProvider ?? NullUniformProvider.Instance;
         WorldID = _nextWorldID++;
 
@@ -276,7 +274,7 @@ public partial class World : IDisposable
         finally
         {
             ExitWorldUpdateMethod();
-            ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
+            ExitDisallowState(appliesTo, UpdateDeferredCreationEntities);
         }
     }
 
@@ -303,7 +301,7 @@ public partial class World : IDisposable
         finally
         {
             ExitWorldUpdateMethod();
-            ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
+            ExitDisallowState(appliesTo, UpdateDeferredCreationEntities);
         }
     }
 
@@ -325,7 +323,7 @@ public partial class World : IDisposable
         finally
         {
             ExitWorldUpdateMethod();
-            ExitDisallowState(singleComponent, CurrentConfig.UpdateDeferredCreationEntities);
+            ExitDisallowState(singleComponent, UpdateDeferredCreationEntities);
         }
     }
 

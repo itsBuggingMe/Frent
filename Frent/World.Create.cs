@@ -79,40 +79,4 @@ partial class World
 
         return concreteEntity;
     }
-
-    /// <summary>
-    /// Creates a large amount of entities quickly
-    /// </summary>
-    /// <param name="count">The number of entities to create</param>
-    /// <returns>The entities created and their component spans</returns>
-    /// <variadic />
-    [Obsolete]
-    public ChunkTuple<T> CreateMany<T>(int count)
-    {
-        if (count < 0)
-            FrentExceptions.Throw_ArgumentOutOfRangeException("Must create at least 1 entity!");
-        if (!AllowStructualChanges)
-            FrentExceptions.Throw_InvalidOperationException("Cannot bulk create during world updates!");
-
-        var archetypes = Archetype<T>.CreateNewOrGetExistingArchetypes(this);
-        int initalEntityCount = archetypes.Archetype.EntityCount;
-
-        EntityTable.EnsureCapacity(EntityCount + count);
-
-        Span<EntityIDOnly> entities = archetypes.Archetype.CreateEntityLocations(count, this);
-
-        if (EntityCreatedEvent.HasListeners)
-        {
-            foreach (var entity in entities)
-                EntityCreatedEvent.Invoke(entity.ToEntity(this));
-        }
-
-        var chunks = new ChunkTuple<T>()
-        {
-            Entities = new EntityEnumerator(this, entities),
-            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],
-        };
-
-        return chunks;
-    }
 }
