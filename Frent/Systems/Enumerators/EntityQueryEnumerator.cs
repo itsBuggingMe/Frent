@@ -123,9 +123,15 @@ public ref struct EntityQueryEnumerator
     }
 
     /// <summary>
-    /// Gets the enumerator over a query.
+    /// A wrapper over a query for enumeration.
     /// </summary>
-    public EntityQueryEnumerator GetEnumerator() => this;
+    public struct Enumerable(Query q)
+    {
+        /// <summary>
+        /// Gets the enumerator over a query.
+        /// </summary>
+        public readonly EntityQueryEnumerator GetEnumerator() => new(q);
+    }
 }
 
 /// <summary>
@@ -275,7 +281,13 @@ public ref struct EntityQueryEnumerator<T>
     }
 
     /// <summary>
-    /// Gets the enumerator over a query.
+    /// A wrapper over a query for enumeration.
     /// </summary>
-    public EntityQueryEnumerator<T> GetEnumerator() => this;
+    public struct Enumerable(Query q)
+    {
+        /// <summary>
+        /// Gets the enumerator over a query.
+        /// </summary>
+        public readonly EntityQueryEnumerator<T> GetEnumerator() => new(q);
+    }
 }

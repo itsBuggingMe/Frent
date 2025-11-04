@@ -57,7 +57,13 @@ public ref struct ChunkQueryEnumerator<T>
     public bool MoveNext() => ++_archetypeIndex < _archetypes.Length;
 
     /// <summary>
-    /// Gets the enumerator over a query.
+    /// A wrapper over a query for enumeration.
     /// </summary>
-    public ChunkQueryEnumerator<T> GetEnumerator() => this;
+    public struct Enumerable(Query q)
+    {
+        /// <summary>
+        /// Gets the enumerator over a query.
+        /// </summary>
+        public readonly ChunkQueryEnumerator<T> GetEnumerator() => new(q);
+    }
 }
