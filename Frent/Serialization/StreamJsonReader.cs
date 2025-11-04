@@ -54,7 +54,7 @@ internal ref struct StreamJsonReader
 
                 _currentBuffer = ArrayPool<byte>.Shared.Rent(_currentBuffer.Length << 1);
 
-                oldBuffer.CopyTo(_currentBuffer);
+                oldBuffer.CopyTo(_currentBuffer.AsSpan());
 
                 ArrayPool<byte>.Shared.Return(oldBuffer);
             }
