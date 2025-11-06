@@ -180,6 +180,8 @@ partial class Archetype
             }
             else
             {
+                MemoryHelpers.AssertComponentIDsUnique(types);
+
                 int nextIDInt = ++NextArchetypeID;
                 if (nextIDInt == ushort.MaxValue)
                     throw new InvalidOperationException($"Exceeded maximum unique archetype count of 65535");
