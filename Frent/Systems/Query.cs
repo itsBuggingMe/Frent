@@ -98,7 +98,7 @@ public partial class Query
             return;
 
         // match behavior of when archetypical components are not includes
-        Unsafe.NullRef<int>() = 0;
+        FrentExceptions.Throw_NullReferenceException();
     }
 }
 
