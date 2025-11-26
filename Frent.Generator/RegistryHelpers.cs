@@ -103,10 +103,10 @@ public static class RegistryHelpers
         Name: UniformComponentInterfaceName or EntityUniformComponentInterfaceName,
     };
 
-    public const string IncludesComponentsAttributeName = "Frent.Updating.IncludesComponentsAttribute";
-    public const string ExcludesComponentsAttributeName = "Frent.Updating.ExcludesComponentsAttribute";
-    public const string IncludesTagsAttributeName = "Frent.Updating.IncludesTagsAttribute";
-    public const string ExcludesTagsAttributeName = "Frent.Updating.ExcludesTagsAttribute";
+    public const string IncludesComponentsAttributeName = "global::Frent.Updating.IncludesComponentsAttribute";
+    public const string ExcludesComponentsAttributeName = "global::Frent.Updating.ExcludesComponentsAttribute";
+    public const string IncludesTagsAttributeName = "global::Frent.Updating.IncludesTagsAttribute";
+    public const string ExcludesTagsAttributeName = "global::Frent.Updating.ExcludesTagsAttribute";
 
     public const string UpdateTypeAttributeName = "Frent.Updating.UpdateTypeAttribute";
 
