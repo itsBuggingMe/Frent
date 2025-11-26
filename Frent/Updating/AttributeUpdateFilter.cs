@@ -77,6 +77,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     {
         Span<ArchtypeUpdateMethod> records = _methods.AsSpan();
         World world = _world;
+
         foreach (var (archetype, start, length) in _matchedArchtypes.AsSpan())
         {
             if (archetype.EntityCount == 0)

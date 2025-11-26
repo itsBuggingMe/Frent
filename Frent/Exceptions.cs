@@ -25,23 +25,16 @@ internal class FrentExceptions
     }
 
     [DoesNotReturn]
-    public static void Throw_ComponentNotFoundException(string message)
-    {
-        throw new ComponentNotFoundException(message);
-    }
-
-    [DoesNotReturn]
     public static void Throw_ComponentAlreadyExistsException(Type t)
     {
         throw new ComponentAlreadyExistsException(t);
     }
 
     [DoesNotReturn]
-    public static void Throw_ComponentAlreadyExistsException(string message)
+    public static void Throw_ComponentAlreadyExistsException<T>()
     {
-        throw new ComponentAlreadyExistsException(message);
+        throw new ComponentAlreadyExistsException(typeof(T));
     }
-
 
     [DoesNotReturn]
     public static void Throw_ArgumentOutOfRangeException(string message)
@@ -56,20 +49,32 @@ internal class FrentExceptions
     }
 }
 
-internal class ComponentAlreadyExistsException : Exception
+/// <summary>
+/// Thrown when a component already exists on an entity.
+/// </summary>
+public class ComponentAlreadyExistsException(Type t) : Exception($"Component of type {t.FullName} already exists on entity!");
+
+/// <summary>
+/// Represents an exception that is thrown when a requested component type cannot be found.
+/// </summary>
+public class ComponentNotFoundException(Type t) : Exception($"Component of type {t.FullName} not found");
+
+/// <summary>
+/// An exception that is thrown when an entity is missing a required component during an update.
+/// </summary>
+public class MissingComponentException(Type componentType, Type expectedType, Entity invalidEntity)
+    : Exception($"Entity {invalidEntity.EntityID} from world {invalidEntity.WorldID} with component {componentType.Name} missing dependency {expectedType.Name}.")
 {
-    public ComponentAlreadyExistsException(Type t)
-        : base($"Component of type {t.FullName} already exists on entity!") { }
-
-    public ComponentAlreadyExistsException(string message)
-        : base(message) { }
-}
-
-internal class ComponentNotFoundException : Exception
-{
-    public ComponentNotFoundException(Type t)
-        : base($"Component of type {t.FullName} not found") { }
-
-    public ComponentNotFoundException(string message)
-        : base(message) { }
+    /// <summary>
+    /// The dependent component type that caused the exception.
+    /// </summary>
+    public Type ComponentType { get; } = componentType;
+    /// <summary>
+    /// The component dependency that is missing.
+    /// </summary>
+    public Type ExpectedType { get; } = expectedType;
+    /// <summary>
+    /// The entity on which <see cref="ComponentType"/> exists but <see cref="ExpectedType"/> is missing.
+    /// </summary>
+    public Entity InvalidEntity { get; } = invalidEntity;
 }

@@ -31,7 +31,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         ref var denseIndex = ref EnsureSparseCapacityAndGetIndex(id);
         if (denseIndex != -1)
         {
-            FrentExceptions.Throw_ComponentAlreadyExistsException($"Component Already Has Component of Type {typeof(T).Name}!");
+            FrentExceptions.Throw_ComponentAlreadyExistsException<T>();
         }
 
         denseIndex = _nextIndex++;
@@ -49,10 +49,10 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         var sparse = _sparse;
 
         if (!((uint)e.EntityID < (uint)sparse.Length))
-            FrentExceptions.Throw_ComponentNotFoundException($"Component of type {typeof(T).Name} does not exist on this entity.");
+            FrentExceptions.Throw_ComponentNotFoundException<T>();
         int index = sparse[e.EntityID];
         if (!((uint)index < (uint)dense.Length))
-            FrentExceptions.Throw_ComponentNotFoundException($"Component of type {typeof(T).Name} does not exist on this entity.");
+            FrentExceptions.Throw_ComponentNotFoundException<T>();
 
         ref T toSet = ref dense[index];
         if (typeof(T).IsValueType)

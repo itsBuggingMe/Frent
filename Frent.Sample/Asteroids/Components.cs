@@ -147,7 +147,7 @@ internal struct Line : IUniformUpdate<ShapeBatch, Transform>, ISparseComponent
 }
 
 [Editor]
-internal struct PlayerController : IUniformComponent<World, Transform, Velocity>, IInitable, ISparseComponent
+internal struct PlayerController : IUniformUpdate<World, Transform, Velocity>, IInitable, ISparseComponent
 {
     private int _timeSinceShoot;
     private MouseState _pms;
@@ -207,7 +207,7 @@ internal struct PlayerController : IUniformComponent<World, Transform, Velocity>
 }
 
 [Editor]
-internal struct EnemyController(Entity target) : IEntityComponent<Transform, Velocity>
+internal struct EnemyController(Entity target) : IEntityUpdate<Transform, Velocity>
 {
     public Entity Target = target;
     private int _shootTimer;
