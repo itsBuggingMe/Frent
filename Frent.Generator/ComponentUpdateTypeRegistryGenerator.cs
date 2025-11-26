@@ -479,7 +479,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append(", global::").Append(model.FullName);
 
             foreach (var item in updateMethodModel.GenericArguments)
-                cb.Append(", ").Append(item);
+                cb.Append(", global::").Append(item);
 
             if(updateMethodModel.UniformTupleTypes.Length >= 2)
             {
