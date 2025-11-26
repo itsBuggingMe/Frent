@@ -5,7 +5,7 @@ namespace Frent.Generator.Models;
 
 internal record struct ComponentUpdateItemModel(
     UpdateModelFlags Flags,
-    string FullName, // Frent.Generator.Model.ComponentUpdateItemModel
+    string FullName, // global::Frent.Generator.Model.ComponentUpdateItemModel
     string? Namespace, // Frent.Generator.Model
     //string ImplInterface, // IComponent
     string HintName, // Frent.Generator.Model.ComponentUpdateItemModel
