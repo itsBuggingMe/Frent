@@ -1,11 +1,10 @@
 ﻿using Frent.Collections;
-using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
-namespace Frent.Core;
+namespace Frent.Core.Archetypes;
 
 [Variadic(nameof(Archetype))]
 internal static class Archetype<T>

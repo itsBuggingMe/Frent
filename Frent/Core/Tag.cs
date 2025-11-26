@@ -1,5 +1,4 @@
 ﻿using Frent.Collections;
-using Frent.Core.Structures;
 
 namespace Frent.Core;
 

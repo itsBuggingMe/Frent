@@ -1,6 +1,5 @@
 ﻿using Frent.Collections;
 using Frent.Components;
-using Frent.Core.Structures;
 using Frent.Updating;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;

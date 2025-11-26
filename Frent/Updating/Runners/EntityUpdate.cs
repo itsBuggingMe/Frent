@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -8,7 +9,7 @@ using System.Runtime.InteropServices;
 namespace Frent.Updating.Runners;
 
 /// <inheritdoc cref="GenerationServices"/>
-public class EntityUpdateRunner<TPredicate, TComp>(Delegate? f) : RunnerBase(f), IRunner
+public sealed class EntityUpdateRunner<TPredicate, TComp>(Delegate? f) : RunnerBase(f), IRunner
     where TPredicate : IFilterPredicate
     where TComp : IEntityUpdate
 {
@@ -95,7 +96,7 @@ public class EntityUpdateRunner<TPredicate, TComp>(Delegate? f) : RunnerBase(f),
 
 /// <inheritdoc cref="GenerationServices"/>
 [Variadic(nameof(IRunner))]
-public class EntityUpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerBase(f), IRunner
+public sealed class EntityUpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerBase(f), IRunner
     where TPredicate : IFilterPredicate
     where TComp : IEntityUpdate<TArg>
 {

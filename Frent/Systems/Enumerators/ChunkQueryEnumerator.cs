@@ -1,4 +1,5 @@
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Variadic.Generator;
 
 namespace Frent.Systems;

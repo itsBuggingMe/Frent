@@ -1,7 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Core.Events;
-using Frent.Core.Structures;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;

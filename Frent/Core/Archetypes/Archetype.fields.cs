@@ -1,10 +1,9 @@
 ﻿using Frent.Collections;
-using Frent.Core.Structures;
 using Frent.Updating;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Frent.Core;
+namespace Frent.Core.Archetypes;
 
 //56 bytes total - 16 header + mt, 8 comps, 8 entities, 8 table, 8 sparse bits, 6 ids and tracking, 2 padding
 partial class Archetype(ArchetypeID archetypeID, ComponentStorageRecord[] components, bool isTempCreateArchetype)

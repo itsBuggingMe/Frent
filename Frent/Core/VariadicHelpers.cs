@@ -1,4 +1,4 @@
-﻿using Frent.Core.Structures;
+﻿using Frent.Core.Archetypes;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;

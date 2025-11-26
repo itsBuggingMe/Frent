@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Core.Events;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
@@ -309,8 +310,6 @@ partial struct Entity
 
 partial struct Entity
 {
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void M() { }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Archetype TraverseThroughCacheOrCreate<T, TEdge>(
         World world,

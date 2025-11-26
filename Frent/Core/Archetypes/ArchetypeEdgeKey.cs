@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Frent.Core.Structures;
+namespace Frent.Core.Archetypes;
 
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]

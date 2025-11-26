@@ -1,8 +1,8 @@
 ﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Core.Events;
-using Frent.Core.Structures;
 using Frent.Systems;
 using Frent.Systems.Queries;
 using Frent.Updating;
@@ -243,8 +243,9 @@ public partial class World : IDisposable
         for (int i = 1; i < WorldSparseSetTable.Length; i++)
             WorldSparseSetTable[i] = Component.ComponentTableBySparseIndex[i].Factory.CreateSparseSet();
 
-        WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultWorldEntity = new Entity(WorldID, default, default);
+
+        WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
     }
 

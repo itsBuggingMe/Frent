@@ -1,4 +1,4 @@
-﻿using Frent.Core.Structures;
+﻿using Frent.Core;
 
 namespace Frent.Marshalling;
 

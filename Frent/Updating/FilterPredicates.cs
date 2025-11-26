@@ -2,7 +2,7 @@
 using Frent.Core;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
-using static Frent.Core.Structures.GlobalWorldTables;
+using static Frent.Core.GlobalWorldTables;
 
 namespace Frent.Updating;
 

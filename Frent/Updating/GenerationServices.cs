@@ -57,25 +57,18 @@ public static class GenerationServices
 }
 
 /// <inheritdoc cref="GenerationServices"/>
-public readonly struct UpdateMethodData(IRunner Runner, Type[] Attributes, TypeFilterRecord TypeFilterRecord)
+public readonly struct UpdateMethodData(IRunner runner, Type[] attributes, TypeFilterRecord typeFilterRecord, Type[] dependencies)
 {
-    internal readonly IRunner Runner = Runner;
-    internal readonly Type[] Attributes = Attributes;
-    internal readonly TypeFilterRecord TypeFilterRecord = TypeFilterRecord;
+    internal readonly IRunner Runner = runner;
+    internal readonly Type[] Attributes = attributes;
+    internal readonly TypeFilterRecord TypeFilterRecord = typeFilterRecord;
+    internal readonly Type[] Dependencies = dependencies;
 
-    internal readonly bool AttributeIsDefined(Type attributeType)
-    {
-        foreach (var attr in Attributes)
-        {
-            if (attr == attributeType)
-                return true;
-        }
-        return false;
-    }
+    internal readonly bool AttributeIsDefined(Type attributeType) => Array.IndexOf(Attributes, attributeType, 0, Attributes.Length) >= 0;
 }
 
 /// <inheritdoc cref="GenerationServices"/>
-public record struct TypeFilterRecord(Type[] IncludeComponents, Type[] ExcludeComponents, Type[] IncludeTags, Type[] ExcludeTags)
+public sealed record TypeFilterRecord(Type[] IncludeComponents, Type[] ExcludeComponents, Type[] IncludeTags, Type[] ExcludeTags)
 {
     /// <inheritdoc cref="GenerationServices"/>
     public static readonly TypeFilterRecord None = new([], [], [], []);

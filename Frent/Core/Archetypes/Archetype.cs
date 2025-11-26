@@ -1,6 +1,6 @@
 ﻿using Frent.Buffers;
 using Frent.Collections;
-using Frent.Core.Structures;
+using Frent.Core.Archetypes;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Frent.Core;
+namespace Frent.Core.Archetypes;
 
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
 internal partial class Archetype
