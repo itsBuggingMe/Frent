@@ -234,6 +234,22 @@ internal class Updating
 
         world.Update<FilterAttribute2>();
     }
+
+    [Test]
+    public void Update_MissingComponent_MissingComponentException()
+    {
+        using World world = new();
+
+        Entity e = world.Create(new DependencyComponent());
+
+        MissingComponentException? exception = 
+            Throws<MissingComponentException>(() => world.Update<FilterAttribute1>());
+
+        That(exception, Is.Not.Null);
+        That(exception!.InvalidEntity, Is.EqualTo(e));
+        That(exception!.ComponentType, Is.EqualTo(typeof(DependencyComponent)));
+        That(exception!.MissingComponent, Is.EqualTo(typeof(int)));
+    }
 }
 
 internal partial struct LazyComponent<T>(Action a) : IUpdate

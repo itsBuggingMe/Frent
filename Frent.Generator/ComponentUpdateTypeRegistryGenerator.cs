@@ -96,7 +96,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             {
                 // this is the IComponent<T...> or whatever interface it implements.
                 INamedTypeSymbol @interface = potentialInterface;
-
                 string[] genericArguments;
                 if(@interface.TypeArguments.Length != 0)
                 {
@@ -215,7 +214,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     private static void PushUpdateTypeAttributes(ref Stack<string> updateAttributes, out TypeFilterModel componentsAttributes, out TypeFilterModel tagsAttributes, TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol @interface, SemanticModel semanticModel)
     {
         bool isBoth = @interface.Name is "IEntityUniformUpdate";
-        bool isUniform = isBoth || @interface.Name is "IUniformUpdate";
+        //bool isUniform = isBoth || @interface.Name is "IUniformUpdate";
         bool isEntity = isBoth || @interface.Name is "IEntityUpdate";
 
         componentsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
@@ -289,6 +288,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     default:
                         if(!InheritsFromBase(attrData.AttributeClass, RegistryHelpers.UpdateTypeAttributeName))
                             break;
+
                         updateAttributes.Push(attrName);
                         break;
                 }
@@ -527,7 +527,11 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             // Type[] dependencies
             cb.Append(", ");
 
-            AppendArray(updateMethodModel.GenericArguments.Items);
+            bool hasUniforms = updateMethodModel.ImplInterface is
+                RegistryHelpers.UniformComponentInterfaceName or
+                RegistryHelpers.EntityUniformComponentInterfaceName;
+
+            AppendArray(updateMethodModel.GenericArguments.Items.AsSpan(hasUniforms ? 1 : 0));
 
             cb.RemoveLastComma();
 
@@ -566,7 +570,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             return (1, interfaceName.Length - "IUpdate".Length);
         }
 
-        void AppendArray(string[] typeNames)
+        void AppendArray(ReadOnlySpan<string> typeNames)
         {
             if (typeNames.Length == 0)
             {

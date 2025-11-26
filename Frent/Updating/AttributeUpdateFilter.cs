@@ -70,17 +70,40 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         }
         else
         {
-            SinglethreadedUpdate();
+            int recordIndex = 0;
+
+            try
+            {
+                SinglethreadedUpdate(ref recordIndex);
+            }
+            catch (NullReferenceException)
+            {
+                MissingComponentException? ex = recordIndex == -1 ?
+                    throw new NotImplementedException()
+                    : CreateExceptionArchetype(recordIndex);
+
+                if (ex is null)
+                    throw;
+
+                throw ex;
+            }
         }
     }
 
-    private void SinglethreadedUpdate()
+    private void SinglethreadedUpdate(ref int recordIndex)
     {
         Span<ArchetypeUpdateMethod> records = _methods.AsSpan();
         World world = _world;
 
-        foreach (var (archetype, start, length) in _matchedArchetypes.AsSpan())
+        Span<ArchetypeUpdateSpan> archetypes = _matchedArchetypes.AsSpan();
+        for(; recordIndex < archetypes.Length; recordIndex++)
         {
+            ref ArchetypeUpdateSpan archetypeRecord = ref archetypes.UnsafeSpanIndex(recordIndex);
+
+            Archetype archetype = archetypeRecord.Archetype;
+            int start = archetypeRecord.Start;
+            int length = archetypeRecord.Length;
+
             if (archetype.EntityCount == 0)
                 continue;
 
@@ -92,6 +115,8 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 item.Runner.RunArchetypical(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world, 0, archetype.EntityCount);
             }
         }
+
+        recordIndex = -1;
 
         Span<SparseUpdateMethod> sparseUpdates = _sparseMethods.AsSpan(0, _sparseMethodsCount);
 
@@ -274,7 +299,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                     UpdateMethodData metadata = failedComponent.Methods[potentialFailure.MetadataIndex];
                     foreach(var dependency in metadata.Dependencies)
                     {
-                        if(archetype.GetComponentIndex(Component.GetComponentID(dependency)) == -1)
+                        if(archetype.GetComponentIndex(Component.GetComponentID(dependency)) == 0)
                         {
                             Entity firstEntity = archetype.GetEntityDataReference().ToEntity(_world);
                             return new MissingComponentException(failedComponent.Type, dependency, firstEntity);

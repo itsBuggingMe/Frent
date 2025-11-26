@@ -63,7 +63,7 @@ public class ComponentNotFoundException(Type t) : Exception($"Component of type 
 /// An exception that is thrown when an entity is missing a required component during an update.
 /// </summary>
 public class MissingComponentException(Type componentType, Type expectedType, Entity invalidEntity)
-    : Exception($"Entity {invalidEntity.EntityID} from world {invalidEntity.WorldID} with component {componentType.Name} missing dependency {expectedType.Name}.")
+    : Exception($"Entity {invalidEntity.EntityID} with component {componentType.Name} missing dependency {expectedType.Name}.")
 {
     /// <summary>
     /// The dependent component type that caused the exception.
@@ -72,9 +72,9 @@ public class MissingComponentException(Type componentType, Type expectedType, En
     /// <summary>
     /// The component dependency that is missing.
     /// </summary>
-    public Type ExpectedType { get; } = expectedType;
+    public Type MissingComponent { get; } = expectedType;
     /// <summary>
-    /// The entity on which <see cref="ComponentType"/> exists but <see cref="ExpectedType"/> is missing.
+    /// The entity on which <see cref="ComponentType"/> exists but <see cref="MissingComponent"/> is missing.
     /// </summary>
     public Entity InvalidEntity { get; } = invalidEntity;
 }
