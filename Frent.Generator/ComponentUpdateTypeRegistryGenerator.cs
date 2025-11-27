@@ -443,7 +443,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         {
             cb
                 .Append("global::Frent.Core.Tag.RegisterTag(typeof(")
-                .Append("global::").Append(model.FullName)
+                .Append(model.FullName)
                 .AppendLine("));")
                 .AppendLine();
         }

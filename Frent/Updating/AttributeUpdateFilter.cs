@@ -66,7 +66,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         if (_isMultithread)
         {
-            MultithreadedUpdate();
+            MultiThreadedUpdate();
         }
         else
         {
@@ -74,31 +74,40 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
             try
             {
-                SinglethreadedUpdate(ref recordIndex);
+                SingleThreadedArchetype(ref recordIndex);
+            }
+            catch (NullReferenceException) // translate null reference exceptions into missing component exceptions
+            {
+                if (CreateExceptionArchetype(recordIndex) is { } e)
+                    throw e;
+                throw;
+            }
+
+            int entityId = 0;
+            int sparseRecordIndex = 0;
+
+            try
+            {
+                SingleThreadedSparse(ref sparseRecordIndex, ref entityId);
             }
             catch (NullReferenceException)
             {
-                MissingComponentException? ex = recordIndex == -1 ?
-                    throw new NotImplementedException()
-                    : CreateExceptionArchetype(recordIndex);
-
-                if (ex is null)
-                    throw;
-
-                throw ex;
+                if (CreateExceptionSparse(entityId, sparseRecordIndex) is { } e)
+                    throw e;
+                throw;
             }
         }
     }
 
-    private void SinglethreadedUpdate(ref int recordIndex)
+    private void SingleThreadedArchetype(ref int archetypeRecordIndex)
     {
         Span<ArchetypeUpdateMethod> records = _methods.AsSpan();
         World world = _world;
 
         Span<ArchetypeUpdateSpan> archetypes = _matchedArchetypes.AsSpan();
-        for(; recordIndex < archetypes.Length; recordIndex++)
+        for(archetypeRecordIndex = 0; archetypeRecordIndex < archetypes.Length; archetypeRecordIndex++)
         {
-            ref ArchetypeUpdateSpan archetypeRecord = ref archetypes.UnsafeSpanIndex(recordIndex);
+            ref ArchetypeUpdateSpan archetypeRecord = ref archetypes.UnsafeSpanIndex(archetypeRecordIndex);
 
             Archetype archetype = archetypeRecord.Archetype;
             int start = archetypeRecord.Start;
@@ -115,21 +124,25 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 item.Runner.RunArchetypical(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world, 0, archetype.EntityCount);
             }
         }
+    }
 
-        recordIndex = -1;
-
+    private void SingleThreadedSparse(ref int i, ref int sparseEntityId)
+    {
+        World world = _world;
         Span<SparseUpdateMethod> sparseUpdates = _sparseMethods.AsSpan(0, _sparseMethodsCount);
 
-        foreach (SparseUpdateMethod method in sparseUpdates)
+        for(i = 0; i < sparseUpdates.Length; i++)
         {
+            SparseUpdateMethod method = sparseUpdates[i];
+
             if (method.SparseSet.Count == 0)
                 continue;
 
-            method.Runner.RunSparse(method.SparseSet, world);
+            method.Runner.RunSparse(method.SparseSet, world, ref sparseEntityId);
         }
     }
 
-    private void MultithreadedUpdate()
+    private void MultiThreadedUpdate()
     {
         const int LargeArchetypeThreshold = 16;
 
@@ -312,6 +325,30 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         return null;
     }
 
+    private MissingComponentException? CreateExceptionSparse(int entityId, int recordId)
+    {
+        SparseUpdateMethod record = _sparseMethods[recordId];
+
+        ComponentID componentId = Component.GetComponentID(record.SparseSet.Type);
+
+        Entity e = new Entity(_world.WorldID, _world.EntityTable[entityId].Version, entityId);
+
+        Debug.Assert(_world.EntityTable[entityId].Archetype is not null);
+
+        foreach (var method in componentId.Methods)
+        {
+            if(_matchAll || method.AttributeIsDefined(_attributeType))
+            {
+                foreach(var dep in method.Dependencies)
+                {
+                    if(!e.Has(dep))
+                        return new MissingComponentException(componentId.Type, dep, e);
+                }
+            }
+        }
+
+        return null;
+    }
     internal void ArchetypeAdded(Archetype archetype)
     {
         if (_lastRegisteredComponentID < Component.ComponentTable.Count)
@@ -388,7 +425,8 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         foreach (var sparseMethod in _sparseMethods.AsSpan(0, _sparseMethodsCount))
         {
-            sparseMethod.Runner.RunSparseSubset(sparseMethod.SparseSet, world, ids);
+            int entityId = 0;
+            sparseMethod.Runner.RunSparseSubset(sparseMethod.SparseSet, world, ids, ref entityId);
         }
     }
 

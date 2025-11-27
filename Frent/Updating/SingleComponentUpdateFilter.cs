@@ -84,7 +84,8 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
             var world = _world;
             foreach (var runner in _allRunners)
             {
-                runner.RunSparse(set, world);
+                int entityId = 0;   
+                runner.RunSparse(set, world, ref entityId);
             }
         }
 

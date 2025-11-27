@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Marshalling;
 using Frent.Systems;
 using Frent.Updating;
@@ -85,20 +86,20 @@ public class JsonWorldSerializer
     /// <summary>
     /// Deserializes a JSON string into a new instance of the World class.
     /// </summary>
-    public World Deserialize(string json, bool invokeIniters = false, IUniformProvider? uniformProvider = null, Config? config = null)
+    public World Deserialize(string json, bool invokeIniters = false, IUniformProvider? uniformProvider = null)
     {
         byte[] utf8Bytes = Encoding.UTF8.GetBytes(json);
-        return Deserialize(new MemoryStream(utf8Bytes), invokeIniters, uniformProvider, config);
+        return Deserialize(new MemoryStream(utf8Bytes), invokeIniters, uniformProvider);
     }
 
     /// <summary>
     /// Deserializes a world and its entities from the specified JSON stream.
     /// </summary>
-    public World Deserialize(Stream stream, bool invokeIniters = false, IUniformProvider? uniformProvider = null, Config? config = null)
+    public World Deserialize(Stream stream, bool invokeIniters = false, IUniformProvider? uniformProvider = null)
     {
         _entityMap.Clear();
 
-        World world = _activeWorld = new(uniformProvider, config);
+        World world = _activeWorld = new(uniformProvider);
 
         // when callling .Read, use the streamReader
         // when calling anything else, use the ref reader

@@ -36,7 +36,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Deleg
         }
     }
 
-    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world)
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, ref int _)
     {
         ref int entityId = ref sparseSet.GetEntityIDsDataReference();
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
@@ -63,7 +63,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Deleg
         }
     }
 
-    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
+    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate, ref int _)
     {
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
         ReadOnlySpan<int> map = sparseSet.SparseSpan();
@@ -164,7 +164,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
         }
     }
 
-    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world)
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, ref int id)
     {
         ref int entityId = ref sparseSet.GetEntityIDsDataReference();
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
@@ -180,6 +180,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
         for (int i = sparseSet.Count; i > 0; i--)
         {
             entity.EntityID = entityId;
+            id = entityId;
             // entity version set in GetCachedLookup
 
             Archetype archetype;
@@ -199,7 +200,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
         }
     }
 
-    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
+    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate, ref int id)
     {
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
 
@@ -216,12 +217,14 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
         {
             if (!((uint)entityId < (uint)map.Length))
                 continue;
+
             int denseIndex = map[entityId];
 
             if (denseIndex < 0)
                 continue;
 
             entity.EntityID = entityId;
+            id = entityId;
             // entity version set in GetCachedLookup
 
             Archetype archetype;

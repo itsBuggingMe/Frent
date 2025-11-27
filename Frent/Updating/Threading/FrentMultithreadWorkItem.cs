@@ -52,7 +52,8 @@ internal static class FrentMultithread
 
                 foreach (SparseUpdateMethod method in methods)
                 {
-                    method.Runner.RunSparse(set, workItem._world!);
+                    int entityId = 0;
+                    method.Runner.RunSparse(set, workItem._world!, ref entityId);
                 }
 
                 Interlocked.Decrement(ref workItem._counter!.Value);

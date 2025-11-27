@@ -10,8 +10,10 @@ namespace Frent.Updating.Runners;
 public interface IRunner
 {
     internal void RunArchetypical(Array buffer, Archetype b, World world, int start, int length);
-    internal void RunSparse(ComponentSparseSetBase sparseSet, World world);
-    internal void RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate);
+    /// <remarks>entityId is only set if this IRunner represents a runner with depedencies. It is otherwise undefined. It is set to the current entityId that is being updated</remarks>
+    internal void RunSparse(ComponentSparseSetBase sparseSet, World world, ref int entityId);
+    /// <inheritdoc cref="RunSparse(ComponentSparseSetBase, World, ref int)"/>
+    internal void RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate, ref int entityId);
     internal static ref T GetComponentStorageDataReference<T>(Array array)
     {
         return ref MemoryMarshal.GetArrayDataReference(UnsafeExtensions.UnsafeCast<T[]>(array));
