@@ -1,5 +1,11 @@
-﻿using System.Diagnostics;
+﻿using Frent.Collections;
+using Frent.Core;
+using Frent.Core.Archetypes;
+using Frent.Updating;
+using Frent.Updating.Runners;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using static Frent.Updating.AttributeUpdateFilter;
 
 namespace Frent;
 
@@ -52,6 +58,74 @@ internal class FrentExceptions
     public static void Throw_NullReferenceException()
     {
         throw new NullReferenceException();
+    }
+
+    internal static MissingComponentException? CreateExceptionArchetype(World world, Archetype archetype, Span<ArchetypeUpdateMethod> methodsToCheck)
+    {
+        // this can be slow - failure path
+
+        if (archetype.EntityCount == 0)
+            return null;
+
+        Span<EntityIDOnly> entities = archetype.GetEntitySpan();
+
+        foreach (ref ArchetypeUpdateMethod potentialFailure in methodsToCheck)
+        {
+            // ComponentID -> potentialFailure.Index
+            byte[] indexTable = archetype.ComponentTagTable;
+
+            for (int i = 0; i < indexTable.Length; i++)
+            {
+                // find backwards from storage index to component id
+                if ((indexTable[i] & GlobalWorldTables.IndexBits) == potentialFailure.Index)
+                {
+                    ComponentID failedComponent = new((ushort)i);
+
+                    // loop through depdendencies of this component to see if any are missing
+                    UpdateMethodData metadata = failedComponent.Methods[potentialFailure.MetadataIndex];
+
+                    foreach (Type shouldHaveThisComponent in metadata.Dependencies)
+                    {
+                        ComponentID id = Component.GetComponentID(shouldHaveThisComponent);
+                        foreach (var entity in entities)
+                        {
+                            if (!entity.ToEntity(world).Has(id))
+                            {
+                                return new MissingComponentException(failedComponent.Type, id.Type, entity.ToEntity(world));
+                            }
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        // everything in order, must be user null reference exception
+        return null;
+    }
+
+    internal static MissingComponentException? CreateExceptionSparse(World world, ComponentSparseSetBase sparseSet, int entityId, Func<UpdateMethodData, bool> filter)
+    {
+        ComponentID componentId = Component.GetComponentID(sparseSet.Type);
+
+        Entity e = new Entity(world.WorldID, world.EntityTable[entityId].Version, entityId);
+
+        Debug.Assert(world.EntityTable[entityId].Archetype is not null);
+
+        foreach (var method in componentId.Methods)
+        {
+            if (filter(method))
+            {
+                foreach (var dep in method.Dependencies)
+                {
+                    if (!e.Has(dep))
+                        return new MissingComponentException(componentId.Type, dep, e);
+                }
+            }
+        }
+
+        return null;
     }
 }
 

@@ -4,6 +4,7 @@ using Frent.Core.Archetypes;
 using Frent.Updating.Runners;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Frent.Updating.AttributeUpdateFilter;
 
 namespace Frent.Updating;
 
@@ -24,6 +25,7 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
 
     private readonly IRunner[] _normalRunners;
     private readonly (IDTypeFilter Filter, IRunner Runner)[] _filteredRunners;
+    
     private readonly IRunner[] _allRunners;
 
     // bloom filter
@@ -69,70 +71,152 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
     {
         if (_isArchetypical)
         {
-            if (_filteredRunners.Length == 0)
+            int recordIndex = 0;
+
+            try
             {
-                SimpleArchetypicalUpdate();
+                if (_filteredRunners.Length == 0)
+                {
+                    SimpleArchetypicalUpdate();
+                }
+                else
+                {
+                    FilteredArchetypicalUpdate();
+                }
+
+                void SimpleArchetypicalUpdate()
+                {
+                    World world = _world;
+
+                    Span<ArchetypeRecord> records = _archetypes.AsSpan(0, _archetypesNext);
+                    for (int i = 0; i < records.Length; i++)
+                    {
+                        recordIndex = i;
+
+                        (Archetype archetype, int storageIndex, int length) = records[i];
+
+                        if (archetype.EntityCount == 0)
+                            continue;
+
+                        Array buffer = archetype.Components.UnsafeArrayIndex(storageIndex).Buffer;
+
+                        foreach (var runner in _normalRunners)
+                        {
+                            runner.RunArchetypical(buffer, archetype, world, 0, archetype.EntityCount);
+                        }
+                    }
+                }
+
+                void FilteredArchetypicalUpdate()
+                {
+                    World world = _world;
+                    ref IRunner current = ref MemoryMarshal.GetArrayDataReference(_filteredRunnersPerArchetype);
+
+                    Span<ArchetypeRecord> records = _archetypes.AsSpan(0, _archetypesNext);
+                    for (int i = 0; i < records.Length; i++)
+                    {
+                        recordIndex = i;
+
+                        (Archetype archetype, int storageIndex, int length) = records[i];
+
+                        int entityCount = archetype.EntityCount;
+
+                        if (entityCount == 0)
+                            continue;
+
+                        Array buffer = archetype.Components.UnsafeArrayIndex(storageIndex).Buffer;
+
+                        // average joe methods
+                        foreach (var runner in _normalRunners)
+                        {
+                            runner.RunArchetypical(buffer, archetype, world, 0, entityCount);
+                        }
+
+                        for (nint j = 0; j < length; j++)
+                        {
+                            current.RunArchetypical(buffer, archetype, world, 0, entityCount);
+
+                            current = ref Unsafe.Add(ref current, 1);
+                        }
+                    }
+                }
             }
-            else
+            catch(NullReferenceException)
             {
-                FilteredArchetypicalUpdate();
+                if (CreateMissingComponentException(recordIndex) is { } m)
+                    throw m;
+
+                throw;
             }
         }
         else
         {
-            var set = _sparseSet;
-            var world = _world;
-            foreach (var runner in _allRunners)
+            int runnerIndex = 0;
+            int entityId = 0;
+            try
             {
-                int entityId = 0;   
-                runner.RunSparse(set, world, ref entityId);
+                var set = _sparseSet;
+                var world = _world;
+
+                Span<IRunner> allRunners = _allRunners;
+                for(; runnerIndex < allRunners.Length; runnerIndex++)
+                {
+                    allRunners[runnerIndex].RunSparse(set, world, ref entityId);
+                }
+            }
+            catch(NullReferenceException)
+            {
+                IRunner failedRunner = _allRunners[runnerIndex];
+                MissingComponentException? e = FrentExceptions.CreateExceptionSparse(_world, _sparseSet, entityId, m => m.Runner == failedRunner);
+
+                if (e is not null)
+                    throw e;
+
+                throw;
             }
         }
+    }
 
-        void SimpleArchetypicalUpdate()
+    private MissingComponentException? CreateMissingComponentException(int recordIndex)
+    {
+        Span<ArchetypeRecord> records = _archetypes.AsSpan(0, _archetypesNext);
+
+        int start = 0;
+        for (int i = 0; i < recordIndex; i++)
+            start += records[i].Length;
+
+        Span<IRunner> filteredRunners = _filteredRunnersPerArchetype.AsSpan(start, records[recordIndex].Length);
+        Span<IRunner> normalRunners = _normalRunners;
+
+        (Archetype archetype, int storageIndex, _) = records[recordIndex];
+        UpdateMethodData[] metadata = _componentID.Methods;
+
+        return CheckRunners(filteredRunners) ?? CheckRunners(normalRunners);
+
+
+        MissingComponentException? CheckRunners(Span<IRunner> runners)
         {
-            World world = _world;
-
-            foreach (var method in _archetypes.AsSpan(0, _archetypesNext))
+            foreach (var runner in runners)
             {
-                if (method.Archetype.EntityCount == 0)
+                int index = MemoryHelpers.FindIndexOfRunner(metadata, runner);
+                if (index is -1)
                     continue;
 
-                Array buffer = method.Archetype.Components.UnsafeArrayIndex(method.StorageIndex).Buffer;
+                Type[] deps = metadata[index].Dependencies;
 
-                foreach (var runner in _normalRunners)
+                foreach (EntityIDOnly entityId in archetype.GetEntitySpan())
                 {
-                    runner.RunArchetypical(buffer, method.Archetype, world, 0, method.Archetype.EntityCount);
+                    Entity e = entityId.ToEntity(_world);
+
+                    foreach (var dep in deps)
+                    {
+                        if (!e.Has(dep))
+                            return new MissingComponentException(_componentID.Type, dep, e);
+                    }
                 }
             }
-        }
 
-        void FilteredArchetypicalUpdate()
-        {
-            World world = _world;
-            ref IRunner current = ref MemoryMarshal.GetArrayDataReference(_filteredRunnersPerArchetype);
-
-            foreach ((Archetype archetype, int storageIndex, int length) in _archetypes.AsSpan(0, _archetypesNext))
-            {
-                int entityCount = archetype.EntityCount;
-                if (entityCount == 0)
-                    continue;
-
-                Array buffer = archetype.Components.UnsafeArrayIndex(storageIndex).Buffer;
-
-                // average joe methods
-                foreach (var runner in _normalRunners)
-                {
-                    runner.RunArchetypical(buffer, archetype, world, 0, entityCount);
-                }
-
-                for (nint i = 0; i < length; i++)
-                {
-                    current.RunArchetypical(buffer, archetype, world, 0, entityCount);
-
-                    current = ref Unsafe.Add(ref current, 1);
-                }
-            }
+            return null;
         }
     }
 

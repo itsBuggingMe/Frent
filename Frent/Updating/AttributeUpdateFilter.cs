@@ -290,64 +290,18 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         }
     }
 
+    // these methods are cold
     private MissingComponentException? CreateExceptionArchetype(int matchedArchetypeIndex)
     {
         ArchetypeUpdateSpan record = _matchedArchetypes.AsSpan()[matchedArchetypeIndex];
-        Archetype archetype = record.Archetype;
 
-        if(archetype.EntityCount == 0)
-            return null;
-
-        foreach(ref ArchetypeUpdateMethod potentialFailure in _methods.AsSpan(record.Start, record.Length))
-        {
-            // ComponentID -> potentialFailure.Index
-            byte[] tagTable = record.Archetype.ComponentTagTable;
-            
-            for(int i = 0; i < tagTable.Length; i++)
-                if ((tagTable[i] & GlobalWorldTables.IndexBits) == potentialFailure.Index)
-                {
-                    ComponentID failedComponent = new((ushort)i);
-
-                    // loop through depdendencies of this component to see if any are missing
-                    UpdateMethodData metadata = failedComponent.Methods[potentialFailure.MetadataIndex];
-                    foreach(var dependency in metadata.Dependencies)
-                    {
-                        if(archetype.GetComponentIndex(Component.GetComponentID(dependency)) == 0)
-                        {
-                            Entity firstEntity = archetype.GetEntityDataReference().ToEntity(_world);
-                            return new MissingComponentException(failedComponent.Type, dependency, firstEntity);
-                        }
-                    }
-                }
-        }
-
-        // everything in order, must be user null reference exception
-        return null;
+        return FrentExceptions.CreateExceptionArchetype(_world, record.Archetype, _methods.AsSpan(record.Start, record.Length), matchedArchetypeIndex);
     }
 
     private MissingComponentException? CreateExceptionSparse(int entityId, int recordId)
     {
-        SparseUpdateMethod record = _sparseMethods[recordId];
-
-        ComponentID componentId = Component.GetComponentID(record.SparseSet.Type);
-
-        Entity e = new Entity(_world.WorldID, _world.EntityTable[entityId].Version, entityId);
-
-        Debug.Assert(_world.EntityTable[entityId].Archetype is not null);
-
-        foreach (var method in componentId.Methods)
-        {
-            if(_matchAll || method.AttributeIsDefined(_attributeType))
-            {
-                foreach(var dep in method.Dependencies)
-                {
-                    if(!e.Has(dep))
-                        return new MissingComponentException(componentId.Type, dep, e);
-                }
-            }
-        }
-
-        return null;
+        SparseUpdateMethod sparseMethod = _sparseMethods[recordId];
+        return FrentExceptions.CreateExceptionSparse(_world, sparseMethod.SparseSet, entityId, u => _matchAll || u.AttributeIsDefined(_attributeType));
     }
     internal void ArchetypeAdded(Archetype archetype)
     {
