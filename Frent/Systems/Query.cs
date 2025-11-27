@@ -99,7 +99,7 @@ public partial class Query
             return;
 
         // match behavior of when archetypical components are not includes
-        Unsafe.NullRef<int>() = 0;
+        FrentExceptions.Throw_NullReferenceException();
     }
 }
 
@@ -111,17 +111,17 @@ partial class Query
     /// Enumerates component references for all entities in this query. Intended for use in foreach loops.
     /// </summary>
     /// <variadic />
-    public QueryEnumerator<T> Enumerate<T>() => new(this);
+    public QueryEnumerator<T>.Enumerable Enumerate<T>() => new(this);
     /// <summary>
     /// Enumerates component references and <see cref="Entity"/> instances for all entities in this query. Intended for use in foreach loops.
     /// </summary>
     /// <variadic />
-    public EntityQueryEnumerator<T> EnumerateWithEntities<T>() => new(this);
+    public EntityQueryEnumerator<T>.Enumerable EnumerateWithEntities<T>() => new(this);
     /// <summary>
     /// Enumerates component chunks for all entities in this query. Intended for use in foreach loops.
     /// </summary>
     /// <variadic />
-    public ChunkQueryEnumerator<T> EnumerateChunks<T>() => new(this);
+    public ChunkQueryEnumerator<T>.Enumerable EnumerateChunks<T>() => new(this);
 }
 
 partial class Query
@@ -129,5 +129,5 @@ partial class Query
     /// <summary>
     /// Enumerates <see cref="Entity"/> instances for all entities in this query. Intended for use in foreach loops.
     /// </summary>
-    public EntityQueryEnumerator EnumerateWithEntities() => new(this);
+    public EntityQueryEnumerator.Enumerable EnumerateWithEntities() => new(this);
 }

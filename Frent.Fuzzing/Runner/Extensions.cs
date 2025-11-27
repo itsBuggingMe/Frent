@@ -13,7 +13,7 @@ internal static class Extensions
         state.Assert(pass, message);
     }
 
-    public static IEnumerable<Entity> AsEntityEnumerable(this EntityQueryEnumerator enumerator)
+    public static IEnumerable<Entity> AsEntityEnumerable(this EntityQueryEnumerator.Enumerable enumerator)
     {
         List<Entity> items = [];
         foreach (var entity in enumerator)
@@ -21,7 +21,7 @@ internal static class Extensions
         return items;
     }
 
-    public static IEnumerable<(Entity Entity, T C1)> AsEntityEnumerable<T>(this EntityQueryEnumerator<T> enumerator)
+    public static IEnumerable<(Entity Entity, T C1)> AsEntityEnumerable<T>(this EntityQueryEnumerator<T>.Enumerable enumerator)
     {
         List<(Entity, T)> items = [];
         foreach (var tup in enumerator)
@@ -29,7 +29,7 @@ internal static class Extensions
         return items;
     }
 
-    public static IEnumerable<(Entity Entity, T1 C1, T2 C2)> AsEntityEnumerable<T1, T2>(this EntityQueryEnumerator<T1, T2> enumerator)
+    public static IEnumerable<(Entity Entity, T1 C1, T2 C2)> AsEntityEnumerable<T1, T2>(this EntityQueryEnumerator<T1, T2>.Enumerable enumerator)
     {
         List<(Entity, T1, T2)> items = [];
         foreach (var tup in enumerator)
@@ -37,7 +37,7 @@ internal static class Extensions
         return items;
     }
 
-    public static IEnumerable<T> AsEnumerable<T>(this QueryEnumerator<T> enumerator)
+    public static IEnumerable<T> AsEnumerable<T>(this QueryEnumerator<T>.Enumerable enumerator)
     {
         List<T> items = [];
         foreach (var tup in enumerator)
@@ -45,7 +45,7 @@ internal static class Extensions
         return items;
     }
 
-    public static IEnumerable<(T1 C1, T2 C2)> AsEnumerable<T1, T2>(this QueryEnumerator<T1, T2> enumerator)
+    public static IEnumerable<(T1 C1, T2 C2)> AsEnumerable<T1, T2>(this QueryEnumerator<T1, T2>.Enumerable enumerator)
     {
         List<(T1, T2)> items = [];
         foreach (var tup in enumerator)

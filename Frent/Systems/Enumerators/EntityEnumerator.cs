@@ -31,5 +31,5 @@ public ref struct EntityEnumerator
     /// <summary>
     /// Gets the enumerator over a query.
     /// </summary>
-    public EntityEnumerator GetEnumerator() => this;
+    public EntityEnumerator GetEnumerator() => new(_world, _entities);
 }

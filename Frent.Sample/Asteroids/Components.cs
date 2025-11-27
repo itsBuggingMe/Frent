@@ -11,6 +11,8 @@ using System.Runtime.CompilerServices;
 using System.Collections.Immutable;
 using Frent.Core;
 using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
+using Frent.Serialization;
 
 namespace Frent.Sample.Asteroids;
 
@@ -327,3 +329,14 @@ internal struct BulletBehavior(Entity entity) : IUpdate<CircleCollision>
 
 internal struct Asteroid;
 internal struct Shootable;
+
+[JsonSourceGenerationOptions(IncludeFields = true)]
+[ComponentJsonSerializerContext]
+[JsonSerializable(typeof(BulletBehavior))]
+[JsonSerializable(typeof(CircleCollision))]
+[JsonSerializable(typeof(AngularVelocity))]
+[JsonSerializable(typeof(Triangle))]
+[JsonSerializable(typeof(CameraControl))]
+[JsonSerializable(typeof(FollowEntity))]
+[JsonSerializable(typeof(EnemyController))]
+internal partial class AssemblyContext : JsonSerializerContext;

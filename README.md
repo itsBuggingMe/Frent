@@ -51,13 +51,14 @@ Frent is a lot faster than most C# ECS implementations - [Benchmark](https://git
 - [x]  `struct` & `class` as components
 - [x]  Pass in uniform data automatically e.g., `deltaTime`
 - [x]  AOT Compatible & Zero reflection
-- [X]  Tags
-- [X]  Events
-- [X]  Command buffer
-- [X]  Multithreading
-- [X]  Seamless storage in sparse sets or archetypes
-- [X]  Automatic structual change management
-- [X] `EntityMarshal` and `WorldMarshal` for even faster speeds!
+- [x]  Tags
+- [x]  Events
+- [x]  Command buffer
+- [x]  Multithreading
+- [x]  Seamless storage in sparse sets or archetypes
+- [x]  Automatic structural change management
+- [x]  Create entities anytime - no command buffer
+- [x] `EntityMarshal` and `WorldMarshal` for even faster speeds!
 
 # Contributing
 

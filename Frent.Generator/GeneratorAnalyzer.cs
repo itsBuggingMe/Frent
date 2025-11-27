@@ -11,19 +11,55 @@ namespace Frent.Generator;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 internal class GeneratorAnalyzer : DiagnosticAnalyzer
 {
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => _supportedDiagnostics;
-    private static readonly ImmutableArray<DiagnosticDescriptor> _supportedDiagnostics;
+#pragma warning disable RS2008 // Enable analyzer release tracking
+    public static readonly DiagnosticDescriptor NonPartialGenericComponent = new(
+        id: "FR0000",
+        title: "Non-partial Generic Component Type",
+        messageFormat: "Generic Component '{0}' must be marked as partial",
+        category: "Source Generation",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
-    static GeneratorAnalyzer()
-    {
-        var b = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(5);
-        b.Add(NonPartialGenericComponent);
-        b.Add(NonPartialOuterInaccessibleType);
-        b.Add(NonPartialNestedInaccessibleType);
-        b.Add(TooManyFilterComponents);
-        b.Add(TooManyFilterTags);
-        _supportedDiagnostics = b.MoveToImmutable();
-    }
+    public static readonly DiagnosticDescriptor NonPartialOuterInaccessibleType = new(
+        id: "FR0001",
+        title: "Non-partial Outer Inaccessible Type",
+        messageFormat: "Outer type of inaccessible nested component type '{0}' must be marked as partial",
+        category: "Source Generation",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor NonPartialNestedInaccessibleType = new(
+        id: "FR0002",
+        title: "Non-partial Nested Inaccessible Component Type",
+        messageFormat: "Inaccessible Nested Component Type '{0}' must be marked as partial",
+        category: "Source Generation",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor TooManyFilterComponents = new(
+        id: "FR0003",
+        title: "Too Many Filter Components",
+        messageFormat: "Component '{0}' has more than 8 component types specified when {1}",
+        category: "Source Generation",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor TooManyFilterTags = new(
+        id: "FR0003",
+        title: "Too Many Filter Tags",
+        messageFormat: "Component '{0}' has more than 8 tag types specified when {1}",
+        category: "Source Generation",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => _supportedDiagnostics;
+
+    private static readonly ImmutableArray<DiagnosticDescriptor> _supportedDiagnostics = 
+        ImmutableArray.Create(
+            NonPartialGenericComponent,
+            NonPartialOuterInaccessibleType,
+            NonPartialNestedInaccessibleType,
+            TooManyFilterComponents,
+            TooManyFilterTags);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -137,45 +173,4 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(Diagnostic.Create(diagnosticDescriptor, location.Locations.First(), args));
         }
     }
-
-#pragma warning disable RS2008 // Enable analyzer release tracking
-    public static readonly DiagnosticDescriptor NonPartialGenericComponent = new(
-        id: "FR0000",
-        title: "Non-partial Generic Component Type",
-        messageFormat: "Generic Component '{0}' must be marked as partial",
-        category: "Source Generation",
-        DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor NonPartialOuterInaccessibleType = new(
-        id: "FR0001",
-        title: "Non-partial Outer Inaccessible Type",
-        messageFormat: "Outer type of inaccessible nested component type '{0}' must be marked as partial",
-        category: "Source Generation",
-        DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor NonPartialNestedInaccessibleType = new(
-        id: "FR0002",
-        title: "Non-partial Nested Inaccessible Component Type",
-        messageFormat: "Inaccessible Nested Component Type '{0}' must be marked as partial",
-        category: "Source Generation",
-        DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor TooManyFilterComponents = new(
-        id: "FR0003",
-        title: "Too Many Filter Components",
-        messageFormat: "Component '{0}' has more than 8 component types specified when {1}",
-        category: "Source Generation",
-        DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor TooManyFilterTags = new(
-        id: "FR0004",
-        title: "Too Many Filter Tags",
-        messageFormat: "Component '{0}' has more than 8 tag types specified when {1}",
-        category: "Source Generation",
-        DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
 }
