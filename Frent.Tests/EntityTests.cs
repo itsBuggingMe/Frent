@@ -179,6 +179,23 @@ internal class EntityTests
     }
 
     [Test]
+    public void AddMultiple_Deferred_AddsComponents()
+    {
+        using World world = new();
+        var e = world.Create();
+
+        foreach (var _ in world.CreateQuery()
+            .Build()
+            .EnumerateWithEntities())
+        {
+            e.Add(1, 2f);
+        }
+
+        That(e.Get<int>(), Is.EqualTo(1));
+        That(e.Get<float>(), Is.EqualTo(2));
+    }
+
+    [Test]
     public void AddAsType_AddsAsType()
     {
         Component.RegisterComponent<BaseClass>();

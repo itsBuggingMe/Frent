@@ -151,6 +151,12 @@ to:
 |
 
 from:
+            world.WorldUpdateCommandBuffer.AddComponent(this, c1);
+to:
+|            world.WorldUpdateCommandBuffer.AddComponent(this, c$);
+|
+
+from:
                 if (Component<T>.Destroyer is null) c1ref = ref Component<T>.IsSparseComponent ?
                         ref MemoryHelpers.GetSparseSet<T>(ref first)[EntityID] :
                         ref Unsafe.Add(ref from.GetComponentDataReference<T>(), thisLookup.Index);
