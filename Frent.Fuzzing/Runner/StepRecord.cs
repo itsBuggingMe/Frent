@@ -9,6 +9,7 @@ internal struct StepRecord(Entity entity, object meta, Action? playback = null)
     public object Meta = meta;
     public Action? Playback = playback;
     public int Step;
+    public bool Deferred;
 
     public override string ToString() => $"Action: {Action}, Entity {EntityMarshal.EntityID(Entity)}, Meta: {Meta}, Step: {Step}";
 }

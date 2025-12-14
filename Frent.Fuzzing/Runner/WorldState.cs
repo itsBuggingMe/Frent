@@ -79,31 +79,29 @@ internal partial class WorldState : IDisposable
     public void Advance()
     {
         WorldActions thisAction = WorldActionsHelper.SelectWeightedAction(_random);
+        bool tryUseCommandBuffer = _random.Next() % 2 == 0;
+        bool stepped = false;
 
-        StepRecord stepTaken = thisAction switch
+        StepRecord stepTaken = default;
+
+        if (tryUseCommandBuffer)
         {
-            WorldActions.CreateGeneric => CreateGeneric(),
-            WorldActions.CreateHandles => CreateHandles(),
-            WorldActions.CreateObjects => CreateObjects(),
-            WorldActions.Delete => Delete(),
-            WorldActions.AddGeneric => AddGeneric(),
-            WorldActions.AddHandles => AddHandles(),
-            WorldActions.AddObject => AddObject(),
-            WorldActions.AddAs => AddAs(),
-            WorldActions.RemoveGeneric => RemoveGeneric(),
-            WorldActions.RemoveType => RemoveType(),
-            WorldActions.TagGeneric => TagGeneric(),
-            WorldActions.TagType => TagType(),
-            WorldActions.DetachGeneric => DetachGeneric(),
-            WorldActions.DetachType => DetachType(),
-            WorldActions.Set => Set(),
-            _ => throw new ArgumentOutOfRangeException(nameof(thisAction), thisAction, null)
-        };
+            foreach (var _ in _worldState.CreateQuery().Build().EnumerateWithEntities())
+            {
+                stepTaken = TakeAction();
+                stepped = true;
+                break;
+            }
+        }
+
+        if(!stepped)
+            stepTaken = TakeAction();
 
         stepTaken = stepTaken with
         {
             Action = thisAction,
             Step = _steps,
+            Deferred = tryUseCommandBuffer,
         };
 
         _actions.Add(stepTaken);
@@ -118,6 +116,29 @@ internal partial class WorldState : IDisposable
         EnsureConsistency();
 
         _steps++;
+
+        StepRecord TakeAction()
+        {
+            return thisAction switch
+            {
+                WorldActions.CreateGeneric => CreateGeneric(),
+                WorldActions.CreateHandles => CreateHandles(),
+                WorldActions.CreateObjects => CreateObjects(),
+                WorldActions.Delete => Delete(),
+                WorldActions.AddGeneric => AddGeneric(),
+                WorldActions.AddHandles => AddHandles(),
+                WorldActions.AddObject => AddObject(),
+                WorldActions.AddAs => AddAs(),
+                WorldActions.RemoveGeneric => RemoveGeneric(),
+                WorldActions.RemoveType => RemoveType(),
+                WorldActions.TagGeneric => TagGeneric(),
+                WorldActions.TagType => TagType(),
+                WorldActions.DetachGeneric => DetachGeneric(),
+                WorldActions.DetachType => DetachType(),
+                WorldActions.Set => Set(),
+                _ => throw new ArgumentOutOfRangeException(nameof(thisAction), thisAction, null)
+            };
+        }
     }
 
 

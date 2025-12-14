@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Frent.Fuzzing": {
+      "commandName": "Project",
+      "commandLineArgs": "1 1000"
+    }
+  }
+}
