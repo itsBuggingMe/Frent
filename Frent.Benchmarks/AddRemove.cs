@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Frent.Components;
+using System.Collections.Specialized;
 
 namespace Frent.Benchmarks;
 
@@ -39,4 +40,9 @@ internal partial class AddRemove
 
     partial struct SparseComp : ISparseComponent;
     partial struct ArchComp;
+
+    void M(Dictionary<string, string> d)
+    {
+        d.Reverse();
+    }
 }

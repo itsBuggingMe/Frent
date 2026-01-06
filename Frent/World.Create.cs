@@ -59,7 +59,7 @@ partial class World
 
         if (hasSparseComponent)
         {
-            eloc.Flags |= EntityFlags.HasSparseComponents;
+            eloc.Flags |= EntityFlags.HasHadSparseComponents;
             ref Bitset bitset = ref inserted.GetBitset(eloc.Index);
 
             bitset = default;

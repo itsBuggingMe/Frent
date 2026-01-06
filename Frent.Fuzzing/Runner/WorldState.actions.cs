@@ -182,7 +182,7 @@ internal partial class WorldState
         toAdd.AddAs(typeof(object), component);
         handle = ComponentHandle.Create<object>(component);
 
-        return new(toAdd, new { Type = type }, () =>
+        return new(toAdd, new { Type = typeof(object) }, () =>
         {
             _componentValues[toAdd].Add(handle);
         });

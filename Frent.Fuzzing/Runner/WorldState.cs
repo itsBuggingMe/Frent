@@ -113,8 +113,21 @@ internal partial class WorldState : IDisposable
                 .Add(stepTaken);
         }
 
+#if DEBUG
+        try
+        {
+            EnsureConsistency();
+        }
+        catch (Exception e)
+        {
+            Debug(e, stepTaken, 
+                stepTaken.Entity.IsNull ? null : _entityHistory[stepTaken.Entity],
+                stepTaken.Entity.IsNull ? [] : _componentValues[stepTaken.Entity],
+                stepTaken.Entity.IsNull ? [] : _tagValues[stepTaken.Entity]);
+        }
+#else
         EnsureConsistency();
-
+#endif
         _steps++;
 
         StepRecord TakeAction()
@@ -141,6 +154,37 @@ internal partial class WorldState : IDisposable
         }
     }
 
+    private void Debug(
+        Exception exception,
+        StepRecord step,
+        List<StepRecord>? history,
+        List<ComponentHandle> expectedComponents,
+        List<TagID> expectedTags)
+    {
+        if(!step.Entity.IsNull)
+        {
+            Console.WriteLine("Expected Components: ");
+
+            foreach (var componentHandle in expectedComponents)
+            {
+                object component = componentHandle.RetrieveBoxed();
+                Console.WriteLine($"{componentHandle.Type}: {component}");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Actual Components: ");
+
+            foreach (var componentId in step.Entity)
+            {
+                object component = step.Entity.Get(componentId);
+                Console.WriteLine($"{componentId.Type.Name}: {component}");
+            }
+        }
+
+        Debugger.Break();
+
+
+    }
 
     private void EnsureConsistency()
     {

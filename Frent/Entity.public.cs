@@ -272,7 +272,7 @@ partial struct Entity
             if (sparseIndex != 0)
             {
                 world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).AddOrSet(EntityID, componentHandle);
-                eloc.Flags |= EntityFlags.HasSparseComponents;
+                eloc.Flags |= EntityFlags.HasHadSparseComponents;
                 bits.Set(sparseIndex);
             }
             else
@@ -384,7 +384,7 @@ partial struct Entity
                 sparseSet = w.WorldSparseSetTable[sparseIndex];
                 if (sparseSet.Has(EntityID))
                     FrentExceptions.Throw_ComponentAlreadyExistsException(componentID.Type);
-                lookup.Flags |= EntityFlags.HasSparseComponents;
+                lookup.Flags |= EntityFlags.HasHadSparseComponents;
                 lookup.GetBitset().Set(sparseIndex);
                 sparseSet.AddOrSet(EntityID, ComponentHandle.CreateFromBoxed(componentID, component));
                 sparseSet.Init(this);

@@ -160,7 +160,7 @@ public partial struct Entity : IEquatable<Entity>
     {
         if (!InternalIsAlive(out var world, out var location))
             Throw_EntityIsDead();
-        if (!location.HasFlag(EntityFlags.HasSparseComponents))
+        if (!location.HasFlag(EntityFlags.HasHadSparseComponents))
             return location.Archetype.ArchetypeTypeArray;
 
         var res = ImmutableArray.CreateBuilder<ComponentID>(ArchetypicalComponentTypes.Length +
@@ -202,7 +202,7 @@ public partial struct Entity : IEquatable<Entity>
                 Throw_EntityIsDead();
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
-            _bitset = entityLocation.HasFlag(EntityFlags.HasSparseComponents)
+            _bitset = entityLocation.HasFlag(EntityFlags.HasHadSparseComponents)
                 ? entityLocation.GetBitset()
                 : default;
 

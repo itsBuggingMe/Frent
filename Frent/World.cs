@@ -504,7 +504,7 @@ public partial class World : IDisposable
             ref EntityLocation item = ref tableItems[i];
             if (item.Archetype is null)
                 continue;
-            if (!item.HasFlag(EntityFlags.HasSparseComponents))
+            if (!item.HasFlag(EntityFlags.HasHadSparseComponents))
                 continue;
 
             CleanupSparseComponents(new Entity(WorldID, item.Version, i), ref item);
@@ -600,7 +600,7 @@ public partial class World : IDisposable
 
         if (hasSparseComponent)
         {
-            eloc.Flags |= EntityFlags.HasSparseComponents;
+            eloc.Flags |= EntityFlags.HasHadSparseComponents;
             bitset = ref inserted.GetBitset(eloc.Index);
             bitset = default;
         }
@@ -614,7 +614,7 @@ public partial class World : IDisposable
             int sparseIndex = sparseComponentIndicies[i];
             if (sparseIndex == 0)
             {
-                archetypes.Archetype.GetComponentStorage(componentHandles[i].ComponentID)
+                inserted.GetComponentStorage(componentHandles[i].ComponentID)
                     .SetAt(null, componentHandles[i], eloc.Index);
             }
             else

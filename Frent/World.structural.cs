@@ -199,7 +199,7 @@ partial class World
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void DeleteEntityWithoutEvents(Entity entity, ref EntityLocation currentLookup)
     {
-        if (currentLookup.HasFlag(EntityFlags.HasSparseComponents))
+        if (currentLookup.HasFlag(EntityFlags.HasHadSparseComponents))
             CleanupSparseComponents(entity, ref currentLookup);
 
         // entity is guaranteed to be alive here

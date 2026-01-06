@@ -317,6 +317,7 @@ public class CommandBuffer
                     if (removeEvent is not null)
                         set.InvokeGenericEvent(concrete, removeEvent);
                     set.Remove(id, true);
+                    record.GetBitset().ClearAt(sparseIndex);
                 }
                 else
                 {
@@ -332,7 +333,6 @@ public class CommandBuffer
 
         while (_addComponentBuffer.TryPop(out var command))
         {
-            //TODO: events
             Entity concrete = command.Entity.ToEntity(_world);
             ref var record = ref _world.EntityTable[concrete.EntityID];
 
@@ -346,9 +346,12 @@ public class CommandBuffer
 
                 if (sparseIndex != 0)
                 {
+                    // todo: create sparse methods for these opts in world?
                     sparseSet = _world.WorldSparseSetTable[sparseIndex];
                     sparseSet.AddOrSet(concrete.EntityID, command.ComponentHandle);
                     sparseSet.Init(concrete);
+                    record.GetBitset().Set(sparseIndex);
+                    record.Flags |= EntityFlags.HasHadSparseComponents;
                 }
                 else
                 {

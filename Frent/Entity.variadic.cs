@@ -60,7 +60,7 @@ partial struct Entity
 
         if (NeighborCache<T>.HasAnySparseComponents)
         {
-            thisLookup.Flags |= EntityFlags.HasSparseComponents;
+            thisLookup.Flags |= EntityFlags.HasHadSparseComponents;
             ref Bitset set = ref NeighborCache<T>.HasAnyArchetypicalComponents ?
                 ref to!.GetBitset(archIndex) : // guarded by HasAnyArchetypicalComponents
                 ref thisLookup.Archetype.GetBitset(thisLookup.Index);
