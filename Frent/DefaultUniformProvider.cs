@@ -5,7 +5,7 @@
 /// </summary>
 public class DefaultUniformProvider : IUniformProvider
 {
-    private Dictionary<Type, object> _uniforms = [];
+    private readonly Dictionary<Type, object> _uniforms = [];
 
     /// <summary>
     /// Adds a uniform to this uniform provider.

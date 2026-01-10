@@ -1,8 +1,8 @@
 ﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Core.Events;
-using Frent.Core.Structures;
 using Frent.Systems;
 using Frent.Systems.Queries;
 using Frent.Updating;
@@ -128,14 +128,14 @@ public partial class World : IDisposable
     private IUniformProvider _uniformProvider;
 
     /// <summary>
+    /// When <see langword="true"/>, entities created during <see cref="World.Update()"/>, <see cref="World.Update(Type)"/>, and <see cref="World.Update{T}()"/> will also be updated during the same update.
+    /// </summary>
+    public bool UpdateDeferredCreationEntities { get; set; }
+
+    /// <summary>
     /// Gets the current number of entities managed by the world.
     /// </summary>
     public int EntityCount => NextEntityID - _freeListCount;
-
-    /// <summary>
-    /// The current world config.
-    /// </summary>
-    public Config CurrentConfig { get; set; }
 
     internal RefDictionary<EntityIDOnly, EventRecord> EventLookup = new();
     internal readonly Archetype DefaultArchetype;
@@ -228,11 +228,11 @@ public partial class World : IDisposable
     /// Creates a world with zero entities and a uniform provider.
     /// </summary>
     /// <param name="uniformProvider">The initial uniform provider to be used.</param>
-    /// <param name="config">The inital config to use. If not provided, <see cref="Config.Singlethreaded"/> is used.</param>
-    public World(IUniformProvider? uniformProvider = null, Config? config = null)
+    /// <param name="updateDeferredCreationEntities">When <see langword="true"/>, entities created during <see cref="World.Update()"/>, <see cref="World.Update(Type)"/>, and <see cref="World.Update{T}()"/> will also be updated during the same update.</param>
+    public World(IUniformProvider? uniformProvider = null, bool updateDeferredCreationEntities = false)
     {
-        CurrentConfig = config ?? Config.Singlethreaded;
         _uniformProvider = uniformProvider ?? NullUniformProvider.Instance;
+        UpdateDeferredCreationEntities = updateDeferredCreationEntities;
         WorldID = _nextWorldID++;
 
         GlobalWorldTables.Worlds[WorldID] = this;
@@ -243,8 +243,9 @@ public partial class World : IDisposable
         for (int i = 1; i < WorldSparseSetTable.Length; i++)
             WorldSparseSetTable[i] = Component.ComponentTableBySparseIndex[i].Factory.CreateSparseSet();
 
-        WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultWorldEntity = new Entity(WorldID, default, default);
+
+        WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
     }
 
@@ -261,7 +262,7 @@ public partial class World : IDisposable
     }
 
     /// <summary>
-    /// Updates all component instances in the world that implement a component interface, e.g., <see cref="IComponent"/>
+    /// Updates all component instances in the world that implement a component interface, e.g., <see cref="IUpdate"/>
     /// </summary>
     public void Update()
     {
@@ -276,7 +277,7 @@ public partial class World : IDisposable
         finally
         {
             ExitWorldUpdateMethod();
-            ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
+            ExitDisallowState(appliesTo, UpdateDeferredCreationEntities);
         }
     }
 
@@ -303,7 +304,7 @@ public partial class World : IDisposable
         finally
         {
             ExitWorldUpdateMethod();
-            ExitDisallowState(appliesTo, CurrentConfig.UpdateDeferredCreationEntities);
+            ExitDisallowState(appliesTo, UpdateDeferredCreationEntities);
         }
     }
 
@@ -325,7 +326,7 @@ public partial class World : IDisposable
         finally
         {
             ExitWorldUpdateMethod();
-            ExitDisallowState(singleComponent, CurrentConfig.UpdateDeferredCreationEntities);
+            ExitDisallowState(singleComponent, UpdateDeferredCreationEntities);
         }
     }
 

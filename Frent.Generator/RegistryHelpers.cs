@@ -10,10 +10,10 @@ namespace Frent.Generator;
 public static class RegistryHelpers
 {
     private static SymbolDisplayFormat? _symbolDisplayFormat;
-    public static SymbolDisplayFormat FullyQualifiedTypeNameFormat => _symbolDisplayFormat ??= new(
+    public static SymbolDisplayFormat FullyQualifiedTypeNameFormat => _symbolDisplayFormat ??= new SymbolDisplayFormat(
         genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
-        );
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+        globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included);
 
     public static StringBuilder AppendNamespace(this StringBuilder sb, string @namespace)
     {
@@ -117,10 +117,10 @@ public static class RegistryHelpers
         Name: UniformComponentInterfaceName or EntityUniformComponentInterfaceName,
     };
 
-    public const string IncludesComponentsAttributeName = "Frent.Updating.IncludesComponentsAttribute";
-    public const string ExcludesComponentsAttributeName = "Frent.Updating.ExcludesComponentsAttribute";
-    public const string IncludesTagsAttributeName = "Frent.Updating.IncludesTagsAttribute";
-    public const string ExcludesTagsAttributeName = "Frent.Updating.ExcludesTagsAttribute";
+    public const string IncludesComponentsAttributeName = "global::Frent.Updating.IncludesComponentsAttribute";
+    public const string ExcludesComponentsAttributeName = "global::Frent.Updating.ExcludesComponentsAttribute";
+    public const string IncludesTagsAttributeName = "global::Frent.Updating.IncludesTagsAttribute";
+    public const string ExcludesTagsAttributeName = "global::Frent.Updating.ExcludesTagsAttribute";
 
     public const string UpdateTypeAttributeName = "Frent.Updating.UpdateTypeAttribute";
 
@@ -139,8 +139,8 @@ public static class RegistryHelpers
     public const string SparseInterfaceName = "ISparseComponent";
     public const string TagInterfaceName = "ITag";
 
-    public const string UniformComponentInterfaceName = "IUniformComponent";
-    public const string EntityUniformComponentInterfaceName = "IEntityUniformComponent";
+    public const string UniformComponentInterfaceName = "IUniformUpdate";
+    public const string EntityUniformComponentInterfaceName = "IEntityUniformUpdate";
 
     public const string FrentComponentNamespace = "Frent.Components";
 

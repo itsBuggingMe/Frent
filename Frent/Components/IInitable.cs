@@ -6,7 +6,7 @@
 public interface IInitable : IComponentBase
 {
     /// <summary>
-    /// This method is called whenever a component begins its lifetime, whether by any <see cref="Entity.Add{T}(in T)"/> method or any <see cref="World.Create{T}(in T)"/> method (but not <see cref="World.CreateMany{T}(int)"/>).
+    /// This method is called whenever a component begins its lifetime, whether by any <see cref="Entity.Add{T}(in T)"/> method or any <see cref="World.Create{T}(in T)"/> method.
     /// </summary>
     /// <param name="self">The <see cref="Entity"/> this component belongs to.</param>
     void Init(Entity self);

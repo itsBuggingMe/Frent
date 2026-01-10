@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Diagnostics;

@@ -1,6 +1,7 @@
 ﻿using Frent.Buffers;
 using Frent.Collections;
 using Frent.Updating;
+using Frent.Updating.Runners;
 using Frent.Variadic.Generator;
 using System.Buffers;
 using System.Collections.Immutable;
@@ -138,6 +139,13 @@ internal static class MemoryHelpers
         return builder.ToImmutable();
     }
 
+    public static int FindIndexOfRunner(UpdateMethodData[] methodMetadatas, IRunner runner)
+    {
+        for (int i = 0; i < methodMetadatas.Length; i++)
+            if (methodMetadatas[i].Runner == runner)
+                return i;
+        return -1;
+    }
     public static TValue GetOrAddNew<TKey, TValue>(this RefDictionary<TKey, TValue> dictionary, TKey key)
         where TKey : notnull, IEquatable<TKey>
         where TValue : new()

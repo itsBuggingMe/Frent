@@ -28,10 +28,10 @@ namespace Frent.Sample
         public GameRoot(int count)
         {
             _count = count;
-            _world = new World(this, new Config()
+            _world = new World(this)
             {
                 UpdateDeferredCreationEntities = true,
-            });
+            };
             _manager = new GraphicsDeviceManager(this);
             IsMouseVisible = true;
             Window.AllowUserResizing = true;

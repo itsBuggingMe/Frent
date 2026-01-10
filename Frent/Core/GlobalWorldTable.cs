@@ -1,7 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Updating;
 
-namespace Frent.Core.Structures;
+namespace Frent.Core;
 
 internal static class GlobalWorldTables
 {

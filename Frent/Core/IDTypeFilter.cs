@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Updating;
+using Frent.Core.Archetypes;
 
 namespace Frent.Core;
 

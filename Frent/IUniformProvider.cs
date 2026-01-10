@@ -4,7 +4,7 @@ namespace Frent;
 
 /// <summary>
 /// Defines a uniform provider, which is used by <see cref="World"/> to supply uniforms to components and queries
-/// e.g., <see cref="IUniformComponent{TUniform}"/>
+/// e.g., <see cref="IUniformUpdate{TUniform}"/>
 /// </summary>
 public interface IUniformProvider
 {

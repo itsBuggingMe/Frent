@@ -6,7 +6,7 @@ namespace Frent.Components;
 /// <summary>
 /// Indicates a component should be updated with zero arguments
 /// </summary>
-public interface IComponent : IComponentBase
+public interface IUpdate : IComponentBase
 {
     /// <summary>
     /// Updates this component
@@ -20,8 +20,8 @@ public interface IComponent : IComponentBase
 /// <variadic />
 [Variadic(TArgFrom, TArgPattern)]
 [Variadic(RefArgFrom, RefArgPattern)]
-public interface IComponent<TArg> : IComponentBase
+public interface IUpdate<TArg> : IComponentBase
 {
-    /// <inheritdoc cref="IComponent.Update"/>
+    /// <inheritdoc cref="IUpdate.Update"/>
     void Update(ref TArg arg);
 }

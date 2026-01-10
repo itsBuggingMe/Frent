@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Updating;
 
 namespace Frent.Marshalling;

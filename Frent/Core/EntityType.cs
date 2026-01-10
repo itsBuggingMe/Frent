@@ -1,5 +1,6 @@
 ﻿global using ArchetypeID = Frent.Core.EntityType;
-using Frent.Core.Structures;
+using Frent.Core.Archetypes;
+using Frent.Updating;
 using System.Collections.Immutable;
 
 namespace Frent.Core;
@@ -16,12 +17,12 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// <summary>
     /// The component types
     /// </summary>
-    public readonly ImmutableArray<ComponentID> Types => Core.Archetype.ArchetypeTable[RawIndex].ComponentTypes;
+    public readonly ImmutableArray<ComponentID> Types => Core.Archetypes.Archetype.ArchetypeTable[RawIndex].ComponentTypes;
 
     /// <summary>
     /// The tag types
     /// </summary>
-    public readonly ImmutableArray<TagID> Tags => Core.Archetype.ArchetypeTable[RawIndex].TagTypes;
+    public readonly ImmutableArray<TagID> Tags => Core.Archetypes.Archetype.ArchetypeTable[RawIndex].TagTypes;
 
     /// <summary>
     /// Checks if this <see cref="EntityType"/> has a component represented by a <see cref="ComponentID"/>
@@ -80,8 +81,8 @@ public struct EntityType : IEquatable<ArchetypeID>
     /// <param name="tags">The tags the <see cref="EntityType"/> should have.</param>
     public static EntityType EntityTypeOf(ReadOnlySpan<ComponentID> components, ReadOnlySpan<TagID> tags)
     {
-        return Core.Archetype.GetArchetypeID(components, tags);
+        return Core.Archetypes.Archetype.GetArchetypeID(components, tags);
     }
 
-    internal readonly ref Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex).Archetype!;
+    internal readonly ref Core.Archetypes.Archetype Archetype(World context) => ref context.WorldArchetypeTable.UnsafeArrayIndex(RawIndex).Archetype!;
 }

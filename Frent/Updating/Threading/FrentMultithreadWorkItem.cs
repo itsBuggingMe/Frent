@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -51,7 +52,8 @@ internal static class FrentMultithread
 
                 foreach (SparseUpdateMethod method in methods)
                 {
-                    method.Runner.RunSparse(set, workItem._world!);
+                    int entityId = 0;
+                    method.Runner.RunSparse(set, workItem._world!, ref entityId);
                 }
 
                 Interlocked.Decrement(ref workItem._counter!.Value);
@@ -81,10 +83,10 @@ internal static class FrentMultithread
 
         private World? _world;
         private Stack<ArchetypeUpdateSpan>? _archetypes;
-        private ArchtypeUpdateMethod[]? _componentStorageBases;
+        private ArchetypeUpdateMethod[]? _componentStorageBases;
         private StrongBox<int>? _counter;
 
-        public static void UnsafeQueueWork(World world, Stack<ArchetypeUpdateSpan> archetypes, ArchtypeUpdateMethod[] componentStorageBases, StrongBox<int> counter)
+        public static void UnsafeQueueWork(World world, Stack<ArchetypeUpdateSpan> archetypes, ArchetypeUpdateMethod[] componentStorageBases, StrongBox<int> counter)
         {
             Interlocked.Increment(ref counter.Value);
 
@@ -110,7 +112,7 @@ internal static class FrentMultithread
                 {
                     (Archetype archetype, int start, int count) = record;
 
-                    Span<ArchtypeUpdateMethod> methods = workItem._componentStorageBases.AsSpan(start, count);
+                    Span<ArchetypeUpdateMethod> methods = workItem._componentStorageBases.AsSpan(start, count);
                     ref ComponentStorageRecord storageStart = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
 
                     foreach (var method in methods)
@@ -149,7 +151,7 @@ internal static class FrentMultithread
 
         private World? _world;
         private ArchetypeUpdateSpan _archetypeRecord;
-        private ArchtypeUpdateMethod[]? _components;
+        private ArchetypeUpdateMethod[]? _components;
         private StrongBox<int>? _counter;
         private int _start;
         private int _count;
@@ -157,7 +159,7 @@ internal static class FrentMultithread
         public static void UnsafeQueueWork(
             World world,
             ArchetypeUpdateSpan archetypeUpdateRecord,
-            ArchtypeUpdateMethod[] componentStorageBases,
+            ArchetypeUpdateMethod[] componentStorageBases,
             StrongBox<int> counter,
             int start,
             int count)
@@ -184,7 +186,7 @@ internal static class FrentMultithread
 
                 World world = frentMultithreadWorkItem._world!;
                 (Archetype archetype, int start, int count) = frentMultithreadWorkItem._archetypeRecord;
-                Span<ArchtypeUpdateMethod> methods = frentMultithreadWorkItem._components.AsSpan(start, count);
+                Span<ArchetypeUpdateMethod> methods = frentMultithreadWorkItem._components.AsSpan(start, count);
 
                 int archetypeStart = frentMultithreadWorkItem._start;
                 int archetypeCount = frentMultithreadWorkItem._count;

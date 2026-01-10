@@ -1,12 +1,13 @@
 ﻿using Frent.Core;
 using Frent.Core.Events;
+using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Frent.Collections;
 
-internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
+internal sealed class ComponentSparseSet<T>() : ComponentSparseSetBase(typeof(T))
 {
     internal T[] Dense = new T[InitialCapacity];
 
@@ -31,7 +32,7 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         ref var denseIndex = ref EnsureSparseCapacityAndGetIndex(id);
         if (denseIndex != -1)
         {
-            FrentExceptions.Throw_ComponentAlreadyExistsException($"Component Already Has Component of Type {typeof(T).Name}!");
+            FrentExceptions.Throw_ComponentAlreadyExistsException<T>();
         }
 
         denseIndex = _nextIndex++;
@@ -49,10 +50,10 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
         var sparse = _sparse;
 
         if (!((uint)e.EntityID < (uint)sparse.Length))
-            FrentExceptions.Throw_ComponentNotFoundException($"Component of type {typeof(T).Name} does not exist on this entity.");
+            FrentExceptions.Throw_ComponentNotFoundException<T>();
         int index = sparse[e.EntityID];
         if (!((uint)index < (uint)dense.Length))
-            FrentExceptions.Throw_ComponentNotFoundException($"Component of type {typeof(T).Name} does not exist on this entity.");
+            FrentExceptions.Throw_ComponentNotFoundException<T>();
 
         ref T toSet = ref dense[index];
         if (typeof(T).IsValueType)
@@ -139,11 +140,12 @@ internal sealed class ComponentSparseSet<T> : ComponentSparseSetBase
     public override void Init(Entity entity) => Component<T>.Initer?.Invoke(entity, ref this[entity.EntityID]);
 }
 
-internal abstract class ComponentSparseSetBase
+internal abstract class ComponentSparseSetBase(Type t)
 {
     protected int[] _sparse = [];
     protected int[] _ids = new int[InitialCapacity];
     protected int _nextIndex;
+    internal readonly Type Type = t;
 
     public int Count => _nextIndex;
 

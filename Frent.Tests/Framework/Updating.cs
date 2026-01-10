@@ -126,10 +126,7 @@ internal class Updating
     public void Update_DeferredEntityCreationUpdate_UpdatesDeferredEntities()
     {
         int count = 0;
-        using World world = new(null, new Config()
-        {
-            UpdateDeferredCreationEntities = true
-        });
+        using World world = new(null, true);
 
         world.Create(new DelegateBehavior(() =>
         {
@@ -151,10 +148,7 @@ internal class Updating
     [Test]
     public void Update_DeferredEntityCreationUpdate_HitsRecursionLimit()
     {
-        using World world = new(null, new Config()
-        {
-            UpdateDeferredCreationEntities = true
-        });
+        using World world = new(null, true);
 
         world.Create(new DelegateBehavior(() =>
         {
@@ -176,10 +170,7 @@ internal class Updating
     public void Update_FilteredDeferredEntityCreationUpdate_UpdatesDeferredEntities()
     {
         int count = 0;
-        using World world = new(null, new Config()
-        {
-            UpdateDeferredCreationEntities = true
-        });
+        using World world = new(null, true);
 
         world.Create(new FilteredBehavior1(() =>
         {
@@ -245,13 +236,13 @@ internal class Updating
     }
 }
 
-internal partial struct LazyComponent<T>(Action a) : IComponent
+internal partial struct LazyComponent<T>(Action a) : IUpdate
 {
     [FilterAttribute1]
     public void Update() => a();
 }
 
-internal struct MultipleUpdateComponent : IComponent, IComponent<MultipleUpdateComponent>
+internal struct MultipleUpdateComponent : IUpdate, IUpdate<MultipleUpdateComponent>
 {
     public int Count1;
     public int Count2;
@@ -261,7 +252,7 @@ internal struct MultipleUpdateComponent : IComponent, IComponent<MultipleUpdateC
     public void Update(ref MultipleUpdateComponent _) => Count2++;
 }
 
-internal struct NoMatch(World world) : IComponent
+internal struct NoMatch(World world) : IUpdate
 {
     [FilterAttribute2]
     public void Update()

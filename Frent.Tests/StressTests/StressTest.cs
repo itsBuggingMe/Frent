@@ -7,6 +7,7 @@ using static NUnit.Framework.Assert;
 
 namespace Frent.Tests.StressTests;
 
+// mostly replaced by the fuzzing project
 internal class StressTest
 {
     [Test]

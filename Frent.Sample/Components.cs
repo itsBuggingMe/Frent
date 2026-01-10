@@ -27,7 +27,7 @@ internal struct Velocity(Vector2 dxy)
     public Vector2 DXY = dxy;
     public static implicit operator Velocity(Vector2 dxy) => new(dxy);
 }
-internal record struct MouseController : IEntityUniformComponent<GameRoot, Velocity, Position>
+internal record struct MouseController : IEntityUniformUpdate<GameRoot, Velocity, Position>
 {
     public void Update(Entity e, GameRoot uniform, ref Velocity vel, ref Position arg)
     {

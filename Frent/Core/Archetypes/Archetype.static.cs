@@ -1,11 +1,10 @@
 ﻿using Frent.Collections;
-using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
-namespace Frent.Core;
+namespace Frent.Core.Archetypes;
 
 [Variadic(nameof(Archetype))]
 internal static class Archetype<T>
@@ -31,28 +30,21 @@ internal static class Archetype<T>
         var index = ID.RawIndex;
         ref World.WorldArchetypeTableItem archetypes = ref world.WorldArchetypeTable.UnsafeArrayIndex(index);
         if (archetypes.Archetype is null)
-        {
             archetypes = CreateArchetypes(world);
-        }
         return archetypes;
 
         //this method is literally only called once per world
         [MethodImpl(MethodImplOptions.NoInlining)]
         static World.WorldArchetypeTableItem CreateArchetypes(World world)
         {
-            ComponentStorageRecord[] runners = new ComponentStorageRecord[ArchetypeComponentIDs.Length + 1];
-            ComponentStorageRecord[] tmpStorages = new ComponentStorageRecord[runners.Length];
-            byte[] map = GlobalWorldTables.ComponentTagLocationTable[ID.RawIndex];
-
+            VariadicHelpers.CreateArchetypeBuffers(ArchetypeComponentIDs, ID, 
+                out var runners,
+                out var tmpStorages,
+                out var map);
 
             Component<T>.InitalizeComponentRunnerImpl(runners, tmpStorages, map);
 
-
-            Archetype archetype = new Archetype(ID, runners, false);
-            Archetype tempCreateArchetype = new Archetype(ID, tmpStorages, true);
-
-            world.ArchetypeAdded(archetype, tempCreateArchetype);
-            return new World.WorldArchetypeTableItem(archetype, tempCreateArchetype);
+            return VariadicHelpers.CreateArchetype(ID, world, runners, tmpStorages);
         }
 
     }

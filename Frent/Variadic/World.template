@@ -38,8 +38,3 @@ from:
 to:
 |            if (Component<T$>.IsSparseComponent) bitset.Set(Component<T$>.SparseSetComponentIndex);
 |
-from:
-            Span = archetypes.Archetype.GetComponentSpan<T>()[initalEntityCount..],
-to:
-|            Span$ = archetypes.Archetype.GetComponentSpan<T$>()[initalEntityCount..],
-|

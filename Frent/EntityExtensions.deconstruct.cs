@@ -1,6 +1,5 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using Frent.Core.Structures;
 using Frent.Updating;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;

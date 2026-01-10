@@ -78,8 +78,7 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
         bool isComponent = false;
         //int updateInterfaceCount = 0;
 
-
-        foreach(var @interface in namedTypeSymbol.AllInterfaces)
+        foreach (var @interface in namedTypeSymbol.AllInterfaces)
         {
             if (!@interface.IsOrExtendsIComponentBase())
                 return;

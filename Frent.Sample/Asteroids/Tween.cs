@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Frent.Sample.Asteroids;
 
-internal struct Tween(TweenType type, float length, Action<Entity, float> action) : IEntityComponent
+internal struct Tween(TweenType type, float length, Action<Entity, float> action) : IEntityUpdate
 {
     public TweenType Type = type;
     public float StartValue = 0;

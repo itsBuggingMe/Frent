@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 

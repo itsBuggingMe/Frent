@@ -100,7 +100,7 @@ internal class Samples
     }
     #endregion
 }
-record struct Pos(float X) : IEntityComponent
+record struct Pos(float X) : IEntityUpdate
 {
     public void Update(Entity entity)
     {
@@ -110,7 +110,7 @@ record struct Pos(float X) : IEntityComponent
     }
 }
 
-record struct Vel(float DX) : IUniformComponent<float, Pos>
+record struct Vel(float DX) : IUniformUpdate<float, Pos>
 {
     public void Update(float dt, ref Pos pos)
     {
@@ -118,7 +118,7 @@ record struct Vel(float DX) : IUniformComponent<float, Pos>
     }
 }
 
-struct ConsoleText(ConsoleColor Color) : IComponent<string>
+struct ConsoleText(ConsoleColor Color) : IUpdate<string>
 {
     public void Update(ref string str)
     {

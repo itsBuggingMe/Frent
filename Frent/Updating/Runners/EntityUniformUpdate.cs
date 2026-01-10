@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Components;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -8,9 +9,9 @@ using System.Runtime.InteropServices;
 namespace Frent.Updating.Runners;
 
 /// <inheritdoc cref="GenerationServices"/>
-public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f) : RunnerBase(f), IRunner
+public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f) : RunnerBase(f), IRunner
     where TPredicate : IFilterPredicate
-    where TComp : IEntityUniformComponent<TUniform>
+    where TComp : IEntityUniformUpdate<TUniform>
 {
 
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
@@ -35,7 +36,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f)
         }
     }
 
-    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world)
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, ref int _)
     {
         ref int entityId = ref sparseSet.GetEntityIDsDataReference();
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
@@ -62,7 +63,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f)
         }
     }
 
-    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
+    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate, ref int _)
     {
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
         ReadOnlySpan<int> map = sparseSet.SparseSpan();
@@ -100,9 +101,9 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f)
 
 /// <inheritdoc cref="GenerationServices"/>
 [Variadic(nameof(IRunner))]
-public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delegate? f) : RunnerBase(f), IRunner
+public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delegate? f) : RunnerBase(f), IRunner
     where TPredicate : IFilterPredicate
-    where TComp : IEntityUniformComponent<TUniform, TArg>
+    where TComp : IEntityUniformUpdate<TUniform, TArg>
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
@@ -112,9 +113,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(world.WorldSparseSetTable);
 
         ref TArg sparseFirst = ref IRunner.InitSparse<TArg>(ref first, out Span<int> sparseArgArray);
-        ref TArg arg = ref Component<TArg>.IsSparseComponent ?
-            ref Unsafe.NullRef<TArg>()
-            : ref Unsafe.Add(ref b.GetComponentDataReference<TArg>(), start);
+        ref TArg arg = ref VariadicHelpers.ArchetypeRefOrNullRef<TArg>(b, start);
 
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
@@ -165,7 +164,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
         }
     }
 
-    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world)
+    void IRunner.RunSparse(ComponentSparseSetBase sparseSet, World world, ref int id)
     {
         ref int entityId = ref sparseSet.GetEntityIDsDataReference();
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
@@ -181,6 +180,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
         for (int i = sparseSet.Count; i > 0; i--)
         {
             entity.EntityID = entityId;
+            id = entityId;
             // entity version set in GetCachedLookup
 
             Archetype archetype;
@@ -191,9 +191,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
             if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref entityData.MapRef, in archetype.GetBitset(i)))
                 continue;
 
-            ref TArg arg = ref Component<TArg>.IsSparseComponent
-                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
-                : ref entityData.Get<TArg>();
+            ref TArg arg = ref VariadicHelpers.GetRefSparseOrArchetypical(ref sparseFirst, sparseArgArray, in entity, in entityData);
 
             component.Update(entity, uniform, ref arg);
 
@@ -202,7 +200,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
         }
     }
 
-    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate)
+    void IRunner.RunSparseSubset(ComponentSparseSetBase sparseSet, World world, ReadOnlySpan<int> idsToUpdate, ref int id)
     {
         ref TComp component = ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<TComp>>(sparseSet).GetComponentDataReference();
 
@@ -219,12 +217,14 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
         {
             if (!((uint)entityId < (uint)map.Length))
                 continue;
+
             int denseIndex = map[entityId];
 
             if (denseIndex < 0)
                 continue;
 
             entity.EntityID = entityId;
+            id = entityId;
             // entity version set in GetCachedLookup
 
             Archetype archetype;
@@ -235,9 +235,7 @@ public class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Delega
             if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(archetype.ComponentTagTable), in archetype.GetBitset((int)entityData.Index)))
                 continue;
 
-            ref TArg arg = ref Component<TArg>.IsSparseComponent
-                ? ref Unsafe.Add(ref sparseFirst, sparseArgArray.UnsafeSpanIndex(entity.EntityID))
-                : ref entityData.Get<TArg>();
+            ref TArg arg = ref VariadicHelpers.GetRefSparseOrArchetypical(ref sparseFirst, sparseArgArray, in entity, in entityData);
 
             Unsafe.Add(ref component, denseIndex).Update(entity, uniform, ref arg);
         }

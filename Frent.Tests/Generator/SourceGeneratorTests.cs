@@ -101,9 +101,9 @@ namespace Frent.Tests.Generator
         }
 
         internal class ValueTupleUniform(Action<(float, int)> onUpdate) : 
-            IUniformComponent<(float, int)>,
-            IEntityUniformComponent<(float, int)>,
-            IEntityUniformComponent<(float, int), ValueTupleUniform>
+            IUniformUpdate<(float, int)>,
+            IEntityUniformUpdate<(float, int)>,
+            IEntityUniformUpdate<(float, int), ValueTupleUniform>
         {
             public void Update((float, int) uniform)
             {
@@ -131,7 +131,7 @@ namespace Frent.Tests.Generator
                 }
             }
 
-            private partial class InnerPartially<T1> : IComponent
+            private partial class InnerPartially<T1> : IUpdate
             {
                 public void Update()
                 {
@@ -162,7 +162,7 @@ namespace Frent.Tests.Generator
 
 // Global Namespace
 
-internal partial class InGlobalNamespace : IComponent
+internal partial class InGlobalNamespace : IUpdate
 {
     public void Update()
     {
@@ -172,7 +172,7 @@ internal partial class InGlobalNamespace : IComponent
     internal partial struct Inner<T> : IComponentBase
     {
 
-        internal partial struct Unbound<T1> : IUniformComponent<T1>
+        internal partial struct Unbound<T1> : IUniformUpdate<T1>
         {
             public void Update(T1 uniform)
             {
@@ -193,7 +193,7 @@ internal partial class Derived : InGlobalNamespace
     }
 
     //this should produce a warning
-    protected partial class Warning : IComponent, IUniformComponent<int>
+    protected partial class Warning : IUpdate, IUniformUpdate<int>
     {
         public void Update()
         {
@@ -206,7 +206,7 @@ internal partial class Derived : InGlobalNamespace
         }
     }
 }
-internal interface ILifetimeInterface : IComponent, IInitable, IDestroyable
+internal interface ILifetimeInterface : IUpdate, IInitable, IDestroyable
 {
 
 }

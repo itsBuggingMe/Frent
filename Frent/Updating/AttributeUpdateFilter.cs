@@ -1,5 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Updating.Runners;
 using Frent.Updating.Threading;
 using System.Collections.Immutable;
@@ -23,20 +24,21 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
 
     private int _lastRegisteredComponentID;
-    private ShortSparseSet<ArchetypeUpdateSpan> _matchedArchtypes = new();
+    private readonly ShortSparseSet<ArchetypeUpdateSpan> _matchedArchetypes = new();
 
-    private ArchtypeUpdateMethod[] _methods = new ArchtypeUpdateMethod[8];
+    private ArchetypeUpdateMethod[] _methods = new ArchetypeUpdateMethod[8];
     private int _methodsCount;
 
     private SparseUpdateMethod[] _sparseMethods = new SparseUpdateMethod[4];
     private int _sparseMethodsCount;
 
-    private Dictionary<ComponentID, MatchedMethodData> _matchedArchetypicalComponentMethods = [];
+    private readonly Dictionary<ComponentID, MatchedMethodData> _matchedArchetypicalComponentMethods = [];
     private ulong _componentBloomFilter;
 
     private readonly StrongBox<int>? _updateCount;
     private readonly Stack<ArchetypeUpdateSpan>? _smallArchetypeUpdateRecords;
     private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
+    private readonly Stack<Exception>? _mulithreadedExceptions;
     private readonly bool _isMultithread;
     private readonly bool _matchAll;
 
@@ -55,6 +57,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             _updateCount = new StrongBox<int>();
             _smallArchetypeUpdateRecords = new Stack<ArchetypeUpdateSpan>();
             _largeArchetypeRecords = new Stack<ArchetypeUpdateSpan>();
+            _mulithreadedExceptions = new Stack<Exception>();
         }
     }
 
@@ -65,20 +68,53 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         if (_isMultithread)
         {
-            MultithreadedUpdate();
+            MultiThreadedUpdate();
         }
         else
         {
-            SinglethreadedUpdate();
+            int recordIndex = 0;
+
+            try
+            {
+                SingleThreadedArchetype(ref recordIndex);
+            }
+            catch (NullReferenceException) // translate null reference exceptions into missing component exceptions
+            {
+                if (CreateExceptionArchetype(recordIndex) is { } e)
+                    throw e;
+                throw;
+            }
+
+            int entityId = 0;
+            int sparseRecordIndex = 0;
+
+            try
+            {
+                SingleThreadedSparse(ref sparseRecordIndex, ref entityId);
+            }
+            catch (NullReferenceException)
+            {
+                if (CreateExceptionSparse(entityId, sparseRecordIndex) is { } e)
+                    throw e;
+                throw;
+            }
         }
     }
 
-    private void SinglethreadedUpdate()
+    private void SingleThreadedArchetype(ref int archetypeRecordIndex)
     {
-        Span<ArchtypeUpdateMethod> records = _methods.AsSpan();
+        Span<ArchetypeUpdateMethod> records = _methods.AsSpan();
         World world = _world;
-        foreach (var (archetype, start, length) in _matchedArchtypes.AsSpan())
+
+        Span<ArchetypeUpdateSpan> archetypes = _matchedArchetypes.AsSpan();
+        for(archetypeRecordIndex = 0; archetypeRecordIndex < archetypes.Length; archetypeRecordIndex++)
         {
+            ref ArchetypeUpdateSpan archetypeRecord = ref archetypes.UnsafeSpanIndex(archetypeRecordIndex);
+
+            Archetype archetype = archetypeRecord.Archetype;
+            int start = archetypeRecord.Start;
+            int length = archetypeRecord.Length;
+
             if (archetype.EntityCount == 0)
                 continue;
 
@@ -90,23 +126,29 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 item.Runner.RunArchetypical(Unsafe.Add(ref archetypeFirst, item.Index).Buffer, archetype, world, 0, archetype.EntityCount);
             }
         }
+    }
 
+    private void SingleThreadedSparse(ref int i, ref int sparseEntityId)
+    {
+        World world = _world;
         Span<SparseUpdateMethod> sparseUpdates = _sparseMethods.AsSpan(0, _sparseMethodsCount);
 
-        foreach (SparseUpdateMethod method in sparseUpdates)
+        for(i = 0; i < sparseUpdates.Length; i++)
         {
+            SparseUpdateMethod method = sparseUpdates[i];
+
             if (method.SparseSet.Count == 0)
                 continue;
 
-            method.Runner.RunSparse(method.SparseSet, world);
+            method.Runner.RunSparse(method.SparseSet, world, ref sparseEntityId);
         }
     }
 
-    private void MultithreadedUpdate()
+    private void MultiThreadedUpdate()
     {
         const int LargeArchetypeThreshold = 16;
 
-        var archetypes = _matchedArchtypes.AsSpan();
+        var archetypes = _matchedArchetypes.AsSpan();
 
         int largeCount = 0;
 
@@ -205,12 +247,14 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 MatchedMethodData frugalRunnerArray = default;
                 IRunner[]? runners = null;
                 IDTypeFilter[]? filters = null;
+                int[]? indicies = null;
 
                 if (matchedMethodsCount > 1)
                 {
                     runners = new IRunner[matchedMethodsCount];
                     filters = new IDTypeFilter[matchedMethodsCount];
-                    frugalRunnerArray = new MatchedMethodData(runners, filters);
+                    indicies = new int[matchedMethodsCount];
+                    frugalRunnerArray = new MatchedMethodData(runners, filters, indicies);
                 }
 
                 int k = 0;
@@ -227,13 +271,14 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                     // index j has runner
                     if (matchedMethodsCount == 1)
                     {
-                        frugalRunnerArray = new MatchedMethodData(runnerToSave, filterToSave);
+                        frugalRunnerArray = new MatchedMethodData(runnerToSave, filterToSave, j);
                         break;
                     }
                     else
                     {
                         runners![k] = runnerToSave;
-                        filters![k++] = filterToSave;
+                        filters![k] = filterToSave;
+                        indicies![k++] = j;
                     }
                 }
 
@@ -247,6 +292,18 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         }
     }
 
+    // these methods are cold
+    private MissingComponentException? CreateExceptionArchetype(int matchedArchetypeIndex)
+    {
+        ArchetypeUpdateSpan record = _matchedArchetypes.AsSpan()[matchedArchetypeIndex];
+        return FrentExceptions.CreateExceptionArchetype(_world, record.Archetype, _methods.AsSpan(record.Start, record.Length));
+    }
+
+    private MissingComponentException? CreateExceptionSparse(int entityId, int recordId)
+    {
+        SparseUpdateMethod sparseMethod = _sparseMethods[recordId];
+        return FrentExceptions.CreateExceptionSparse(_world, sparseMethod.SparseSet, entityId, u => _matchAll || u.AttributeIsDefined(_attributeType));
+    }
     internal void ArchetypeAdded(Archetype archetype)
     {
         if (_lastRegisteredComponentID < Component.ComponentTable.Count)
@@ -262,32 +319,35 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             if ((mask & _componentBloomFilter) == 0 || !_matchedArchetypicalComponentMethods.TryGetValue(components[i], out var runners))
                 continue;
 
-            runners.GetOneOrOther(out IRunner[]? arr, out IRunner? single,
-                out IDTypeFilter[]? arrF, out IDTypeFilter? singleF);
+            runners.GetOneOrOther(
+                out IRunner[]? arr, out IRunner? single,
+                out IDTypeFilter[]? arrF, out IDTypeFilter? singleF,
+                out int[]? arrI, out int? singleI
+                );
 
 
 
             if (single is not null)
             {
                 if (singleF!.FilterArchetype(archetype))
-                    PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(single, i + 1 /*offset by one to account for tombstone at [0]*/));
+                    PushArchetypeUpdateMethod(new ArchetypeUpdateMethod(single, i + 1 /*offset by one to account for tombstone at [0]*/, singleI!.Value));
             }
             else
             {
                 for (int j = 0; j < arr!.Length; j++)
                 {
                     if (arrF![j].FilterArchetype(archetype))
-                        PushArchetypeUpdateMethod(new ArchtypeUpdateMethod(arr[j], i + 1));
+                        PushArchetypeUpdateMethod(new ArchetypeUpdateMethod(arr[j], i + 1, arrI![j]));
                 }
             }
         }
 
         if (length != 0)
         {
-            _matchedArchtypes[archetype.ID.RawIndex] = new(archetype, start, length);
+            _matchedArchetypes[archetype.ID.RawIndex] = new(archetype, start, length);
         }
 
-        void PushArchetypeUpdateMethod(ArchtypeUpdateMethod archtypeUpdateMethod)
+        void PushArchetypeUpdateMethod(ArchetypeUpdateMethod archtypeUpdateMethod)
         {
             MemoryHelpers.GetValueOrResize(ref _methods, _methodsCount++) = archtypeUpdateMethod;
             length++;
@@ -296,9 +356,9 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
     public void UpdateSubset(ReadOnlySpan<ArchetypeDeferredUpdateRecord> archetypes, ReadOnlySpan<int> ids)
     {
-        Span<ArchtypeUpdateMethod> records = _methods.AsSpan();
+        Span<ArchetypeUpdateMethod> records = _methods.AsSpan();
         World world = _world;
-        var archetypeSet = _matchedArchtypes;
+        var archetypeSet = _matchedArchetypes;
 
         foreach (var (archetype, _, previousEntityCount) in archetypes)
         {
@@ -320,17 +380,22 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         foreach (var sparseMethod in _sparseMethods.AsSpan(0, _sparseMethodsCount))
         {
-            sparseMethod.Runner.RunSparseSubset(sparseMethod.SparseSet, world, ids);
+            int entityId = 0;
+            sparseMethod.Runner.RunSparseSubset(sparseMethod.SparseSet, world, ids, ref entityId);
         }
     }
 
     /// <summary>
     /// An update method for a component type in the context of a specific archetype. The runner executes and the index is the index of the component buffer.
     /// </summary>
-    internal readonly struct ArchtypeUpdateMethod(IRunner runner, nint index)
+    internal readonly struct ArchetypeUpdateMethod(IRunner runner, int index, int metadataIndex)
     {
         public readonly IRunner Runner = runner;
-        public readonly nint Index = index;
+        public readonly int Index = index;
+
+        // UpdateMethodData[MetadataIndex].Runner == Runner
+        // Maps backwards to metadata for exception handling
+        public readonly int MetadataIndex = metadataIndex;
     }
 
     internal readonly struct SparseUpdateMethod(IRunner runner, ComponentSparseSetBase sparseSet)
@@ -355,20 +420,23 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
     internal readonly struct MatchedMethodData
     {
-        public MatchedMethodData(IRunner only, IDTypeFilter typeFilterRecord)
+        public MatchedMethodData(IRunner only, IDTypeFilter typeFilterRecord, int metadataIndex)
         {
             _root = only;
             _filterRoot = typeFilterRecord;
+            _metadataIndexRoot = metadataIndex;
         }
 
-        public MatchedMethodData(IRunner[] runners, IDTypeFilter[] typeFilterRecord)
+        public MatchedMethodData(IRunner[] runners, IDTypeFilter[] typeFilterRecord, int[] metadataIndices)
         {
             _root = runners;
             _filterRoot = typeFilterRecord;
+            _metadataIndexRoot = metadataIndices;
         }
 
         private readonly object _root;
         private readonly object _filterRoot;
+        private readonly object _metadataIndexRoot;
 
         public readonly int Length
         {
@@ -385,8 +453,11 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        public void GetOneOrOther(out IRunner[]? runners, out IRunner? runner,
-            out IDTypeFilter[]? typeFilterRecords, out IDTypeFilter? typeFilterRecord)
+        public void GetOneOrOther(
+            out IRunner[]? runners, out IRunner? runner,
+            out IDTypeFilter[]? typeFilterRecords, out IDTypeFilter? typeFilterRecord,
+            out int[]? metadataIndicies, out int? metadataIndex
+            )
         {
             if (_root.GetType() == typeof(IRunner[]))
             {// n > 1
@@ -394,12 +465,16 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
                 runner = default;
                 typeFilterRecords = UnsafeExtensions.UnsafeCast<IDTypeFilter[]>(_filterRoot);
                 typeFilterRecord = default;
+                metadataIndicies = UnsafeExtensions.UnsafeCast<int[]>(_metadataIndexRoot);
+                metadataIndex = default;
                 return;
             }
             runners = default;
             runner = UnsafeExtensions.UnsafeCast<IRunner>(_root);
             typeFilterRecords = default;
             typeFilterRecord = UnsafeExtensions.UnsafeCast<IDTypeFilter>(_filterRoot);
+            metadataIndicies = default;
+            metadataIndex = (int)_metadataIndexRoot;
         }
     }
 }

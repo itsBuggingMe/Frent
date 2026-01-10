@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace Frent.Generator;
 
@@ -123,7 +124,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             {
                 // this is the IComponent<T...> or whatever interface it implements.
                 INamedTypeSymbol @interface = potentialInterface;
-
                 string[] genericArguments;
                 if(@interface.TypeArguments.Length != 0)
                 {
@@ -189,7 +189,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         return new ComponentUpdateItemModel(
 
             Flags: flags,
-            FullName: componentTypeSymbol.ToString(),
+            FullName: componentTypeSymbol.ToDisplayString(RegistryHelpers.FullyQualifiedTypeNameFormat),
             Namespace: @namespace,
             HintName: componentTypeSymbol.Name,
             MinimallyQualifiedName: componentTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
@@ -241,9 +241,9 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
     private static void PushUpdateTypeAttributes(ref Stack<string> updateAttributes, out TypeFilterModel componentsAttributes, out TypeFilterModel tagsAttributes, TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol @interface, SemanticModel semanticModel)
     {
-        bool isBoth = @interface.Name is "IEntityUniformComponent";
-        bool isUniform = isBoth || @interface.Name is "IUniformComponent";
-        bool isEntity = isBoth || @interface.Name is "IEntityComponent";
+        bool isBoth = @interface.Name is "IEntityUniformUpdate";
+        //bool isUniform = isBoth || @interface.Name is "IUniformUpdate";
+        bool isEntity = isBoth || @interface.Name is "IEntityUpdate";
 
         componentsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
         tagsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
@@ -316,6 +316,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     default:
                         if(!InheritsFromBase(attrData.AttributeClass, RegistryHelpers.UpdateTypeAttributeName))
                             break;
+
                         updateAttributes.Push(attrName);
                         break;
                 }
@@ -442,7 +443,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         {
             cb
                 .Append("global::Frent.Core.Tag.RegisterTag(typeof(")
-                .Append("global::").Append(model.FullName)
+                .Append(model.FullName)
                 .AppendLine("));")
                 .AppendLine();
         }
@@ -453,11 +454,11 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         Stack<string> componentsToRegister = new();
 
-        cb.Append("GenerationServices.RegisterComponent<global::").Append(model.FullName).AppendLine(">();");
+        cb.Append("GenerationServices.RegisterComponent<").Append(model.FullName).AppendLine(">();");
 
         cb
             .Append("GenerationServices.RegisterUpdateType(typeof(")
-            .Append("global::").Append(model.FullName)
+            .Append(model.FullName)
             .Append("), ");
 
         foreach (var updateMethodModel in model.UpdateMethods)
@@ -476,6 +477,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
             //new UpdateMethod(, new Type[] {  }, new TypeFilterRecord())
 
+            // IRunner runner
             cb
                 .Append("new global::Frent.Updating.UpdateMethodData(")
                 .Append("new ")
@@ -558,7 +560,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             }
 
             cb
-                .Append(", global::").Append(model.FullName);
+                .Append(", ").Append(model.FullName);
 
             foreach (var item in updateMethodModel.GenericArguments)
                 cb.Append(", ").Append(item);
@@ -569,7 +571,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 .Append(">((global::Frent.IUniformProvider p) => (")
                 .Foreach(updateMethodModel.UniformTupleTypes.Items, CancellationToken.None, (in string typeName, CodeBuilder builder, CancellationToken _) =>
                 {
-                    builder.Append("p.GetUniform<global::").Append(typeName).Append(">(), ");
+                    builder.Append("p.GetUniform<").Append(typeName).Append(">(), ");
                 })
                 .RemoveLastComma()
                 .Append(")), ");
@@ -579,9 +581,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 cb.Append(">(null), ");
             }
 
+            // Type[] attributes
             AppendArray(updateMethodModel.Attributes.Items);
 
-            // type filters
+            // TypeFilterRecord typeFilterRecord
             if (hasTypeFilters)
             {
                 cb.Append("new global::Frent.Updating.TypeFilterRecord(");
@@ -603,6 +606,17 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 cb.Append("global::Frent.Updating.TypeFilterRecord.None");
             }
 
+            // Type[] dependencies
+            cb.Append(", ");
+
+            bool hasUniforms = updateMethodModel.ImplInterface is
+                RegistryHelpers.UniformComponentInterfaceName or
+                RegistryHelpers.EntityUniformComponentInterfaceName;
+
+            AppendArray(updateMethodModel.GenericArguments.Items.AsSpan(hasUniforms ? 1 : 0));
+
+            cb.RemoveLastComma();
+
             cb.Append("), ");
         }
 
@@ -613,20 +627,20 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
         if (model.HasFlag(UpdateModelFlags.Initable))
         {
             cb.Append("GenerationServices.RegisterInit<")
-            .Append("global::").Append(model.FullName)
+            .Append(model.FullName)
             .AppendLine(">();");
         }
 
         if (model.HasFlag(UpdateModelFlags.Destroyable))
         {
             cb.Append("GenerationServices.RegisterDestroy<")
-            .Append("global::").Append(model.FullName)
+            .Append(model.FullName)
             .AppendLine(">();");
         }
 
         foreach (var name in componentsToRegister.AsSpan())
         {
-            cb.Append("_ = Frent.Core.Component<global::")
+            cb.Append("_ = Frent.Core.Component<")
                 .Append(name)
                 .AppendLine(">.ID;");
         }
@@ -635,10 +649,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         static (int Start, int Count) ExtractUpdaterName(string interfaceName)
         {
-            return (1, interfaceName.Length - "IComponent".Length);
+            return (1, interfaceName.Length - "IUpdate".Length);
         }
 
-        void AppendArray(string[] typeNames)
+        void AppendArray(ReadOnlySpan<string> typeNames)
         {
             if (typeNames.Length == 0)
             {
@@ -651,7 +665,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 {
                     cb
                     .Append("typeof(")
-                    .Append("global::").Append(attrType)
+                    .Append(attrType)
                     .Append("), ");
                 }
                 cb.Append("}, ");
@@ -701,8 +715,10 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         return new(SanitizeNameForFile(model.FullName), cb.ToString());
 
-        static string SanitizeNameForFile(string name)
+        static string SanitizeNameForFile(string nameString)
         {
+            ReadOnlySpan<char> name = nameString.AsSpan("global::".Length);
+
             const string FileEnd = ".g.cs";
             Span<char> newName = stackalloc char[name.Length + FileEnd.Length];
             for (int i = 0; i < name.Length; i++)

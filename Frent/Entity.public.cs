@@ -1,7 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Core.Events;
-using Frent.Core.Structures;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -918,17 +918,6 @@ partial struct Entity
     /// The null entity
     /// </summary>
     public static Entity Null => default;
-
-    /// <summary>
-    /// Gets an <see cref="EntityType"/> without needing an <see cref="Entity"/> of the specific type.
-    /// </summary>
-    /// <param name="components">The components the <see cref="EntityType"/> should have.</param>
-    /// <param name="tags">The tags the <see cref="EntityType"/> should have.</param>
-    [Obsolete("Use ArchetypeID.EntityTypeOf instead")]
-    public static EntityType EntityTypeOf(ReadOnlySpan<ComponentID> components, ReadOnlySpan<TagID> tags)
-    {
-        return Archetype.GetArchetypeID(components, tags);
-    }
     #endregion
 
     #endregion

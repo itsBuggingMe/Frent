@@ -1,6 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
-using Frent.Core.Structures;
+using Frent.Core.Archetypes;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
