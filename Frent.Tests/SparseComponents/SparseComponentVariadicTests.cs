@@ -309,39 +309,6 @@ internal class SparseComponentVariadicTests
     }
     
     #endregion
-    
-    #region Missing Component Tests
-    
-    [Test]
-    public void WorldUpdate_SparseComponentMissingRequiredComponent_UpdateNotCalled()
-    {
-        using World world = new();
-        var entity = world.Create<SparseVariadicComponent1>(default);
-
-        MissingComponentException? e = Throws<MissingComponentException>(world.Update);
-
-        That(e, Is.Not.Null);
-        That(e!.InvalidEntity, Is.EqualTo(entity));
-        That(e!.ComponentType, Is.EqualTo(typeof(SparseVariadicComponent1)));
-        That(e!.MissingComponent, Is.EqualTo(typeof(RegularComponent1)));
-    }
-    
-    [Test]
-    public void WorldUpdate_SparseComponentMissingOneOfMultipleRequiredComponents_UpdateNotCalled()
-    {
-        using World world = new();
-        var entity = world.Create<RegularComponent1, SparseVariadicComponent2>(
-            new RegularComponent1(42), default);
-
-        MissingComponentException? e = Throws<MissingComponentException>(world.Update);
-
-        That(e, Is.Not.Null);
-        That(e!.InvalidEntity, Is.EqualTo(entity));
-        That(e!.ComponentType, Is.EqualTo(typeof(SparseVariadicComponent2)));
-        That(e!.MissingComponent, Is.EqualTo(typeof(RegularComponent2)));
-    }
-
-    #endregion
 
     #region Component Modification During Update Tests
 

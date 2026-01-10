@@ -38,6 +38,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private readonly StrongBox<int>? _updateCount;
     private readonly Stack<ArchetypeUpdateSpan>? _smallArchetypeUpdateRecords;
     private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
+    private readonly Stack<Exception>? _mulithreadedExceptions;
     private readonly bool _isMultithread;
     private readonly bool _matchAll;
 
@@ -56,6 +57,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             _updateCount = new StrongBox<int>();
             _smallArchetypeUpdateRecords = new Stack<ArchetypeUpdateSpan>();
             _largeArchetypeRecords = new Stack<ArchetypeUpdateSpan>();
+            _mulithreadedExceptions = new Stack<Exception>();
         }
     }
 
@@ -294,8 +296,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private MissingComponentException? CreateExceptionArchetype(int matchedArchetypeIndex)
     {
         ArchetypeUpdateSpan record = _matchedArchetypes.AsSpan()[matchedArchetypeIndex];
-
-        return FrentExceptions.CreateExceptionArchetype(_world, record.Archetype, _methods.AsSpan(record.Start, record.Length), matchedArchetypeIndex);
+        return FrentExceptions.CreateExceptionArchetype(_world, record.Archetype, _methods.AsSpan(record.Start, record.Length));
     }
 
     private MissingComponentException? CreateExceptionSparse(int entityId, int recordId)
