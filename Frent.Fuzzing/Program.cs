@@ -1,13 +1,13 @@
 ﻿using Frent.Fuzzing;
 using Frent.Fuzzing.Runner;
 
-if (args.Length == 0 && false)
+if (args.Length == 0)
 {
     Fuzzer.CreateFuzzProcesses();
 }
 else
 {
-    InconsistencyException? e = WorldState.Fuzz(["1", "1000"], true, out int seed);
+    InconsistencyException? e = WorldState.Fuzz(args, true, out int seed);
 
     if(e is not null)
     {
