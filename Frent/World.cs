@@ -487,17 +487,7 @@ public partial class World : IDisposable
     {
         if (_isDisposed)
             throw new InvalidOperationException("World is already disposed!");
-
-        GlobalWorldTables.Worlds[WorldID] = null!;
-
-        foreach (ref var item in WorldArchetypeTable.AsSpan())
-        {
-            if (item.Archetype is not null)
-            {
-                item.Archetype.ReleaseArrays(false);
-                item.DeferredCreationArchetype.ReleaseArrays(true);
-            }
-        }
+        _isDisposed = true;
 
         Span<EntityLocation> tableItems = EntityTable.AsSpan();
         for (int i = 0; i < tableItems.Length; i++)
@@ -505,15 +495,12 @@ public partial class World : IDisposable
             ref EntityLocation item = ref tableItems[i];
             if (item.Archetype is null)
                 continue;
-            if (!item.HasFlag(EntityFlags.HasHadSparseComponents))
-                continue;
-
-            CleanupSparseComponents(new Entity(WorldID, item.Version, i), ref item);
+            DeleteEntity(new Entity(WorldID, item.Version, i), ref item);
         }
 
-        _sharedCountdown.Dispose();
 
-        _isDisposed = true;
+        GlobalWorldTables.Worlds[WorldID] = null!;
+        _sharedCountdown.Dispose();
 
         //EntityTable.Dispose();
     }
