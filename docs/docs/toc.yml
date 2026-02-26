@@ -2,6 +2,8 @@
   href: ecf.md
 - name: Events
   href: events.md
+- name: Uniforms
+  href: uniforms.md
 - name: Identities
   href: id.md
 - name: Structural Changes
