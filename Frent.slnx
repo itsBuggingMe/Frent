@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Frent.Benchmarks/Frent.Benchmarks.csproj" />
+  <Project Path="Frent.Fuzzing/Frent.Fuzzing.csproj" />
+  <Project Path="Frent.Generator/Frent.Generator.csproj" />
+  <Project Path="Frent.Sample/Frent.Sample.csproj" />
+  <Project Path="Frent.Tests/Frent.Tests.csproj" />
+  <Project Path="Frent.Variadic.Generator/Frent.Variadic.Generator.csproj" />
+  <Project Path="Frent/Frent.csproj" />
+</Solution>

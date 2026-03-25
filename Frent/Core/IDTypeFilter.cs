@@ -59,10 +59,14 @@ internal class IDTypeFilter(
         {
             ref UpdateMethodData data = ref methods[i];
 
-            if (TypeFilterRecord.None == data.TypeFilterRecord)
+            if (ReferenceEquals(TypeFilterRecord.None, data.TypeFilterRecord))
                 continue;
 
-            componentIDTypeFilter ??= new IDTypeFilter[i + 1];
+            if(componentIDTypeFilter is null)
+            {
+                componentIDTypeFilter = new IDTypeFilter[i + 1];
+                componentIDTypeFilter.AsSpan().Fill(IDTypeFilter.None);
+            }
 
             componentIDTypeFilter[i] = CreateFromRecordCore(in data.TypeFilterRecord);
         }
