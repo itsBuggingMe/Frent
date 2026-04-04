@@ -15,9 +15,9 @@ internal ref struct Stack<T>
         _array = len == 0 ? [] : new T[len];
     }
 
-    public Stack() : this(0)
+    public Stack()
     {
-
+        _array = [];
     }
 
     public void Push(T val)

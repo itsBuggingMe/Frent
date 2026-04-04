@@ -142,10 +142,18 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
                 Stack<string> updateAttributes = new Stack<string>();
 
-                TypeFilterModel componentsAttribute = default;
-                TypeFilterModel tagsAttributes = default;
+                // i should really wrap this in a struct...
+                // oh well
+                // its too late
+                Stack<string> includeComponentsAttributes = new();
+                Stack<string> excludeComponentsAttributes = new();
+                Stack<string> includeTagsAttributes = new();
+                Stack<string> excludeTagsAttributes = new();
 
-                PushUpdateTypeAttributes(ref updateAttributes, ref componentsAttribute, ref tagsAttributes, componentTypeDeclarationSyntax, @interface, gsc.SemanticModel, componentTypeSymbol);
+                PushUpdateTypeAttributes(ref updateAttributes, ref includeComponentsAttributes, ref excludeComponentsAttributes, ref includeTagsAttributes, ref excludeTagsAttributes, @interface, gsc.SemanticModel, componentTypeSymbol);
+
+                TypeFilterModel componentsAttributes = new TypeFilterModel(new(includeComponentsAttributes.ToArray()), new(excludeComponentsAttributes.ToArray()));
+                TypeFilterModel tagsAttributes = new TypeFilterModel(new(includeTagsAttributes.ToArray()), new(excludeTagsAttributes.ToArray()));
 
                 Stack<string> uniformTupleTypes = new Stack<string>();
 
@@ -162,7 +170,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     ImplInterface: @interface.Name,
                     GenericArguments: new(genericArguments),
                     UniformTupleTypes: new(uniformTupleTypes.ToArray()),
-                    Components: componentsAttribute,
+                    Components: componentsAttributes,
                     Tags: tagsAttributes,
                     Attributes: new(updateAttributes.ToArray())
                 ));
@@ -243,41 +251,39 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     }
 
     private static void PushUpdateTypeAttributes(
-        ref Stack<string> updateAttributes, ref TypeFilterModel componentsAttributes, ref TypeFilterModel tagsAttributes, 
-        TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol @interface, SemanticModel semanticModel, INamedTypeSymbol componentTypeSymbol)
+        ref Stack<string> updateAttributes, 
+        ref Stack<string> includeComponentsAttributes,
+        ref Stack<string> excludeComponentsAttributes,
+        ref Stack<string> includeTagsAttributes, 
+        ref Stack<string> excludeTagsAttributes,
+        INamedTypeSymbol @interface, SemanticModel semanticModel, INamedTypeSymbol componentTypeSymbol)
     {
+
         bool isBoth = @interface.Name is "IEntityUniformUpdate";
         //bool isUniform = isBoth || @interface.Name is "IUniformUpdate";
         bool isEntity = isBoth || @interface.Name is "IEntityUpdate";
-
-        componentsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
-        tagsAttributes = new(EquatableArray<string>.Empty, EquatableArray<string>.Empty);
 
         INamedTypeSymbol? current = componentTypeSymbol;
         do
         {
             foreach (var item in current.GetMembers())
             {
-                if (TryExtractAttributesFromMember(ref updateAttributes, ref componentsAttributes, ref tagsAttributes, item))
+                if (TryExtractAttributesFromMember(ref updateAttributes, ref includeComponentsAttributes, ref excludeComponentsAttributes, ref includeTagsAttributes, ref excludeTagsAttributes, item))
                     break;
             }
 
-            current = componentTypeSymbol.TypeKind is TypeKind.Struct ?
+            current = current.TypeKind is TypeKind.Struct ?
                 null :
-                componentTypeSymbol.BaseType;
-        } while (current is not null);
+                current.BaseType;
+        } while (current is not null && current.SpecialType is not SpecialType.System_Object);// skip System.Object
 
-        // also go through interfaces
-        foreach(var otherInterface in componentTypeSymbol.AllInterfaces.AsSpan())
-        {
-            if (otherInterface.IsFrentComponentInterface())
-                continue;
-
-            if (TryExtractAttributesFromMember(ref updateAttributes, ref componentsAttributes, ref tagsAttributes, otherInterface))
-                break;
-        }
-
-        bool TryExtractAttributesFromMember(ref Stack<string> updateAttributes, ref TypeFilterModel componentsAttributes, ref TypeFilterModel tagsAttributes, ISymbol? member)
+        bool TryExtractAttributesFromMember(
+            ref Stack<string> updateAttributes,
+            ref Stack<string> includeComponentsAttributes,
+            ref Stack<string> excludeComponentsAttributes,
+            ref Stack<string> includeTagsAttributes,
+            ref Stack<string> excludeTagsAttributes, 
+            ISymbol? member)
         {
             if (member is not IMethodSymbol method || 
                 method.Name.ToString() != RegistryHelpers.UpdateMethodName || 
@@ -309,12 +315,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     return false;
                 }
             }
-
-            Stack<string> includeComponentsAttributes = new();
-            Stack<string> excludeComponentsAttributes = new();
-
-            Stack<string> includeTagsAttributes = new();
-            Stack<string> excludeTagsAttributes = new();
 
             foreach (var attrData in attributes)
             {
@@ -356,10 +356,6 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     }
                 }
             }
-
-            componentsAttributes = new TypeFilterModel(new(includeComponentsAttributes.ToArray()), new(excludeComponentsAttributes.ToArray()));
-            tagsAttributes = new TypeFilterModel(new(includeTagsAttributes.ToArray()), new(excludeTagsAttributes.ToArray()));
-
             return true;
         }
     }

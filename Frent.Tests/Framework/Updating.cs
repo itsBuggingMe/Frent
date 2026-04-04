@@ -234,6 +234,54 @@ internal class Updating
 
         world.Update<FilterAttribute2>();
     }
+
+    [Test]
+    public void Inherited_IncludesMissingComponent_DoesNotUpdate()
+    {
+        using World world = new();
+
+        world.Create(new InheritanceChild());
+
+        world.Update();
+    }
+
+    [Test]
+    public void Inherited_FilterAttribute_Updates()
+    {
+        using World world = new();
+
+        InheritanceChild c;
+        world.Create(c = new InheritanceChild());
+
+        world.Update<FilterAttribute1>();
+
+        That(c.Count, Is.EqualTo(1));
+    }
+}
+
+internal abstract class InheritanceBase : IUpdate, IEntityUpdate
+{
+    public int Count { get; set; }
+    [FilterAttribute1]
+    public abstract void Update();
+    [IncludesComponents(typeof(int))]
+    public abstract void Update(Entity e);
+}
+
+internal class InheritanceChild : InheritanceBase, IInitable
+{
+    private Entity _self;
+    public void Init(Entity self) => _self = self;
+
+    public override void Update()
+    {
+        Count++;
+    }
+
+    public override void Update(Entity e)
+    {
+        That(_self.Has<int>());
+    }
 }
 
 internal partial struct LazyComponent<T>(Action a) : IUpdate
