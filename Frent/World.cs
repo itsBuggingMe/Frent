@@ -342,7 +342,13 @@ public partial class World : IDisposable
             fkvp.Value.ArchetypeAdded(archetype);
     }
 
-    internal Query CreateQuery(ImmutableArray<Rule> rules)
+    /// <summary>
+    /// Creates a query with the specified rules non-generically.
+    /// </summary>
+    /// <param name="rules">The rules to filter entities by.</param>
+    /// <remarks>The created query is not cached; it is reccomended to avoid duplicate query objects.</remarks>
+    /// <returns>A query that represents entities that fullfill the ruleset.</returns>
+    public Query CreateQuery(ImmutableArray<Rule> rules)
     {
         Query q = new Query(this, rules);
         QueryCache.Push(q);
@@ -357,7 +363,6 @@ public partial class World : IDisposable
     /// Returns a query builder that can be used to create a query with the specified rules.
     /// </summary>
     public QueryBuilder CreateQuery() => new QueryBuilder(this);
-
 
     internal Query CreateQueryFromSpan(ReadOnlySpan<Rule> rules) => CreateQuery(MemoryHelpers.ReadOnlySpanToImmutableArray(rules));
 
