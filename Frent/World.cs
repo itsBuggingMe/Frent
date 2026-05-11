@@ -406,22 +406,27 @@ public partial class World : IDisposable
     {
         if (Interlocked.Decrement(ref _allowStructuralChanges) == 0)
         {
-            if (DeferredCreationArchetypes.Count > 0)
+            try
             {
-                if (updateDeferredEntities)
+                if (DeferredCreationArchetypes.Count > 0)
                 {
-                    Debug.Assert(filterUsed is not null);
-                    ResolveUpdateDeferredCreationEntities(filterUsed);
-                }
-                else
-                {
-                    foreach (var (archetype, tmp, _) in DeferredCreationArchetypes.AsSpan())
-                        archetype.ResolveDeferredEntityCreations(this, tmp);
+                    if (updateDeferredEntities)
+                    {
+                        Debug.Assert(filterUsed is not null);
+                        ResolveUpdateDeferredCreationEntities(filterUsed);
+                    }
+                    else
+                    {
+                        foreach (var (archetype, tmp, _) in DeferredCreationArchetypes.AsSpan())
+                            archetype.ResolveDeferredEntityCreations(this, tmp);
+                    }
                 }
             }
-
-            DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
-            Interlocked.Decrement(ref _allowStructuralChanges);
+            finally
+            {
+                DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
+                Interlocked.Decrement(ref _allowStructuralChanges);
+            }
 
             int count = 0;
             while (WorldUpdateCommandBuffer.Playback())
@@ -437,31 +442,41 @@ public partial class World : IDisposable
 
         Interlocked.Increment(ref _allowStructuralChanges);
 
-        int createRecursionCount = 0;
-        while (resolveArchetypes.Length != 0)
+        try
         {
-            foreach (var (archetype, tmp, _) in resolveArchetypes)
-                archetype.ResolveDeferredEntityCreations(this, tmp);
-
-            (_altDeferredCreationArchetypes, DeferredCreationArchetypes) = (DeferredCreationArchetypes, _altDeferredCreationArchetypes);
-            (_altDeferredCreationEntities, DeferredCreationEntities) = (DeferredCreationEntities, _altDeferredCreationEntities);
-            DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
-            DeferredCreationEntities.Clear();
-
-            filterUsed.UpdateSubset(resolveArchetypes, resolveEntities);
-
-            resolveArchetypes = DeferredCreationArchetypes.AsSpan();
-            resolveEntities = DeferredCreationEntities.AsSpan();
-
-            if (++createRecursionCount > DeferredEntityOperationRecursionLimit)
+            int createRecursionCount = 0;
+            while (resolveArchetypes.Length != 0)
             {
-                FrentExceptions.Throw_InvalidOperationException("Deferred entity creation recursion limit exceeded! Are your components creating entities (which create more entities...)?");
+                foreach (var (archetype, tmp, _) in resolveArchetypes)
+                    archetype.ResolveDeferredEntityCreations(this, tmp);
+
+                (_altDeferredCreationArchetypes, DeferredCreationArchetypes) = (DeferredCreationArchetypes, _altDeferredCreationArchetypes);
+                (_altDeferredCreationEntities, DeferredCreationEntities) = (DeferredCreationEntities, _altDeferredCreationEntities);
+                DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
+                DeferredCreationEntities.Clear();
+
+                filterUsed.UpdateSubset(resolveArchetypes, resolveEntities);
+
+                resolveArchetypes = DeferredCreationArchetypes.AsSpan();
+                resolveEntities = DeferredCreationEntities.AsSpan();
+
+                if (++createRecursionCount > DeferredEntityOperationRecursionLimit)
+                {
+                    FrentExceptions.Throw_InvalidOperationException("Deferred entity creation recursion limit exceeded! Are your components creating entities (which create more entities...)?");
+                }
             }
         }
+        finally
+        {
+            foreach (var (archetype, tmp, _) in DeferredCreationArchetypes.AsSpan())
+                archetype.ResolveDeferredEntityCreations(this, tmp);
 
-        DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
-        DeferredCreationEntities.Clear();
-        Interlocked.Decrement(ref _allowStructuralChanges);
+            DeferredCreationArchetypes.ClearWithoutClearingGCReferences();
+            DeferredCreationEntities.Clear();
+            _altDeferredCreationArchetypes.ClearWithoutClearingGCReferences();
+            _altDeferredCreationEntities.Clear();
+            Interlocked.Decrement(ref _allowStructuralChanges);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

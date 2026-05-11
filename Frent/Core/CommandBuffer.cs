@@ -217,6 +217,8 @@ public class CommandBuffer
     /// <returns>The created entity ID</returns>
     public Entity End()
     {
+        AssertCreatingEntity();
+
         //CreateCommand points to a segment of the _createEntityComponents stack
         var e = _world.CreateEntityWithoutEvent();
         _createEntityBuffer.Push(new CreateCommand(
@@ -236,6 +238,9 @@ public class CommandBuffer
     {
         _isInactive = true;
 
+        foreach (var component in _createEntityComponents.AsSpan())
+            component.Dispose();
+
         while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
             var item = createCommand.Entity;
@@ -246,7 +251,15 @@ public class CommandBuffer
             }
         }
 
+        foreach (var command in _addComponentBuffer.AsSpan())
+            command.ComponentHandle.Dispose();
+
+        _lastCreateEntityComponentsBufferIndex = -1;
+        _createEntityComponents.Clear();
+        _addComponentBuffer.Clear();
         _removeComponentBuffer.Clear();
+        _tagEntityBuffer.Clear();
+        _detachTagEntityBuffer.Clear();
         _deleteEntityBuffer.Clear();
     }
 
@@ -286,6 +299,7 @@ public class CommandBuffer
                 _world.CreateFromHandlesCore(concrete.EntityID, ref _world.EntityTable[concrete.EntityID], handles);
             }
         }
+        _createEntityComponents.Clear();
 
         while (_deleteEntityBuffer.TryPop(out var item))
         {
@@ -381,6 +395,10 @@ public class CommandBuffer
                 }
 
                 _world.ComponentAddedEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
+            }
+            else
+            {
+                command.ComponentHandle.Dispose();
             }
         }
 

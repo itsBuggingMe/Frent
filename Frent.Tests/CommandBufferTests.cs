@@ -65,6 +65,35 @@ internal class CommandBufferTests
     }
 
     [Test]
+    public void Clear_ClearsAllBufferItemTypes()
+    {
+        using World world = new World();
+        CommandBuffer commandBuffer = new CommandBuffer(world);
+
+        var e = world.Create();
+        commandBuffer.AddComponent(e, new Class1());
+        commandBuffer.Tag<Struct1>(e);
+        commandBuffer.Detach<Struct1>(e);
+
+        commandBuffer.Clear();
+
+        That(commandBuffer.HasBufferItems, Is.False);
+        That(commandBuffer.Playback(), Is.False);
+        That(e.Has<Class1>(), Is.False);
+        That(e.Tagged<Struct1>(), Is.False);
+    }
+
+    [Test]
+    public void End_WithoutEntity_Throws()
+    {
+        using World world = new World();
+        CommandBuffer commandBuffer = new CommandBuffer(world);
+
+        Throws<InvalidOperationException>(() => commandBuffer.End());
+        That(world.EntityCount, Is.Zero);
+    }
+
+    [Test]
     public void AddComponentGeneric_AddsComponentOnPlayback()
     {
         using World world = new World();
