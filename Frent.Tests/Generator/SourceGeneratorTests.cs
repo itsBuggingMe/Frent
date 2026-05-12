@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Frent;
 using Frent.Components;
+using Frent.Serialization;
 using static Frent.Tests.Generator.SourceGeneratorTests;
 using static NUnit.Framework.Assert;
 
@@ -217,3 +219,7 @@ internal class InitalizeException : Exception;
 internal class DestroyException : Exception;
 
 internal class UpdateException : Exception;
+
+[ComponentJsonSerializerContext]
+[JsonSerializable(typeof(InGlobalNamespace))]
+internal partial class TestJsonContext : JsonSerializerContext;

@@ -389,7 +389,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                     .Scope()
                         .Foreach(typeNames.AsSpan(), ct, static (in string name, CodeBuilder builder, CancellationToken ct) =>
                         {
-                            builder.Append("global::Frent.Updating.GenerationServices.RegisterJsonTypeInfoResolver(global::").Append(name).AppendLine(".Default);");
+                            builder.Append("global::Frent.Updating.GenerationServices.RegisterJsonTypeInfoResolver(").Append(name).AppendLine(".Default);");
                         })
                     .Unscope()
                 .Unscope()
