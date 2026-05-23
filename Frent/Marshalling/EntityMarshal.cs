@@ -15,7 +15,7 @@ public static class EntityMarshal
     /// <returns>The <see cref="World"/> the <paramref name="entity"/> belongs to, if it still exists.</returns>
     public static World? GetWorld(Entity entity)
     {
-        return GlobalWorldTables.Worlds.UnsafeIndexNoResize(entity.EntityID);
+        return GlobalWorldTables.Worlds.UnsafeIndexNoResize(entity.WorldID);
     }
 
     /// <summary>

@@ -378,6 +378,7 @@ partial struct Entity
             ComponentStorageRecord? componentRunner = null;
             ComponentSparseSetBase? sparseSet = null;
 
+            int entityIndex = 0;
             int sparseIndex = componentID.SparseIndex;
             if (sparseIndex != 0)
             {
@@ -393,12 +394,12 @@ partial struct Entity
             {
                 w.AddArchetypicalComponent(this, ref lookup, componentID, out EntityLocation entityLocation, out Archetype destination);
 
+                entityIndex = entityLocation.Index;
                 componentRunner = destination.Components[destination.GetComponentIndex(componentID)];
-                componentRunner.Value.SetAt(null, component, entityLocation.Index);
-                componentRunner.Value.CallIniter(this, entityLocation.Index);
+                componentRunner.Value.SetAt(null, component, entityIndex);
+                componentRunner.Value.CallIniter(this, entityIndex);
             }
 
-            int entityIndex = 0;
 
             w.ComponentAddedEvent.Invoke(this, componentID);
 
@@ -431,7 +432,7 @@ partial struct Entity
         ref var lookup = ref AssertIsAlive(out var w);
         if (w.AllowStructualChanges)
         {
-            w.ComponentAddedEvent.Invoke(this, componentID);
+            w.ComponentRemovedEvent.Invoke(this, componentID);
 
             ref EventRecord events = ref Unsafe.NullRef<EventRecord>();
             if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
@@ -624,7 +625,7 @@ partial struct Entity
         if (!lookup.Archetype.HasTag(tagID))
             return false;
 
-        ArchetypeID archetype = world.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
+        ArchetypeID archetype = world.RemoveTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
         world.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(world));
 
         EntityFlags flags = lookup.Flags | world.WorldEventFlags;

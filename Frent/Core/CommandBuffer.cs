@@ -412,7 +412,7 @@ public class CommandBuffer
                     Archetype.GetAdjacentArchetypeLookup(_world, ArchetypeEdgeKey.Tag(command.TagID, record.Archetype.ID, ArchetypeEdgeType.AddTag)));
 
                 _world.Tagged.Invoke(concrete, command.TagID);
-                if (record.HasFlag(EntityFlags.Detach))
+                if (record.HasFlag(EntityFlags.Tagged))
                 {
                     _world.EventLookup.GetValueRefOrNullRef(command.Entity).Tag.Invoke(concrete, command.TagID);
                 }

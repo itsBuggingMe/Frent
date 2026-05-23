@@ -57,6 +57,14 @@ public class JsonWorldSerializer
 
     private World? _activeWorld;
 
+    private readonly
+#if NET9_0_OR_GREATER
+    Lock
+#else
+    object
+#endif
+        _lock = new();
+
     /// <summary>
     /// Initializes a new instance of the JsonWorldSerializer class, which is used to serialize and deserialize World instances to and from JSON.
     /// </summary>
@@ -97,119 +105,122 @@ public class JsonWorldSerializer
     /// </summary>
     public World Deserialize(Stream stream, bool invokeIniters = false, IUniformProvider? uniformProvider = null)
     {
-        _entityMap.Clear();
-
-        World world = _activeWorld = new(uniformProvider);
-
-        // when callling .Read, use the streamReader
-        // when calling anything else, use the ref reader
-        StreamJsonReader jsonStreamReader = new(stream);
-        ref Utf8JsonReader reader = ref jsonStreamReader.CurrentReader;
-
-        ReadAssert(ref jsonStreamReader, JsonTokenType.StartArray);
-
-
-        while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
+        lock(_lock)
         {
-            AssertJsonToken(ref reader, JsonTokenType.StartObject);
+            _entityMap.Clear();
 
-            Entity entity = Entity.Null;
-            bool hasTags = false;
+            World world = _activeWorld = new(uniformProvider);
 
-            while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndObject)
+            // when callling .Read, use the streamReader
+            // when calling anything else, use the ref reader
+            StreamJsonReader jsonStreamReader = new(stream);
+            ref Utf8JsonReader reader = ref jsonStreamReader.CurrentReader;
+
+            ReadAssert(ref jsonStreamReader, JsonTokenType.StartArray);
+
+
+            while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
             {
-                AssertJsonToken(ref reader, JsonTokenType.PropertyName);
+                AssertJsonToken(ref reader, JsonTokenType.StartObject);
 
-                if (reader.ValueTextEquals(Props.Id))
-                {
-                    ReadAssert(ref jsonStreamReader, JsonTokenType.Number);
-                    entity = MapEntityRead(reader.GetInt32());
-                }
-                else if (reader.ValueTextEquals(Props.Components))
-                {
-                    jsonStreamReader.Capture();
-                }
-                else if (reader.ValueTextEquals(Props.Types))
-                {
-                    ReadAssert(ref reader, JsonTokenType.StartArray);
+                Entity entity = Entity.Null;
+                bool hasTags = false;
 
-                    hasTags = true;
-                    _readTags.Clear();
-                    while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
-                        _componentMetadataNames.Enqueue(reader.GetString() ?? "");
-                }
-                else if (reader.ValueTextEquals(Props.Tags))
+                while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndObject)
                 {
-                    ReadAssert(ref reader, JsonTokenType.StartArray);
+                    AssertJsonToken(ref reader, JsonTokenType.PropertyName);
 
-                    while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                    if (reader.ValueTextEquals(Props.Id))
                     {
-                        string tagTypeName = reader.GetString() ?? "";
+                        ReadAssert(ref jsonStreamReader, JsonTokenType.Number);
+                        entity = MapEntityRead(reader.GetInt32());
+                    }
+                    else if (reader.ValueTextEquals(Props.Components))
+                    {
+                        jsonStreamReader.Capture();
+                    }
+                    else if (reader.ValueTextEquals(Props.Types))
+                    {
+                        ReadAssert(ref reader, JsonTokenType.StartArray);
 
-                        var tagId = Tag.GetTagType(tagTypeName);
+                        hasTags = true;
+                        _readTags.Clear();
+                        while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                            _componentMetadataNames.Enqueue(reader.GetString() ?? "");
+                    }
+                    else if (reader.ValueTextEquals(Props.Tags))
+                    {
+                        ReadAssert(ref reader, JsonTokenType.StartArray);
 
-                        if (tagId is not { } t)
-                            FrentExceptions.Throw_InvalidOperationException($"{tagTypeName} is not serializable.");
-                        else
-                            _readTags.Push(t);
+                        while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                        {
+                            string tagTypeName = reader.GetString() ?? "";
+
+                            var tagId = Tag.GetTagType(tagTypeName);
+
+                            if (tagId is not { } t)
+                                FrentExceptions.Throw_InvalidOperationException($"{tagTypeName} is not serializable.");
+                            else
+                                _readTags.Push(t);
+                        }
+                    }
+                    else
+                    {
+                        reader.Skip();
                     }
                 }
-                else
+
+                // we have info now
+                Utf8JsonReader capturedReader = jsonStreamReader.Restore();
+                CreateEntity(ref capturedReader);
+
+                // local method to deallocate stack space
+                void CreateEntity(ref Utf8JsonReader capturedReader)
                 {
-                    reader.Skip();
+                    // tags
+                    if (hasTags)
+                        entity.TagFromIDs(_readTags.AsSpan());
+
+                    // components
+                    int index = 0;
+                    Span<ComponentHandle> components = stackalloc ComponentHandle[_componentMetadataNames.Count];
+
+                    ReadAssert(ref capturedReader, JsonTokenType.StartArray);
+
+                    while (capturedReader.Read() && capturedReader.TokenType != JsonTokenType.EndArray)
+                    {
+                        string componentTypeName = _componentMetadataNames.Dequeue();
+                        Type? componentType = GenerationServices.SerializableTypesMap.GetValueOrDefault(componentTypeName) ??
+                            Component.GetComponentByString(componentTypeName)?.Type;
+
+                        if (componentType is null)
+                            FrentExceptions.Throw_InvalidOperationException($"{componentTypeName} is not serializable.");
+
+                        object comp = JsonSerializer.Deserialize(ref capturedReader, _options.GetTypeInfo(componentType))!;
+                        components[index++] = ComponentHandle.CreateFromBoxed(Component.GetComponentID(componentType), comp);
+                    }
+
+                    entity.AddFromHandles(components);
                 }
             }
 
-            // we have info now
-            Utf8JsonReader capturedReader = jsonStreamReader.Restore();
-            CreateEntity(ref capturedReader);
+            _activeWorld = null;
+            jsonStreamReader.Dispose();
 
-            // local method to deallocate stack space
-            void CreateEntity(ref Utf8JsonReader capturedReader)
+            Query everything = world.CreateQuery()
+                .Build();
+
+            if (invokeIniters)
             {
-                // tags
-                if(hasTags)
-                    entity.TagFromIDs(_readTags.AsSpan());
-
-                // components
-                int index = 0;
-                Span<ComponentHandle> components = stackalloc ComponentHandle[_componentMetadataNames.Count];
-
-                ReadAssert(ref capturedReader, JsonTokenType.StartArray);
-
-                while (capturedReader.Read() && capturedReader.TokenType != JsonTokenType.EndArray)
+                foreach (var entity in everything
+                    .EnumerateWithEntities())
                 {
-                    string componentTypeName = _componentMetadataNames.Dequeue();
-                    Type? componentType = GenerationServices.SerializableTypesMap.GetValueOrDefault(componentTypeName) ??
-                        Component.GetComponentByString(componentTypeName)?.Type;
-
-                    if (componentType is null)
-                        FrentExceptions.Throw_InvalidOperationException($"{componentTypeName} is not serializable.");
-
-                    object comp = JsonSerializer.Deserialize(ref capturedReader, _options.GetTypeInfo(componentType))!;
-                    components[index++] = ComponentHandle.CreateFromBoxed(Component.GetComponentID(componentType), comp);
+                    entity.EnumerateComponents(new OnDeserializedIniterInvokerState(entity));
                 }
-
-                entity.AddFromHandles(components);
             }
+
+            return world;
         }
-
-        _activeWorld = null;
-        jsonStreamReader.Dispose();
-
-        Query everything = world.CreateQuery()
-            .Build();
-
-        if (invokeIniters)
-        {
-            foreach(var entity in everything
-                .EnumerateWithEntities())
-            {
-                entity.EnumerateComponents(new OnDeserializedIniterInvokerState(entity));
-            }
-        }
-
-        return world;
     }
 
     #region Serialize
@@ -248,81 +259,85 @@ public class JsonWorldSerializer
     /// <param name="query"></param>
     public void Serialize(Utf8JsonWriter writer, World world, Query? query = null)
     {
-        AssertQueryFromWorld(world, query);
-
-        Query everything = world.CreateQuery()
-            .Build();
-
-        _entityMap.Clear();
-
-        _activeWorld = world;
-
-        writer.WriteStartArray();
-
-        SerializerState state = new SerializerState(writer, this);
-
-        foreach(Entity e in (query ?? world.CreateQuery().Build())
-            .EnumerateWithEntities())
+        lock (_lock)
         {
-            state.Entity = e;
-            state.HasDerivedComponent = false;
+            AssertQueryFromWorld(world, query);
 
-            writer.WriteStartObject();
+            Query everything = world.CreateQuery()
+                .Build();
 
-            // metadata prop comes first
-            ComponentTypes();
+            _entityMap.Clear();
+            _nextEntityId = 0;
 
-            writer.WriteNumber(Props.Id, MapEntityWrite(e));
+            _activeWorld = world;
 
-            ComponentData();
+            writer.WriteStartArray();
 
-            Tags();
+            SerializerState state = new SerializerState(writer, this);
 
-            writer.WriteEndObject();
-
-            void ComponentData()
+            foreach (Entity e in (query ?? world.CreateQuery().Build())
+                .EnumerateWithEntities())
             {
-                writer.WritePropertyName(Props.Components);
-                writer.WriteStartArray();
+                state.Entity = e;
+                state.HasDerivedComponent = false;
 
-                e.EnumerateComponents(state);
+                writer.WriteStartObject();
 
-                writer.WriteEndArray();
+                // metadata prop comes first
+                ComponentTypes();
+
+                writer.WriteNumber(Props.Id, MapEntityWrite(e));
+
+                ComponentData();
+
+                Tags();
+
+                writer.WriteEndObject();
+
+                void ComponentData()
+                {
+                    writer.WritePropertyName(Props.Components);
+                    writer.WriteStartArray();
+
+                    e.EnumerateComponents(state);
+
+                    writer.WriteEndArray();
+                }
+
+                void ComponentTypes()
+                {
+                    writer.WritePropertyName(Props.Types);
+                    writer.WriteStartArray();
+
+                    foreach (var component in e)
+                        writer.WriteStringValue(component.Type.ToString());
+
+                    writer.WriteEndArray();
+                }
+
+                void Tags()
+                {
+                    var types = e.TagTypes;
+                    if (types.Length == 0)
+                        return;
+
+                    writer.WritePropertyName(Props.Tags);
+                    writer.WriteStartArray();
+
+                    foreach (var tag in types)
+                        writer.WriteStringValue(tag.Type.ToString());
+
+                    writer.WriteEndArray();
+                }
             }
 
-            void ComponentTypes()
-            {
-                writer.WritePropertyName(Props.Types);
-                writer.WriteStartArray();
+            writer.WriteEndArray();
 
-                foreach (var component in e)
-                    writer.WriteStringValue(component.Type.ToString());
-
-                writer.WriteEndArray();
-            }
-
-            void Tags()
-            {
-                var types = e.TagTypes;
-                if (types.Length == 0)
-                    return;
-
-                writer.WritePropertyName(Props.Tags);
-                writer.WriteStartArray();
-
-                foreach (var tag in types)
-                    writer.WriteStringValue(tag.Type.ToString());
-
-                writer.WriteEndArray();
-            }
+            _activeWorld = null;
         }
-
-        writer.WriteEndArray();
-
-        _activeWorld = null;
     }
 
-    private void AssertQueryFromWorld(World world, Query? query)
+    private static void AssertQueryFromWorld(World world, Query? query)
     {
         if (query is null)
             return;
