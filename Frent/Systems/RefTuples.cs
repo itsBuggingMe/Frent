@@ -12,7 +12,7 @@ namespace Frent.Systems;
 [Variadic("    public Ref<T> Item1;", "|    public Ref<T$> Item$;\n|")]
 [Variadic("out Ref<T> @ref", "|out Ref<T$> @ref$, |")]
 [Variadic("        @ref = Item1;", "|        @ref$ = Item$;\n|")]
-public ref struct RefTuple<T>
+public ref partial struct RefTuple<T>
 {
     public Ref<T> Item1;
 
@@ -24,6 +24,12 @@ public ref struct RefTuple<T>
         @ref = Item1;
     }
 }
+
+partial struct RefTuple<T>
+{
+    public static implicit operator Ref<T>(RefTuple<T> tuple) => tuple.Item1;
+}
+
 
 /// <summary>
 /// A tuple of multiple references with an <see cref="Entity"/>.
