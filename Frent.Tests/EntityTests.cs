@@ -238,6 +238,22 @@ internal class EntityTests
     }
 
     [Test]
+    public void DetachNonGeneric_DuringEnumeration_Defers()
+    {
+        using World world = new();
+        var e = world.Create();
+        e.Tag<Struct1>();
+
+        foreach (var _ in world.CreateQuery().Build().EnumerateWithEntities())
+        {
+            That(e.Detach(Tag<Struct1>.ID), Is.True);
+            That(e.Tagged<Struct1>(), Is.True);
+        }
+
+        That(e.Tagged<Struct1>(), Is.False);
+    }
+
+    [Test]
     public void Tag_AddsTag()
     {
         using World world = new();

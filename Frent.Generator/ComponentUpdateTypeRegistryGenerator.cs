@@ -481,7 +481,7 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
             bool hasTypeFilters = updateMethodModel.Tags.Allow.Length > 0 ||
                 updateMethodModel.Tags.Disallow.Length > 0 ||
                 updateMethodModel.Components.Allow.Length > 0 ||
-                updateMethodModel.Components.Allow.Length > 0;
+                updateMethodModel.Components.Disallow.Length > 0;
 
             //new UpdateMethod(, new Type[] {  }, new TypeFilterRecord())
 

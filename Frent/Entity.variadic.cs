@@ -185,7 +185,7 @@ partial struct Entity
             ref NeighborCache<T>.Tag.Lookup,
             ref thisLookup,
             true);
-
+        
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
 
         EntityFlags flags = thisLookup.Flags | world.WorldEventFlags;
@@ -194,9 +194,9 @@ partial struct Entity
             if (world.Tagged.HasListeners)
                 InvokeTagWorldEvents<T>(ref world.Tagged, this);
 
-            if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+            ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
+            if (!Unsafe.IsNullRef(ref events))
             {
-                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityTagEvents<T>(this, ref events.Tag);
             }
         }
@@ -232,9 +232,9 @@ partial struct Entity
             if (world.Detached.HasListeners)
                 InvokeTagWorldEvents<T>(ref world.Detached, this);
 
-            if (EntityLocation.HasEventFlag(thisLookup.Flags, EntityFlags.Detach))
+            ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
+            if (!Unsafe.IsNullRef(ref events))
             {
-                ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 InvokePerEntityTagEvents<T>(this, ref events.Detach);
             }
         }

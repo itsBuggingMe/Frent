@@ -625,6 +625,12 @@ partial struct Entity
         if (!lookup.Archetype.HasTag(tagID))
             return false;
 
+        if (!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.Detach(this, tagID);
+            return true;
+        }
+
         ArchetypeID archetype = world.RemoveTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.RemoveTag);
         world.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(world));
 

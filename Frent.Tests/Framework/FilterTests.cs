@@ -115,9 +115,66 @@ internal partial class FilterTests
 
         That(count, Is.EqualTo(2));
     }
+
+    [Test]
+    public void Archetypical_SparseExclusion_AdvancesAfterSkippedEntity()
+    {
+        using World w = new();
+        int count = 0;
+        Action tick = () => count++;
+
+        var skipped = w.Create(new FilteredBySparseMarker(tick), new Struct1());
+        var updated1 = w.Create(new FilteredBySparseMarker(tick), new Struct1());
+        var updated2 = w.Create(new FilteredBySparseMarker(tick), new Struct1());
+
+        skipped.Add<SparseMarker>(default);
+
+        w.Update<FilterAttribute1>();
+
+        That(count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Sparse_TagExclusion_AdvancesAfterSkippedEntity()
+    {
+        using World w = new();
+        int count = 0;
+        Action tick = () => count++;
+
+        var skipped = w.Create(new SparseFilteredByTag(tick));
+        var updated = w.Create(new SparseFilteredByTag(tick));
+
+        skipped.Tag<Tag3>();
+
+        w.Update<FilterAttribute1>();
+
+        That(count, Is.EqualTo(1));
+    }
+
     struct Tag1;
     struct Tag2;
     struct Tag3;
+    partial struct SparseMarker : ISparseComponent;
+
+    partial struct FilteredBySparseMarker(Action onUpdate) : IUpdate
+    {
+        [ExcludesComponents(typeof(SparseMarker))]
+        [FilterAttribute1]
+        public void Update()
+        {
+            onUpdate();
+        }
+    }
+
+    partial struct SparseFilteredByTag(Action onUpdate) : IUpdate, ISparseComponent
+    {
+        [ExcludesTags(typeof(Tag3))]
+        [FilterAttribute1]
+        public void Update()
+        {
+            onUpdate();
+        }
+    }
 
     partial struct FilterComponent(Action onUpdate)
         : IUpdate, IUpdate<Struct1>, IInitable
