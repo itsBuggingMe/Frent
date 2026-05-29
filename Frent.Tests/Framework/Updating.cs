@@ -146,6 +146,64 @@ internal class Updating
     }
 
     [Test]
+    public void UpdateComponent_DeferredEntityCreationUpdate_UpdatesOnlyDeferredEntities()
+    {
+        int createCount = 0;
+        int updateCount = 0;
+        using World world = new(null, true);
+
+        world.Create(new DelegateBehavior(() =>
+        {
+            createCount++;
+            world.Create(new DelegateBehavior(() => updateCount++));
+        }));
+
+        world.UpdateComponent(Component<DelegateBehavior>.ID);
+
+        That(createCount, Is.EqualTo(1));
+        That(updateCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void UpdateComponent_DeferredSparseEntityCreationUpdate_UpdatesDeferredEntities()
+    {
+        int createCount = 0;
+        int updateCount = 0;
+        using World world = new(null, true);
+
+        world.Create(new DeferredSparseBehavior(() =>
+        {
+            createCount++;
+            world.Create(new DeferredSparseBehavior(() => updateCount++));
+        }));
+
+        world.UpdateComponent(Component<DeferredSparseBehavior>.ID);
+
+        That(createCount, Is.EqualTo(1));
+        That(updateCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Update_MultithreadedUpdate_WaitsForWorkers()
+    {
+        using World world = new();
+        using ManualResetEventSlim started = new();
+        using ManualResetEventSlim release = new();
+        int updateCount = 0;
+
+        world.Create(new BlockingMultithreadedBehavior(started, release, () => updateCount++));
+
+        Task updateTask = Task.Run(() => world.Update<WaitForUpdateAttribute>());
+
+        That(started.Wait(TimeSpan.FromSeconds(5)), Is.True);
+        That(updateTask.IsCompleted, Is.False);
+
+        release.Set();
+        That(updateTask.Wait(TimeSpan.FromSeconds(5)), Is.True);
+        That(updateCount, Is.EqualTo(1));
+    }
+
+    [Test]
     public void Update_DeferredEntityCreationUpdate_HitsRecursionLimit()
     {
         using World world = new(null, true);
@@ -306,5 +364,23 @@ internal struct NoMatch(World world) : IUpdate
     public void Update()
     {
         world.Create(new LazyComponent<float>(() => throw new Exception("This should not called")));
+    }
+}
+
+internal class DeferredSparseBehavior(Action onUpdate) : IUpdate, ISparseComponent
+{
+    public void Update() => onUpdate();
+}
+
+internal class WaitForUpdateAttribute : MultithreadUpdateTypeAttribute;
+
+internal class BlockingMultithreadedBehavior(ManualResetEventSlim started, ManualResetEventSlim release, Action onUpdate) : IUpdate
+{
+    [WaitForUpdate]
+    public void Update()
+    {
+        started.Set();
+        release.Wait();
+        onUpdate();
     }
 }
