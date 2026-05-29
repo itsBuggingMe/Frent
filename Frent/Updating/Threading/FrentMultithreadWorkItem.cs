@@ -24,8 +24,9 @@ internal static class FrentMultithread
         private World? _world;
         private ArraySegment<SparseUpdateMethod> _update;
         private StrongBox<int>? _counter;
+        private Stack<Exception>? _exceptions;
 
-        public static void UnsafeQueueWork(World world, ArraySegment<SparseUpdateMethod> method, StrongBox<int> counter)
+        public static void UnsafeQueueWork(World world, ArraySegment<SparseUpdateMethod> method, StrongBox<int> counter, Stack<Exception> exceptions)
         {
             if (method.Count == 0)
                 return;
@@ -42,25 +43,39 @@ internal static class FrentMultithread
             workItem._world = world;
             workItem._update = method;
             workItem._counter = counter;
+            workItem._exceptions = exceptions;
 
             ThreadPool.UnsafeQueueUserWorkItem(static o =>
             {
                 SparseSetWorkItem workItem = UnsafeExtensions.UnsafeCast<SparseSetWorkItem>(o!);
 
-                Span<SparseUpdateMethod> methods = workItem._update.AsSpan();
-                ComponentSparseSetBase set = methods[0].SparseSet;
-
-                foreach (SparseUpdateMethod method in methods)
+                try
                 {
-                    int entityId = 0;
-                    method.Runner.RunSparse(set, workItem._world!, ref entityId);
-                }
+                    Span<SparseUpdateMethod> methods = workItem._update.AsSpan();
+                    ComponentSparseSetBase set = methods[0].SparseSet;
 
-                Interlocked.Decrement(ref workItem._counter!.Value);
+                    foreach (SparseUpdateMethod method in methods)
+                    {
+                        int entityId = 0;
+                        method.Runner.RunSparse(set, workItem._world!, ref entityId);
+                    }
+                }
+                catch (Exception e)
+                {
+                    lock (workItem._exceptions!)
+                    {
+                        workItem._exceptions.Push(e);
+                    }
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref workItem._counter!.Value);
+                }
 
                 workItem._world = default;
                 workItem._update = default;
                 workItem._counter = default;
+                workItem._exceptions = default;
 
                 lock (s_poolLock)
                 {
@@ -85,8 +100,9 @@ internal static class FrentMultithread
         private Stack<ArchetypeUpdateSpan>? _archetypes;
         private ArchetypeUpdateMethod[]? _componentStorageBases;
         private StrongBox<int>? _counter;
+        private Stack<Exception>? _exceptions;
 
-        public static void UnsafeQueueWork(World world, Stack<ArchetypeUpdateSpan> archetypes, ArchetypeUpdateMethod[] componentStorageBases, StrongBox<int> counter)
+        public static void UnsafeQueueWork(World world, Stack<ArchetypeUpdateSpan> archetypes, ArchetypeUpdateMethod[] componentStorageBases, StrongBox<int> counter, Stack<Exception> exceptions)
         {
             Interlocked.Increment(ref counter.Value);
 
@@ -101,34 +117,48 @@ internal static class FrentMultithread
             workItem._componentStorageBases = componentStorageBases;
             workItem._world = world;
             workItem._counter = counter;
+            workItem._exceptions = exceptions;
 
             ThreadPool.UnsafeQueueUserWorkItem(static o =>
             {
                 MultipleArchetypeWorkItem workItem = UnsafeExtensions.UnsafeCast<MultipleArchetypeWorkItem>(o!);
 
-                World world = workItem._world!;
-
-                while (workItem._archetypes!.TryPop(out var record))
+                try
                 {
-                    (Archetype archetype, int start, int count) = record;
+                    World world = workItem._world!;
 
-                    Span<ArchetypeUpdateMethod> methods = workItem._componentStorageBases.AsSpan(start, count);
-                    ref ComponentStorageRecord storageStart = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
-
-                    foreach (var method in methods)
+                    while (workItem._archetypes!.TryPop(out var record))
                     {
-                        Debug.Assert(method.Index < archetype.Components.Length);
+                        (Archetype archetype, int start, int count) = record;
 
-                        method.Runner.RunArchetypical(Unsafe.Add(ref storageStart, method.Index).Buffer, archetype, world, 0, archetype.EntityCount);
+                        Span<ArchetypeUpdateMethod> methods = workItem._componentStorageBases.AsSpan(start, count);
+                        ref ComponentStorageRecord storageStart = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
+
+                        foreach (var method in methods)
+                        {
+                            Debug.Assert(method.Index < archetype.Components.Length);
+
+                            method.Runner.RunArchetypical(Unsafe.Add(ref storageStart, method.Index).Buffer, archetype, world, 0, archetype.EntityCount);
+                        }
                     }
                 }
-
-                Interlocked.Decrement(ref workItem._counter!.Value);
+                catch (Exception e)
+                {
+                    lock (workItem._exceptions!)
+                    {
+                        workItem._exceptions.Push(e);
+                    }
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref workItem._counter!.Value);
+                }
 
                 workItem._archetypes = default;
                 workItem._componentStorageBases = default;
                 workItem._world = default;
                 workItem._counter = default;
+                workItem._exceptions = default;
 
                 lock (s_poolLock)
                 {
@@ -153,6 +183,7 @@ internal static class FrentMultithread
         private ArchetypeUpdateSpan _archetypeRecord;
         private ArchetypeUpdateMethod[]? _components;
         private StrongBox<int>? _counter;
+        private Stack<Exception>? _exceptions;
         private int _start;
         private int _count;
 
@@ -161,6 +192,7 @@ internal static class FrentMultithread
             ArchetypeUpdateSpan archetypeUpdateRecord,
             ArchetypeUpdateMethod[] componentStorageBases,
             StrongBox<int> counter,
+            Stack<Exception> exceptions,
             int start,
             int count)
         {
@@ -177,6 +209,7 @@ internal static class FrentMultithread
             workItem._components = componentStorageBases;
             workItem._world = world;
             workItem._counter = counter;
+            workItem._exceptions = exceptions;
             workItem._start = start;
             workItem._count = count;
 
@@ -184,33 +217,46 @@ internal static class FrentMultithread
             {
                 SingleArchetypeWorkItem frentMultithreadWorkItem = UnsafeExtensions.UnsafeCast<SingleArchetypeWorkItem>(o!);
 
-                World world = frentMultithreadWorkItem._world!;
-                (Archetype archetype, int start, int count) = frentMultithreadWorkItem._archetypeRecord;
-                Span<ArchetypeUpdateMethod> methods = frentMultithreadWorkItem._components.AsSpan(start, count);
-
-                int archetypeStart = frentMultithreadWorkItem._start;
-                int archetypeCount = frentMultithreadWorkItem._count;
-
-                ref ComponentStorageRecord storageStart = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
-
-                foreach (var method in methods)
+                try
                 {
-                    Debug.Assert(method.Index < archetype.Components.Length);
+                    World world = frentMultithreadWorkItem._world!;
+                    (Archetype archetype, int start, int count) = frentMultithreadWorkItem._archetypeRecord;
+                    Span<ArchetypeUpdateMethod> methods = frentMultithreadWorkItem._components.AsSpan(start, count);
 
-                    method.Runner.RunArchetypical(
-                        Unsafe.Add(ref storageStart, method.Index).Buffer,
-                        archetype,
-                        world,
-                        archetypeStart,
-                        archetypeCount);
+                    int archetypeStart = frentMultithreadWorkItem._start;
+                    int archetypeCount = frentMultithreadWorkItem._count;
+
+                    ref ComponentStorageRecord storageStart = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
+
+                    foreach (var method in methods)
+                    {
+                        Debug.Assert(method.Index < archetype.Components.Length);
+
+                        method.Runner.RunArchetypical(
+                            Unsafe.Add(ref storageStart, method.Index).Buffer,
+                            archetype,
+                            world,
+                            archetypeStart,
+                            archetypeCount);
+                    }
                 }
-
-                Interlocked.Decrement(ref frentMultithreadWorkItem._counter!.Value);
+                catch (Exception e)
+                {
+                    lock (frentMultithreadWorkItem._exceptions!)
+                    {
+                        frentMultithreadWorkItem._exceptions.Push(e);
+                    }
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref frentMultithreadWorkItem._counter!.Value);
+                }
 
                 frentMultithreadWorkItem._archetypeRecord = default;
                 frentMultithreadWorkItem._components = default;
                 frentMultithreadWorkItem._world = default;
                 frentMultithreadWorkItem._counter = default;
+                frentMultithreadWorkItem._exceptions = default;
 
                 lock (s_poolLock)
                 {

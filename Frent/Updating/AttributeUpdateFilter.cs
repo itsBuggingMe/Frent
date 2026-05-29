@@ -148,6 +148,9 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     {
         const int LargeArchetypeThreshold = 16;
 
+        _updateCount!.Value = 0;
+        _mulithreadedExceptions!.Clear();
+
         var archetypes = _matchedArchetypes.AsSpan();
 
         int largeCount = 0;
@@ -171,7 +174,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         }
 
         FrentMultithread.MultipleArchetypeWorkItem.UnsafeQueueWork(
-            _world, _smallArchetypeUpdateRecords!, _methods, _updateCount!);
+            _world, _smallArchetypeUpdateRecords!, _methods, _updateCount, _mulithreadedExceptions);
 
         int maxChunkSize = Math.Max(largeCount / Environment.ProcessorCount, 256);
 
@@ -181,7 +184,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             for (int i = 0; i < entityCount; i += maxChunkSize)
             {
                 FrentMultithread.SingleArchetypeWorkItem.UnsafeQueueWork(
-                    _world, archetypeRecord, _methods, _updateCount!,
+                    _world, archetypeRecord, _methods, _updateCount, _mulithreadedExceptions,
                     start: i,
                     count: Math.Min(maxChunkSize, entityCount - i));
             }
@@ -189,11 +192,14 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         Span<SparseUpdateMethod> sparseMethods = _sparseMethods.AsSpan(0, _sparseMethodsCount);
 
-        for (int i = 0; i < sparseMethods.Length; i++)
+        for (int i = 0; i < sparseMethods.Length;)
         {
             ComponentSparseSetBase set = sparseMethods[i].SparseSet;
             if (set.Count == 0)
+            {
+                i++;
                 continue;
+            }
 
             int start = i;
             do
@@ -202,7 +208,18 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             } while (i < sparseMethods.Length && set == sparseMethods[i].SparseSet);
 
             ArraySegment<SparseUpdateMethod> methods = new(_sparseMethods, start, i - start);
-            FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, _updateCount!);
+            FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, _updateCount, _mulithreadedExceptions);
+        }
+
+        SpinWait spinWait = new();
+        while (Volatile.Read(ref _updateCount.Value) != 0)
+        {
+            spinWait.SpinOnce();
+        }
+
+        if (_mulithreadedExceptions.Count != 0)
+        {
+            throw new AggregateException(_mulithreadedExceptions);
         }
     }
 

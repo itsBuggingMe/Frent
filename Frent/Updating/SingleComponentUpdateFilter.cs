@@ -46,8 +46,16 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
         _sparseSet = world.WorldSparseSetTable[component.SparseIndex];
 
         _allRunners = new IRunner[methods.Length];
-        _normalRunners = new IRunner[methods.Length - filters.Length];
-        _filteredRunners = filters.Length == 0 ? [] : new (IDTypeFilter Filter, IRunner Runner)[filters.Length];
+
+        int filteredRunnerCount = 0;
+        for (int i = 0; i < methods.Length; i++)
+        {
+            if ((uint)i < (uint)filters.Length && filters[i] is { } f && f != IDTypeFilter.None)
+                filteredRunnerCount++;
+        }
+
+        _normalRunners = new IRunner[methods.Length - filteredRunnerCount];
+        _filteredRunners = filteredRunnerCount == 0 ? [] : new (IDTypeFilter Filter, IRunner Runner)[filteredRunnerCount];
 
         int nIndex = 0;
         int fIndex = 0;
@@ -269,13 +277,19 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
         {
             foreach ((Archetype archetype, Archetype _, int initalEntityCount) in archetypes)
             {
-                Array buffer = archetype.Components.UnsafeArrayIndex(archetype.GetComponentIndex(componentID)).Buffer;
-                int entityCount = archetype.EntityCount;
+                int componentIndex = archetype.GetComponentIndex(componentID);
+                if (componentIndex == 0)
+                    continue;
+
+                Array buffer = archetype.Components.UnsafeArrayIndex(componentIndex).Buffer;
+                int entitiesToUpdate = archetype.EntityCount - initalEntityCount;
+                if (entitiesToUpdate == 0)
+                    continue;
 
                 // average joe methods
                 foreach (var runner in _normalRunners)
                 {
-                    runner.RunArchetypical(buffer, archetype, world, 0, entityCount);
+                    runner.RunArchetypical(buffer, archetype, world, initalEntityCount, entitiesToUpdate);
                 }
 
                 foreach ((IDTypeFilter filter, IRunner runner) in _filteredRunners)
@@ -285,13 +299,15 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
                     if (!filter.FilterArchetype(archetype))
                         continue;
 
-                    runner.RunArchetypical(buffer, archetype, world, 0, entityCount);
+                    runner.RunArchetypical(buffer, archetype, world, initalEntityCount, entitiesToUpdate);
                 }
             }
         }
         else
         {
-            throw new NotImplementedException();
+            int entityId = 0;
+            foreach (var runner in _allRunners)
+                runner.RunSparseSubset(_sparseSet, world, ids, ref entityId);
         }
     }
 
