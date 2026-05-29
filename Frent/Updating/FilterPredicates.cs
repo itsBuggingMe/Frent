@@ -1,7 +1,9 @@
 ﻿using Frent.Collections;
 using Frent.Core;
+using Frent.Core.Archetypes;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static Frent.Core.GlobalWorldTables;
 
 namespace Frent.Updating;
@@ -32,6 +34,23 @@ public readonly struct NonePredicate : IFilterPredicate
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     bool IFilterPredicate.SkipEntity(ref byte e, ref readonly Bitset sparseBits) => false;
+
+    /// <summary>
+    /// True if method should run, false if it should be skipped
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool ApplyPredicate<TPredicate>(World world, int entityId)
+        where TPredicate : IFilterPredicate
+    {
+        if (typeof(TPredicate) != typeof(NonePredicate))
+        {
+            ref EntityLocation location = ref world.EntityTable[entityId];
+            Archetype archetype = location.Archetype;
+
+            return !default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(archetype.ComponentTagTable), in archetype.GetBitset(location.Index));
+        }
+        return true;
+    }
 }
 
 /// <inheritdoc cref="GenerationServices"/>

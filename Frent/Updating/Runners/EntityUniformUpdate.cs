@@ -22,17 +22,14 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Deleg
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
-        for (int i = 0; i < length; i++)
+        for (int i = 0; i < length; i++, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
         {
             entityIds.SetEntity(ref entity);
 
-            if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(b.ComponentTagTable), in b.GetBitsetNoLazy(i)))
+            if (!NonePredicate.ApplyPredicate<TPredicate>(world, entity.EntityID))
                 continue;
 
             comp.Update(entity, uniform);
-
-            entityIds = ref Unsafe.Add(ref entityIds, 1);
-            comp = ref Unsafe.Add(ref comp, 1);
         }
     }
 
@@ -44,7 +41,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Deleg
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
-        for (int i = sparseSet.Count; i > 0; i--)
+        for (int i = sparseSet.Count; i > 0; i--, component = ref Unsafe.Add(ref component, 1), entityId = ref Unsafe.Add(ref entityId, 1))
         {
             entity.EntityID = entityId;
             // I'm ok with pulling from the entity table
@@ -53,13 +50,10 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Deleg
             ref var record = ref world.EntityTable[entityId];
             entity.EntityVersion = record.Version;
 
-            if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(record.Archetype.ComponentTagTable), in record.Archetype.GetBitset(i)))
+            if (!NonePredicate.ApplyPredicate<TPredicate>(world, entity.EntityID))
                 continue;
 
             component.Update(entity, uniform);
-
-            component = ref Unsafe.Add(ref component, 1);
-            entityId = ref Unsafe.Add(ref entityId, 1);
         }
     }
 
@@ -90,7 +84,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Deleg
                 continue;
             }
 
-            if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(record.Archetype.ComponentTagTable), in record.Archetype.GetBitset(record.Index)))
+            if (!NonePredicate.ApplyPredicate<TPredicate>(world, entity.EntityID))
                 continue;
 
             Unsafe.Add(ref component, denseIndex).Update(entity, uniform);
@@ -127,6 +121,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
         for (int i = start; i < end; i++)
         {
             entityIds.SetEntity(ref entity);
+            bool shouldRun = true;
             if (Component<TArg>.IsSparseComponent)
             {
                 if ((uint)i < (uint)bitsets.Length)
@@ -136,7 +131,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
 
                     // we source our bitset from here so no double lookup
                     if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(b.ComponentTagTable), in bitset))
-                        continue;
+                        shouldRun = false;
                 }
                 else
                 {// has no sparse components, but we expected at least 1
@@ -144,9 +139,9 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
                 }
             }
             // get bitset manually
-            else if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(b.ComponentTagTable), in b.GetBitsetNoLazy(i)))
+            else if (!NonePredicate.ApplyPredicate<TPredicate>(world, entity.EntityID))
             {
-                continue;
+                shouldRun = false;
             }
 
             if (Component<TArg>.IsSparseComponent)
@@ -155,7 +150,10 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
                 arg = ref Unsafe.Add(ref sparseFirst, index);
             }
 
-            comp.Update(entity, uniform, ref arg);
+            if (shouldRun)
+            {
+                comp.Update(entity, uniform, ref arg);
+            }
 
             entityIds = ref Unsafe.Add(ref entityIds, 1);
             comp = ref Unsafe.Add(ref comp, 1);
@@ -188,12 +186,14 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
                 ? entity.GetCachedLookupAndAssertSparseComponent(world, BitsetHelper<TArg>.BitsetOf, out archetype)
                 : entity.GetCachedLookup(world, out archetype);
 
-            if (typeof(TPredicate) != typeof(NonePredicate) && default(TPredicate)!.SkipEntity(ref entityData.MapRef, in archetype.GetBitset(i)))
-                continue;
+            bool shouldRun = NonePredicate.ApplyPredicate<TPredicate>(world, entityId);
 
             ref TArg arg = ref VariadicHelpers.GetRefSparseOrArchetypical(ref sparseFirst, sparseArgArray, in entity, in entityData);
 
-            component.Update(entity, uniform, ref arg);
+            if (shouldRun)
+            {
+                component.Update(entity, uniform, ref arg);
+            }
 
             component = ref Unsafe.Add(ref component, 1);
             entityId = ref Unsafe.Add(ref entityId, 1);
