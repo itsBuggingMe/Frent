@@ -18,17 +18,18 @@ internal class EntityTests
     public void OnComponentAddedGeneric_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
         var entity = world.Create();
         entity.OnComponentAddedGeneric += new GenericAction((t, o) =>
         {
             That(o, Is.EqualTo(1));
             if (t == typeof(int))
-                Pass();
+                call.Call();
         });
 
         entity.Add(1);
-        Fail();
+        call.AssertCalled();
     }
 
 
@@ -36,23 +37,25 @@ internal class EntityTests
     public void OnComponentAddedGeneric_Invoked_AddAs()
     {
         using World world = new();
+        CallHelper call = new();
 
         var entity = world.Create();
         entity.OnComponentAddedGeneric += new GenericAction((t, o) =>
         {
             That(o, Is.EqualTo(1));
             if (t == typeof(int))
-                Pass();
+                call.Call();
         });
 
         entity.AddAs(Component<int>.ID, 1);
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void OnComponentRemovedGeneric_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
         var entity = world.Create(1);
         entity.OnComponentRemovedGeneric += new GenericAction((t, o) =>
@@ -60,92 +63,98 @@ internal class EntityTests
             That(o, Is.EqualTo(1));
 
             if (t == typeof(int))
-                Pass();
+                call.Call();
         });
 
         entity.Remove<int>();
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void OnComponentAdded_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
         var entity = world.Create();
         entity.OnComponentAdded += (t, o) =>
         {
             That(t.Get<int>(), Is.EqualTo(1));
             if (o.Type == typeof(int))
-                Pass();
+                call.Call();
         };
 
         entity.Add(1);
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void OnComponentAdded_Invoked_AddAs()
     {
         using World world = new();
+        CallHelper call = new();
 
         var entity = world.Create();
         entity.OnComponentAdded += (t, o) =>
         {
             That(t.Get<int>(), Is.EqualTo(1));
             if (o.Type == typeof(int))
-                Pass();
+                call.Call();
         };
 
         entity.AddAs(Component<int>.ID, 1);
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void OnComponentRemoved_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
         var entity = world.Create(1);
         entity.OnComponentRemoved += (t, o) =>
         {
             if (o.Type == typeof(int))
-                Pass();
+                call.Call();
         };
 
         entity.Remove<int>();
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void OnTagged_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
         var entity = world.Create(1);
-        entity.OnTagged += (a, b) => Pass();
+        entity.OnTagged += (a, b) => call.Call();
         entity.Tag<int>();
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void OnDetach_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
         var entity = world.Create(1);
-        entity.OnDetach += (a, b) => Pass();
+        entity.OnDetach += (a, b) => call.Call();
         entity.Tag<int>();
         entity.Detach<int>();
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void OnDelete_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
         var entity = world.Create(1);
-        entity.OnDelete += (a) => Pass();
+        entity.OnDelete += (a) => call.Call();
         entity.Delete();
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]

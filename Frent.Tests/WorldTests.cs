@@ -91,74 +91,80 @@ internal class WorldTests
     public void ComponentAdded_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
-        world.ComponentAdded += (e, c) => Pass();
+        world.ComponentAdded += (e, c) => call.Call();
 
         world.Create().Add<Struct1>(default);
 
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void ComponentRemoved_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
-        world.ComponentRemoved += (e, c) => Pass();
+        world.ComponentRemoved += (e, c) => call.Call();
 
         world.Create<Struct1>(default).Remove<Struct1>();
 
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void EntityDelete_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
-        world.EntityDeleted += (e) => Pass();
+        world.EntityDeleted += (e) => call.Call();
 
         world.Create().Delete();
 
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void EntityCreated_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
-        world.EntityCreated += (e) => Pass();
+        world.EntityCreated += (e) => call.Call();
 
         world.Create();
 
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void TagAdded_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
-        world.TagTagged += (e, t) => Pass();
+        world.TagTagged += (e, t) => call.Call();
 
         world.Create().Tag<Struct1>();
 
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]
     public void TagRemoved_Invoked()
     {
         using World world = new();
+        CallHelper call = new();
 
-        world.TagDetached += (e, t) => Pass();
+        world.TagDetached += (e, t) => call.Call();
 
         var e = world.Create();
         e.Tag<Struct1>();
         e.Detach<Struct1>();
 
-        Fail();
+        call.AssertCalled();
     }
 
     [Test]

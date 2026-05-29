@@ -6,5 +6,4 @@
   <Project Path="Frent.Tests/Frent.Tests.csproj" />
   <Project Path="Frent.Variadic.Generator/Frent.Variadic.Generator.csproj" />
   <Project Path="Frent/Frent.csproj" />
-  <Project Path="Test/Test.csproj" Id="0d336092-0e4a-4c8f-8c6b-dddedd1d58a5" />
 </Solution>
