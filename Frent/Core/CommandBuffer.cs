@@ -297,8 +297,11 @@ public class CommandBuffer
             {
                 lookup.Archetype.DeleteEntity(lookup.Index);
 
+
                 Span<ComponentHandle> handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
                 _world.CreateFromHandlesCore(concrete.EntityID, ref _world.EntityTable[concrete.EntityID], handles);
+                foreach (ComponentHandle handle in handles)
+                    handle.Dispose();
             }
         }
         _createEntityComponents.Clear();

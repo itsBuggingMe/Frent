@@ -261,79 +261,115 @@ public class JsonWorldSerializer
     {
         lock (_lock)
         {
-            AssertQueryFromWorld(world, query);
-
-            Query everything = world.CreateQuery()
-                .Build();
-
-            _entityMap.Clear();
-            _nextEntityId = 0;
-
-            _activeWorld = world;
-
-            writer.WriteStartArray();
-
-            SerializerState state = new SerializerState(writer, this);
-
-            foreach (Entity e in (query ?? world.CreateQuery().Build())
-                .EnumerateWithEntities())
+            try
             {
-                state.Entity = e;
-                state.HasDerivedComponent = false;
+                AssertQueryFromWorld(world, query);
 
-                writer.WriteStartObject();
+                Query everything = world.CreateQuery()
+                    .Build();
 
-                // metadata prop comes first
-                ComponentTypes();
+                _entityMap.Clear();
+                _nextEntityId = 0;
 
-                writer.WriteNumber(Props.Id, MapEntityWrite(e));
+                _activeWorld = world;
 
-                ComponentData();
+                writer.WriteStartArray();
 
-                Tags();
+                SerializerState state = new SerializerState(writer, []);
 
-                writer.WriteEndObject();
-
-                void ComponentData()
+                foreach (Entity e in (query ?? world.CreateQuery().Build())
+                    .EnumerateWithEntities())
                 {
-                    writer.WritePropertyName(Props.Components);
-                    writer.WriteStartArray();
+                    state.Entity = e;
+                    state.Index = 0;
+                    state.SerializedComponentMetadata.Clear();
 
-                    e.EnumerateComponents(state);
+                    writer.WriteStartObject();
 
-                    writer.WriteEndArray();
+                    // metadata prop comes first
+                    ComponentTypes();
+
+                    writer.WriteNumber(Props.Id, MapEntityWrite(e));
+
+                    ComponentData();
+
+                    Tags();
+
+                    writer.WriteEndObject();
+
+                    void ComponentData()
+                    {
+                        writer.WritePropertyName(Props.Components);
+                        writer.WriteStartArray();
+
+                        e.EnumerateComponents(state);
+
+                        writer.WriteEndArray();
+                    }
+
+                    void ComponentTypes()
+                    {
+                        writer.WritePropertyName(Props.Types);
+                        writer.WriteStartArray();
+
+                        foreach (var componentId in e)
+                        {
+                            Type componentType = componentId.Type;
+
+                            // setup the next serialize step
+                            Type actualComponentType = componentType /*not yet the actual component type*/;
+                            bool componentIsDerivedType = false;
+
+                            if (!componentType.IsValueType && !componentType.IsSealed && e.Get(componentId) is object component)
+                            {
+                                actualComponentType = component.GetType();
+                                componentIsDerivedType = actualComponentType != componentType;
+                            }
+
+                            _options.TryGetTypeInfo(actualComponentType, out JsonTypeInfo? typeInfoToUse);
+
+                            // we manually get type info so we can choose whether or not to throw
+                            if (typeInfoToUse is null)
+                            {
+                                if (_ignoreNonSerializableComponents)
+                                {
+                                    // use a null type info if it is skipped
+                                    state.SerializedComponentMetadata.Add(default);
+                                    continue;
+                                }
+
+                                FrentExceptions.Throw_InvalidOperationException($"{componentType.Name} is not serializable.");
+                            }
+
+                            state.SerializedComponentMetadata.Add((componentIsDerivedType, typeInfoToUse));
+                            writer.WriteStringValue(componentType.ToString());
+                        }
+
+                        writer.WriteEndArray();
+                    }
+
+                    void Tags()
+                    {
+                        var types = e.TagTypes;
+                        if (types.Length == 0)
+                            return;
+
+                        writer.WritePropertyName(Props.Tags);
+                        writer.WriteStartArray();
+
+                        foreach (var tag in types)
+                            writer.WriteStringValue(tag.Type.ToString());
+
+                        writer.WriteEndArray();
+                    }
                 }
 
-                void ComponentTypes()
-                {
-                    writer.WritePropertyName(Props.Types);
-                    writer.WriteStartArray();
-
-                    foreach (var component in e)
-                        writer.WriteStringValue(component.Type.ToString());
-
-                    writer.WriteEndArray();
-                }
-
-                void Tags()
-                {
-                    var types = e.TagTypes;
-                    if (types.Length == 0)
-                        return;
-
-                    writer.WritePropertyName(Props.Tags);
-                    writer.WriteStartArray();
-
-                    foreach (var tag in types)
-                        writer.WriteStringValue(tag.Type.ToString());
-
-                    writer.WriteEndArray();
-                }
+                writer.WriteEndArray();
             }
-
-            writer.WriteEndArray();
-
-            _activeWorld = null;
+            finally
+            {
+                _activeWorld = null;
+            }
         }
     }
 
@@ -401,44 +437,29 @@ public class JsonWorldSerializer
 
     private struct SerializerState(
         Utf8JsonWriter jsonWriter, 
-        JsonWorldSerializer serializer) : IGenericAction
+        List<(bool IsDerivedType, JsonTypeInfo? TypeInfo)> serializedComponentMetadata) : IGenericAction
     {
         public Entity Entity;
-        public bool HasDerivedComponent;
+        public int Index;
+        public List<(bool IsDerivedType, JsonTypeInfo? TypeInfo)> SerializedComponentMetadata = serializedComponentMetadata;
 
         public void Invoke<T>(ref T component)
         {
-            Type actualComponentType = typeof(T);
-            bool componentIsDerivedType = false;
+            (bool derivedType, JsonTypeInfo? typeInfo) = SerializedComponentMetadata[Index];
+            Index++;
 
-            if (!(typeof(T).IsValueType || typeof(T).IsSealed || component is null))
-            {
-                actualComponentType = component.GetType();
-                componentIsDerivedType = actualComponentType != typeof(T);
-            }
-
-            serializer._options.TryGetTypeInfo(actualComponentType, out JsonTypeInfo? typeInfoToUse);
-            
-            // we manually get type info so we can choose whether or not to throw
-            if (typeInfoToUse is null)
-            {
-                if (serializer._ignoreNonSerializableComponents)
-                    return;
-
-                FrentExceptions.Throw_InvalidOperationException($"{typeof(T).Name} is not serializable.");
-            }
-
-            HasDerivedComponent |= componentIsDerivedType;
+            if (typeInfo is null)
+                return;
 
             // serialize
-            if(componentIsDerivedType)
+            if(derivedType)
             {
-                JsonSerializer.Serialize(jsonWriter, component, typeInfoToUse);
+                JsonSerializer.Serialize(jsonWriter, component, typeInfo);
             }
             else
             {
                 // prevent excess boxing
-                JsonSerializer.Serialize(jsonWriter, component, (JsonTypeInfo<T>)typeInfoToUse);
+                JsonSerializer.Serialize(jsonWriter, component, (JsonTypeInfo<T>)typeInfo);
             }
         }
     }

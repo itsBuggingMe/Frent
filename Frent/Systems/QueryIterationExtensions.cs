@@ -37,6 +37,10 @@ public static partial class QueryIterationExtensions
     {
         query.AssertHasSparseComponent<T>();
 
+    try
+    {
+        query.World.EnterDisallowState();
+
         ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(query.World.WorldSparseSetTable);
 
         if (!query.HasSparseExclusions)
@@ -74,6 +78,11 @@ public static partial class QueryIterationExtensions
         {// do extra work to exclude sparse components
             InlineSparseExcludeImpl<TAction, T>(ref first, query, action);
         }
+    }
+    finally
+    {
+        query.World.ExitDisallowState(null);
+    }
     }
 
     internal static void InlineSparseExcludeImpl<TAction, T>(ref ComponentSparseSetBase first, Query query, TAction action)

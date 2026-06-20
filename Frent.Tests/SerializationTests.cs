@@ -7,6 +7,7 @@ using System.Text.Json;
 using static NUnit.Framework.Assert;
 using Frent.Components;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Frent.Tests;
 
@@ -136,6 +137,28 @@ internal class SerializationTests
         That(deserializedEntity.Get<CallbackTestComponent>().Archetype, Is.EqualTo(archetype));
     }
 
+    [Test]
+    public void Serialize_IgnoresNonSerializableComponent_MetadataStaysAligned()
+    {
+        JsonSerializerOptions options = new()
+        {
+            TypeInfoResolver = new BlockingResolver(typeof(NotSerializableComponent))
+        };
+        JsonWorldSerializer serializer = new(options, ignoreNonSerializableComponents: true);
+
+        using World world = new();
+        world.Create(42, new NotSerializableComponent(123));
+
+        string json = serializer.Serialize(world);
+        using World deserialized = serializer.Deserialize(json);
+
+        Entity deserializedEntity = GetFirstEntity(deserialized.CreateQuery().Build());
+
+        That(json, Does.Not.Contain(typeof(NotSerializableComponent).ToString()));
+        That(deserializedEntity.Get<int>(), Is.EqualTo(42));
+        That(deserializedEntity.TryHas<NotSerializableComponent>(), Is.False);
+    }
+
     private static Entity GetFirstEntity(Query query)
     {
         foreach (var entity in query.EnumerateWithEntities())
@@ -161,5 +184,20 @@ internal class SerializationTests
     {
         public EntityType Archetype { get; set; }
         public ComponentID ComponentType { get; set; }
+    }
+
+    internal record struct NotSerializableComponent(int Value);
+
+    private sealed class BlockingResolver(Type blockedType) : IJsonTypeInfoResolver
+    {
+        private readonly DefaultJsonTypeInfoResolver _inner = new();
+
+        public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options)
+        {
+            if (type == blockedType)
+                return null;
+
+            return _inner.GetTypeInfo(type, options);
+        }
     }
 }

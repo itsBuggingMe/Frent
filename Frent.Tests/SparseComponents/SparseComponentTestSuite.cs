@@ -448,6 +448,18 @@ internal class SparseComponentTestSuite
         
         That(exists2, Is.False);
     }
+
+    [Test]
+    public void TryGetType_MissingSparseComponent_ReturnsFalse()
+    {
+        using World world = new();
+        var entity = world.Create();
+
+        var exists = entity.TryGet(typeof(SparseUpdateComponent), out object? value);
+
+        That(exists, Is.False);
+        That(value, Is.Null);
+    }
     
     [Test]
     public void Has_SparseComponent_ReturnsCorrectResult()

@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using Frent.Core.Events;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -111,10 +112,12 @@ internal sealed class ComponentSparseSet<T>() : ComponentSparseSetBase(typeof(T)
             top = default;
     }
 
-    public override bool TryGet(int id, out object value)
+    public override bool TryGet(int id, [NotNullWhen(true)] out object? value)
     {
         var res = TryGet(id, out bool exists);
-        value = res.Value!;
+
+        value = exists ? res.Value : null;
+
         return exists;
     }
 
@@ -155,7 +158,7 @@ internal abstract class ComponentSparseSetBase(Type t)
     public abstract void AddOrSet(int id, ComponentHandle value);
     public abstract void Set(Entity e, object value);
     public abstract void Remove(int id, bool callDestroyer);
-    public abstract bool TryGet(int id, out object value);
+    public abstract bool TryGet(int id, [NotNullWhen(true)] out object? value);
     public abstract void Init(Entity id);
     public abstract void InvokeGenericEvent(Entity entity, GenericEvent @event);
 
