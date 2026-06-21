@@ -257,6 +257,16 @@ partial struct Entity
     {
         ref EntityLocation eloc = ref AssertIsAlive(out var world);
 
+        if(!world.AllowStructualChanges)
+        {
+            foreach (var handle in componentHandles)
+            {
+                world.WorldUpdateCommandBuffer.AddComponent(this, handle.Duplicate());
+            }
+
+            return;
+        }
+
         if (componentHandles.Length + eloc.Archetype.ComponentTypeCount > MemoryHelpers.MaxComponentCount)
             throw new ArgumentException("Max 127 components on an entity", nameof(componentHandles));
 
@@ -435,7 +445,7 @@ partial struct Entity
             w.ComponentRemovedEvent.Invoke(this, componentID);
 
             ref EventRecord events = ref Unsafe.NullRef<EventRecord>();
-            if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+            if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
             {
                 events = ref w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
 
@@ -579,6 +589,9 @@ partial struct Entity
 
         tagIds.CopyTo(newIds);
         pTags.AsSpan().CopyTo(newIds[tagIds.Length..]);
+
+        if (MemoryHelpers.HasDuplicateIDs(newIds, out TagID duplicate))
+            FrentExceptions.Throw_InvalidOperationException($"This entity already has a tag of type {duplicate.Type.Name}");
 
         Archetype dest = Archetype.CreateOrGetExistingArchetype(components.AsSpan(), newIds, w, components);
 

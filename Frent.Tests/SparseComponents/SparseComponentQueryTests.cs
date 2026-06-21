@@ -167,6 +167,42 @@ internal class SparseComponentQueryTests
         CollectionAssert.Contains(entityComponentPairs, (entity2, 20));
         That(entityComponentPairs.Count, Is.EqualTo(2));
     }
+
+    [Test]
+    public void Query_EnumerateSparseComponent_WithoutSparseRule_Throws()
+    {
+        using World world = new();
+        world.Create<RegularQueryComponent>(new RegularQueryComponent(1.0f));
+
+        var query = world.CreateQuery()
+            .With<RegularQueryComponent>()
+            .Build();
+
+        Throws<NullReferenceException>(() =>
+        {
+            foreach (var _ in query.Enumerate<SparseQueryComponent>())
+            {
+            }
+        });
+    }
+
+    [Test]
+    public void Query_EnumerateWithEntitiesSparseComponent_WithoutSparseRule_Throws()
+    {
+        using World world = new();
+        world.Create<RegularQueryComponent>(new RegularQueryComponent(1.0f));
+
+        var query = world.CreateQuery()
+            .With<RegularQueryComponent>()
+            .Build();
+
+        Throws<NullReferenceException>(() =>
+        {
+            foreach (var _ in query.EnumerateWithEntities<SparseQueryComponent>())
+            {
+            }
+        });
+    }
     
     [Test]
     public void Query_WithoutSparseComponent_ExcludesEntitiesWithComponent()

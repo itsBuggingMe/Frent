@@ -52,6 +52,7 @@ internal abstract class IDTable
         }
     }
 
+    public abstract int Duplicate(int index);
     public abstract void InvokeEventWithAndConsume(GenericEvent? genericEvent, Entity entity, int index);
     protected abstract void SetValue(object value, int index);
     protected abstract void ClearValue(int index);
@@ -89,6 +90,12 @@ internal sealed class IDTable<T> : IDTable
     public ref T Take(int index)
     {
         return ref Buffer[index];
+    }
+
+    public override int Duplicate(int index)
+    {
+        Create(out int duplicateIndex) = Buffer[index];
+        return duplicateIndex;
     }
 
     protected override void Double()

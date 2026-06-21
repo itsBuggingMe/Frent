@@ -30,6 +30,29 @@ internal class ComponentHandleTests
     }
 
     [Test]
+    public void Duplicate_CopiesComponent()
+    {
+        using var handle = ComponentHandle.Create(new Struct1(69));
+        using var duplicate = handle.Duplicate();
+
+        That(duplicate, Is.Not.EqualTo(handle));
+        That(duplicate.Type, Is.EqualTo(handle.Type));
+        That(duplicate.ComponentID, Is.EqualTo(handle.ComponentID));
+        That(duplicate.Retrieve<Struct1>(), Is.EqualTo(new Struct1(69)));
+    }
+
+    [Test]
+    public void Duplicate_DisposesIndependently()
+    {
+        var handle = ComponentHandle.Create(69);
+        using var duplicate = handle.Duplicate();
+
+        handle.Dispose();
+
+        That(duplicate.Retrieve<int>(), Is.EqualTo(69));
+    }
+
+    [Test]
     public void Type_CorrectType()
     {
         ComponentHandle[] handle = 

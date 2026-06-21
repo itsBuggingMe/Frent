@@ -61,7 +61,7 @@ partial class Archetype
     internal static FastStack<ArchetypeData> ArchetypeTable = FastStack<ArchetypeData>.Create(16);
     internal static int NextArchetypeID = -1;
 
-    private static readonly RefDictionary<long, ArchetypeData> ExistingArchetypes = new();
+    private static readonly RefDictionary<ulong, ArchetypeData> ExistingArchetypes = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CopyBitset(Archetype from, Archetype to, int fromIndex, int toIndex)
@@ -160,8 +160,14 @@ partial class Archetype
     {
         if (types.Length > MemoryHelpers.MaxComponentCount)
             throw new InvalidOperationException("Entities can have a max of 127 components!");
+
         lock (GlobalWorldTables.BufferChangeLock)
         {
+            if (MemoryHelpers.HasDuplicateIDs(types, out ComponentID compDupe))
+                throw new InvalidOperationException($"Attempted to create entity with duplicate components: {compDupe.Type.Name}");
+            if (MemoryHelpers.HasDuplicateIDs(tagTypes, out TagID tagDupe))
+                throw new InvalidOperationException($"Attempted to create entity with duplicate tags: {tagDupe.Type.Name}");
+            
             ref ArchetypeData slot = ref ExistingArchetypes.GetValueRefOrAddDefault(GetHash(types, tagTypes), out bool exists);
             ArchetypeID finalID;
 
@@ -172,8 +178,6 @@ partial class Archetype
             }
             else
             {
-                MemoryHelpers.AssertComponentIDsUnique(types);
-
                 int nextIDInt = ++NextArchetypeID;
                 if (nextIDInt == ushort.MaxValue)
                     throw new InvalidOperationException($"Exceeded maximum unique archetype count of 65535");
@@ -226,36 +230,35 @@ partial class Archetype
         }
     }
 
-    private static long GetHash(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> andMoreTypes)
+    // need to be communative
+    // work for n = 0
+    private static ulong GetHash(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> andMoreTypes)
     {
-        HashCode h1 = new();
-        HashCode h2 = new();
+        ulong hash1 = 0;
+        ulong hash2 = 0;
 
-        int i;
-        for (i = 0; i < types.Length >> 1; i++)
+        foreach (ComponentID value in types)
         {
-            h1.Add(types[i]);
+            hash1 += Mix(value.RawIndex + 0x9E3779B97F4A7C15UL);
         }
 
-
-        var hash1 = 0U;
-        var hash2 = 0U;
-
-        foreach (var item in andMoreTypes)
+        foreach (TagID value in andMoreTypes)
         {
-            hash1 ^= item.RawValue * 98317U;
-            hash2 += item.RawValue * 53U;
+            hash2 += Mix(value.RawValue + 0x9E3779B97F4A7C15UL);
         }
 
-        h1.Add(HashCode.Combine(hash1, hash2));
+        // https://stackoverflow.com/a/13811549
+        return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
+    }
 
-        for (; i < types.Length; i++)
-        {
-            h2.Add(types[i]);
-        }
-
-        var hash = ((long)h1.ToHashCode() * 1610612741) + h2.ToHashCode();
-
-        return hash;
+    // splitmix64
+    private static ulong Mix(ulong value)
+    {
+        value ^= value >> 30;
+        value *= 0xBF58476D1CE4E5B9UL;
+        value ^= value >> 27;
+        value *= 0x94D049BB133111EBUL;
+        value ^= value >> 31;
+        return value;
     }
 }

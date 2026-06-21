@@ -93,6 +93,17 @@ public class CommandBuffer
     /// </summary>
     /// <param name="entity">The entity to add to.</param>
     /// <param name="component">The component to add.</param>
+    public void AddComponent(Entity entity, ComponentHandle component)
+    {
+        SetIsActive();
+        _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, component));
+    }
+
+    /// <summary>
+    /// Adds a component to an entity when <see cref="Playback"/> is called.
+    /// </summary>
+    /// <param name="entity">The entity to add to.</param>
+    /// <param name="component">The component to add.</param>
     /// <param name="componentID">The ID of the component type to add as.</param>
     /// <remarks><paramref name="component"/> must be assignable to <see cref="ComponentID.Type"/>.</remarks>
     public void AddComponent(Entity entity, ComponentID componentID, object component)

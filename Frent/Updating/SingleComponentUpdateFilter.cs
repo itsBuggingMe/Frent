@@ -130,7 +130,10 @@ internal class SingleComponentUpdateFilter : IComponentUpdateFilter
                         int entityCount = archetype.EntityCount;
 
                         if (entityCount == 0)
+                        {
+                            current = ref Unsafe.Add(ref current, length);
                             continue;
+                        }
 
                         Array buffer = archetype.Components.UnsafeArrayIndex(storageIndex).Buffer;
 
