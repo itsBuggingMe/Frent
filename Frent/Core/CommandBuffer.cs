@@ -295,8 +295,7 @@ public class CommandBuffer
 
             if (createCommand.BufferLength > 0)
             {
-                lookup.Archetype.DeleteEntity(lookup.Index);
-
+                _world.RemoveEntityPlaceholder(ref lookup);
 
                 Span<ComponentHandle> handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
                 _world.CreateFromHandlesCore(concrete.EntityID, ref _world.EntityTable[concrete.EntityID], handles);

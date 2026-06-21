@@ -28,6 +28,25 @@ internal class CommandBufferTests
     }
 
     [Test]
+    public void Create_PlaybackKeepsSwappedPlaceholderEntityLocationValid()
+    {
+        using World world = new World();
+        CommandBuffer commandBuffer = new CommandBuffer(world);
+
+        Entity buffered = commandBuffer.Entity()
+            .With(42)
+            .End();
+        Entity survivor = world.Create();
+
+        commandBuffer.Playback();
+        survivor.Add("alive");
+
+        That(buffered.Get<int>(), Is.EqualTo(42));
+        That(survivor.Get<string>(), Is.EqualTo("alive"));
+        That(survivor.IsAlive, Is.True);
+    }
+
+    [Test]
     public void HasBufferItem_ReturnsTrueIfBufferItemExists()
     {
         using World world = new World();

@@ -72,7 +72,7 @@ partial class World
         }
 
         ref var displacedEntityLocation = ref EntityTable.UnsafeIndexNoResize(movedDown.ID);
-        displacedEntityLocation.Archetype = currentLookup.Archetype;
+        // displacedEntityLocation.Archetype = currentLookup.Archetype;
         displacedEntityLocation.Index = currentLookup.Index;
 
         currentLookup.Archetype = nextLocation.Archetype;
@@ -126,7 +126,7 @@ partial class World
 
         //copy everything but 
         ref var displacedEntityLocation = ref EntityTable.UnsafeIndexNoResize(movedDown.ID);
-        displacedEntityLocation.Archetype = currentLookup.Archetype;
+        // displacedEntityLocation.Archetype = currentLookup.Archetype;
         displacedEntityLocation.Index = currentLookup.Index;
 
         currentLookup.Archetype = nextLocation.Archetype;
@@ -164,7 +164,7 @@ partial class World
         }
 
         ref var displacedEntityLocation = ref EntityTable.UnsafeIndexNoResize(movedDown.ID);
-        displacedEntityLocation.Archetype = currentLookup.Archetype;
+        // displacedEntityLocation.Archetype = currentLookup.Archetype;
         displacedEntityLocation.Index = currentLookup.Index;
 
         currentLookup.Archetype = nextLocation.Archetype;
@@ -211,7 +211,7 @@ partial class World
 
         ref var replaced = ref EntityTable.UnsafeIndexNoResize(replacedEntity.ID);
         replaced.Index = currentLookup.Index;
-        replaced.Archetype = currentLookup.Archetype;
+        // replaced.Archetype = currentLookup.Archetype;
 
         currentLookup.Archetype = null!;
         currentLookup.Version++;
@@ -224,6 +224,15 @@ partial class World
             currentLookup.Index = _freelist;
             _freelist = entity.EntityID;
         }
+    }
+
+    internal void RemoveEntityPlaceholder(ref EntityLocation currentLookup)
+    {
+        EntityIDOnly replacedEntity = currentLookup.Archetype!.DeleteEntity(currentLookup.Index);
+
+        ref var replaced = ref EntityTable.UnsafeIndexNoResize(replacedEntity.ID);
+        replaced.Index = currentLookup.Index;
+        // replaced.Archetype = currentLookup.Archetype;
     }
 
     internal void CleanupSparseComponents(Entity entity, ref EntityLocation currentLookup)
