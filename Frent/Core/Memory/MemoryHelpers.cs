@@ -33,32 +33,33 @@ internal static class MemoryHelpers
     public static int RoundDownToNextMultipleOf16(int value) => value & ~15;
     public static byte BoolToByte(bool b) => Unsafe.As<bool, byte>(ref b);
 
-    public static void AssertComponentIDsUnique(ReadOnlySpan<ComponentID> comps)
+    public static bool HasDuplicateIDs<T>(ReadOnlySpan<T> ids, out T duplicate)
+        where T : ITypeID, IEquatable<T>
     {
-        bool isFuzzy = Component.ComponentTable.Count > 64;
         ulong bitset = default;
-        for (int i = 0; i < comps.Length; i++)
-        {
-            var comp = comps[i];
-            ulong mask = 1UL << (comp.RawIndex & 63);
+        int totalIdCount =
+            typeof(T) == typeof(ComponentID) ?
+            Component.ComponentTable.Count :
+                typeof(T) == typeof(TagID) ?
+                Tag.TagTable.Count :
+                    throw new NotSupportedException();
 
-            if ((bitset & mask) != 0 && (!isFuzzy || AppearsOtherThanAtIndex(comps, comp, i)))
-                throw new InvalidOperationException($"Attempted to create entity with duplicate components: {comp.Type.Name}");
+        for (int i = 0; i < ids.Length; i++)
+        {
+            var id = ids[i];
+            ulong mask = 1UL << (id.Value & 63);
+
+            if ((bitset & mask) != 0 && (totalIdCount <= 64 || ids.IndexOf(id) < i))
+            {
+                duplicate = id;
+                return true;
+            }
 
             bitset |= mask;
         }
 
-        static bool AppearsOtherThanAtIndex(ReadOnlySpan<ComponentID> componentIDs, ComponentID value, int index)
-        {
-            for(int i = 0; i < componentIDs.Length; i++)
-            {
-                if (componentIDs[i] == value && i != index)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+        duplicate = default;
+        return false;
     }
 
     public static ref Bitset GetBitset(scoped ref Bitset[] arr, int key)

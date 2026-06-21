@@ -59,6 +59,11 @@ to:
                 ref currentArchetype.GetComponentDataReference<T$>();
 |
 from:
+        query.AssertHasSparseComponent<T>();
+to:
+|        query.AssertHasSparseComponent<T$>();
+|
+from:
 <T>
 to:
 <|T$, |>

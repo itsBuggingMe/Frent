@@ -176,6 +176,8 @@ public ref struct EntityQueryEnumerator<T>
 
     internal EntityQueryEnumerator(Query query)
     {
+        query.AssertHasSparseComponent<T>();
+
         _world = query.World;
 
 #if NETSTANDARD

@@ -48,6 +48,8 @@ public ref struct QueryEnumerator<T>
 
     internal QueryEnumerator(Query query)
     {
+        query.AssertHasSparseComponent<T>();
+
         _world = query.World;
 
 #if NETSTANDARD

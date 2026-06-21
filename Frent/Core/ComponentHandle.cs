@@ -77,6 +77,17 @@ public readonly struct ComponentHandle : IEquatable<ComponentHandle>, IDisposabl
         return Component.ComponentTable[_componentType.RawIndex].Storage.TakeBoxed(_index);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="ComponentHandle"/> containing a copy of this handle's component value.
+    /// </summary>
+    /// <remarks>The returned handle owns separate storage and must be disposed independently.</remarks>
+    /// <returns>A new <see cref="ComponentHandle"/> with the same component type and value.</returns>
+    public ComponentHandle Duplicate()
+    {
+        int duplicateIndex = ParentTable.Duplicate(_index);
+        return new ComponentHandle(duplicateIndex, _componentType);
+    }
+
     internal void InvokeComponentEventAndConsume(Entity entity, GenericEvent? @event)
     {
         Component.ComponentTable[_componentType.RawIndex].Storage.InvokeEventWithAndConsume(@event, entity, _index);
