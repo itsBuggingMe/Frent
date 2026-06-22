@@ -3,6 +3,8 @@ using Frent.Components;
 using Frent.Core;
 using Frent.Core.Archetypes;
 using Frent.Updating;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 
 namespace Frent.Marshalling;
 

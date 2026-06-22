@@ -34,7 +34,7 @@ internal static class MemoryHelpers
     public static byte BoolToByte(bool b) => Unsafe.As<bool, byte>(ref b);
 
     public static bool HasDuplicateIDs<T>(ReadOnlySpan<T> ids, out T duplicate)
-        where T : ITypeID, IEquatable<T>
+        where T : struct, ITypeID, IEquatable<T>
     {
         ulong bitset = default;
         int totalIdCount =
