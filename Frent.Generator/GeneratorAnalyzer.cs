@@ -81,7 +81,7 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
         foreach (var @interface in namedTypeSymbol.AllInterfaces)
         {
             if (!@interface.IsOrExtendsIComponentBase())
-                return;
+                continue;
 
             isComponent = true;
 

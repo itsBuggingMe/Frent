@@ -536,12 +536,12 @@ public partial class World : IDisposable
         if (components.Length > MemoryHelpers.MaxComponentCount)
             throw new ArgumentException("Max 127 components on an entity", nameof(components));
 
-        Span<ComponentHandle> componentHandles = stackalloc ComponentHandle[components.Length];
+        using ComponentHandleArray componentHandles = stackalloc ComponentHandle[components.Length];
 
         for (int i = 0; i < componentHandles.Length; i++)
             componentHandles[i] = ComponentHandle.CreateFromBoxed(components[i]);
 
-        return CreateFromHandles(componentHandles, tags);
+        return CreateFromHandles(componentHandles.Span, tags);
     }
 
     /// <summary>
@@ -641,7 +641,7 @@ public partial class World : IDisposable
             int sparseIndex = sparseComponentIndicies[i];
             if (sparseIndex == 0)
             {
-                archetypes.Archetype.GetComponentStorage(componentHandles[i].ComponentID)
+                inserted.GetComponentStorage(componentHandles[i].ComponentID)
                     .CallIniter(concreteEntity, eloc.Index);
             }
             else

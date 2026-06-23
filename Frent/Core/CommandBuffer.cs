@@ -308,10 +308,8 @@ public class CommandBuffer
             {
                 _world.RemoveEntityPlaceholder(ref lookup);
 
-                Span<ComponentHandle> handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
-                _world.CreateFromHandlesCore(concrete.EntityID, ref _world.EntityTable[concrete.EntityID], handles);
-                foreach (ComponentHandle handle in handles)
-                    handle.Dispose();
+                using ComponentHandleArray handles = _createEntityComponents.AsSpan().Slice(createCommand.BufferIndex, createCommand.BufferLength);
+                _world.CreateFromHandlesCore(concrete.EntityID, ref _world.EntityTable[concrete.EntityID], handles.Span);
             }
         }
         _createEntityComponents.Clear();
@@ -391,10 +389,10 @@ public class CommandBuffer
 
                     runner.Value.CallIniter(concrete, location.Index);
 
-                    command.ComponentHandle.Dispose();
-
                     archIndex = location.Index;
                 }
+
+                command.ComponentHandle.Dispose();
 
                 if (record.HasFlag(EntityFlags.AddComp | EntityFlags.AddGenericComp))
                 {

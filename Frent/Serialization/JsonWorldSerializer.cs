@@ -183,7 +183,7 @@ public class JsonWorldSerializer
 
                     // components
                     int index = 0;
-                    Span<ComponentHandle> components = stackalloc ComponentHandle[_componentMetadataNames.Count];
+                    using ComponentHandleArray components = stackalloc ComponentHandle[_componentMetadataNames.Count];
 
                     ReadAssert(ref capturedReader, JsonTokenType.StartArray);
 
@@ -200,7 +200,7 @@ public class JsonWorldSerializer
                         components[index++] = ComponentHandle.CreateFromBoxed(Component.GetComponentID(componentType), comp);
                     }
 
-                    entity.AddFromHandles(components);
+                    entity.AddFromHandles(components.Span);
                 }
             }
 
