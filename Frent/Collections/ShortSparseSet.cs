@@ -1,27 +1,27 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
+using Frent.Core;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
 
+/// <remarks>
+/// supports ids (0,  <see cref="ushort.MaxValue"/>]
+/// </remarks>
 internal class ShortSparseSet<T>
 {
-    /// <summary>
-    /// Gets the number of elements that the <see cref="ShortSparseSet{T}"/> can hold without resizing.
-    /// </summary>
-    public int Capacity => _dense.Length;
+    private const ushort Tombstone = 0;
+    private const int InitialCapacity = 4;
 
     /// <summary>
     /// Gets the number of elements contained in the <see cref="ShortSparseSet{T}"/>.
     /// </summary>
-    public int Count => _nextIndex;
+    public int Count => _nextIndex - 1;
 
-    private int _nextIndex;
+    private int _nextIndex = 1;
 
     private T[] _dense;
-
-    // this collection should never be empty
     private ushort[] _sparse;
+    private ushort[] _ids;
 
     private const string INVALID_ID = "ID not in sparse set!";
 
@@ -29,148 +29,113 @@ internal class ShortSparseSet<T>
     {
         get
         {
-            ref var index = ref EnsureSparseCapacityAndGetIndex(id);
+            ref ushort index = ref EnsureSparseCapacityAndGetIndex(id);
 
-            if (index == ushort.MaxValue)
-                index = (ushort)(_nextIndex++);
+            if (index == Tombstone)
+            {
+                if (_nextIndex > ushort.MaxValue)
+                    FrentExceptions.Throw_InvalidOperationException($"Exceeded maximum count");
 
-            return ref EnsureDenseCapacityAndGetSlot(index);
+                index = (ushort)_nextIndex++;
+                MemoryHelpers.GetValueOrResize(ref _ids, index) = id;
+            }
+
+            return ref MemoryHelpers.GetValueOrResize(ref _dense, index);
         }
     }
 
     public ShortSparseSet()
     {
-        const int InitalCapacity = 4;
-        _dense = new T[InitalCapacity];
-        _sparse = new ushort[InitalCapacity];
-        _sparse.AsSpan().Fill(ushort.MaxValue);
+        _dense = new T[InitialCapacity];
+        _sparse = new ushort[InitialCapacity];
+        _ids = new ushort[InitialCapacity];
     }
 
     public ref T Get(ushort id)
     {
-        var localSparse = _sparse;
-        if (!(id < localSparse.Length))
-        {//out of range
+        if (!TryGetIndex(id, out ushort index))
             FrentExceptions.Throw_ArgumentOutOfRangeException(INVALID_ID);
-        }
-        var index = localSparse[id];
 
-        var localDense = _dense;
-        if (!(index < localDense.Length))
-        {
-            FrentExceptions.Throw_ArgumentOutOfRangeException(INVALID_ID);
-        }
-
-        return ref localDense[index];
+        return ref _dense[index];
     }
 
     public bool TryGet(ushort id, [MaybeNullWhen(false)] out T value)
     {
-        var localSparse = _sparse;
-        if (!(id < localSparse.Length))
-            goto doesntExist;
+        if (TryGetIndex(id, out ushort index))
+        {
+            value = _dense[index];
+            return true;
+        }
 
-        var index = localSparse[id];
-
-        var localDense = _dense;
-        if (!(index < localDense.Length))
-            goto doesntExist;
-
-        value = localDense[index];
-        return true;
-
-    //saves a bit of code size
-    doesntExist:
         value = default;
         return false;
     }
 
-    public bool Remove(ushort id)
+    public void Remove(ushort id)
     {
-        int moveDownIndex = --_nextIndex;
+        if (id == Tombstone)
+            return;
 
-        var localSparse = _sparse;
-
-        if (!(id < localSparse.Length))
-            return false;
-
-        int moveIntoIndex = localSparse[id];
-
-        var localDense = _dense;
-        if (!(moveIntoIndex < localDense.Length))
-            return false;//here, moveIntoIndex should really only ever be ushort.MaxValue. We check against len to elide bounds check
-
-        ref T from = ref localDense[moveDownIndex];
-        localDense[moveIntoIndex] = from;
-
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            from = default!;
-
-        return true;
-    }
-
-    public bool Has(int id)
-    {
         var sparse = _sparse;
         if (!((uint)id < (uint)sparse.Length))
-            return false;
-        return sparse[id] != ushort.MaxValue;
-    }
+            return;
 
-    public void EnsureCapacity(ushort capacity)
-    {
-        if (_dense.Length < capacity)
+        ref ushort denseIndexRef = ref sparse[id];
+        ushort denseIndex = denseIndexRef;
+        if (denseIndex == Tombstone || denseIndex >= _nextIndex)
+            return;
+
+        int lastIndex = --_nextIndex;
+        ref T removed = ref _dense[denseIndex];
+
+        if (denseIndex != lastIndex)
         {
-            Array.Resize(ref _dense, capacity);
+            ushort movedId = _ids[lastIndex];
+            removed = _dense[lastIndex];
+            _ids[denseIndex] = movedId;
+            _sparse[movedId] = denseIndex;
         }
+
+        denseIndexRef = Tombstone;
+        _ids[lastIndex] = Tombstone;
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            _dense[lastIndex] = default!;
     }
 
     /// <summary>
     /// Note: this span will become invalid on resize or add
     /// </summary>
-    public Span<T> AsSpan() => _dense.AsSpan(0, _nextIndex);
+    public Span<T> AsSpan() => _dense.AsSpan(1, Count);
 
     public void Clear()
     {
-        _nextIndex = 0;
-        _sparse.AsSpan().Fill(ushort.MaxValue);
+        _nextIndex = 1;
+        _sparse.AsSpan().Clear();
+        _ids.AsSpan().Clear();
+
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            _dense.AsSpan().Clear();
+            _dense.AsSpan(1).Clear();
+    }
+
+    private bool TryGetIndex(ushort id, out ushort index)
+    {
+        var sparse = _sparse;
+        if (id != Tombstone && (uint)id < (uint)sparse.Length)
+        {
+            index = sparse[id];
+            return index != Tombstone && index < _nextIndex;
+        }
+
+        index = default;
+        return false;
     }
 
     private ref ushort EnsureSparseCapacityAndGetIndex(ushort id)
     {
-        var localSparse = _sparse;
-        if (id < localSparse.Length)
-        {
-            return ref localSparse[id];
-        }
+        if (id == Tombstone)
+            FrentExceptions.Throw_ArgumentOutOfRangeException(INVALID_ID);
 
-        return ref ResizeArrayAndGet(ref _sparse, id);
-
-        static ref ushort ResizeArrayAndGet(ref ushort[] arr, int index)
-        {
-            int prevLen = arr.Length;
-            Array.Resize(ref arr, (int)BitOperations.RoundUpToPowerOf2((uint)index + 1));
-            arr.AsSpan(prevLen).Fill(ushort.MaxValue);
-            return ref arr[index];
-        }
-    }
-
-    private ref T EnsureDenseCapacityAndGetSlot(ushort index)
-    {
-        var localDense = _dense;
-        if (index < localDense.Length)
-        {
-            return ref localDense[index];
-        }
-
-        return ref ResizeArrayAndGet(ref _dense, index);
-
-        static ref T ResizeArrayAndGet(ref T[] arr, int index)
-        {
-            Array.Resize(ref arr, (int)BitOperations.RoundUpToPowerOf2((uint)index + 1));
-            return ref arr[index];
-        }
+        return ref MemoryHelpers.GetValueOrResize(ref _sparse, id);
     }
 }

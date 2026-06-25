@@ -60,6 +60,34 @@ public class RefDictionaryTests
     }
 
     [Test]
+    public void Remove_ExistingKey_DoesNotEnumerateRemovedEntry()
+    {
+        _dict.GetValueRefOrAddDefault("keep-1", out _) = 1;
+        _dict.GetValueRefOrAddDefault("remove", out _) = 2;
+        _dict.GetValueRefOrAddDefault("keep-2", out _) = 3;
+
+        _dict.Remove("remove");
+
+        List<string> keys = [];
+        foreach (var entry in _dict)
+            keys.Add(entry.Key);
+
+        Assert.That(keys, Is.EquivalentTo(new[] { "keep-1", "keep-2" }));
+    }
+
+    [Test]
+    public void GetValueRefOrAddDefault_ReusedSlot_ReturnsDefaultValue()
+    {
+        _dict.GetValueRefOrAddDefault("old", out _) = 42;
+        _dict.Remove("old");
+
+        ref int value = ref _dict.GetValueRefOrAddDefault("new", out bool exists);
+
+        Assert.That(exists, Is.False);
+        Assert.That(value, Is.Zero);
+    }
+
+    [Test]
     public void AddMultipleEntries_Resize_AndRetrieveAll()
     {
         for (int i = 0; i < 20; i++)

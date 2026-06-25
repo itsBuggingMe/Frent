@@ -14,7 +14,7 @@ internal class UsageAnalyzer : DiagnosticAnalyzer
 {
 #pragma warning disable RS2008 // Enable analyzer release tracking
     public static readonly DiagnosticDescriptor DuplicateCreateTypeParameter = new(
-        id: "FR0004",
+        id: "FR0005",
         title: "Duplicate Component Type",
         messageFormat: "World.Create() called with duplicate component type parameter {0}",
         category: "Usage",

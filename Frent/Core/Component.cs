@@ -175,6 +175,12 @@ public static class Component
             var destroyDelegate = (ComponentDelegates<T>.DestroyDelegate?)(GenerationServices.TypeDestroyers.GetValueOrDefault(type));
             int sparseIndex = Component<T>.IsSparseComponent ? ++NextSparseSetComponentIndex : 0;
 
+            if (sparseIndex > 255)
+            {
+                throw new InvalidOperationException($"Exceeded maximum unique sparse component type count of 255");
+            }
+
+
             IDTable<T> stack = new IDTable<T>();
             UpdateMethodData[] updateMethodData = GenerationServices.UserGeneratedTypeMap.GetValueOrDefault(type) ?? [];
 
@@ -229,6 +235,12 @@ public static class Component
 
             bool isSparseComponent = typeof(ISparseComponent).IsAssignableFrom(type);
             int sparseIndex = isSparseComponent ? ++NextSparseSetComponentIndex : 0;
+
+            if(sparseIndex > 255)
+            {
+                throw new InvalidOperationException($"Exceeded maximum unique sparse component type count of 255");
+            }
+
             ComponentData data = new ComponentData(type, table ?? CreateComponentTable(type), type == typeof(void) ? null! : GetComponentFactoryFromType(type),
                 GenerationServices.TypeIniters.GetValueOrDefault(type),
                 GenerationServices.TypeDestroyers.GetValueOrDefault(type),

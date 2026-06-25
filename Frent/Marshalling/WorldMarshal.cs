@@ -96,4 +96,74 @@ public static class WorldMarshal
 
         return result;
     }
+
+    /// <summary>
+    /// Copies an entity and its component data into another world.
+    /// </summary>
+    /// <param name="destinationWorld">The world that receives the copied entity.</param>
+    /// <param name="entity">The entity to copy.</param>
+    /// <param name="callIniters">Whether to invoke init callbacks on copied components.</param>
+    /// <param name="callEvents">Whether to invoke the destination world's entity created event.</param>
+    /// <returns>The copied entity in <paramref name="destinationWorld"/>.</returns>
+    public static Entity MoveEntityAcrossWorlds(World destinationWorld, Entity entity, bool callIniters, bool callEvents)
+    {
+        ref EntityLocation eloc = ref entity.AssertIsAlive(out World sourceWorld);
+        if (sourceWorld == destinationWorld)
+            return entity;
+        if (!destinationWorld.AllowStructualChanges)
+            throw new InvalidOperationException("Cannot perform structural changes on destination world.");
+
+        // different world, same components; same order
+        Archetype sourceArchetype = eloc.Archetype;
+        Archetype destinationArchetype = Archetype.CreateOrGetExistingArchetype(eloc.ArchetypeID, destinationWorld).Archetype;
+
+        EntityFlags destinationFlags = eloc.HasFlag(EntityFlags.HasHadSparseComponents) ? EntityFlags.HasHadSparseComponents : EntityFlags.None;
+        ref EntityIDOnly destinationIdSlot = ref destinationArchetype.CreateEntityLocation(destinationFlags, out var destinationLocation);
+        Entity copiedEntity = destinationWorld.CreateEntityFromLocation(destinationLocation);
+        destinationIdSlot.Init(copiedEntity);
+
+        for (int i = 1; i < sourceArchetype.Components.Length; i++)
+        {
+            Array.Copy(sourceArchetype.Components[i].Buffer, eloc.Index, destinationArchetype.Components[i].Buffer, destinationLocation.Index, 1);
+        }
+
+        if (eloc.HasFlag(EntityFlags.HasHadSparseComponents))
+        {
+            ref Bitset bitset = ref sourceArchetype.GetBitset(eloc.Index);
+            destinationArchetype.GetBitset(destinationLocation.Index) = bitset;
+            ComponentSparseSetBase[] srcSparseSets = sourceWorld.WorldSparseSetTable;
+            ComponentSparseSetBase[] destSparseSets = destinationWorld.WorldSparseSetTable;
+
+            foreach (int sparseComponentId in bitset)
+            {
+                ComponentSparseSetBase srcSet = srcSparseSets.UnsafeArrayIndex(sparseComponentId);
+                ComponentSparseSetBase destSet = destSparseSets.UnsafeArrayIndex(sparseComponentId);
+
+                srcSet.CopyTo(entity.EntityID, destSet, copiedEntity.EntityID);
+            }
+
+            if (callIniters)
+            {
+                foreach (int sparseComponentId in bitset)
+                {
+                    destSparseSets.UnsafeArrayIndex(sparseComponentId).Init(copiedEntity);
+                }
+            }
+        }
+
+        if (callIniters)
+        {
+            for (int i = 1; i < destinationArchetype.Components.Length; i++)
+            {
+                destinationArchetype.Components[i].CallIniter(copiedEntity, destinationLocation.Index);
+            }
+        }
+
+        if (callEvents)
+        {
+            destinationWorld.EntityCreatedEvent.Invoke(copiedEntity);
+        }
+
+        return copiedEntity;
+    }
 }

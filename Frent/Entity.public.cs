@@ -117,7 +117,7 @@ partial struct Entity
         if (Component<T>.IsSparseComponent)
         {
             var set = world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex);
-            return ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(set)[EntityID];
+            return ref UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(set).GetExisting(EntityID);
         }
 
         Archetype archetype = lookup.Archetype;
@@ -255,6 +255,11 @@ partial struct Entity
     /// <exception cref="ArgumentException">If adding <paramref name="componentHandles.Length"/> components will result in more than the maximum allowed commponent count.</exception>
     public readonly void AddFromHandles(params ReadOnlySpan<ComponentHandle> componentHandles)
     {
+        AddFromHandlesCore(componentHandles, callIniters: true);
+    }
+
+    internal readonly void AddFromHandlesCore(ReadOnlySpan<ComponentHandle> componentHandles, bool callIniters)
+    {
         ref EntityLocation eloc = ref AssertIsAlive(out var world);
 
         if(!world.AllowStructualChanges)
@@ -281,7 +286,7 @@ partial struct Entity
             int sparseIndex = componentHandle.ComponentID.SparseIndex;
             if (sparseIndex != 0)
             {
-                world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).AddOrSet(EntityID, componentHandle);
+                world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).Add(EntityID, componentHandle);
                 eloc.Flags |= EntityFlags.HasHadSparseComponents;
                 bits.Set(sparseIndex);
             }
@@ -320,17 +325,20 @@ partial struct Entity
             }
         }
 
-        for (int i = 0; i < componentHandles.Length; i++)
+        if (callIniters)
         {
-            ComponentID compId = componentHandles[i].ComponentID;
-            int sparseIndex = compId.SparseIndex;
-            if (sparseIndex == 0)
+            for (int i = 0; i < componentHandles.Length; i++)
             {
-                buffer[i].CallIniter(this, nextLocation.Index);
-            }
-            else
-            {
-                world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).Init(this);
+                ComponentID compId = componentHandles[i].ComponentID;
+                int sparseIndex = compId.SparseIndex;
+                if (sparseIndex == 0)
+                {
+                    buffer[i].CallIniter(this, nextLocation.Index);
+                }
+                else
+                {
+                    world.WorldSparseSetTable.UnsafeArrayIndex(sparseIndex).Init(this);
+                }
             }
         }
 
@@ -397,7 +405,8 @@ partial struct Entity
                     FrentExceptions.Throw_ComponentAlreadyExistsException(componentID.Type);
                 lookup.Flags |= EntityFlags.HasHadSparseComponents;
                 lookup.GetBitset().Set(sparseIndex);
-                sparseSet.AddOrSet(EntityID, ComponentHandle.CreateFromBoxed(componentID, component));
+                using var tmpHandle = ComponentHandle.CreateFromBoxed(componentID, component);
+                sparseSet.Add(EntityID, tmpHandle);
                 sparseSet.Init(this);
             }
             else
@@ -920,11 +929,21 @@ partial struct Entity
     /// <param name="onEach">The unbound generic function called on each item</param>
     public readonly void EnumerateComponents(IGenericAction onEach)
     {
-        ref var lookup = ref AssertIsAlive(out var _);
+        ref var lookup = ref AssertIsAlive(out var world);
         ComponentStorageRecord[] runners = lookup.Archetype.Components;
         for (int i = 1; i < runners.Length; i++)
         {
             runners[i].InvokeGenericActionWith(onEach, lookup.Index);
+        }
+
+        if (!lookup.HasFlag(EntityFlags.HasHadSparseComponents))
+            return;
+
+        ref Bitset bitset = ref lookup.GetBitset();
+        foreach (int sparseComponentId in bitset)
+        {
+            world.WorldSparseSetTable.UnsafeArrayIndex(sparseComponentId)
+                .InvokeGenericActionWith(onEach, EntityID);
         }
     }
 

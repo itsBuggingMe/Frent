@@ -45,7 +45,7 @@ internal class GeneratorAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true);
 
     public static readonly DiagnosticDescriptor TooManyFilterTags = new(
-        id: "FR0003",
+        id: "FR0004",
         title: "Too Many Filter Tags",
         messageFormat: "Component '{0}' has more than 8 tag types specified when {1}",
         category: "Source Generation",

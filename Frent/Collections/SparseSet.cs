@@ -1,6 +1,7 @@
 ﻿using Frent.Core;
 using Frent.Core.Events;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -8,9 +9,9 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Collections;
 
-internal sealed class ComponentSparseSet<T>() : ComponentSparseSetBase(typeof(T))
+internal sealed class ComponentSparseSet<T>() : ComponentSparseSetBase(new T[InitialCapacity], typeof(T))
 {
-    internal T[] Dense = new T[InitialCapacity];
+    internal ref T[] Dense => ref Unsafe.As<Array, T[]>(ref _dense);
 
     public ref T this[int id]
     {
@@ -43,20 +44,18 @@ internal sealed class ComponentSparseSet<T>() : ComponentSparseSetBase(typeof(T)
     }
 
     public override void AddOrSet(int id, ComponentHandle value) => this[id] = value.Retrieve<T>();
+    public override void Add(int id, ComponentHandle value) => AddComponent(id) = value.Retrieve<T>();
+
+    public override void CopyTo(int sourceId, ComponentSparseSetBase destination, int destinationId)
+    {
+        ComponentSparseSet<T> destinationSet = UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(destination);
+        destinationSet.AddComponent(destinationId) = GetExisting(sourceId);
+    }
 
     // match behavior with archetypical set
     public override void Set(Entity e, object value)
     {
-        var dense = Dense;
-        var sparse = _sparse;
-
-        if (!((uint)e.EntityID < (uint)sparse.Length))
-            FrentExceptions.Throw_ComponentNotFoundException<T>();
-        int index = sparse[e.EntityID];
-        if (!((uint)index < (uint)dense.Length))
-            FrentExceptions.Throw_ComponentNotFoundException<T>();
-
-        ref T toSet = ref dense[index];
+        ref T toSet = ref GetExisting(e.EntityID);
         if (typeof(T).IsValueType)
         {// treat like writing a byref
             toSet = (T)value;
@@ -65,6 +64,7 @@ internal sealed class ComponentSparseSet<T>() : ComponentSparseSetBase(typeof(T)
         {
             if (ReferenceEquals(toSet, value))
                 return;
+            Component<T>.Destroyer?.Invoke(ref toSet);
             toSet = (T)value;
             Component<T>.Initer?.Invoke(e, ref toSet);
         }
@@ -76,9 +76,22 @@ internal sealed class ComponentSparseSet<T>() : ComponentSparseSetBase(typeof(T)
     public Ref<T> GetUnsafe(int id) => new Ref<T>(ref Dense.UnsafeArrayIndex(_sparse.UnsafeArrayIndex(id)));
 #endif
 
-    public override object Get(int id) => Dense[_sparse[id]]!;
+    public ref T GetExisting(int id)
+    {
+        var sparse = _sparse;
+        var dense = Dense;
+        Unsafe.SkipInit(out int denseIndex);
+
+        if (!((uint)id < (uint)sparse.Length) || (uint)(denseIndex = sparse[id]) >= (uint)_nextIndex)
+            FrentExceptions.Throw_ComponentNotFoundException<T>();
+
+        return ref dense[denseIndex];
+    }
+
+    public override object Get(int id) => GetExisting(id)!;
 
     public override void InvokeGenericEvent(Entity entity, GenericEvent @event) => @event.Invoke(entity, ref Dense[_sparse[entity.EntityID]]);
+    public override void InvokeGenericActionWith(IGenericAction action, int id) => action.Invoke(ref GetExisting(id));
 
     public override void Remove(int id, bool call)
     {
@@ -143,24 +156,36 @@ internal sealed class ComponentSparseSet<T>() : ComponentSparseSetBase(typeof(T)
     public override void Init(Entity entity) => Component<T>.Initer?.Invoke(entity, ref this[entity.EntityID]);
 }
 
-internal abstract class ComponentSparseSetBase(Type t)
+internal abstract class ComponentSparseSetBase
 {
+    protected ComponentSparseSetBase(Array dense, Type type)
+    {
+        Debug.Assert(dense.GetType().GetElementType() == type);
+        _dense = dense;
+        Type = type;
+    }
+
+    protected Array _dense;
     protected int[] _sparse = [];
     protected int[] _ids = new int[InitialCapacity];
     protected int _nextIndex;
-    internal readonly Type Type = t;
+    internal readonly Type Type;
 
     public int Count => _nextIndex;
+    public Array Components => _dense;
 
     protected const int InitialCapacity = 4;
 
     public abstract object Get(int id);
     public abstract void AddOrSet(int id, ComponentHandle value);
+    public abstract void Add(int id, ComponentHandle value);
+    public abstract void CopyTo(int sourceId, ComponentSparseSetBase destination, int destinationId);
     public abstract void Set(Entity e, object value);
     public abstract void Remove(int id, bool callDestroyer);
     public abstract bool TryGet(int id, [NotNullWhen(true)] out object? value);
     public abstract void Init(Entity id);
     public abstract void InvokeGenericEvent(Entity entity, GenericEvent @event);
+    public abstract void InvokeGenericActionWith(IGenericAction action, int id);
 
     public bool Has(int id)
     {

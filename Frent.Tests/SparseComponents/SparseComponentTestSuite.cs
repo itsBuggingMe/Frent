@@ -433,6 +433,18 @@ internal class SparseComponentTestSuite
     }
     
     [Test]
+    public void Get_MissingSparseComponent_ThrowsAndDoesNotAddComponent()
+    {
+        using World world = new();
+        var entity = world.Create();
+
+        Throws<ComponentNotFoundException>(() => _ = entity.Get<SparseUpdateComponent>());
+
+        That(entity.Has<SparseUpdateComponent>(), Is.False);
+        That(entity.ComponentTypes, Does.Not.Contain(Component<SparseUpdateComponent>.ID));
+    }
+    
+    [Test]
     public void TryGet_SparseComponent_ReturnsCorrectResult()
     {
         using World world = new();
@@ -520,6 +532,22 @@ internal class SparseComponentTestSuite
         CollectionAssert.Contains(componentTypes, Component<RegularComponent>.ID);
         CollectionAssert.Contains(componentTypes, Component<SparseUpdateComponent>.ID);
         That(componentTypes.Length, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void EnumerateComponents_MixedComponents_IncludesSparseComponent()
+    {
+        using World world = new();
+        var entity = world.Create<RegularComponent, SparseUpdateComponent>(
+            new RegularComponent(10),
+            new SparseUpdateComponent { UpdateCount = 7 });
+
+        Dictionary<Type, object?> components = [];
+        entity.EnumerateComponents(new GenericAction((type, value) => components[type] = value));
+
+        That(components.Keys, Is.EquivalentTo(new[] { typeof(RegularComponent), typeof(SparseUpdateComponent) }));
+        That(((RegularComponent)components[typeof(RegularComponent)]!).Value, Is.EqualTo(10));
+        That(((SparseUpdateComponent)components[typeof(SparseUpdateComponent)]!).UpdateCount, Is.EqualTo(7));
     }
     
     #endregion
@@ -781,6 +809,31 @@ internal class SparseComponentTestSuite
         var componentTypes = entity.ComponentTypes;
         var sparseComponentCount = componentTypes.Count(c => c == Component<SparseUpdateComponent>.ID);
         That(sparseComponentCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddFromHandles_ExistingSparseComponent_ThrowsAndDoesNotReplace()
+    {
+        using World world = new();
+        var entity = world.Create<SparseUpdateComponent>(new SparseUpdateComponent { UpdateCount = 1 });
+        using var handle = ComponentHandle.Create(new SparseUpdateComponent { UpdateCount = 99 });
+
+        Throws<ComponentAlreadyExistsException>(() => entity.AddFromHandles(handle));
+
+        That(entity.Get<SparseUpdateComponent>().UpdateCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void CommandBufferAdd_ExistingSparseComponent_ThrowsAndDoesNotReplace()
+    {
+        using World world = new();
+        var entity = world.Create<SparseUpdateComponent>(new SparseUpdateComponent { UpdateCount = 1 });
+        CommandBuffer commandBuffer = new(world);
+        commandBuffer.AddComponent(entity, new SparseUpdateComponent { UpdateCount = 99 });
+
+        Throws<ComponentAlreadyExistsException>(() => commandBuffer.Playback());
+
+        That(entity.Get<SparseUpdateComponent>().UpdateCount, Is.EqualTo(1));
     }
     
     [Test]

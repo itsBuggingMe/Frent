@@ -1,8 +1,8 @@
 ﻿arity: 16
 from:
-                    if (!Component<T>.IsSparseComponent) c1 = ref Unsafe.Add(ref c1, 1);
+                    c1 = ref Unsafe.Add(ref c1, 1);
 to:
-|                    if (!Component<T$>.IsSparseComponent) c$ = ref Unsafe.Add(ref c$, 1);
+|                    c$ = ref Unsafe.Add(ref c$, 1);
 |
 from:
                 if (!Component<T>.IsSparseComponent) c1 = ref Unsafe.Add(ref c1, 1);
@@ -21,17 +21,17 @@ to:
 from:
                 if (Component<T>.IsSparseComponent)
                 {
-                    if (!((uint)id < (uint)sparseArgArray.Length)) continue;
+                    if (!((uint)id < (uint)sparseArgArray.Length)) goto NextEntity;
                     int index = sparseArgArray[id];
-                    if (index < 0) continue;
+                    if (index < 0) goto NextEntity;
                     c1 = ref Unsafe.Add(ref sparseFirst, index);
                 }
 to:
 |                if (Component<T$>.IsSparseComponent)
                 {
-                    if (!((uint)id < (uint)sparseArgArray$.Length)) continue;
+                    if (!((uint)id < (uint)sparseArgArray$.Length)) goto NextEntity;
                     int index = sparseArgArray$[id];
-                    if (index < 0) continue;
+                    if (index < 0) goto NextEntity;
                     c$ = ref Unsafe.Add(ref sparseFirst$, index);
                 }
 |
@@ -51,30 +51,24 @@ to:
 |        ref T$ sparseFirst$ = ref IRunner.InitSparse<T$>(ref first, out Span<int> sparseArgArray$);
 |
 from:
-                ref T c1 = ref Component<T>.IsSparseComponent ?
-                    ref Unsafe.NullRef<T>() :
-                    ref archetype.GetComponentDataReference<T>();
+                ref T c1 = ref archetype.GetComponentDataReference<T>();
 to:
-|                ref T$ c$ = ref Component<T$>.IsSparseComponent ?
-                    ref Unsafe.NullRef<T$>() :
-                    ref archetype.GetComponentDataReference<T$>();
+|                ref T$ c$ = ref archetype.GetComponentDataReference<T$>();
 |
 from:
                     if (Component<T>.IsSparseComponent)
                     {
-                        int id = entity.ID;
-                        if (!((uint)id < (uint)sparseArgArray.Length)) continue;
+                        if (!((uint)id < (uint)sparseArgArray.Length)) goto NextEntity;
                         int index = sparseArgArray[id];
-                        if (index < 0) continue;
+                        if (index < 0) goto NextEntity;
                         c1 = ref Unsafe.Add(ref sparseFirst, index);
                     }
 to:
 |                    if (Component<T$>.IsSparseComponent)
                     {
-                        int id = entity.ID;
-                        if (!((uint)id < (uint)sparseArgArray$.Length)) continue;
+                        if (!((uint)id < (uint)sparseArgArray$.Length)) goto NextEntity;
                         int index = sparseArgArray$[id];
-                        if (index < 0) continue;
+                        if (index < 0) goto NextEntity;
                         c$ = ref Unsafe.Add(ref sparseFirst$, index);
                     }
 |

@@ -82,7 +82,7 @@ public partial class World : IDisposable
     }
 
     internal FastStack<Query> QueryCache = new FastStack<Query>(4);
-
+    private Action<ushort>? _queryDisposeCallbacks;
     internal CountdownEvent SharedCountdown => _sharedCountdown;
     private CountdownEvent _sharedCountdown = new(0);
     internal FastStack<ArchetypeID> EnabledArchetypes = FastStack<ArchetypeID>.Create(16);
@@ -266,8 +266,8 @@ public partial class World : IDisposable
     /// </summary>
     public void Update()
     {
-        EnterDisallowState();
         EnterWorldUpdateMethod();
+        EnterDisallowState();
         AttributeUpdateFilter? appliesTo = default;
         try
         {
@@ -293,8 +293,8 @@ public partial class World : IDisposable
     /// <param name="attributeType">The attribute type to filter</param>
     public void Update(Type attributeType)
     {
-        EnterDisallowState();
         EnterWorldUpdateMethod();
+        EnterDisallowState();
         AttributeUpdateFilter? appliesTo = default;
         try
         {
@@ -314,8 +314,8 @@ public partial class World : IDisposable
     /// <param name="componentType"></param>
     public void UpdateComponent(ComponentID componentType)
     {
-        EnterDisallowState();
         EnterWorldUpdateMethod();
+        EnterDisallowState();
         SingleComponentUpdateFilter? singleComponent = null;
 
         try
@@ -370,7 +370,12 @@ public partial class World : IDisposable
         where T : struct, IQueryBuilder
     {
         ref Query query = ref QueryInfo<T>.Queries[WorldID];
-        query ??= QueryInfo<T>.Build(this);
+        if(query is null)
+        {
+            query = QueryInfo<T>.Build(this);
+
+            _queryDisposeCallbacks += QueryInfo<T>.Queries.Remove;
+        }
         return query;
     }
 
@@ -520,6 +525,8 @@ public partial class World : IDisposable
 
 
         GlobalWorldTables.Worlds[WorldID] = null!;
+        _queryDisposeCallbacks?.Invoke(WorldID);
+        _queryDisposeCallbacks = null;
         _sharedCountdown.Dispose();
 
         //EntityTable.Dispose();
@@ -562,6 +569,7 @@ public partial class World : IDisposable
     {
         Span<ComponentID> componentIDs = stackalloc ComponentID[componentHandles.Length];
         Span<int> sparseComponentIndicies = stackalloc int[componentHandles.Length];
+        Bitset sparseComponentsToCreate = default;
         bool hasSparseComponent = false;
 
         int archetypeicalComponentIdsIndex = 0;
@@ -575,6 +583,10 @@ public partial class World : IDisposable
             }
             else
             {
+                if (sparseComponentsToCreate.IsSet(sparseIndex))
+                    FrentExceptions.Throw_ComponentAlreadyExistsException(compId.Type);
+
+                sparseComponentsToCreate.Set(sparseIndex);
                 sparseComponentIndicies[i] = sparseIndex;
                 hasSparseComponent = true;
             }
@@ -627,7 +639,7 @@ public partial class World : IDisposable
             }
             else
             {
-                WorldSparseSetTable[sparseIndex].AddOrSet(id, componentHandles[i]);
+                WorldSparseSetTable[sparseIndex].Add(id, componentHandles[i]);
                 bitset.Set(sparseIndex);
             }
         }

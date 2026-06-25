@@ -33,6 +33,6 @@ internal struct ComponentStorageRecord
     internal readonly void SetAt(Entity? parent, object component, int index) => BufferManager.SetAt(Buffer, parent, component, index);
     internal readonly void SetAt(Entity? parent, ComponentHandle component, int index) => BufferManager.SetAt(Buffer, parent, component, index);
     internal readonly object GetAt(int index) => Buffer.GetValue(index)!;
-    internal readonly void CallIniter(Entity parent, int index) => BufferManager.CallIniter(Buffer, parent, index);
+    internal readonly void CallIniter(Entity self, int index) => BufferManager.CallIniter(Buffer, self, index);
     internal readonly void CallDestroyer(int index) => BufferManager.CallDestroyer(Buffer, index);
 }

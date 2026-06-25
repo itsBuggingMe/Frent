@@ -144,6 +144,7 @@ public class JsonWorldSerializer
                         ReadAssert(ref reader, JsonTokenType.StartArray);
 
                         hasTags = true;
+                        _componentMetadataNames.Clear();
                         _readTags.Clear();
                         while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
                             _componentMetadataNames.Enqueue(reader.GetString() ?? "");
@@ -200,7 +201,7 @@ public class JsonWorldSerializer
                         components[index++] = ComponentHandle.CreateFromBoxed(Component.GetComponentID(componentType), comp);
                     }
 
-                    entity.AddFromHandles(components.Span);
+                    entity.AddFromHandlesCore(components.Span[..index], callIniters: false);
                 }
             }
 

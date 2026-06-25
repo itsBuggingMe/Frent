@@ -159,6 +159,62 @@ internal class SerializationTests
         That(deserializedEntity.TryHas<NotSerializableComponent>(), Is.False);
     }
 
+    [Test]
+    public void SerializeDeserialize_SparseComponent_RoundTrips()
+    {
+        using World world = new();
+        world.Create(new SerializableSparseComponent { Value = 37 });
+
+        string json = JsonWorldSerializer.Default.Serialize(world);
+        using World deserialized = JsonWorldSerializer.Default.Deserialize(json);
+
+        Entity deserializedEntity = GetFirstEntity(deserialized.CreateQuery()
+            .With<SerializableSparseComponent>()
+            .Build());
+
+        That(deserializedEntity.Get<SerializableSparseComponent>().Value, Is.EqualTo(37));
+    }
+
+    [Test]
+    public void Deserialize_InvokeInitersFalse_DoesNotInvokeIniters()
+    {
+        using World world = new();
+        world.Create(
+            new SerializableInitComponent { Value = 11 },
+            new SerializableSparseInitComponent { Value = 22 });
+
+        string json = JsonWorldSerializer.Default.Serialize(world);
+        ResetSerializationIniterCounts();
+
+        using World deserialized = JsonWorldSerializer.Default.Deserialize(json, invokeIniters: false);
+
+        That(SerializableInitComponent.InitCount, Is.Zero);
+        That(SerializableSparseInitComponent.InitCount, Is.Zero);
+    }
+
+    [Test]
+    public void Deserialize_InvokeInitersTrue_InvokesEachIniterOnce()
+    {
+        using World world = new();
+        world.Create(
+            new SerializableInitComponent { Value = 11 },
+            new SerializableSparseInitComponent { Value = 22 });
+
+        string json = JsonWorldSerializer.Default.Serialize(world);
+        ResetSerializationIniterCounts();
+
+        using World deserialized = JsonWorldSerializer.Default.Deserialize(json, invokeIniters: true);
+
+        That(SerializableInitComponent.InitCount, Is.EqualTo(1));
+        That(SerializableSparseInitComponent.InitCount, Is.EqualTo(1));
+    }
+
+    private static void ResetSerializationIniterCounts()
+    {
+        SerializableInitComponent.InitCount = 0;
+        SerializableSparseInitComponent.InitCount = 0;
+    }
+
     private static Entity GetFirstEntity(Query query)
     {
         foreach (var entity in query.EnumerateWithEntities())
@@ -187,6 +243,33 @@ internal class SerializationTests
     }
 
     internal record struct NotSerializableComponent(int Value);
+
+    internal struct SerializableSparseComponent : ISparseComponent
+    {
+        public int Value { get; set; }
+    }
+
+    internal struct SerializableInitComponent : IInitable
+    {
+        public static int InitCount;
+        public int Value { get; set; }
+
+        public void Init(Entity self)
+        {
+            InitCount++;
+        }
+    }
+
+    internal struct SerializableSparseInitComponent : ISparseComponent, IInitable
+    {
+        public static int InitCount;
+        public int Value { get; set; }
+
+        public void Init(Entity self)
+        {
+            InitCount++;
+        }
+    }
 
     private sealed class BlockingResolver(Type blockedType) : IJsonTypeInfoResolver
     {

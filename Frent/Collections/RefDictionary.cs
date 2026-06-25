@@ -9,18 +9,21 @@ namespace Frent.Collections;
 //[DebuggerTypeProxy(typeof(RefDictionary<,>.RefDictionaryDebugView))]
 internal class RefDictionary<TKey, TValue> where TKey : notnull
 {
+    private const int EndOfChain = -1;
+    private const int InactiveEntry = -2;
+
     public RefDictionary()
     {
         foreach (ref var entry in _entries.AsSpan())
         {
-            entry.NextIndex = -2;
-            entry.BucketIndex = -1;
+            entry.NextIndex = InactiveEntry;
+            entry.BucketIndex = EndOfChain;
         }
     }
 
     private Entry[] _entries = new Entry[4];
     private int _next;
-    private int _free = -1;
+    private int _free = EndOfChain;
 
     [StructLayout(LayoutKind.Auto)]
     internal struct Entry
@@ -54,12 +57,12 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
 
     public void Clear()
     {
-        _free = -1;
+        _free = EndOfChain;
         _next = 0;
         foreach (ref var entry in _entries.AsSpan())
         {
-            entry.NextIndex = -2;
-            entry.BucketIndex = -1;
+            entry.NextIndex = InactiveEntry;
+            entry.BucketIndex = EndOfChain;
 
             if(RuntimeHelpers.IsReferenceOrContainsReferences<TKey>())
                 entry.Key = default!;
@@ -105,9 +108,13 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
                 connectedFrom = current.NextIndex;
 
                 // add to free list
-                current.NextIndex = _free;
-                _free = next;
                 value = current.Value;
+                if (RuntimeHelpers.IsReferenceOrContainsReferences<TKey>())
+                    current.Key = default!;
+                if (RuntimeHelpers.IsReferenceOrContainsReferences<TValue>())
+                    current.Value = default!;
+                current.NextIndex = EncodeFreeListNext(_free);
+                _free = next;
                 return true;
             }
 
@@ -170,7 +177,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
     {
         Entry[] entries = _entries;
         int next;
-        if (_free == -1)
+        if (_free == EndOfChain)
         {
             next = _next++;
             if (!((uint)next < (uint)entries.Length))
@@ -181,7 +188,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         else
         {
             next = _free;
-            _free = entries[next].NextIndex;
+            _free = DecodeFreeListNext(entries[next].NextIndex);
         }
 
         ref Entry bucket = ref entries[key.GetHashCode() & (entries.Length - 1)];
@@ -191,6 +198,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         ref Entry nextEntry = ref entries[next];
 
         nextEntry.Key = key;
+        nextEntry.Value = default!;
         // next entry -> old entry index
         nextEntry.NextIndex = oldBucketIndex;
 
@@ -208,21 +216,32 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         for (int i = 0; i < entries.Length; i++)
         {
             ref var entry = ref entries[i];
-            entry.NextIndex = -2;
-            entry.BucketIndex = -1;
+            entry.NextIndex = InactiveEntry;
+            entry.BucketIndex = EndOfChain;
         }
 
         _next = 0;
+        _free = EndOfChain;
 
         // rebuild
         for (int i = 0; i < oldEntries.Length; i++)
         {
             ref Entry entry = ref oldEntries[i];
-            CreateEntry(entry.Key).Value = entry.Value;
+            if (IsActive(entry.NextIndex))
+                CreateEntry(entry.Key).Value = entry.Value;
         }
 
         return ref CreateEntry(key);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsActive(int nextIndex) => nextIndex >= EndOfChain;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int EncodeFreeListNext(int nextFree) => nextFree == EndOfChain ? InactiveEntry : -nextFree - 3;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int DecodeFreeListNext(int encodedNext) => encodedNext == InactiveEntry ? EndOfChain : -encodedNext - 3;
 
     public Enumerator GetEnumerator() => new Enumerator(_entries, _next);
 
@@ -246,7 +265,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
             for (_index++; _index < _count; _index++)
             {
                 ref Entry entry = ref _entries[_index];
-                if (entry.NextIndex != -2)
+                if (IsActive(entry.NextIndex))
                 {
                     _current = new KeyValuePair<TKey, TValue>(entry.Key, entry.Value);
                     return true;

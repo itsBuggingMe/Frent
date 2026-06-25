@@ -41,42 +41,25 @@ public static partial class QueryIterationExtensions
     {
         query.World.EnterDisallowState();
 
-        ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(query.World.WorldSparseSetTable);
-
-        if (!query.HasSparseExclusions)
+        if (!query.HasSparseRules)
         {
-            ref T sparseFirst = ref IRunner.InitSparse<T>(ref first, out Span<int> sparseArgArray);
-
             foreach (var archetype in query.AsSpan())
             {
                 //use ref instead of span to avoid extra locals
-                ref T c1 = ref Component<T>.IsSparseComponent ?
-                    ref Unsafe.NullRef<T>() :
-                    ref archetype.GetComponentDataReference<T>();
+                ref T c1 = ref archetype.GetComponentDataReference<T>();
 
-                ref EntityIDOnly entity = ref archetype.GetEntityDataReference();
-
-                for (nint i = archetype.EntityCount - 1; i >= 0; i--)
+                for (int i = 0; i < archetype.EntityCount; i++)
                 {
-                    if (Component<T>.IsSparseComponent)
-                    {
-                        int id = entity.ID;
-                        if (!((uint)id < (uint)sparseArgArray.Length)) continue;
-                        int index = sparseArgArray[id];
-                        if (index < 0) continue;
-                        c1 = ref Unsafe.Add(ref sparseFirst, index);
-                    }
-
                     action.Run(ref c1);
 
-                    entity = ref Unsafe.Add(ref entity, 1);
-                    if (!Component<T>.IsSparseComponent) c1 = ref Unsafe.Add(ref c1, 1);
+                    c1 = ref Unsafe.Add(ref c1, 1);
                 }
             }
         }
         else
-        {// do extra work to exclude sparse components
-            InlineSparseExcludeImpl<TAction, T>(ref first, query, action);
+        {// do extra work for sparse includes and excludes
+            ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(query.World.WorldSparseSetTable);
+            InlineSparseRuleImpl<TAction, T>(ref first, query, action);
         }
     }
     finally
@@ -85,9 +68,10 @@ public static partial class QueryIterationExtensions
     }
     }
 
-    internal static void InlineSparseExcludeImpl<TAction, T>(ref ComponentSparseSetBase first, Query query, TAction action)
+    internal static void InlineSparseRuleImpl<TAction, T>(ref ComponentSparseSetBase first, Query query, TAction action)
         where TAction : IAction<T>
     {
+        Bitset includeBits = query.IncludeMask;
         Bitset excludeBits = query.ExcludeMask;
 
         ref T sparseFirst = ref IRunner.InitSparse<T>(ref first, out Span<int> sparseArgArray);
@@ -103,25 +87,27 @@ public static partial class QueryIterationExtensions
 
             ref EntityIDOnly entity = ref archetype.GetEntityDataReference();
 
-            for (int i = archetype.EntityCount - 1; i >= 0; i--)
+            for (int i = 0; i < archetype.EntityCount; i++)
             {
                 int id = entity.ID;
+                ref Bitset sparseBits = ref (uint)i < (uint)bitset.Length
+                    ? ref bitset[i]
+                    : ref Bitset.Zero;
+
+                if (!Bitset.Filter(ref sparseBits, includeBits.AsVector(), excludeBits.AsVector()))
+                    goto NextEntity;
+
                 if (Component<T>.IsSparseComponent)
                 {
-                    if (!((uint)id < (uint)sparseArgArray.Length)) continue;
+                    if (!((uint)id < (uint)sparseArgArray.Length)) goto NextEntity;
                     int index = sparseArgArray[id];
-                    if (index < 0) continue;
+                    if (index < 0) goto NextEntity;
                     c1 = ref Unsafe.Add(ref sparseFirst, index);
-                }
-
-                // exclude
-                if ((uint)i < (uint)bitset.Length && Bitset.AndAndThenAnySet(ref excludeBits, ref bitset[i]))
-                {
-                    continue;
                 }
 
                 action.Run(ref c1);
 
+            NextEntity:
                 entity = ref Unsafe.Add(ref entity, 1);
                 if (!Component<T>.IsSparseComponent) c1 = ref Unsafe.Add(ref c1, 1);
             }

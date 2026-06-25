@@ -73,11 +73,11 @@ internal abstract class ComponentBufferManager
     /// <summary>
     /// Sets the component at the index. Invokes lifetime if component type isn't a struct, the new component is different, and parent is not null.
     /// </summary>
-    internal abstract void SetAt(Array buffer, Entity? parent, ComponentHandle component, int index);
+    internal abstract void SetAt(Array buffer, Entity? self, ComponentHandle component, int index);
     /// <summary>
     /// Calls the initer at the location.
     /// </summary>
-    internal abstract void CallIniter(Array buffer, Entity parent, int index);
+    internal abstract void CallIniter(Array buffer, Entity self, int index);
     /// <summary>
     /// Calls the destroyer at the location.
     /// </summary>
@@ -118,7 +118,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
 #endif
     }
     //Note - no unsafe here
-    internal sealed override void SetAt(Array buffer, Entity? parent, object component, int index)
+    internal sealed override void SetAt(Array buffer, Entity? self, object component, int index)
     {
         ref TComponent slot = ref Index(buffer, index);
         if (!typeof(TComponent).IsValueType)
@@ -129,7 +129,7 @@ internal sealed class ComponentBufferManager<TComponent> : ComponentBufferManage
             }
 
             // for reference types, if we know its a new class we process lifetime
-            if (parent is { } entity)
+            if (self is { } entity)
             {
                 Component<TComponent>.Destroyer?.Invoke(ref slot);
                 slot = (TComponent)component;

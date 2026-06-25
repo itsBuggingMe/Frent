@@ -365,8 +365,10 @@ public class CommandBuffer
 
             if (record.Version == command.Entity.Version)
             {
+                using ComponentHandle componentHandle = command.ComponentHandle;
+
                 // init x -> generic events -> entity events -> worldevents x
-                int sparseIndex = command.ComponentHandle.ComponentID.SparseIndex;
+                int sparseIndex = componentHandle.ComponentID.SparseIndex;
                 ComponentStorageRecord? runner = null;
                 ComponentSparseSetBase? sparseSet = null;
                 int archIndex = 0;
@@ -375,24 +377,22 @@ public class CommandBuffer
                 {
                     // todo: create sparse methods for these opts in world?
                     sparseSet = _world.WorldSparseSetTable[sparseIndex];
-                    sparseSet.AddOrSet(concrete.EntityID, command.ComponentHandle);
+                    sparseSet.Add(concrete.EntityID, componentHandle);
                     sparseSet.Init(concrete);
                     record.GetBitset().Set(sparseIndex);
                     record.Flags |= EntityFlags.HasHadSparseComponents;
                 }
                 else
                 {
-                    _world.AddArchetypicalComponent(concrete, ref record, command.ComponentHandle.ComponentID, out var location, out var destination);
+                    _world.AddArchetypicalComponent(concrete, ref record, componentHandle.ComponentID, out var location, out var destination);
 
-                    runner = destination.Components[destination.GetComponentIndex(command.ComponentHandle.ComponentID)];
-                    runner.Value.PullComponentFrom(command.ComponentHandle.ParentTable, location.Index, command.ComponentHandle.Index);
+                    runner = destination.Components[destination.GetComponentIndex(componentHandle.ComponentID)];
+                    runner.Value.PullComponentFrom(componentHandle.ParentTable, location.Index, componentHandle.Index);
 
                     runner.Value.CallIniter(concrete, location.Index);
 
                     archIndex = location.Index;
                 }
-
-                command.ComponentHandle.Dispose();
 
                 if (record.HasFlag(EntityFlags.AddComp | EntityFlags.AddGenericComp))
                 {
@@ -404,10 +404,10 @@ public class CommandBuffer
                         sparseSet?.InvokeGenericEvent(concrete, events.Add.GenericEvent);
                     }
 
-                    events.Add.NormalEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
+                    events.Add.NormalEvent.Invoke(concrete, componentHandle.ComponentID);
                 }
 
-                _world.ComponentAddedEvent.Invoke(concrete, command.ComponentHandle.ComponentID);
+                _world.ComponentAddedEvent.Invoke(concrete, componentHandle.ComponentID);
             }
             else
             {
