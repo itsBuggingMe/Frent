@@ -15,6 +15,16 @@ internal class EntityTests
     }
 
     [Test]
+    public void DefaultRef_ChecksNull()
+    {
+        Ref<string> referenceTypeRef = default;
+        Ref<int> valueTypeRef = default;
+
+        That(referenceTypeRef.ToString(), Is.Null);
+        That(valueTypeRef.ToString(), Is.Null);
+    }
+
+    [Test]
     public void OnComponentAddedGeneric_Invoked()
     {
         using World world = new();

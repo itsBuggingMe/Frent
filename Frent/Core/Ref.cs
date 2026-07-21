@@ -1,4 +1,6 @@
-﻿namespace Frent.Core;
+﻿using System.Runtime.CompilerServices;
+
+namespace Frent.Core;
 
 /// <summary>
 /// A wrapper ref struct over a reference to a <typeparamref name="T"/>
@@ -25,7 +27,12 @@ public ref struct Ref<T>
     /// Calls the wrapped <typeparamref name="T"/>'s ToString() function, or returns null.
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
-    public override readonly string? ToString() => Value?.ToString();
+    public override readonly string? ToString()
+    {
+        if (Unsafe.IsNullRef(ref RawRef))
+            return null;
+        return Value?.ToString();
+    }
 #elif NETSTANDARD2_1
     internal Ref(T[] compArr, int index)
     {
@@ -53,7 +60,12 @@ public ref struct Ref<T>
     /// Calls the wrapped <typeparamref name="T"/>'s ToString() function, or returns null.
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
-    public override readonly string? ToString() => Value?.ToString();
+    public override readonly string? ToString()
+    {
+        if (_data.IsEmpty)
+            return null;
+        return Value?.ToString();
+    }
 #else
     internal Ref(T[] compArr, int index) => RawRef = MemoryMarshal.CreateSpan(ref compArr.UnsafeArrayIndex(index), 1);
     internal Ref(Span<T> compSpan, int index) => RawRef = MemoryMarshal.CreateSpan(ref compSpan.UnsafeSpanIndex(index), 1);
@@ -72,6 +84,11 @@ public ref struct Ref<T>
     /// Calls the wrapped <typeparamref name="T"/>'s ToString() function, or returns null.
     /// </summary>
     /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
-    public override readonly string? ToString() => Value?.ToString();
+    public override readonly string? ToString()
+    {
+        if (RawRef.IsEmpty)
+            return null;
+        return Value?.ToString();
+    }
 #endif
 }
