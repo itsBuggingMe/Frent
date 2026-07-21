@@ -11,7 +11,7 @@
 Frent is on [Nuget](https://www.nuget.org/packages/Frent/)!
 
 ```pwsh
-dotnet add package Frent --version 0.7.2-beta
+dotnet add package Frent --version 0.7.3-beta
 ```
 
 ## Unity
