@@ -21,7 +21,8 @@ public class CommandBuffer
     private readonly ComponentStorageRecord[] _componentRunnerBuffer = new ComponentStorageRecord[MemoryHelpers.MaxComponentCount];
     internal FastStack<EntityIDOnly> _deleteEntityBuffer = FastStack<EntityIDOnly>.Create(2);
 
-    internal World _world;
+    internal readonly World _world;
+    internal readonly ushort _worldId;
     //-1 indicates normal state
     internal int _lastCreateEntityComponentsBufferIndex = -1;
     internal bool _isInactive;
@@ -38,6 +39,7 @@ public class CommandBuffer
     public CommandBuffer(World world)
     {
         _world = world;
+        _worldId = _world.WorldID;
         _isInactive = true;
     }
 
@@ -48,6 +50,7 @@ public class CommandBuffer
     public void DeleteEntity(Entity entity)
     {
         SetIsActive();
+        AssertEntityFromWorld(entity);
         _deleteEntityBuffer.Push(entity.EntityIDOnly);
     }
 
@@ -59,6 +62,7 @@ public class CommandBuffer
     public void RemoveComponent(Entity entity, ComponentID component)
     {
         SetIsActive();
+        AssertEntityFromWorld(entity);
         _removeComponentBuffer.Push(new DeleteComponent(entity.EntityIDOnly, component));
     }
 
@@ -85,17 +89,19 @@ public class CommandBuffer
     public void AddComponent<T>(Entity entity, in T component)
     {
         SetIsActive();
+        AssertEntityFromWorld(entity);
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, ComponentHandle.Create(component)));
     }
 
     /// <summary>
-    /// Adds a component to an entity when <see cref="Playback"/> is called.
+    /// Adds a component to an entity when <see cref="Playback"/> is called. The handle is automatically disposed.
     /// </summary>
     /// <param name="entity">The entity to add to.</param>
     /// <param name="component">The component to add.</param>
     public void AddComponent(Entity entity, ComponentHandle component)
     {
         SetIsActive();
+        AssertEntityFromWorld(entity);
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, component));
     }
 
@@ -109,6 +115,7 @@ public class CommandBuffer
     public void AddComponent(Entity entity, ComponentID componentID, object component)
     {
         SetIsActive();
+        AssertEntityFromWorld(entity);
         _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, ComponentHandle.CreateFromBoxed(componentID, component)));
     }
 
@@ -144,6 +151,7 @@ public class CommandBuffer
     public void Tag(Entity entity, TagID tagID)
     {
         SetIsActive();
+        AssertEntityFromWorld(entity);
         _tagEntityBuffer.Push(new(entity.EntityIDOnly, tagID));
     }
 
@@ -161,6 +169,7 @@ public class CommandBuffer
     public void Detach(Entity entity, TagID tagID)
     {
         SetIsActive();
+        AssertEntityFromWorld(entity);
         _detachTagEntityBuffer.Push(new(entity.EntityIDOnly, tagID));
     }
     #endregion
@@ -303,7 +312,8 @@ public class CommandBuffer
         {
             Entity concrete = createCommand.Entity.ToEntity(_world);
             ref EntityLocation lookup = ref _world.EntityTable.UnsafeIndexNoResize(concrete.EntityID);
-
+            if (lookup.Archetype is null /*the user created the entity, then deleted it before playback*/)
+                continue;
             if (createCommand.BufferLength > 0)
             {
                 _world.RemoveEntityPlaceholder(ref lookup);
@@ -455,16 +465,22 @@ public class CommandBuffer
         return hasItems;
     }
 
+    private void AssertEntityFromWorld(Entity e)
+    {
+        if (e.WorldID != _worldId)
+            Throw_EntityFromDifferentWorld();
+    }
+
     private void AssertCreatingEntity()
     {
         if (_lastCreateEntityComponentsBufferIndex < 0)
         {
-            Throw();
+            Throw_NoEntityBeingCreated();
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static void Throw() => throw new InvalidOperationException("Use CommandBuffer.Entity() to begin creating an entity!");
     }
+    static void Throw_NoEntityBeingCreated() => throw new InvalidOperationException("Use CommandBuffer.Entity() to begin creating an entity!");
+    static void Throw_EntityFromDifferentWorld() => throw new InvalidOperationException("This entity belongs to another world!");
 
     private void SetIsActive()
     {

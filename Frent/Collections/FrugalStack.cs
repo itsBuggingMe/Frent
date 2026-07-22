@@ -1,9 +1,10 @@
 ﻿using Frent.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Frent.Collections;
 
-internal struct FrugalStack<T>()
+internal struct FrugalStack<T>() where T : notnull
 {
     private T[] _buffer = [];
     private int _nextIndex = 0;
@@ -23,15 +24,15 @@ internal struct FrugalStack<T>()
 
     private void ResizeAndPush(in T comp)
     {
-        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, _buffer.Length > 16 ? _buffer.Length << 1 : _buffer.Length + 2);
+        Array.Resize(ref _buffer, _buffer.Length > 16 ? _buffer.Length * 2 : _buffer.Length + 2);
         _buffer[_nextIndex++] = comp;
     }
 
-    public bool TryPop(out T value)
+    public bool TryPop([NotNullWhen(true)] out T? value)
     {
         if (_nextIndex == 0)
         {
-            value = default!;
+            value = default;
             return false;
         }
 

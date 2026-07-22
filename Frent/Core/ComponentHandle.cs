@@ -97,7 +97,7 @@ public readonly struct ComponentHandle : IEquatable<ComponentHandle>, IDisposabl
     /// Frees the memory associated with this component handle and marks it for reuse.
     /// </summary>
     /// <remarks>It is very easy to leak memory by improperly disposing of <see cref="ComponentHandle"/> instances. The handle does not check for double disposes.</remarks>
-    public void Dispose() => Component.ComponentTable[_componentType.RawIndex].Storage.Consume(_index);
+    public void Dispose() => Component.ComponentTable[_componentType.RawIndex].Storage?.Consume(_index);
     /// <summary>
     /// Checks if a <see cref="ComponentHandle"/> is equal to this handle and so points to the same component.
     /// </summary>

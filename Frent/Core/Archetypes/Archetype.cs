@@ -189,32 +189,6 @@ internal partial class Archetype
         deferredCreationArchetype.DeferredEntityCount = 0;
     }
 
-    internal Span<EntityIDOnly> CreateEntityLocations(int count, World world)
-    {
-        int newLen = NextComponentIndex + count;
-        EnsureCapacity(newLen);
-
-        Span<EntityIDOnly> entitySpan = _entities.AsSpan(NextComponentIndex, count);
-
-        int componentIndex = NextComponentIndex;
-
-        for (int i = 0; i < entitySpan.Length; i++)
-        {
-            ref EntityIDOnly archetypeEntity = ref entitySpan[i];
-
-            ref EntityLocation lookup = ref world.FindNewEntityLocation(out archetypeEntity.ID);
-
-            archetypeEntity.Version = lookup.Version;
-
-            lookup.Archetype = this;
-            lookup.Index = componentIndex++;
-            lookup.Flags = EntityFlags.None;
-        }
-
-        NextComponentIndex = componentIndex;
-
-        return entitySpan;
-    }
 
     private void Resize(int newLen)
     {
@@ -244,7 +218,7 @@ internal partial class Archetype
             return;
         }
 
-        FastStackArrayPool<EntityIDOnly>.ResizeArrayFromPool(ref _entities, count);
+        Array.Resize(ref _entities, count);
         var runners = Components;
         for (int i = 1; i < runners.Length; i++)
         {

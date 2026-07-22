@@ -80,15 +80,15 @@ internal struct EntityOnlyEvent()
     {
         if (_first == action)
         {
-            _first = null;
-            if (_invokationList.TryPop(out var v))
-                _first = v;
+            _first = _second;
+            if(_second is not null)
+            {
+                _invokationList.TryPop(out _second);
+            }
         }
         else if (_second == action)
         {
-            _second = null;
-            if (_invokationList.TryPop(out var v))
-                _second = v;
+            _invokationList.TryPop(out _second);
         }
         else
         {

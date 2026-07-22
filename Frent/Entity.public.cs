@@ -566,8 +566,9 @@ partial struct Entity
             if (w.Tagged.HasListeners)
                 w.Tagged.Invoke(this, tagID);
 
-            if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
-                w.EventLookup.GetValueRefOrNullRef(EntityIDOnly).Tag.Invoke(this, tagID); ;
+            ref EventRecord events = ref w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
+            if (!Unsafe.IsNullRef(ref events))
+                events.Tag.Invoke(this, tagID);
         }
 
         return true;

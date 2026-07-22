@@ -5,9 +5,14 @@ using System.Runtime.CompilerServices;
 
 namespace Frent.Buffers;
 
-internal class FastStackArrayPool<T> : ArrayPool<T>
+// <summary>
+// Small as in not much pooling but fast to get buffers.
+// </summary>
+// TODO: evaulate whether this is really needed/the memory allocation characteristics of actual games
+/*
+internal class SmallArrayPool<T> : ArrayPool<T>
 {
-    public static FastStackArrayPool<T> Instance { get; } = new();
+    public static SmallArrayPool<T> Instance { get; } = new();
 
     internal static void ResizeArrayFromPool(ref T[] arr, int len)
     {
@@ -17,7 +22,7 @@ internal class FastStackArrayPool<T> : ArrayPool<T>
         arr = finalArr;
     }
 
-    public FastStackArrayPool()
+    public SmallArrayPool()
     {
         //16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536 
         Gen2GcCallback.Gen2CollectionOccured += ClearBuckets;
@@ -64,4 +69,4 @@ internal class FastStackArrayPool<T> : ArrayPool<T>
     {
         Buckets.AsSpan().Clear();
     }
-}
+}*/

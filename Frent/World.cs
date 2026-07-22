@@ -28,12 +28,12 @@ namespace Frent;
  */
 
 /// <summary>
-/// A collection of entities that can be updated and queried.
+/// A collection of entities that can be updated and queried. Is not thread safe.
 /// </summary>
 public partial class World : IDisposable
 {
     #region Static Version Management
-    private static ushort _nextWorldID = 1;
+    private static int _nextWorldID = 1;
     #endregion
 
     //entity ID -> entity metadata
@@ -233,7 +233,7 @@ public partial class World : IDisposable
     {
         _uniformProvider = uniformProvider ?? NullUniformProvider.Instance;
         UpdateDeferredCreationEntities = updateDeferredCreationEntities;
-        WorldID = _nextWorldID++;
+        WorldID = (ushort)Interlocked.Increment(ref _nextWorldID);
 
         GlobalWorldTables.Worlds[WorldID] = this;
 

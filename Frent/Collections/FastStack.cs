@@ -39,7 +39,7 @@ internal struct FastStack<T>(int initalComponents) : IEnumerable<T>
 
     private void ResizeAndPush(in T comp)
     {
-        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, _buffer.Length * 2);
+        Array.Resize(ref _buffer, _buffer.Length * 2);
         _buffer[_nextIndex++] = comp;
     }
 

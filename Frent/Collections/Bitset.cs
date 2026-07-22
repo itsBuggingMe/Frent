@@ -131,7 +131,10 @@ internal struct Bitset
         Vector256<ulong> self = Vector256.LoadUnsafe(ref sparseBits._0);
         Vector256<ulong> includeVec = Vector256.LoadUnsafe(ref include._0);
 
-        if (Avx.TestC(self, includeVec))
+
+        if (Avx.IsSupported ?
+            Avx.TestC(self, includeVec) :
+            (self & includeVec) == includeVec)
             return;
 
         FrentExceptions.Throw_NullReferenceException();

@@ -44,6 +44,22 @@ internal class SerializationTests
     }
 
     [Test]
+    public void TestSerializationWithTagsOnly()
+    {
+        using World world = new();
+        var entity = world.Create();
+        entity.Tag<Tag>();
+
+        string json = JsonWorldSerializer.Default.Serialize(world);
+        using World deserialized = JsonWorldSerializer.Default.Deserialize(json);
+
+        var query = deserialized.CreateQuery().Build();
+        Entity deserializedEntity = GetFirstEntity(query);
+        That(deserializedEntity.Tagged<Tag>(), Is.True);
+    }
+
+
+    [Test]
     public void TestCustomSerializerOptions()
     {
         var options = new JsonSerializerOptions(JsonSerializerOptions.Default)
@@ -75,8 +91,8 @@ internal class SerializationTests
         using World deserialized = JsonWorldSerializer.Default.Deserialize(json);
 
         var allQuery = deserialized.CreateQuery().Build();
-        var intQuery = deserialized.CreateQuery().With<int>().Build();
-        var stringQuery = deserialized.CreateQuery().With<string>().Build();
+        var intQuery = deserialized.Query<int>();
+        var stringQuery = deserialized.Query<string>();
 
         That(CountEntities(allQuery), Is.EqualTo(1));
         That(CountEntities(intQuery), Is.EqualTo(1));
@@ -168,9 +184,7 @@ internal class SerializationTests
         string json = JsonWorldSerializer.Default.Serialize(world);
         using World deserialized = JsonWorldSerializer.Default.Deserialize(json);
 
-        Entity deserializedEntity = GetFirstEntity(deserialized.CreateQuery()
-            .With<SerializableSparseComponent>()
-            .Build());
+        Entity deserializedEntity = GetFirstEntity(deserialized.Query<SerializableSparseComponent>());
 
         That(deserializedEntity.Get<SerializableSparseComponent>().Value, Is.EqualTo(37));
     }
@@ -190,6 +204,20 @@ internal class SerializationTests
 
         That(SerializableInitComponent.InitCount, Is.Zero);
         That(SerializableSparseInitComponent.InitCount, Is.Zero);
+    }
+
+    [Test]
+    public void InheritedComponentType_KeepsType_RoundTrip()
+    {
+        using World world = new();
+        world.Create((BaseClass)new ChildClass());
+
+        string json = JsonWorldSerializer.Default.Serialize(world);
+
+        using World deserialized = JsonWorldSerializer.Default.Deserialize(json);
+
+        Entity deserializedEntity = GetFirstEntity(deserialized.Query<BaseClass>());
+        That(deserializedEntity.Get<BaseClass>() is ChildClass);
     }
 
     [Test]

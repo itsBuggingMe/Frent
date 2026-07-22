@@ -26,7 +26,7 @@ internal struct Table<T>(int size)
 
     private ref T ResizeGet(int index)
     {
-        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, (int)BitOperations.RoundUpToPowerOf2((uint)(index + 1)));
+        Array.Resize(ref _buffer, (int)BitOperations.RoundUpToPowerOf2((uint)(index + 1)));
         return ref _buffer.UnsafeArrayIndex(index);
     }
 
@@ -39,7 +39,7 @@ internal struct Table<T>(int size)
     {
         if (_buffer.Length >= size)
             return;
-        FastStackArrayPool<T>.ResizeArrayFromPool(ref _buffer, size);
+        Array.Resize(ref _buffer, size);
     }
 
     public Span<T> AsSpan() => _buffer.AsSpan();
