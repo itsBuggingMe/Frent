@@ -37,6 +37,52 @@ internal struct LinkTableEntry
     // CountOrEntityIDs[1] is used as a bloom filter where entity id is directly used as a fast path for error checking
     public InlineArray2<int> CountOrEntityIDs;
 
+    public bool RemoveLink(int target)
+    {
+        if (ArchetypesOrArrays[0] is null)
+            return false;
+
+        if (ArchetypesOrArrays[1] is null)
+        {
+            if (CountOrEntityIDs[0] == target)
+            {
+                //CountOrEntityIDs[0] = default;
+                ArchetypesOrArrays[0] = default;
+                return true;
+            }
+
+            return false;
+        }
+
+        if (ArchetypesOrArrays[0] is Archetype)
+        {
+            return RemoveElement(target, InlineArrayHelper.AsSpan(ref ArchetypesOrArrays), InlineArrayHelper.AsSpan(ref CountOrEntityIDs));
+        }
+
+        int count = CountOrEntityIDs[0];
+        bool removed = RemoveElement(
+            target,
+            UnsafeExtensions.UnsafeCast<Archetype[]>(ArchetypesOrArrays[0]!).AsSpan(0, count),
+            UnsafeExtensions.UnsafeCast<int[]>(ArchetypesOrArrays[1]!).AsSpan(0, count));
+
+        if (removed)
+            CountOrEntityIDs[0]--;
+
+        return removed;
+    }
+
+    private static bool RemoveElement<T>(int target, Span<T> archetypes, Span<int> ids)
+    {
+        int index = ids.IndexOf(target);
+        if (index == -1)
+            return false;
+
+        ids[index] = ids[^1];
+        archetypes[index] = archetypes[^1];
+        archetypes[^1] = default!;
+
+        return true;
+    }
 
     /// <summary>
     /// True if there is not an existing duplicate, false if nothing changed since there was a dupe

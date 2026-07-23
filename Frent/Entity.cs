@@ -70,16 +70,17 @@ public partial struct Entity : IEquatable<Entity>
     #region Internal Helpers
 
     #region IsAlive
-    internal readonly bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
+    internal readonly ref EntityLocation InternalIsAlive(out World world, out bool exists)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         if (world is null)
         {
-            entityLocation = default;
-            return false;
+            exists = false;
+            return ref Unsafe.NullRef<EntityLocation>();
         }
-        entityLocation = world.EntityTable.UnsafeIndexNoResize(EntityID);
-        return entityLocation.Version == EntityVersion;
+        ref EntityLocation entityLocation = ref world.EntityTable.UnsafeIndexNoResize(EntityID);
+        exists = entityLocation.Version == EntityVersion;
+        return ref entityLocation;
     }
 
     /// <exception cref="InvalidOperationException">This <see cref="Entity"/> has been deleted.</exception>
@@ -108,6 +109,9 @@ public partial struct Entity : IEquatable<Entity>
         int sourceLinkId = sourceArchetype.GetExistingOrCreateLinkID(world, eloc.Index);
         int targetLinkId = targetArchetype.GetExistingOrCreateLinkID(world, targetEloc.Index);
 
+        eloc.Flags |= EntityFlags.HasHadOutgoingLinks;
+        targetEloc.Flags |= EntityFlags.HasHadIncomingLinks;
+
         // record the outgoing link on this entity: this -> target
         ref LinkTableEntry outgoing = ref MemoryHelpers.GetValueOrResize(ref links.OutgoingLinks, sourceLinkId);
         if (!outgoing.AddLink(targetArchetype, target))
@@ -120,11 +124,42 @@ public partial struct Entity : IEquatable<Entity>
         return true;
     }
 
+    /// <summary>
+    /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
+    /// </summary>
+    private readonly bool UnlinkCore(LinkID linkKind, ref EntityLocation eloc, int target, ref EntityLocation targetEloc, World world)
+    {
+        if (!eloc.HasFlag(EntityFlags.HasHadOutgoingLinks))
+            return false;
+
+        ref LinkTable links = ref world.WorldLinkTable.UnsafeArrayIndex(linkKind.RawValue);
+
+        Archetype sourceArchetype = eloc.Archetype;
+        Archetype targetArchetype = targetEloc.Archetype;
+
+        int sourceLinkId = sourceArchetype.GetExistingOrCreateLinkID(world, eloc.Index);
+        int targetLinkId = targetArchetype.GetExistingOrCreateLinkID(world, targetEloc.Index);
+
+        eloc.Flags |= EntityFlags.HasHadOutgoingLinks;
+        targetEloc.Flags |= EntityFlags.HasHadIncomingLinks;
+
+        // remove the outgoing link on this entity: this -> target
+        ref LinkTableEntry outgoing = ref MemoryHelpers.GetValueOrResize(ref links.OutgoingLinks, sourceLinkId);
+        if (!outgoing.RemoveLink(target))
+            return false;
+
+        // remove the matching incoming link on the target: target <- this
+        ref LinkTableEntry incoming = ref MemoryHelpers.GetValueOrResize(ref links.IncomingLinks, targetLinkId);
+        incoming.RemoveLink(EntityID);
+
+        return true;
+    }
+
     [DoesNotReturn]
     private static void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
-    internal string DebuggerDisplayString => IsNull ? "Null" : InternalIsAlive(out _, out _) ? $"World: {WorldID}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
+    internal string DebuggerDisplayString => IsNull ? "Null" : IsAlive ? $"World: {WorldID}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
     internal const string EntityIsDeadMessage = "Entity is dead.";
     internal const string DoesNotHaveTagMessage = "This entity does not have this tag";
 
@@ -138,7 +173,7 @@ public partial struct Entity : IEquatable<Entity>
         {
             get
             {
-                if (!target.InternalIsAlive(out World? world, out var eloc))
+                if (!target.IsAlive)
                     return [];
 
                 Dictionary<Type, object> components = [];
@@ -156,7 +191,8 @@ public partial struct Entity : IEquatable<Entity>
 
     private readonly ImmutableArray<ComponentID> AllocateComponentTypeArray()
     {
-        if (!InternalIsAlive(out var world, out var location))
+        ref EntityLocation location = ref InternalIsAlive(out _, out bool alive);
+        if (!alive)
             Throw_EntityIsDead();
         if (!location.HasFlag(EntityFlags.HasHadSparseComponents))
             return location.Archetype.ArchetypeTypeArray;
@@ -196,7 +232,8 @@ public partial struct Entity : IEquatable<Entity>
 
         internal EntityComponentIDEnumerator(Entity entity)
         {
-            if (!entity.InternalIsAlive(out World? world, out EntityLocation entityLocation))
+            ref EntityLocation entityLocation = ref entity.InternalIsAlive(out World world, out bool alive);
+            if (!alive)
                 Throw_EntityIsDead();
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
@@ -236,7 +273,7 @@ public partial struct Entity : IEquatable<Entity>
 
             int? found = _bitset.TryFindIndexOfBitGreaterThanOrEqualTo(_index + 1);
 
-            if (found is { } x)
+            if (found is int x)
             {
                 _index = x;
                 _current = Component.ComponentTableBySparseIndex[_index].ComponentID;

@@ -101,6 +101,10 @@ public partial class World : IDisposable
     internal Event<ComponentID> ComponentRemovedEvent = new Event<ComponentID>();
     internal TagEvent Tagged = new TagEvent();
     internal TagEvent Detached = new TagEvent();
+    internal LinkEvent IncomingLinkedEvent = new LinkEvent();
+    internal LinkEvent OutgoingLinkedEvent = new LinkEvent();
+    internal LinkEvent IncomingUnlinkedEvent = new LinkEvent();
+    internal LinkEvent OutgoingUnlinkedEvent = new LinkEvent();
 
     //these lookups exists for programmical api optimization
     //normal <T1, T2...> methods use a shared global static cache
@@ -210,6 +214,42 @@ public partial class World : IDisposable
     {
         add => AddEvent(ref Detached, value, EntityFlags.Detach);
         remove => RemoveEvent(ref Detached, value, EntityFlags.Detach);
+    }
+
+    /// <summary>
+    /// Invoked whenever an entity becomes the target of a link.
+    /// </summary>
+    public event Action<Entity, LinkID> IncomingLinked
+    {
+        add => AddEvent(ref IncomingLinkedEvent, value, EntityFlags.OnIncomingLinked);
+        remove => RemoveEvent(ref IncomingLinkedEvent, value, EntityFlags.OnIncomingLinked);
+    }
+
+    /// <summary>
+    /// Invoked whenever an entity becomes the source of a link.
+    /// </summary>
+    public event Action<Entity, LinkID> OutgoingLinked
+    {
+        add => AddEvent(ref OutgoingLinkedEvent, value, EntityFlags.OnOutgoingLinked);
+        remove => RemoveEvent(ref OutgoingLinkedEvent, value, EntityFlags.OnOutgoingLinked);
+    }
+
+    /// <summary>
+    /// Invoked whenever an incoming link is removed from an entity.
+    /// </summary>
+    public event Action<Entity, LinkID> IncomingUnlinked
+    {
+        add => AddEvent(ref IncomingUnlinkedEvent, value, EntityFlags.OnIncomingUnlinked);
+        remove => RemoveEvent(ref IncomingUnlinkedEvent, value, EntityFlags.OnIncomingUnlinked);
+    }
+
+    /// <summary>
+    /// Invoked whenever an outgoing link is removed from an entity.
+    /// </summary>
+    public event Action<Entity, LinkID> OutgoingUnlinked
+    {
+        add => AddEvent(ref OutgoingUnlinkedEvent, value, EntityFlags.OnOutgoingUnlinked);
+        remove => RemoveEvent(ref OutgoingUnlinkedEvent, value, EntityFlags.OnOutgoingUnlinked);
     }
 
     private void AddEvent<T>(ref Event<T> @event, Action<Entity, T> action, EntityFlags flag)

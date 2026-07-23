@@ -78,12 +78,16 @@ internal enum EntityFlags : ushort
 
     WorldCreate = 1 << 7,
 
-    Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate,
+    Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate
+        | OnIncomingLinked | OnOutgoingLinked | OnIncomingUnlinked | OnOutgoingUnlinked,
 
     HasHadSparseComponents = 1 << 8,
 
-    HasWorldCommandBufferRemove = 1 << 9,
-    HasWorldCommandBufferAdd = 1 << 10,
-    HasWorldCommandBufferDelete = 1 << 11,
+    HasHadIncomingLinks = 1 << 9,
+    HasHadOutgoingLinks = 1 << 10,
 
+    OnIncomingLinked = 1 << 11,
+    OnOutgoingLinked = 1 << 12,
+    OnIncomingUnlinked = 1 << 13,
+    OnOutgoingUnlinked = 1 << 14,
 }

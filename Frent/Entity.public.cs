@@ -54,7 +54,8 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public readonly bool TryHas(ComponentID componentID)
     {
-        if (InternalIsAlive(out World? world, out EntityLocation entityLocation))
+        ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool exists);
+        if (exists)
         {
             if (componentID.IsSparseComponent)
             {
@@ -76,7 +77,8 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity is alive and has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public readonly bool TryHas<T>()
     {
-        if (InternalIsAlive(out World? world, out EntityLocation entityLocation))
+        ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool exists);
+        if (exists)
         {
             if (Component<T>.IsSparseComponent)
             {
@@ -211,7 +213,8 @@ partial struct Entity
     /// <returns><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public readonly bool TryGet<T>(out Ref<T> value)
     {
-        if (!InternalIsAlive(out var world, out var entityLocation))
+        ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool alive);
+        if (!alive)
             goto doesntExist;
 
         if (Component<T>.IsSparseComponent)
@@ -533,13 +536,41 @@ partial struct Entity
 
     public bool TryLink(LinkID linkKind, Entity target)
     {
-        if (!InternalIsAlive(out World? world, out EntityLocation eloc))
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
+        if (!aliveThis)
             return false;
-        if (!target.InternalIsAlive(out World? otherWorld, out EntityLocation targetEloc))
+        ref EntityLocation targetEloc = ref target.InternalIsAlive(out World otherWorld, out bool aliveTarget);
+        if (!aliveTarget)
             return false;
         if (otherWorld != world)
             return false;
         return LinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world);
+    }
+
+    public void Unlink<T>(Entity target) => Unlink(Core.Link<T>.ID, target);
+    public bool TryUnlink<T>(Entity target) => TryUnlink(Core.Link<T>.ID, target);
+
+    public void Unlink(LinkID linkKind, Entity target)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
+        if (otherWorld != world)
+            FrentExceptions.Throw_InvalidOperationException("This entity belongs to another world");
+        if (!UnlinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world)) // TODO: improve exceptions globally
+            FrentExceptions.Throw_InvalidOperationException("Link does not exist");
+    }
+
+    public bool TryUnlink(LinkID linkKind, Entity target)
+    {
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
+        if (!aliveThis)
+            return false;
+        ref EntityLocation targetEloc = ref target.InternalIsAlive(out World otherWorld, out bool aliveTarget);
+        if (!aliveTarget)
+            return false;
+        if (otherWorld != world)
+            return false;
+        return UnlinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world);
     }
 
     #endregion
@@ -761,7 +792,8 @@ partial struct Entity
         set { /*the set is just to enable the += syntax*/ }
         get
         {
-            if (!InternalIsAlive(out var world, out _))
+            InternalIsAlive(out World world, out bool alive);
+            if (!alive)
                 return null;
             world.EntityTable[EntityID].Flags |= EntityFlags.AddGenericComp;
             return world.EventLookup.GetOrAddNew(EntityIDOnly).Add.GenericEvent ??= new();
@@ -776,7 +808,8 @@ partial struct Entity
         set { /*the set is just to enable the += syntax*/ }
         get
         {
-            if (!InternalIsAlive(out var world, out _))
+            InternalIsAlive(out World world, out bool alive);
+            if (!alive)
                 return null;
             world.EntityTable[EntityID].Flags |= EntityFlags.RemoveGenericComp;
             return world.EventLookup.GetOrAddNew(EntityIDOnly).Remove.GenericEvent ??= new();
@@ -801,9 +834,49 @@ partial struct Entity
         remove => UnsubscribeEvent(value, EntityFlags.Detach);
     }
 
+    /// <summary>
+    /// Raised when this entity becomes the target of a link
+    /// </summary>
+    public readonly event Action<Entity, LinkID> OnIncomingLinked
+    {
+        add => InitalizeEventRecord(value, EntityFlags.OnIncomingLinked);
+        remove => UnsubscribeEvent(value, EntityFlags.OnIncomingLinked);
+    }
+
+    /// <summary>
+    /// Raised when this entity becomes the source of a link
+    /// </summary>
+    public readonly event Action<Entity, LinkID> OnOutgoingLinked
+    {
+        add => InitalizeEventRecord(value, EntityFlags.OnOutgoingLinked);
+        remove => UnsubscribeEvent(value, EntityFlags.OnOutgoingLinked);
+    }
+
+    /// <summary>
+    /// Raised when an incoming link to this entity is removed
+    /// </summary>
+    public readonly event Action<Entity, LinkID> OnIncomingUnlinked
+    {
+        add => InitalizeEventRecord(value, EntityFlags.OnIncomingUnlinked);
+        remove => UnsubscribeEvent(value, EntityFlags.OnIncomingUnlinked);
+    }
+
+    /// <summary>
+    /// Raised when an outgoing link from this entity is removed
+    /// </summary>
+    public readonly event Action<Entity, LinkID> OnOutgoingUnlinked
+    {
+        add => InitalizeEventRecord(value, EntityFlags.OnOutgoingUnlinked);
+        remove => UnsubscribeEvent(value, EntityFlags.OnOutgoingUnlinked);
+    }
+
     private readonly void UnsubscribeEvent(object value, EntityFlags flag)
     {
-        if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+        if (value is null)
+            return;
+
+        ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool alive);
+        if (!alive)
             return;
 
         ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, flag, out bool exists);
@@ -834,6 +907,22 @@ partial struct Entity
                     events!.Delete.Remove((Action<Entity>)value);
                     removeFlags = !events.Delete.Any;
                     break;
+                case EntityFlags.OnIncomingLinked:
+                    events!.IncomingLinked.Remove((Action<Entity, LinkID>)value);
+                    removeFlags = !events.IncomingLinked.HasListeners;
+                    break;
+                case EntityFlags.OnOutgoingLinked:
+                    events!.OutgoingLinked.Remove((Action<Entity, LinkID>)value);
+                    removeFlags = !events.OutgoingLinked.HasListeners;
+                    break;
+                case EntityFlags.OnIncomingUnlinked:
+                    events!.IncomingUnlinked.Remove((Action<Entity, LinkID>)value);
+                    removeFlags = !events.IncomingUnlinked.HasListeners;
+                    break;
+                case EntityFlags.OnOutgoingUnlinked:
+                    events!.OutgoingUnlinked.Remove((Action<Entity, LinkID>)value);
+                    removeFlags = !events.OutgoingUnlinked.HasListeners;
+                    break;
             }
 
             if (removeFlags)
@@ -843,7 +932,11 @@ partial struct Entity
 
     private readonly void InitalizeEventRecord(object @delegate, EntityFlags flag, bool isGenericEvent = false)
     {
-        if (@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+        if (@delegate is null)
+            return;
+
+        InternalIsAlive(out World world, out bool alive);
+        if (!alive)
             return;
 
         ref var record = ref world.EventLookup.GetValueRefOrAddDefault(EntityIDOnly, out bool exists);
@@ -873,6 +966,18 @@ partial struct Entity
                 break;
             case EntityFlags.OnDelete:
                 record.Delete.Push((Action<Entity>)@delegate);
+                break;
+            case EntityFlags.OnIncomingLinked:
+                record.IncomingLinked.Add((Action<Entity, LinkID>)@delegate);
+                break;
+            case EntityFlags.OnOutgoingLinked:
+                record.OutgoingLinked.Add((Action<Entity, LinkID>)@delegate);
+                break;
+            case EntityFlags.OnIncomingUnlinked:
+                record.IncomingUnlinked.Add((Action<Entity, LinkID>)@delegate);
+                break;
+            case EntityFlags.OnOutgoingUnlinked:
+                record.OutgoingUnlinked.Add((Action<Entity, LinkID>)@delegate);
                 break;
         }
     }
@@ -907,7 +1012,14 @@ partial struct Entity
     /// Checks to see if this <see cref="Entity"/> is still alive
     /// </summary>
     /// <returns><see langword="true"/> if this entity is still alive (not deleted), otherwise <see langword="false"/></returns>
-    public readonly bool IsAlive => InternalIsAlive(out _, out _);
+    public readonly bool IsAlive
+    {
+        get
+        {
+            InternalIsAlive(out _, out bool alive);
+            return alive;
+        }
+    }
 
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> instance is the null entity: <see langword="default"/>(<see cref="Entity"/>)
