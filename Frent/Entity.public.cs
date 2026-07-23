@@ -211,8 +211,30 @@ partial struct Entity
     /// <returns><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public readonly bool TryGet<T>(out Ref<T> value)
     {
-        value = TryGetCore<T>(out bool exists);
-        return exists;
+        if (!InternalIsAlive(out var world, out var entityLocation))
+            goto doesntExist;
+
+        if (Component<T>.IsSparseComponent)
+        {
+            value = UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex))
+                .TryGet(EntityID, out bool exists);
+            return exists;
+        }
+
+        int compIndex = entityLocation.Archetype.GetComponentIndex<T>();
+
+        if (compIndex == 0)
+            goto doesntExist;
+
+        T[] storage = UnsafeExtensions.UnsafeCast<T[]>(
+            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex).Buffer);
+
+        value = new Ref<T>(storage, entityLocation.Index);
+        return true;
+
+    doesntExist:
+        value = default;
+        return false;
     }
 
     /// <summary>
@@ -493,6 +515,33 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="ComponentNotFoundException"><see cref="Entity"/> does not have component of type <paramref name="type"/>.</exception>
     public readonly void Remove(Type type) => Remove(Component.GetComponentID(type));
+    #endregion
+
+    #region Link
+    public void Link<T>(Entity target) => Link(Core.Link<T>.ID, target);
+    public bool TryLink<T>(Entity target) => TryLink(Core.Link<T>.ID, target);
+
+    public void Link(LinkID linkKind, Entity target)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
+        if (otherWorld != world)
+            FrentExceptions.Throw_InvalidOperationException("This entity belongs to another world");
+        if (!LinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world)) // TODO: improve exceptions globally
+            FrentExceptions.Throw_InvalidOperationException("Link already exists");
+    }
+
+    public bool TryLink(LinkID linkKind, Entity target)
+    {
+        if (!InternalIsAlive(out World? world, out EntityLocation eloc))
+            return false;
+        if (!target.InternalIsAlive(out World? otherWorld, out EntityLocation targetEloc))
+            return false;
+        if (otherWorld != world)
+            return false;
+        return LinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world);
+    }
+
     #endregion
 
     #region Tag

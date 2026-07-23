@@ -42,6 +42,7 @@ public partial class World : IDisposable
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal ComponentSparseSetBase[] WorldSparseSetTable;
+    internal LinkTable[] WorldLinkTable;
 
     internal struct WorldArchetypeTableItem(Archetype archetype, Archetype temp)
     {
@@ -239,6 +240,7 @@ public partial class World : IDisposable
 
         WorldArchetypeTable = new WorldArchetypeTableItem[GlobalWorldTables.ComponentTagLocationTable.Length];
         WorldSparseSetTable = new ComponentSparseSetBase[Component.ComponentTableBySparseIndex.Count];
+        WorldLinkTable = new LinkTable[Link.LinkTableBufferSize];
 
         for (int i = 1; i < WorldSparseSetTable.Length; i++)
             WorldSparseSetTable[i] = Component.ComponentTableBySparseIndex[i].Factory.CreateSparseSet();
@@ -401,6 +403,8 @@ public partial class World : IDisposable
 
         //World world = GlobalWorldTables.Worlds[WorldID];
     }
+
+    internal void GrowLinkTable(int newSize) => Array.Resize(ref WorldLinkTable, newSize);
 
     internal void EnterDisallowState()
     {
@@ -710,6 +714,32 @@ public partial class World : IDisposable
         }
 
     }
+
+    #region World Link IDs
+
+    // 0 is null link id
+    // this is different from LinkID
+    // LinkID is the type of the link
+    // this is an id assigned to an entity like EntityID
+    // that is used to get all link info
+    private int _nextLinkID = 1;
+    private FastStack<int> _recycledLinkIDs = FastStack<int>.Create(4);
+
+    internal int CreateLinkID()
+    {
+        if (_recycledLinkIDs.TryPop(out int recycled))
+            return recycled;
+        return _nextLinkID++;
+    }
+
+
+    internal void RecycleLinkID(int linkID)
+    {
+        if (linkID == 0)
+            return;
+        _recycledLinkIDs.Push(linkID);
+    }
+    #endregion
 
     internal void InvokeEntityCreated(Entity entity)
     {

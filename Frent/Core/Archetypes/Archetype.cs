@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 namespace Frent.Core.Archetypes;
 
 [DebuggerDisplay(AttributeHelpers.DebuggerDisplay)]
-internal partial class Archetype
+internal sealed partial class Archetype
 {
     internal int ComponentTypeCount => Components.Length - 1;//0 is null for hardware trap
     internal ArchetypeID ID => _archetypeID;
@@ -131,6 +131,12 @@ internal partial class Archetype
         writeStorage = deferredCreationArchetype.Components;
 
         return ref deferredCreationArchetype._entities.UnsafeArrayIndex(entityLocation.Index);
+    }
+
+    internal int GetExistingOrCreateLinkID(World world, int row)
+    {
+        ref int slot = ref MemoryHelpers.GetValueOrResize(ref _worldLinkIDs, row);
+        return slot != 0 ? slot : (slot = world.CreateLinkID());
     }
 
     internal void ResolveDeferredEntityCreations(World world, Archetype deferredCreationArchetype)

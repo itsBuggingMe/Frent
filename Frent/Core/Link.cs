@@ -35,6 +35,8 @@ public static class Link
 
     internal static FastStack<Type> LinkTable = FastStack<Type>.Create(4);
 
+    internal static int LinkTableBufferSize;
+
     private static int _nextLinkID = -1;
 
     //initalize default(LinkID) to point to void
@@ -63,6 +65,13 @@ public static class Link
             ExistingLinkIDs[type] = newID;
             ExistingLinkIDsByName[type.ToString()] = newID;
             LinkTable.Push(type);
+
+            if (newID.RawValue >= LinkTableBufferSize)
+            {
+                LinkTableBufferSize = Math.Max(LinkTableBufferSize << 1, 1);
+                foreach (var world in GlobalWorldTables.Worlds.AsSpan())
+                    world?.GrowLinkTable(LinkTableBufferSize);
+            }
 
             return newID;
         }

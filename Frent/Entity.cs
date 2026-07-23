@@ -95,31 +95,29 @@ public partial struct Entity : IEquatable<Entity>
 
     #endregion IsAlive
 
-    private readonly Ref<T> TryGetCore<T>(out bool exists)
+    /// <summary>
+    /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
+    /// </summary>
+    private readonly bool LinkCore(LinkID linkKind, ref EntityLocation eloc, int target, ref EntityLocation targetEloc, World world)
     {
-        if (!InternalIsAlive(out var world, out var entityLocation))
-            goto doesntExist;
+        ref LinkTable links = ref world.WorldLinkTable.UnsafeArrayIndex(linkKind.RawValue);
 
-        if (Component<T>.IsSparseComponent)
-        {
-            return UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex))
-                .TryGet(EntityID, out exists);
-        }
+        Archetype sourceArchetype = eloc.Archetype;
+        Archetype targetArchetype = targetEloc.Archetype;
 
-        int compIndex = entityLocation.Archetype.GetComponentIndex<T>();
+        int sourceLinkId = sourceArchetype.GetExistingOrCreateLinkID(world, eloc.Index);
+        int targetLinkId = targetArchetype.GetExistingOrCreateLinkID(world, targetEloc.Index);
 
-        if (compIndex == 0)
-            goto doesntExist;
+        // record the outgoing link on this entity: this -> target
+        ref LinkTableEntry outgoing = ref MemoryHelpers.GetValueOrResize(ref links.OutgoingLinks, sourceLinkId);
+        if (!outgoing.AddLink(targetArchetype, target))
+            return false;
 
-        exists = true;
-        T[] storage = UnsafeExtensions.UnsafeCast<T[]>(
-            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex).Buffer);
+        // record the matching incoming link on the target: target <- this
+        ref LinkTableEntry incoming = ref MemoryHelpers.GetValueOrResize(ref links.IncomingLinks, targetLinkId);
+        incoming.AddLink(sourceArchetype, EntityID);
 
-        return new Ref<T>(storage, entityLocation.Index);
-
-    doesntExist:
-        exists = false;
-        return default;
+        return true;
     }
 
     [DoesNotReturn]
