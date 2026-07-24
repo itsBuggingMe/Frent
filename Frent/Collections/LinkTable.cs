@@ -12,6 +12,16 @@ internal struct LinkTable()
     internal LinkTableEntry[] OutgoingLinks = [];
     internal LinkTableEntry[] IncomingLinks = [];
 
+    public readonly bool HasLinks(int worldLinkId, bool incoming)
+    {
+        LinkTableEntry[] entries = incoming ? IncomingLinks : OutgoingLinks;
+
+        if (!((uint)worldLinkId < (uint)entries.Length))
+            return false;
+
+        return entries[worldLinkId].Any;
+    }
+
     /// <summary>
     /// Gets the archetype and row of every entity on the other side of <paramref name="location"/>'s links of kind <paramref name="linkID"/>.
     /// </summary>
@@ -25,14 +35,14 @@ internal struct LinkTable()
             return;
 
         LinkTable[] worldLinkTable = world.WorldLinkTable;
-        if (!((uint)linkID.RawValue < (uint)worldLinkTable.Length))
+        if (!(linkID.RawValue < worldLinkTable.Length))
             return;
 
         ref LinkTable table = ref worldLinkTable.UnsafeArrayIndex(linkID.RawValue);
         LinkTableEntry[] entries = incoming ? table.IncomingLinks : table.OutgoingLinks;
 
-        // 0 is the null world link id - the entity was never linked while at this archetype and row
         int worldLinkId = location.Archetype.GetExistingLinkID(location.Index);
+
         if (worldLinkId == 0 || !((uint)worldLinkId < (uint)entries.Length))
             return;
 
@@ -50,6 +60,8 @@ internal struct LinkTableEntry
     // CountOrEntityIDs[0] is count of entities in the arrays above
     // CountOrEntityIDs[1] is used as a bloom filter where entity rows is directly used as a fast path for error checking
     public InlineArray2<int> CountOrEntityRows;
+
+    public readonly bool Any => ArchetypesOrArrays[0] is not null;
 
     public static void GetLinks(ref LinkTableEntry entry, out Span<Archetype> archetypes, out Span<int> rows)
     {

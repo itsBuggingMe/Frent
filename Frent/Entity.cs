@@ -146,7 +146,8 @@ public partial struct Entity : IEquatable<Entity>
 
         // we know link id exists since HasHadOutgoingLinks is true
         int sourceLinkId = sourceArchetype.GetExistingLinkID(eloc.Index);
-        int targetLinkId = targetArchetype.GetExistingLinkID(targetEloc.Index);
+        int targetLinkId = targetEloc.HasFlag(EntityFlags.HasHadLinks) ?
+            targetArchetype.GetExistingLinkID(targetEloc.Index) : 0;
 
         LinkTableEntry[] outgoingLinks = links.OutgoingLinks;
         if (!((uint)sourceLinkId < (uint)outgoingLinks.Length))
@@ -167,6 +168,22 @@ public partial struct Entity : IEquatable<Entity>
         InvokeLinkEvents(world, target, targetFlags, linkKind, EntityFlags.OnIncomingUnlinked);
 
         return true;
+    }
+
+    /// <summary>
+    /// Assumes <paramref name="eloc"/> belongs to a live entity of <paramref name="world"/>.
+    /// </summary>
+    /// <remarks>
+    /// Counts exactly what enumeration would yield, so a link whose far end has since moved or died still counts.
+    /// </remarks>
+    private static bool HasLinkCore(World world, LinkID linkKind, ref EntityLocation eloc, bool incoming)
+    {
+        if (!eloc.HasFlag(incoming ? EntityFlags.HasHadIncomingLinks : EntityFlags.HasHadOutgoingLinks))
+            return false;
+
+        return world.WorldLinkTable
+            .UnsafeArrayIndex(linkKind.RawValue)
+            .HasLinks(eloc.Archetype.GetExistingLinkID(eloc.Index), incoming);
     }
 
     /// <summary>

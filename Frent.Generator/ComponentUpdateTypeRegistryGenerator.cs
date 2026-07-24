@@ -447,10 +447,20 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
     
     private static void AppendInitalizationMethodBody(CodeBuilder cb, in ComponentUpdateItemModel model)
     {
-        if(model.IsTag)
+        if (model.IsTag)
         {
             cb
                 .Append("global::Frent.Core.Tag.RegisterTag(typeof(")
+                .Append(model.FullName)
+                .AppendLine("));")
+                .AppendLine();
+        }
+
+
+        if (model.IsLink)
+        {
+            cb
+                .Append("global::Frent.Core.Link.RegisterLink(typeof(")
                 .Append(model.FullName)
                 .AppendLine("));")
                 .AppendLine();

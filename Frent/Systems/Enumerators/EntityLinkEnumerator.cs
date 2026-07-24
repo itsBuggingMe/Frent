@@ -91,7 +91,7 @@ public ref struct EntityLinkEnumerator<T>
             if (!LinkFilter.Has<T>(currentArchetype, _currentRow))
                 continue;
 
-            _current = currentArchetype.GetEntitySpan()[_currentRow].ToEntity(_world);
+            _current = currentArchetype.GetEntitySpan().UnsafeSpanIndex(_currentRow).ToEntity(_world);
 
 #if NETSTANDARD
             _c1Span = Component<T>.IsSparseComponent ?
@@ -108,28 +108,101 @@ public ref struct EntityLinkEnumerator<T>
 
         return false;
     }
+
+    /// <summary>
+    /// A wrapper over one side of an <see cref="Entity"/>'s links for enumeration with entities.
+    /// </summary>
+    public readonly struct Enumerable
+    {
+        private readonly Entity _entity;
+        private readonly LinkID _linkID;
+        private readonly bool _incoming;
+
+        internal Enumerable(Entity entity, LinkID linkID, bool incoming)
+        {
+            _entity = entity;
+            _linkID = linkID;
+            _incoming = incoming;
+        }
+
+        /// <summary>
+        /// Gets the enumerator over the linked entities.
+        /// </summary>
+        public EntityLinkEnumerator<T> GetEnumerator() => new(_entity, _linkID, _incoming);
+    }
 }
 
 /// <summary>
-/// A wrapper over one side of an <see cref="Entity"/>'s links for enumeration with entities.
+/// Enumerates every <see cref="Entity"/> on the far side of a link.
 /// </summary>
-/// <variadic />
-[Variadic(AttributeHelpers.LinkEnumerator)]
-public readonly struct EntityLinkEnumerable<T>
+/// <remarks>Unlike the generic overloads, no linked entity is skipped since there are no components to filter on.</remarks>
+public ref struct EntityLinkEnumerator
 {
-    private readonly Entity _entity;
-    private readonly LinkID _linkID;
-    private readonly bool _incoming;
+    private readonly World _world;
+    private Span<Archetype> _archetypes;
+    private Span<int> _rows;
+    private int _index;
 
-    internal EntityLinkEnumerable(Entity entity, LinkID linkID, bool incoming)
+    private Entity _current;
+
+    internal EntityLinkEnumerator(Entity entity, LinkID linkID, bool incoming)
     {
-        _entity = entity;
-        _linkID = linkID;
-        _incoming = incoming;
+        ref EntityLocation location = ref entity.AssertIsAlive(out World world);
+
+        _world = world;
+        _world.EnterDisallowState();
+
+        LinkTable.GetLinkedSlots(world, linkID, ref location, incoming, out _archetypes, out _rows);
+        _index = -1;
     }
 
     /// <summary>
-    /// Gets the enumerator over the linked entities.
+    /// The current linked <see cref="Entity"/>.
     /// </summary>
-    public EntityLinkEnumerator<T> GetEnumerator() => new(_entity, _linkID, _incoming);
+    public Entity Current => _current;
+
+    /// <summary>
+    /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
+    /// </summary>
+    public void Dispose()
+    {
+        _world.ExitDisallowState(null);
+    }
+
+    /// <summary>
+    /// Moves to the next linked <see cref="Entity"/> in this enumeration.
+    /// </summary>
+    /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
+    public bool MoveNext()
+    {
+        if (!((uint)++_index < (uint)_archetypes.Length))
+            return false;
+
+        Archetype currentArchetype = _archetypes.UnsafeSpanIndex(_index);
+        _current = currentArchetype.GetEntitySpan().UnsafeSpanIndex(_rows.UnsafeSpanIndex(_index)).ToEntity(_world);
+
+        return true;
+    }
+
+    /// <summary>
+    /// A wrapper over one side of an <see cref="Entity"/>'s links for enumeration of entities alone.
+    /// </summary>
+    public readonly struct Enumerable
+    {
+        private readonly Entity _entity;
+        private readonly LinkID _linkID;
+        private readonly bool _incoming;
+
+        internal Enumerable(Entity entity, LinkID linkID, bool incoming)
+        {
+            _entity = entity;
+            _linkID = linkID;
+            _incoming = incoming;
+        }
+
+        /// <summary>
+        /// Gets the enumerator over the linked entities.
+        /// </summary>
+        public EntityLinkEnumerator GetEnumerator() => new(_entity, _linkID, _incoming);
+    }
 }

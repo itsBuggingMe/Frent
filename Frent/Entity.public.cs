@@ -2,6 +2,7 @@
 using Frent.Core;
 using Frent.Core.Archetypes;
 using Frent.Core.Events;
+using Frent.Systems;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -527,7 +528,7 @@ partial struct Entity
     /// <typeparam name="T">The type of link to create.</typeparam>
     /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
     /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</exception>
-    public void Link<T>(Entity target) => Link(Core.Link<T>.ID, target);
+    public readonly void Link<T>(Entity target) => Link(Core.Link<T>.ID, target);
 
     /// <summary>
     /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of type <typeparamref name="T"/>, if it is possible to do so.
@@ -535,7 +536,7 @@ partial struct Entity
     /// <typeparam name="T">The type of link to create.</typeparam>
     /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
     /// <returns><see langword="true"/> when the link was created, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</returns>
-    public bool TryLink<T>(Entity target) => TryLink(Core.Link<T>.ID, target);
+    public readonly bool TryLink<T>(Entity target) => TryLink(Core.Link<T>.ID, target);
 
     /// <summary>
     /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>.
@@ -543,7 +544,7 @@ partial struct Entity
     /// <param name="linkKind">The kind of link to create.</param>
     /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
     /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</exception>
-    public void Link(LinkID linkKind, Entity target)
+    public readonly void Link(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out World world);
         ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
@@ -559,7 +560,7 @@ partial struct Entity
     /// <param name="linkKind">The kind of link to create.</param>
     /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
     /// <returns><see langword="true"/> when the link was created, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</returns>
-    public bool TryLink(LinkID linkKind, Entity target)
+    public readonly bool TryLink(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
         if (!aliveThis)
@@ -578,7 +579,7 @@ partial struct Entity
     /// <typeparam name="T">The type of link to remove.</typeparam>
     /// <param name="target">The <see cref="Entity"/> this one links to.</param>
     /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</exception>
-    public void Unlink<T>(Entity target) => Unlink(Core.Link<T>.ID, target);
+    public readonly void Unlink<T>(Entity target) => Unlink(Core.Link<T>.ID, target);
 
     /// <summary>
     /// Removes the link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
@@ -586,7 +587,7 @@ partial struct Entity
     /// <typeparam name="T">The type of link to remove.</typeparam>
     /// <param name="target">The <see cref="Entity"/> this one links to.</param>
     /// <returns><see langword="true"/> when the link was removed, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</returns>
-    public bool TryUnlink<T>(Entity target) => TryUnlink(Core.Link<T>.ID, target);
+    public readonly bool TryUnlink<T>(Entity target) => TryUnlink(Core.Link<T>.ID, target);
 
     /// <summary>
     /// Removes the link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>.
@@ -594,7 +595,7 @@ partial struct Entity
     /// <param name="linkKind">The kind of link to remove.</param>
     /// <param name="target">The <see cref="Entity"/> this one links to.</param>
     /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</exception>
-    public void Unlink(LinkID linkKind, Entity target)
+    public readonly void Unlink(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out World world);
         ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
@@ -610,7 +611,7 @@ partial struct Entity
     /// <param name="linkKind">The kind of link to remove.</param>
     /// <param name="target">The <see cref="Entity"/> this one links to.</param>
     /// <returns><see langword="true"/> when the link was removed, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</returns>
-    public bool TryUnlink(LinkID linkKind, Entity target)
+    public readonly bool TryUnlink(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
         if (!aliveThis)
@@ -623,6 +624,88 @@ partial struct Entity
         return UnlinkCore(linkKind, ref eloc, target, ref targetEloc, world);
     }
 
+    /// <summary>
+    /// Checks whether this <see cref="Entity"/> links to anything with a link of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <returns><see langword="true"/> when this <see cref="Entity"/> is the source of at least one link of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    /// <exception cref="InvalidOperationException">This <see cref="Entity"/> is dead.</exception>
+    public readonly bool HasOutgoingLink<T>() => HasOutgoingLink(Core.Link<T>.ID);
+
+    /// <summary>
+    /// Checks whether anything links to this <see cref="Entity"/> with a link of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <returns><see langword="true"/> when this <see cref="Entity"/> is the target of at least one link of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    /// <exception cref="InvalidOperationException">This <see cref="Entity"/> is dead.</exception>
+    public readonly bool HasIncomingLink<T>() => HasIncomingLink(Core.Link<T>.ID);
+
+    /// <inheritdoc cref="HasOutgoingLink{T}()"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    public readonly bool HasOutgoingLink(LinkID linkKind)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        return HasLinkCore(world, linkKind, ref eloc, false);
+    }
+
+    /// <inheritdoc cref="HasIncomingLink{T}()"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    public readonly bool HasIncomingLink(LinkID linkKind)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        return HasLinkCore(world, linkKind, ref eloc, true);
+    }
+
+    /// <summary>
+    /// Checks whether this <see cref="Entity"/> links to anything with a link of type <typeparamref name="T"/>, without throwing when dead.
+    /// </summary>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <returns><see langword="true"/> when this <see cref="Entity"/> is alive and is the source of at least one link of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    public readonly bool TryHasOutgoingLink<T>() => TryHasOutgoingLink(Core.Link<T>.ID);
+
+    /// <summary>
+    /// Checks whether anything links to this <see cref="Entity"/> with a link of type <typeparamref name="T"/>, without throwing when dead.
+    /// </summary>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <returns><see langword="true"/> when this <see cref="Entity"/> is alive and is the target of at least one link of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    public readonly bool TryHasIncomingLink<T>() => TryHasIncomingLink(Core.Link<T>.ID);
+
+    /// <inheritdoc cref="TryHasOutgoingLink{T}()"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    public readonly bool TryHasOutgoingLink(LinkID linkKind)
+    {
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
+        return alive && HasLinkCore(world, linkKind, ref eloc, false);
+    }
+
+    /// <inheritdoc cref="TryHasIncomingLink{T}()"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    public readonly bool TryHasIncomingLink(LinkID linkKind)
+    {
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
+        return alive && HasLinkCore(world, linkKind, ref eloc, true);
+    }
+
+    /// <summary>
+    /// Enumerates every <see cref="Entity"/> that links to this one with a link of type <typeparamref name="TLink"/>.
+    /// </summary>
+    /// <typeparam name="TLink">The type of link to enumerate.</typeparam>
+    /// <exception cref="InvalidOperationException">This <see cref="Entity"/> is dead.</exception>
+    public readonly EntityLinkEnumerator.Enumerable EnumerateIncomingWithEntities<TLink>() => EnumerateIncomingWithEntities(Core.Link<TLink>.ID);
+
+    /// <summary>
+    /// Enumerates every <see cref="Entity"/> this one links to with a link of type <typeparamref name="TLink"/>.
+    /// </summary>
+    /// <inheritdoc cref="EnumerateIncomingWithEntities{TLink}()"/>
+    public readonly EntityLinkEnumerator.Enumerable EnumerateOutgoingWithEntities<TLink>() => EnumerateOutgoingWithEntities(Core.Link<TLink>.ID);
+
+    /// <inheritdoc cref="EnumerateIncomingWithEntities{TLink}()"/>
+    /// <param name="linkID">The kind of link to enumerate.</param>
+    public readonly EntityLinkEnumerator.Enumerable EnumerateIncomingWithEntities(LinkID linkID) => new EntityLinkEnumerator.Enumerable(this, linkID, true);
+
+    /// <inheritdoc cref="EnumerateOutgoingWithEntities{TLink}()"/>
+    /// <param name="linkID">The kind of link to enumerate.</param>
+    public readonly EntityLinkEnumerator.Enumerable EnumerateOutgoingWithEntities(LinkID linkID) => new EntityLinkEnumerator.Enumerable(this, linkID, false);
     #endregion
 
     #region Tag

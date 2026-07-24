@@ -141,6 +141,7 @@ internal sealed partial class Archetype
 
     internal int GetExistingLinkID(int row)
     {
+        Debug.Assert((uint)row < (uint)_worldLinkIDs.Length);
         return _worldLinkIDs.UnsafeArrayIndex(row);
     }
 
@@ -302,6 +303,7 @@ internal sealed partial class Archetype
     end:
 
         CopyBitset(this, this, args.FromIndex, args.ToIndex);
+        MoveLinks(this, null, args.ToIndex, args.FromIndex, 0);
         return _entities.UnsafeArrayIndex(args.ToIndex) = _entities.UnsafeArrayIndex(args.FromIndex);
     }
 

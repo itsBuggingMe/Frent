@@ -261,14 +261,14 @@ partial struct Entity
     /// </summary>
     /// <inheritdoc cref="EnumerateIncoming{TLink, T}()"/>
     /// <variadic />
-    public readonly EntityLinkEnumerable<T> EnumerateIncomingWithEntities<TLink, T>() => EnumerateIncomingWithEntities<T>(Core.Link<TLink>.ID);
+    public readonly EntityLinkEnumerator<T>.Enumerable EnumerateIncomingWithEntities<TLink, T>() => EnumerateIncomingWithEntities<T>(Core.Link<TLink>.ID);
 
     /// <summary>
     /// Enumerates every <see cref="Entity"/> this one links to with a link of type <typeparamref name="TLink"/>, along with their components.
     /// </summary>
     /// <inheritdoc cref="EnumerateIncoming{TLink, T}()"/>
     /// <variadic />
-    public readonly EntityLinkEnumerable<T> EnumerateOutgoingWithEntities<TLink, T>() => EnumerateOutgoingWithEntities<T>(Core.Link<TLink>.ID);
+    public readonly EntityLinkEnumerator<T>.Enumerable EnumerateOutgoingWithEntities<TLink, T>() => EnumerateOutgoingWithEntities<T>(Core.Link<TLink>.ID);
 
     /// <inheritdoc cref="EnumerateIncoming{TLink, T}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
@@ -283,12 +283,12 @@ partial struct Entity
     /// <inheritdoc cref="EnumerateIncomingWithEntities{TLink, T}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
     /// <variadic />
-    public readonly EntityLinkEnumerable<T> EnumerateIncomingWithEntities<T>(LinkID linkID) => new EntityLinkEnumerable<T>(this, linkID, true);
+    public readonly EntityLinkEnumerator<T>.Enumerable EnumerateIncomingWithEntities<T>(LinkID linkID) => new EntityLinkEnumerator<T>.Enumerable(this, linkID, true);
 
     /// <inheritdoc cref="EnumerateOutgoingWithEntities{TLink, T}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
     /// <variadic />
-    public readonly EntityLinkEnumerable<T> EnumerateOutgoingWithEntities<T>(LinkID linkID) => new EntityLinkEnumerable<T>(this, linkID, false);
+    public readonly EntityLinkEnumerator<T>.Enumerable EnumerateOutgoingWithEntities<T>(LinkID linkID) => new EntityLinkEnumerator<T>.Enumerable(this, linkID, false);
 
     private static void InvokeComponentWorldEvents<T>(ref Event<ComponentID> @event, Entity entity)
     {

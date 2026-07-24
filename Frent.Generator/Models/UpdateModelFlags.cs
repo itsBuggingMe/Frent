@@ -16,4 +16,5 @@ internal enum UpdateModelFlags
     IsSparse = 1 << 7,
     IsTag = 1 << 8,
     IsComponent = 1 << 9,
+    IsLink = 1 << 10,
 }

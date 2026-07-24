@@ -210,6 +210,11 @@ to:
 LinkEnumerable<|T$, |>
 
 from:
+EntityLinkEnumerator<T>.Enumerable
+to:
+EntityLinkEnumerator<|T$, |>.Enumerable
+
+from:
 {TLink, T}()
 to:
 {TLink, |T$, |}()

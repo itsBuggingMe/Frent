@@ -27,4 +27,5 @@ internal record struct ComponentUpdateItemModel(
     public readonly bool IsSparse => HasFlag(UpdateModelFlags.IsSparse);
     public readonly bool IsComponent => HasFlag(UpdateModelFlags.IsComponent);
     public readonly bool IsTag => HasFlag(UpdateModelFlags.IsTag);
+    public readonly bool IsLink => HasFlag(UpdateModelFlags.IsLink);
 }

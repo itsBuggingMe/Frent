@@ -596,6 +596,276 @@ internal class LinkTests
 
     #endregion
 
+    #region HasLink
+
+    [Test]
+    public static void HasLink_IsDirectional()
+    {
+        using World world = new();
+        Entity parent = world.Create(new Struct1(1));
+        Entity child = world.Create(new Struct1(2));
+
+        child.Link<ChildOf>(parent);
+
+        That(child.HasOutgoingLink<ChildOf>(), Is.True);
+        That(child.HasIncomingLink<ChildOf>(), Is.False);
+
+        That(parent.HasIncomingLink<ChildOf>(), Is.True);
+        That(parent.HasOutgoingLink<ChildOf>(), Is.False);
+    }
+
+    [Test]
+    public static void HasLink_ByLinkID_MatchesGeneric()
+    {
+        using World world = new();
+        Entity parent = world.Create(new Struct1(1));
+        Entity child = world.Create(new Struct1(2));
+
+        child.Link<ChildOf>(parent);
+
+        That(child.HasOutgoingLink(Link<ChildOf>.ID), Is.True);
+        That(parent.HasIncomingLink(Link<ChildOf>.ID), Is.True);
+        That(child.HasIncomingLink(Link<ChildOf>.ID), Is.False);
+        That(parent.HasOutgoingLink(Link<ChildOf>.ID), Is.False);
+    }
+
+    [Test]
+    public static void HasLink_OtherLinkKinds_AreNotCounted()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+
+        a.Link<ChildOf>(b);
+
+        That(a.HasOutgoingLink<Owns>(), Is.False);
+        That(b.HasIncomingLink<Owns>(), Is.False);
+    }
+
+    [Test]
+    public static void HasLink_NeverLinked_IsFalse()
+    {
+        using World world = new();
+        Entity lonely = world.Create(new Struct1(1));
+
+        That(lonely.HasOutgoingLink<ChildOf>(), Is.False);
+        That(lonely.HasIncomingLink<ChildOf>(), Is.False);
+    }
+
+    [Test]
+    public static void HasLink_AfterUnlink_IsFalse()
+    {
+        using World world = new();
+        Entity parent = world.Create(new Struct1(1));
+        Entity child = world.Create(new Struct1(2));
+
+        child.Link<ChildOf>(parent);
+        child.Unlink<ChildOf>(parent);
+
+        That(child.HasOutgoingLink<ChildOf>(), Is.False);
+        That(parent.HasIncomingLink<ChildOf>(), Is.False);
+    }
+
+    [Test]
+    public static void HasLink_AfterUnlinkingOneOfMany_IsStillTrue()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        a.Link<ChildOf>(b);
+        a.Link<ChildOf>(c);
+        a.Unlink<ChildOf>(b);
+
+        That(a.HasOutgoingLink<ChildOf>(), Is.True);
+    }
+
+    [Test]
+    public static void HasLink_DoesNotFilterOnComponents()
+    {
+        using World world = new();
+        Entity source = world.Create(new Struct3(0));
+        // the target has no Struct1, so the Struct1 enumeration skips it
+        Entity target = world.Create(new Struct3(1));
+
+        source.Link<ChildOf>(target);
+
+        That(ValuesOutgoing<ChildOf>(source), Is.Empty);
+        That(source.HasOutgoingLink<ChildOf>(), Is.True);
+    }
+
+    [Test]
+    public static void HasLink_Dead_Throws()
+    {
+        using World world = new();
+        Entity dead = world.Create(new Struct1(1));
+        dead.Delete();
+
+        Throws<InvalidOperationException>(() => dead.HasOutgoingLink<ChildOf>());
+        Throws<InvalidOperationException>(() => dead.HasIncomingLink<ChildOf>());
+        Throws<InvalidOperationException>(() => dead.HasOutgoingLink(Link<ChildOf>.ID));
+        Throws<InvalidOperationException>(() => dead.HasIncomingLink(Link<ChildOf>.ID));
+    }
+
+    [Test]
+    public static void TryHasLink_Dead_IsFalse()
+    {
+        using World world = new();
+        Entity parent = world.Create(new Struct1(1));
+        Entity child = world.Create(new Struct1(2));
+        child.Link<ChildOf>(parent);
+        child.Delete();
+
+        That(child.TryHasOutgoingLink<ChildOf>(), Is.False);
+        That(child.TryHasIncomingLink<ChildOf>(), Is.False);
+        That(child.TryHasOutgoingLink(Link<ChildOf>.ID), Is.False);
+        That(child.TryHasIncomingLink(Link<ChildOf>.ID), Is.False);
+    }
+
+    [Test]
+    public static void TryHasLink_Null_IsFalse()
+    {
+        That(Entity.Null.TryHasOutgoingLink<ChildOf>(), Is.False);
+        That(Entity.Null.TryHasIncomingLink<ChildOf>(), Is.False);
+    }
+
+    [Test]
+    public static void TryHasLink_Alive_MatchesHasLink()
+    {
+        using World world = new();
+        Entity parent = world.Create(new Struct1(1));
+        Entity child = world.Create(new Struct1(2));
+
+        child.Link<ChildOf>(parent);
+
+        That(child.TryHasOutgoingLink<ChildOf>(), Is.EqualTo(child.HasOutgoingLink<ChildOf>()));
+        That(child.TryHasIncomingLink<ChildOf>(), Is.EqualTo(child.HasIncomingLink<ChildOf>()));
+        That(parent.TryHasIncomingLink<ChildOf>(), Is.EqualTo(parent.HasIncomingLink<ChildOf>()));
+        That(parent.TryHasOutgoingLink<ChildOf>(), Is.EqualTo(parent.HasOutgoingLink<ChildOf>()));
+    }
+
+    #endregion
+
+    #region Arity Zero Enumeration
+
+    private static List<Entity> AllOutgoing<TLink>(Entity entity)
+    {
+        List<Entity> entities = [];
+        foreach (Entity linked in entity.EnumerateOutgoingWithEntities<TLink>())
+            entities.Add(linked);
+        return entities;
+    }
+
+    private static List<Entity> AllIncoming<TLink>(Entity entity)
+    {
+        List<Entity> entities = [];
+        foreach (Entity linked in entity.EnumerateIncomingWithEntities<TLink>())
+            entities.Add(linked);
+        return entities;
+    }
+
+    [Test]
+    public static void EnumerateWithEntities_ArityZero_YieldsBothDirections()
+    {
+        using World world = new();
+        Entity parent = world.Create(new Struct1(1));
+        Entity childA = world.Create(new Struct1(2));
+        Entity childB = world.Create(new Struct1(3));
+
+        childA.Link<ChildOf>(parent);
+        childB.Link<ChildOf>(parent);
+
+        That(AllOutgoing<ChildOf>(childA), Is.EqualTo(new[] { parent }));
+        That(AllIncoming<ChildOf>(parent), Is.EquivalentTo(new[] { childA, childB }));
+        That(AllOutgoing<ChildOf>(parent), Is.Empty);
+        That(AllIncoming<ChildOf>(childA), Is.Empty);
+    }
+
+    [Test]
+    public static void EnumerateWithEntities_ArityZero_DoesNotSkipEntitiesMissingComponents()
+    {
+        using World world = new();
+        Entity source = world.Create(new Struct3(0));
+        Entity withStruct1 = world.Create(new Struct1(5));
+        Entity withoutStruct1 = world.Create(new Struct3(1));
+
+        source.Link<ChildOf>(withStruct1);
+        source.Link<ChildOf>(withoutStruct1);
+
+        // the Struct1 overload filters, the arity zero overload does not
+        That(EntitiesOutgoing<ChildOf>(source), Is.EqualTo(new[] { withStruct1 }));
+        That(AllOutgoing<ChildOf>(source), Is.EquivalentTo(new[] { withStruct1, withoutStruct1 }));
+    }
+
+    [Test]
+    public static void EnumerateWithEntities_ArityZero_NeverLinked_IsEmpty()
+    {
+        using World world = new();
+        Entity lonely = world.Create(new Struct1(1));
+
+        That(AllOutgoing<ChildOf>(lonely), Is.Empty);
+        That(AllIncoming<ChildOf>(lonely), Is.Empty);
+    }
+
+    [Test]
+    public static void EnumerateWithEntities_ArityZero_ByLinkID_MatchesGeneric()
+    {
+        using World world = new();
+        Entity parent = world.Create(new Struct1(1));
+        Entity child = world.Create(new Struct1(2));
+
+        child.Link<ChildOf>(parent);
+
+        List<Entity> byID = [];
+        foreach (Entity linked in child.EnumerateOutgoingWithEntities(Link<ChildOf>.ID))
+            byID.Add(linked);
+
+        That(byID, Is.EqualTo(AllOutgoing<ChildOf>(child)));
+    }
+
+    [Test]
+    public static void EnumerateWithEntities_ArityZero_DisallowsStructuralChanges()
+    {
+        using World world = new();
+        Entity parent = world.Create(new Struct1(1));
+        Entity child = world.Create(new Struct1(2));
+
+        child.Link<ChildOf>(parent);
+
+        foreach (Entity linked in parent.EnumerateIncomingWithEntities<ChildOf>())
+        {
+            That(world.AllowStructualChanges, Is.False);
+        }
+
+        That(world.AllowStructualChanges, Is.True);
+    }
+
+    [Test]
+    public static void EnumerateWithEntities_HigherArity_StillWorks()
+    {
+        using World world = new();
+        Entity source = world.Create(new Struct3(0));
+        Entity both = world.Create(new Struct1(7), new Struct2(8));
+        Entity onlyOne = world.Create(new Struct1(9));
+
+        source.Link<ChildOf>(both);
+        source.Link<ChildOf>(onlyOne);
+
+        List<Entity> entities = [];
+        List<int> values = [];
+        foreach ((Entity linked, var c1, var c2) in source.EnumerateOutgoingWithEntities<ChildOf, Struct1, Struct2>())
+        {
+            entities.Add(linked);
+            values.Add(c1.Value.Value + c2.Value.Value);
+        }
+
+        That(entities, Is.EqualTo(new[] { both }));
+        That(values, Is.EqualTo(new[] { 15 }));
+    }
+
+    #endregion
+
     #region World Events
 
     [Test]

@@ -42,7 +42,7 @@ public partial class World : IDisposable
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal ComponentSparseSetBase[] WorldSparseSetTable;
-    internal LinkTable[] WorldLinkTable;
+    internal LinkTable[] WorldLinkTable = [];
 
     internal struct WorldArchetypeTableItem(Archetype archetype, Archetype temp)
     {
@@ -280,11 +280,7 @@ public partial class World : IDisposable
 
         WorldArchetypeTable = new WorldArchetypeTableItem[GlobalWorldTables.ComponentTagLocationTable.Length];
         WorldSparseSetTable = new ComponentSparseSetBase[Component.ComponentTableBySparseIndex.Count];
-        WorldLinkTable = new LinkTable[Link.LinkTableBufferSize];
-
-        // allocating the array does not run LinkTable's field initalizers
-        for (int i = 0; i < WorldLinkTable.Length; i++)
-            WorldLinkTable[i] = new LinkTable();
+        GrowLinkTable(Link.LinkTableBufferSize);
 
         for (int i = 1; i < WorldSparseSetTable.Length; i++)
             WorldSparseSetTable[i] = Component.ComponentTableBySparseIndex[i].Factory.CreateSparseSet();
@@ -453,7 +449,6 @@ public partial class World : IDisposable
         int previousSize = WorldLinkTable.Length;
         Array.Resize(ref WorldLinkTable, newSize);
 
-        // resizing does not run LinkTable's field initalizers
         for (int i = previousSize; i < WorldLinkTable.Length; i++)
             WorldLinkTable[i] = new LinkTable();
     }
