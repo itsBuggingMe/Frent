@@ -35,7 +35,7 @@ public static class Link
 
     internal static FastStack<Type> LinkTable = FastStack<Type>.Create(4);
 
-    internal static int LinkTableBufferSize;
+    internal static int LinkTableBufferSize = 4;
 
     private static int _nextLinkID = -1;
 

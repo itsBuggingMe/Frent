@@ -203,3 +203,28 @@ from:
             ids = ids.Slice(0, 1);
 to:
             ids = ids.Slice(0, $);
+
+from:
+LinkEnumerable<T>
+to:
+LinkEnumerable<|T$, |>
+
+from:
+{TLink, T}()
+to:
+{TLink, |T$, |}()
+
+from:
+<TLink, T>()
+to:
+<TLink, |T$, |>()
+
+from:
+<T>(Core.Link<TLink>.ID)
+to:
+<|T$, |>(Core.Link<TLink>.ID)
+
+from:
+<T>(LinkID linkID)
+to:
+<|T$, |>(LinkID linkID)

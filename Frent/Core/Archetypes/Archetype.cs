@@ -139,6 +139,11 @@ internal sealed partial class Archetype
         return slot != 0 ? slot : (slot = world.CreateLinkID());
     }
 
+    internal int GetExistingLinkID(int row)
+    {
+        return _worldLinkIDs.UnsafeArrayIndex(row);
+    }
+
     internal void ResolveDeferredEntityCreations(World world, Archetype deferredCreationArchetype)
     {
         Debug.Assert(deferredCreationArchetype._archetypeID == _archetypeID);

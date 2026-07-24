@@ -1,7 +1,9 @@
 ﻿using Frent.Collections;
+using Frent.Components;
 using Frent.Core;
 using Frent.Core.Archetypes;
 using Frent.Core.Events;
+using Frent.Systems;
 using Frent.Variadic.Generator;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
@@ -239,6 +241,54 @@ partial struct Entity
             }
         }
     }
+
+    /// <summary>
+    /// Enumerates the components of every <see cref="Entity"/> that links to this one with a link of type <typeparamref name="TLink"/>.
+    /// </summary>
+    /// <remarks>Linked entities that do not have every enumerated component are skipped.</remarks>
+    /// <variadic />
+    public readonly LinkEnumerable<T> EnumerateIncoming<TLink, T>() => EnumerateIncoming<T>(Core.Link<TLink>.ID);
+
+    /// <summary>
+    /// Enumerates the components of every <see cref="Entity"/> this one links to with a link of type <typeparamref name="TLink"/>.
+    /// </summary>
+    /// <inheritdoc cref="EnumerateIncoming{TLink, T}()"/>
+    /// <variadic />
+    public readonly LinkEnumerable<T> EnumerateOutgoing<TLink, T>() => EnumerateOutgoing<T>(Core.Link<TLink>.ID);
+
+    /// <summary>
+    /// Enumerates every <see cref="Entity"/> that links to this one with a link of type <typeparamref name="TLink"/>, along with their components.
+    /// </summary>
+    /// <inheritdoc cref="EnumerateIncoming{TLink, T}()"/>
+    /// <variadic />
+    public readonly EntityLinkEnumerable<T> EnumerateIncomingWithEntities<TLink, T>() => EnumerateIncomingWithEntities<T>(Core.Link<TLink>.ID);
+
+    /// <summary>
+    /// Enumerates every <see cref="Entity"/> this one links to with a link of type <typeparamref name="TLink"/>, along with their components.
+    /// </summary>
+    /// <inheritdoc cref="EnumerateIncoming{TLink, T}()"/>
+    /// <variadic />
+    public readonly EntityLinkEnumerable<T> EnumerateOutgoingWithEntities<TLink, T>() => EnumerateOutgoingWithEntities<T>(Core.Link<TLink>.ID);
+
+    /// <inheritdoc cref="EnumerateIncoming{TLink, T}()"/>
+    /// <param name="linkID">The kind of link to enumerate.</param>
+    /// <variadic />
+    public readonly LinkEnumerable<T> EnumerateIncoming<T>(LinkID linkID) => new LinkEnumerable<T>(this, linkID, true);
+
+    /// <inheritdoc cref="EnumerateOutgoing{TLink, T}()"/>
+    /// <param name="linkID">The kind of link to enumerate.</param>
+    /// <variadic />
+    public readonly LinkEnumerable<T> EnumerateOutgoing<T>(LinkID linkID) => new LinkEnumerable<T>(this, linkID, false);
+
+    /// <inheritdoc cref="EnumerateIncomingWithEntities{TLink, T}()"/>
+    /// <param name="linkID">The kind of link to enumerate.</param>
+    /// <variadic />
+    public readonly EntityLinkEnumerable<T> EnumerateIncomingWithEntities<T>(LinkID linkID) => new EntityLinkEnumerable<T>(this, linkID, true);
+
+    /// <inheritdoc cref="EnumerateOutgoingWithEntities{TLink, T}()"/>
+    /// <param name="linkID">The kind of link to enumerate.</param>
+    /// <variadic />
+    public readonly EntityLinkEnumerable<T> EnumerateOutgoingWithEntities<T>(LinkID linkID) => new EntityLinkEnumerable<T>(this, linkID, false);
 
     private static void InvokeComponentWorldEvents<T>(ref Event<ComponentID> @event, Entity entity)
     {

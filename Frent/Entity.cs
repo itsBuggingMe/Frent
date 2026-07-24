@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Archetypes;
+using Frent.Core.Events;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -99,7 +100,7 @@ public partial struct Entity : IEquatable<Entity>
     /// <summary>
     /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
     /// </summary>
-    private readonly bool LinkCore(LinkID linkKind, ref EntityLocation eloc, int target, ref EntityLocation targetEloc, World world)
+    private readonly bool LinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
     {
         ref LinkTable links = ref world.WorldLinkTable.UnsafeArrayIndex(linkKind.RawValue);
 
@@ -114,12 +115,18 @@ public partial struct Entity : IEquatable<Entity>
 
         // record the outgoing link on this entity: this -> target
         ref LinkTableEntry outgoing = ref MemoryHelpers.GetValueOrResize(ref links.OutgoingLinks, sourceLinkId);
-        if (!outgoing.AddLink(targetArchetype, target))
+        if (!outgoing.AddLink(targetArchetype, targetEloc.Index))
             return false;
 
         // record the matching incoming link on the target: target <- this
         ref LinkTableEntry incoming = ref MemoryHelpers.GetValueOrResize(ref links.IncomingLinks, targetLinkId);
-        incoming.AddLink(sourceArchetype, EntityID);
+        incoming.AddLink(sourceArchetype, eloc.Index);
+
+        // events might cause structural changes, so read the flags before invoking anything
+        EntityFlags sourceFlags = eloc.Flags;
+        EntityFlags targetFlags = targetEloc.Flags;
+        InvokeLinkEvents(world, this, sourceFlags, linkKind, EntityFlags.OnOutgoingLinked);
+        InvokeLinkEvents(world, target, targetFlags, linkKind, EntityFlags.OnIncomingLinked);
 
         return true;
     }
@@ -127,7 +134,7 @@ public partial struct Entity : IEquatable<Entity>
     /// <summary>
     /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
     /// </summary>
-    private readonly bool UnlinkCore(LinkID linkKind, ref EntityLocation eloc, int target, ref EntityLocation targetEloc, World world)
+    private readonly bool UnlinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
     {
         if (!eloc.HasFlag(EntityFlags.HasHadOutgoingLinks))
             return false;
@@ -137,22 +144,68 @@ public partial struct Entity : IEquatable<Entity>
         Archetype sourceArchetype = eloc.Archetype;
         Archetype targetArchetype = targetEloc.Archetype;
 
-        int sourceLinkId = sourceArchetype.GetExistingOrCreateLinkID(world, eloc.Index);
-        int targetLinkId = targetArchetype.GetExistingOrCreateLinkID(world, targetEloc.Index);
+        // we know link id exists since HasHadOutgoingLinks is true
+        int sourceLinkId = sourceArchetype.GetExistingLinkID(eloc.Index);
+        int targetLinkId = targetArchetype.GetExistingLinkID(targetEloc.Index);
 
-        eloc.Flags |= EntityFlags.HasHadOutgoingLinks;
-        targetEloc.Flags |= EntityFlags.HasHadIncomingLinks;
+        LinkTableEntry[] outgoingLinks = links.OutgoingLinks;
+        if (!((uint)sourceLinkId < (uint)outgoingLinks.Length))
+            return false;
 
         // remove the outgoing link on this entity: this -> target
-        ref LinkTableEntry outgoing = ref MemoryHelpers.GetValueOrResize(ref links.OutgoingLinks, sourceLinkId);
-        if (!outgoing.RemoveLink(target))
+        if (!outgoingLinks[sourceLinkId].RemoveLink(targetArchetype, targetEloc.Index))
             return false;
 
         // remove the matching incoming link on the target: target <- this
-        ref LinkTableEntry incoming = ref MemoryHelpers.GetValueOrResize(ref links.IncomingLinks, targetLinkId);
-        incoming.RemoveLink(EntityID);
+        LinkTableEntry[] incomingLinks = links.IncomingLinks;
+        if ((uint)targetLinkId < (uint)incomingLinks.Length)
+            incomingLinks[targetLinkId].RemoveLink(sourceArchetype, eloc.Index);
+
+        EntityFlags sourceFlags = eloc.Flags;
+        EntityFlags targetFlags = targetEloc.Flags;
+        InvokeLinkEvents(world, this, sourceFlags, linkKind, EntityFlags.OnOutgoingUnlinked);
+        InvokeLinkEvents(world, target, targetFlags, linkKind, EntityFlags.OnIncomingUnlinked);
 
         return true;
+    }
+
+    /// <summary>
+    /// Invokes the world level and per entity link event identified by <paramref name="eventFlag"/> on <paramref name="entity"/>.
+    /// </summary>
+    private static void InvokeLinkEvents(World world, Entity entity, EntityFlags flags, LinkID linkKind, EntityFlags eventFlag)
+    {
+        if (!EntityLocation.HasEventFlag(flags | world.WorldEventFlags, eventFlag))
+            return;
+
+        ref EventRecord record = ref Unsafe.NullRef<EventRecord>();
+        if (EntityLocation.HasEventFlag(flags, eventFlag))
+            record = ref world.EventLookup.GetValueRefOrNullRef(entity.EntityIDOnly);
+
+        bool hasRecord = !Unsafe.IsNullRef(ref record);
+
+        switch (eventFlag)
+        {
+            case EntityFlags.OnOutgoingLinked:
+                world.OutgoingLinkedEvent.Invoke(entity, linkKind);
+                if (hasRecord)
+                    record.OutgoingLinked.Invoke(entity, linkKind);
+                break;
+            case EntityFlags.OnIncomingLinked:
+                world.IncomingLinkedEvent.Invoke(entity, linkKind);
+                if (hasRecord)
+                    record.IncomingLinked.Invoke(entity, linkKind);
+                break;
+            case EntityFlags.OnOutgoingUnlinked:
+                world.OutgoingUnlinkedEvent.Invoke(entity, linkKind);
+                if (hasRecord)
+                    record.OutgoingUnlinked.Invoke(entity, linkKind);
+                break;
+            case EntityFlags.OnIncomingUnlinked:
+                world.IncomingUnlinkedEvent.Invoke(entity, linkKind);
+                if (hasRecord)
+                    record.IncomingUnlinked.Invoke(entity, linkKind);
+                break;
+        }
     }
 
     [DoesNotReturn]

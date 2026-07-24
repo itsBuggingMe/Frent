@@ -11,4 +11,6 @@ internal static class AttributeHelpers
     public const string RefArgPattern = "|ref TArg$ arg$, |";
 
     public const string QueryEnumerator = "QueryEnumerator";
+
+    public const string LinkEnumerator = "LinkEnumerator";
 }

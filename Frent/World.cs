@@ -282,6 +282,10 @@ public partial class World : IDisposable
         WorldSparseSetTable = new ComponentSparseSetBase[Component.ComponentTableBySparseIndex.Count];
         WorldLinkTable = new LinkTable[Link.LinkTableBufferSize];
 
+        // allocating the array does not run LinkTable's field initalizers
+        for (int i = 0; i < WorldLinkTable.Length; i++)
+            WorldLinkTable[i] = new LinkTable();
+
         for (int i = 1; i < WorldSparseSetTable.Length; i++)
             WorldSparseSetTable[i] = Component.ComponentTableBySparseIndex[i].Factory.CreateSparseSet();
 
@@ -444,7 +448,15 @@ public partial class World : IDisposable
         //World world = GlobalWorldTables.Worlds[WorldID];
     }
 
-    internal void GrowLinkTable(int newSize) => Array.Resize(ref WorldLinkTable, newSize);
+    internal void GrowLinkTable(int newSize)
+    {
+        int previousSize = WorldLinkTable.Length;
+        Array.Resize(ref WorldLinkTable, newSize);
+
+        // resizing does not run LinkTable's field initalizers
+        for (int i = previousSize; i < WorldLinkTable.Length; i++)
+            WorldLinkTable[i] = new LinkTable();
+    }
 
     internal void EnterDisallowState()
     {

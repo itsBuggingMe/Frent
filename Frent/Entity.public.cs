@@ -521,19 +521,44 @@ partial struct Entity
     #endregion
 
     #region Link
+    /// <summary>
+    /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of link to create.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</exception>
     public void Link<T>(Entity target) => Link(Core.Link<T>.ID, target);
+
+    /// <summary>
+    /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of type <typeparamref name="T"/>, if it is possible to do so.
+    /// </summary>
+    /// <typeparam name="T">The type of link to create.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
+    /// <returns><see langword="true"/> when the link was created, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</returns>
     public bool TryLink<T>(Entity target) => TryLink(Core.Link<T>.ID, target);
 
+    /// <summary>
+    /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>.
+    /// </summary>
+    /// <param name="linkKind">The kind of link to create.</param>
+    /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</exception>
     public void Link(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out World world);
         ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
         if (otherWorld != world)
             FrentExceptions.Throw_InvalidOperationException("This entity belongs to another world");
-        if (!LinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world)) // TODO: improve exceptions globally
+        if (!LinkCore(linkKind, ref eloc, target, ref targetEloc, world)) // TODO: improve exceptions globally
             FrentExceptions.Throw_InvalidOperationException("Link already exists");
     }
 
+    /// <summary>
+    /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>, if it is possible to do so.
+    /// </summary>
+    /// <param name="linkKind">The kind of link to create.</param>
+    /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
+    /// <returns><see langword="true"/> when the link was created, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</returns>
     public bool TryLink(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
@@ -544,22 +569,47 @@ partial struct Entity
             return false;
         if (otherWorld != world)
             return false;
-        return LinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world);
+        return LinkCore(linkKind, ref eloc, target, ref targetEloc, world);
     }
 
+    /// <summary>
+    /// Removes the link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of link to remove.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> this one links to.</param>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</exception>
     public void Unlink<T>(Entity target) => Unlink(Core.Link<T>.ID, target);
+
+    /// <summary>
+    /// Removes the link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
+    /// </summary>
+    /// <typeparam name="T">The type of link to remove.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> this one links to.</param>
+    /// <returns><see langword="true"/> when the link was removed, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</returns>
     public bool TryUnlink<T>(Entity target) => TryUnlink(Core.Link<T>.ID, target);
 
+    /// <summary>
+    /// Removes the link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>.
+    /// </summary>
+    /// <param name="linkKind">The kind of link to remove.</param>
+    /// <param name="target">The <see cref="Entity"/> this one links to.</param>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</exception>
     public void Unlink(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out World world);
         ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
         if (otherWorld != world)
             FrentExceptions.Throw_InvalidOperationException("This entity belongs to another world");
-        if (!UnlinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world)) // TODO: improve exceptions globally
+        if (!UnlinkCore(linkKind, ref eloc, target, ref targetEloc, world)) // TODO: improve exceptions globally
             FrentExceptions.Throw_InvalidOperationException("Link does not exist");
     }
 
+    /// <summary>
+    /// Removes the link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
+    /// </summary>
+    /// <param name="linkKind">The kind of link to remove.</param>
+    /// <param name="target">The <see cref="Entity"/> this one links to.</param>
+    /// <returns><see langword="true"/> when the link was removed, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</returns>
     public bool TryUnlink(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
@@ -570,7 +620,7 @@ partial struct Entity
             return false;
         if (otherWorld != world)
             return false;
-        return UnlinkCore(linkKind, ref eloc, target.EntityID, ref targetEloc, world);
+        return UnlinkCore(linkKind, ref eloc, target, ref targetEloc, world);
     }
 
     #endregion
