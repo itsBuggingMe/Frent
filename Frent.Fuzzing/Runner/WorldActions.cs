@@ -27,6 +27,9 @@ internal enum WorldActions
     DetachType,
 
     Set,
+
+    [Weight(2)] Link,
+    Unlink,
 }
 
 internal static class WorldActionsHelper

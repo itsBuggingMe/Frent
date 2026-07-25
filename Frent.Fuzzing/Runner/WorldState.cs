@@ -55,6 +55,9 @@ internal partial class WorldState : IDisposable
     private Dictionary<Entity, List<ComponentHandle>> _componentValues = [];
     private Dictionary<Entity, List<TagID>> _tagValues = [];
 
+    private readonly HashSet<(Entity Source, Entity Target, LinkID Kind)> _links = [];
+    private readonly LinkID[] _linkKinds = [Link<L1>.ID, Link<L2>.ID, Link<L3>.ID];
+
     private IEnumerable<Entity> Entities => _componentValues.Select(kvp => kvp.Key);
     private HashSet<Entity> _dead = [];
 
@@ -149,6 +152,8 @@ internal partial class WorldState : IDisposable
                 WorldActions.DetachGeneric => DetachGeneric(),
                 WorldActions.DetachType => DetachType(),
                 WorldActions.Set => Set(),
+                WorldActions.Link => Link(),
+                WorldActions.Unlink => Unlink(),
                 _ => throw new ArgumentOutOfRangeException(nameof(thisAction), thisAction, null)
             };
         }

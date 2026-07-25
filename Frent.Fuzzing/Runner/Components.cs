@@ -38,3 +38,7 @@ internal class C4(int value) : ISparseComponent
     public int Value = value;
     public override string ToString() => Value.ToString();
 }
+
+internal struct L1 : ILink;
+internal struct L2 : ILink;
+internal struct L3 : ILink;

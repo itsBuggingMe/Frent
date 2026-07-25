@@ -7,12 +7,12 @@ using System.Runtime.InteropServices;
 namespace Frent.Collections;
 
 // world link id -> some collection of outgoing & incoming links
-internal struct LinkTable()
+internal struct LinkTable
 {
 
 #if NETSTANDARD
-    internal LinkTableEntry[] Outgoing = [];
-    internal LinkTableEntry[] Incoming = [];
+    internal LinkTableEntry[] Outgoing;
+    internal LinkTableEntry[] Incoming;
     public readonly LinkTableEntry[] GetLinkTable(int incoming) => incoming == 0 ? Outgoing : Incoming;
 #else
     [UnscopedRef] internal ref LinkTableEntry[] Outgoing => ref GetLinkTable(0);
@@ -20,6 +20,11 @@ internal struct LinkTable()
     [UnscopedRef] public ref LinkTableEntry[] GetLinkTable(int incoming) => ref ((Span<LinkTableEntry[]>)LinkTables).UnsafeSpanIndex(incoming);
     internal InlineArray2<LinkTableEntry[]> LinkTables;
 #endif
+    public LinkTable()
+    {
+        Outgoing = [];
+        Incoming = [];
+    }
 
     // incoming: 0 -> outgoing table, 1 -> incoming table
 

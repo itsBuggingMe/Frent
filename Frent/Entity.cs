@@ -125,8 +125,8 @@ public partial struct Entity : IEquatable<Entity>
 
         outgoing.SetMapBack(outIndex, inIndex);
 
-        MemoryHelpers.GetValueOrResize(ref world.AssociatedLinks, sourceLinkId).Push(linkKind);
-        MemoryHelpers.GetValueOrResize(ref world.AssociatedLinks, targetLinkId).Push(linkKind);
+        world.AssociatedLinks.UnsafeArrayIndex(sourceLinkId).Push(linkKind);
+        world.AssociatedLinks.UnsafeArrayIndex(targetLinkId).Push(linkKind);
 
         // events might cause structural changes, so read the flags before invoking anything
         EntityFlags sourceFlags = eloc.Flags;

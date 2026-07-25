@@ -780,48 +780,70 @@ public partial class World : IDisposable
     {
         if (_recycledLinkIDs.TryPop(out int recycled))
             return recycled;
-        return _nextLinkID++;
+
+        int newId = _nextLinkID++;
+        if (newId >= AssociatedLinks.Length)
+            GrowAssociatedLinkIDArray();
+        return newId;
     }
 
+    private void GrowAssociatedLinkIDArray()
+    {
+        int oldLength = AssociatedLinks.Length;
+        Array.Resize(ref AssociatedLinks, Math.Max(1, oldLength) * 2);
+        var links = AssociatedLinks;
+        for (int i = oldLength; i < links.Length; i++)
+        {
+            links[i] = FastStack<LinkID>.Create(1);
+        }
+    }
 
     internal void RecycleLinkID(int linkID)
     {
-        if (linkID == 0)
-            return;
+        Debug.Assert(linkID != 0);
         _recycledLinkIDs.Push(linkID);
     }
 
     internal void UpdateLinkReferences(int worldLinkId, Archetype archetype, int row)
     {
         LinkTable[] tables = WorldLinkTable;
-        
+
         foreach (LinkID linkKind in AssociatedLinks[worldLinkId])
         {
             ref LinkTable table = ref tables.UnsafeArrayIndex(linkKind.RawValue);
             LinkTableEntry[] outgoing = table.Outgoing;
             LinkTableEntry[] incoming = table.Incoming;
 
-            outgoing.UnsafeArrayIndex(worldLinkId).UpdateMirrors(incoming, archetype, row);
-            incoming.UnsafeArrayIndex(worldLinkId).UpdateMirrors(outgoing, archetype, row);
+            if ((uint)worldLinkId < (uint)outgoing.Length)
+                outgoing[worldLinkId].UpdateMirrors(incoming, archetype, row);
+            if ((uint)worldLinkId < (uint)incoming.Length)
+                incoming[worldLinkId].UpdateMirrors(outgoing, archetype, row);
         }
     }
 
     internal void UnlinkAll(int worldLinkId)
     {
         LinkTable[] tables = WorldLinkTable;
-        
+
         foreach (LinkID linkKind in AssociatedLinks[worldLinkId])
         {
-            ref LinkTable linkTable = ref tables.UnsafeArrayIndex(linkKind.RawValue);
-            LinkTableEntry[] outgoing = linkTable.Outgoing;
-            LinkTableEntry[] incoming = linkTable.Incoming;
+            ref LinkTable table = ref tables.UnsafeArrayIndex(linkKind.RawValue);
+            LinkTableEntry[] outgoing = table.Outgoing;
+            LinkTableEntry[] incoming = table.Incoming;
 
-            ref var entryo = ref outgoing.UnsafeArrayIndex(worldLinkId);
-            entryo.RemoveAllOpposing(incoming, outgoing);
-            entryo.Clear();
-            ref var entryi = ref incoming.UnsafeArrayIndex(worldLinkId);
-            entryi.RemoveAllOpposing(outgoing, incoming);
-            entryi.Clear();
+            if ((uint)worldLinkId < (uint)outgoing.Length)
+            {
+                ref LinkTableEntry entryo = ref outgoing[worldLinkId];
+                entryo.RemoveAllOpposing(incoming, outgoing);
+                entryo.Clear();
+            }
+
+            if ((uint)worldLinkId < (uint)incoming.Length)
+            {
+                ref LinkTableEntry entryi = ref incoming[worldLinkId];
+                entryi.RemoveAllOpposing(outgoing, incoming);
+                entryi.Clear();
+            }
         }
     }
 #endregion
