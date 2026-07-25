@@ -196,6 +196,7 @@ public class JsonWorldSerializer
                                 else
                                 {
                                     List<int> targets = _links.GetValueRefOrAddDefault(linkId, out _) ??= [];
+                                    targets.Clear();
 
                                     ReadAssert(ref jsonStreamReader, JsonTokenType.StartArray);
                                     while (jsonStreamReader.Read() && reader.TokenType != JsonTokenType.EndArray)
