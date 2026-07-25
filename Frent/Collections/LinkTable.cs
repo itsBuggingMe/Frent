@@ -44,15 +44,12 @@ internal struct LinkTable
     /// <remarks>The spans point directly into link storage; they are invalidated by any link or structual change.</remarks>
     internal static void GetLinkedSlots(World world, LinkID linkID, scoped ref EntityLocation location, int incoming, out Span<Archetype> archetypes, out Span<int> rows)
     {
-        archetypes = default;
-        rows = default;
-
         if (!location.HasFlag((EntityFlags)((ushort)EntityFlags.HasHadOutgoingLinks << incoming)))
-            return;
+            goto fail;
 
         LinkTable[] worldLinkTable = world.WorldLinkTable;
         if (!(linkID.RawValue < worldLinkTable.Length))
-            return;
+            goto fail;
 
         ref LinkTable table = ref worldLinkTable.UnsafeArrayIndex(linkID.RawValue);
         LinkTableEntry[] entries = table.GetLinkTable(incoming);
@@ -60,9 +57,16 @@ internal struct LinkTable
         int worldLinkId = location.Archetype.GetExistingLinkID(location.Index);
 
         if (worldLinkId == 0 || !((uint)worldLinkId < (uint)entries.Length))
-            return;
+            goto fail;
 
         LinkTableEntry.GetLinks(ref entries[worldLinkId], out archetypes, out rows);
+
+        return;
+
+    fail:
+        archetypes = default;
+        rows = default;
+        return;
     }
 }
 
