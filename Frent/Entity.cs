@@ -193,6 +193,35 @@ public partial struct Entity : IEquatable<Entity>
     }
 
     /// <summary>
+    /// we move from linkStart using incoming. linkStart must have a link id
+    /// </summary>
+    private static void EnsureNoSingleLink(int incoming, LinkID linkKind, Entity linkStart, int linkStartWorldLinkId, int newFarWorldLinkId, ref LinkTable links, scoped ref EntityLocation sourceOfLinkEloc, World world)
+    {
+        var arr = links.GetLinkTable(incoming);
+        if (!((uint)linkStartWorldLinkId < (uint)arr.Length))
+            return;
+
+        ref LinkTableEntry halfLinkEdge = ref arr[linkStartWorldLinkId];
+        if (!halfLinkEdge.Any)
+            return;
+
+        if (halfLinkEdge.SingleLinkedWorldID == newFarWorldLinkId)
+            return;
+
+        Entity otherEntity = halfLinkEdge.RootAsArchetype.GetEntitySpan().UnsafeSpanIndex(halfLinkEdge.SingleRow).ToEntity(world);
+        scoped ref EntityLocation targetEloc = ref world.EntityTable.UnsafeIndexNoResize(otherEntity.EntityID);
+        scoped ref EntityLocation tmp = ref Unsafe.NullRef<EntityLocation>();
+        if (incoming > 0)
+        {
+            (linkStart, otherEntity) = (otherEntity, linkStart);
+            tmp = ref sourceOfLinkEloc;
+            sourceOfLinkEloc = ref targetEloc;
+            targetEloc = ref tmp;
+        }
+        linkStart.UnlinkCore(linkKind, ref sourceOfLinkEloc, otherEntity, ref targetEloc, world);
+    }
+
+    /// <summary>
     /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
     /// </summary>
     private readonly bool UnlinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
