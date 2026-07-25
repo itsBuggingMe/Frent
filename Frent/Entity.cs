@@ -96,6 +96,14 @@ public partial struct Entity : IEquatable<Entity>
     }
 
     #endregion IsAlive
+    internal readonly int WorldLinkID
+    {
+        get
+        {
+            ref EntityLocation eloc = ref AssertIsAlive(out _);
+            return eloc.HasFlag(EntityFlags.HasHadIncomingLinks) ? eloc.Archetype.GetExistingLinkID(eloc.Index) : 0;
+        }
+    }
 
     /// <summary>
     /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.

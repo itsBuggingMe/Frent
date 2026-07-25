@@ -468,14 +468,13 @@ public class JsonWorldSerializer
                     void Links()
                     {
                         // { "LinkTypeName": [targetId, ...], ... } - outgoing links
+                        int linkId = e.WorldLinkID;
+                        if (linkId == 0)
+                            return;
+
                         bool wroteObject = false;
-
-                        // index 0 is void; every other registered link kind is a candidate
-                        int kindCount = Link.LinkTable.Count;
-                        for (int k = 1; k < kindCount; k++)
+                        foreach (var kind in e.World.AssociatedLinks[linkId])
                         {
-                            LinkID kind = new LinkID((ushort)k);
-
                             if (!e.HasOutgoingLink(kind))
                                 continue;
 
