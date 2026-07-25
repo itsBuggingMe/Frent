@@ -118,6 +118,18 @@ public partial struct Entity : IEquatable<Entity>
         int sourceLinkId = sourceArchetype.GetExistingOrCreateLinkID(world, eloc.Index);
         int targetLinkId = targetArchetype.GetExistingOrCreateLinkID(world, targetEloc.Index);
 
+        if (linkKind.IsSingleOutgoing &&
+            eloc.HasFlag(EntityFlags.HasHadOutgoingLinks))
+        {
+            EnsureNoSingleLink(0, linkKind, this, sourceLinkId, targetLinkId, ref links, ref eloc, world);
+        }
+
+        if (linkKind.IsSingleIncoming &&
+            targetEloc.HasFlag(EntityFlags.HasHadIncomingLinks))
+        {
+            EnsureNoSingleLink(1, linkKind, target, targetLinkId, sourceLinkId, ref links, ref targetEloc, world);
+        }
+
         eloc.Flags |= EntityFlags.HasHadOutgoingLinks;
         targetEloc.Flags |= EntityFlags.HasHadIncomingLinks;
 
@@ -133,8 +145,8 @@ public partial struct Entity : IEquatable<Entity>
 
         outgoing.SetMapBack(outIndex, inIndex);
 
-        world.AssociatedLinks.UnsafeArrayIndex(sourceLinkId).Push(linkKind);
-        world.AssociatedLinks.UnsafeArrayIndex(targetLinkId).Push(linkKind);
+        PushIfNotExisting(ref world.AssociatedLinks.UnsafeArrayIndex(sourceLinkId), linkKind);
+        PushIfNotExisting(ref world.AssociatedLinks.UnsafeArrayIndex(targetLinkId), linkKind);
 
         // events might cause structural changes, so read the flags before invoking anything
         EntityFlags sourceFlags = eloc.Flags;
@@ -143,6 +155,41 @@ public partial struct Entity : IEquatable<Entity>
         InvokeLinkEvents(world, target, targetFlags, linkKind, EntityFlags.OnIncomingLinked);
 
         return true;
+
+        static void PushIfNotExisting(ref FastStack<LinkID> links, LinkID kind)
+        {
+            if(links.AsSpan().IndexOf(kind) == -1)
+                links.Push(kind);
+        }
+    }
+
+    /// <summary>
+    /// we move from linkStart using incoming. linkStart must have a link id
+    /// </summary>
+    private static void EnsureNoSingleLink(int incoming, LinkID linkKind, Entity linkStart, int linkStartWorldLinkId, int newFarWorldLinkId, ref LinkTable links, scoped ref EntityLocation sourceOfLinkEloc, World world)
+    {
+        var arr = links.GetLinkTable(incoming);
+        if (!((uint)linkStartWorldLinkId < (uint)arr.Length))
+            return;
+
+        ref LinkTableEntry halfLinkEdge = ref arr[linkStartWorldLinkId];
+        if (!halfLinkEdge.Any)
+            return;
+
+        if (halfLinkEdge.SingleLinkedWorldID == newFarWorldLinkId)
+            return;
+
+        Entity otherEntity = halfLinkEdge.RootAsArchetype.GetEntitySpan().UnsafeSpanIndex(halfLinkEdge.SingleRow).ToEntity(world);
+        scoped ref EntityLocation targetEloc = ref world.EntityTable.UnsafeIndexNoResize(otherEntity.EntityID);
+        scoped ref EntityLocation tmp = ref Unsafe.NullRef<EntityLocation>();
+        if (incoming > 0)
+        {
+            (linkStart, otherEntity) = (otherEntity, linkStart);
+            tmp = ref sourceOfLinkEloc;
+            sourceOfLinkEloc = ref targetEloc;
+            targetEloc = ref tmp;
+        }
+        linkStart.UnlinkCore(linkKind, ref sourceOfLinkEloc, otherEntity, ref targetEloc, world);
     }
 
     /// <summary>

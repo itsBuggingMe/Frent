@@ -49,7 +49,6 @@ public static class GenerationServices
     public static void RegisterComponent<T>()
     {
         Core.Component.CachedComponentFactories.TryAdd(typeof(T), new ComponentBufferManager<T>());
-        _ = Component<T>.ID;
     }
 
     /// <inheritdoc cref="GenerationServices"/>

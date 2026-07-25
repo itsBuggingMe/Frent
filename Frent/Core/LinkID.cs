@@ -7,8 +7,15 @@ namespace Frent.Core;
 /// </summary>
 public readonly struct LinkID : ITypeID, IEquatable<LinkID>
 {
-    internal LinkID(ushort id) => RawValue = id;
+    internal LinkID(ushort id, bool isSingleIncoming, bool isSingleOutgoing)
+    {
+        RawValue = id;
+        IsSingleIncoming = isSingleIncoming;
+        IsSingleOutgoing = isSingleOutgoing;
+    }
     internal readonly ushort RawValue;
+    internal readonly bool IsSingleIncoming;
+    internal readonly bool IsSingleOutgoing;
 
     /// <summary>
     /// The type that this LinkID represents

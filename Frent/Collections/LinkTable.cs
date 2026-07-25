@@ -1,5 +1,6 @@
 using Frent.Core;
 using Frent.Core.Archetypes;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -84,6 +85,23 @@ internal struct LinkTableEntry
     private int _linkedWorldId;
 
     public readonly bool Any => _root is not null;
+    public Archetype RootAsArchetype => UnsafeExtensions.UnsafeCast<Archetype>(_root!);
+    public int SingleRow
+    {
+        get
+        {
+            Debug.Assert(_root?.GetType() == typeof(Archetype));
+            return _row;
+        }
+    }
+    public int SingleLinkedWorldID
+    {
+        get
+        {
+            Debug.Assert(_root?.GetType() == typeof(Archetype));
+            return _linkedWorldId;
+        }
+    }
 
     private readonly int ElementCount => _root is null ? 0 : (_root is Archetype ? 1 : _row);
 

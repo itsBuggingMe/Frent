@@ -14,6 +14,10 @@ internal class LinkTests
     internal struct Owns : ILink;
     internal struct Targets : ILink;
 
+    internal struct SingleOut : ISingleOutgoingLink;
+    internal struct SingleIn : ISingleIncomingLink;
+    internal struct SingleBoth : ISingleIncomingLink, ISingleOutgoingLink;
+
     #endregion
 
     #region Helpers
@@ -1119,6 +1123,322 @@ internal class LinkTests
         entity.Link<ChildOf>(entity);
 
         That(raised, Is.EqualTo(new[] { "outgoing", "incoming" }));
+    }
+
+    #endregion
+
+    #region Single Links
+
+    [Test]
+    public static void SingleOutgoing_LinkingNewTarget_ReplacesOldEdge()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        a.Link<SingleOut>(b);
+        a.Link<SingleOut>(c); // a may only have one outgoing SingleOut, so this replaces b with c
+
+        // a now points only at c
+        That(ValuesOutgoing<SingleOut>(a), Is.EqualTo(new[] { 3 }));
+        That(EntitiesOutgoing<SingleOut>(a), Is.EqualTo(new[] { c }));
+
+        // the old target's mirroring incoming edge must be gone (regression: it used to leak)
+        That(ValuesIncoming<SingleOut>(b), Is.Empty);
+        That(EntitiesIncoming<SingleOut>(b), Is.Empty);
+        That(b.HasIncomingLink<SingleOut>(), Is.False);
+
+        // the new target owns the incoming edge
+        That(ValuesIncoming<SingleOut>(c), Is.EqualTo(new[] { 1 }));
+        That(c.HasIncomingLink<SingleOut>(), Is.True);
+    }
+
+    [Test]
+    public static void SingleOutgoing_ReplacedEdge_LeavesBothSidesConsistent()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        a.Link<SingleOut>(b);
+        a.Link<SingleOut>(c);
+
+        // the surviving a -> c edge is fully removable from either side, and nothing dangling
+        // on b interferes (regression: the stale b mirror pointed back into a's reused slot)
+        a.Unlink<SingleOut>(c);
+
+        That(ValuesOutgoing<SingleOut>(a), Is.Empty);
+        That(a.HasOutgoingLink<SingleOut>(), Is.False);
+        That(ValuesIncoming<SingleOut>(c), Is.Empty);
+        That(ValuesIncoming<SingleOut>(b), Is.Empty);
+
+        // b was never a real target after the replacement, so unlinking it must fail
+        That(a.TryUnlink<SingleOut>(b), Is.False);
+    }
+
+    [Test]
+    public static void SingleOutgoing_ReplaceFromLargeStorage_KeepsOtherMirrorsValid()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity x = world.Create(new Struct1(10));
+        Entity y = world.Create(new Struct1(11));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        // b collects several incoming SingleOut edges -> its incoming entry upgrades to array storage
+        a.Link<SingleOut>(b);
+        x.Link<SingleOut>(b);
+        y.Link<SingleOut>(b);
+
+        // a swaps its single outgoing edge from b to c; this removes a's entry out of b's
+        // large incoming storage, which swaps another element into a's slot and must fix up
+        // that element's back-pointer using the outgoing array
+        a.Link<SingleOut>(c);
+
+        That(ValuesIncoming<SingleOut>(b), Is.EqualTo(new[] { 10, 11 }));
+        That(ValuesIncoming<SingleOut>(c), Is.EqualTo(new[] { 1 }));
+
+        // x and y still resolve to b through their (possibly relocated) mirrors
+        That(ValuesOutgoing<SingleOut>(x), Is.EqualTo(new[] { 2 }));
+        That(ValuesOutgoing<SingleOut>(y), Is.EqualTo(new[] { 2 }));
+
+        // and those mirrors are still consistent enough to unlink cleanly
+        x.Unlink<SingleOut>(b);
+        y.Unlink<SingleOut>(b);
+        That(ValuesIncoming<SingleOut>(b), Is.Empty);
+    }
+
+    [Test]
+    public static void SingleIncoming_LinkingNewSource_ReplacesOldEdge()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        a.Link<SingleIn>(c);
+        b.Link<SingleIn>(c); // c may only have one incoming SingleIn, so this replaces a with b
+
+        // c now receives only from b
+        That(ValuesIncoming<SingleIn>(c), Is.EqualTo(new[] { 2 }));
+        That(EntitiesIncoming<SingleIn>(c), Is.EqualTo(new[] { b }));
+
+        // the old source's mirroring outgoing edge must be gone (regression: it used to leak)
+        That(ValuesOutgoing<SingleIn>(a), Is.Empty);
+        That(EntitiesOutgoing<SingleIn>(a), Is.Empty);
+        That(a.HasOutgoingLink<SingleIn>(), Is.False);
+
+        // the new source owns the outgoing edge
+        That(ValuesOutgoing<SingleIn>(b), Is.EqualTo(new[] { 3 }));
+        That(b.HasOutgoingLink<SingleIn>(), Is.True);
+    }
+
+    [Test]
+    public static void SingleIncoming_ReplacedEdge_OldSourceCannotCorruptSurvivor()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        a.Link<SingleIn>(c);
+        b.Link<SingleIn>(c); // replaces a with b
+
+        // the old source a has no live edge, so trying to unlink it must fail rather than
+        // tear down the surviving b -> c edge (regression: a's stale mirror pointed at b's slot)
+        That(a.TryUnlink<SingleIn>(c), Is.False);
+
+        // b -> c is still intact
+        That(ValuesOutgoing<SingleIn>(b), Is.EqualTo(new[] { 3 }));
+        That(ValuesIncoming<SingleIn>(c), Is.EqualTo(new[] { 2 }));
+    }
+
+    [Test]
+    public static void SingleIncoming_ReplaceFromLargeOutgoing_KeepsOtherMirrorsValid()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity t1 = world.Create(new Struct1(10));
+        Entity c = world.Create(new Struct1(3));
+        Entity t2 = world.Create(new Struct1(11));
+        Entity b = world.Create(new Struct1(2));
+
+        // a has several outgoing SingleIn edges -> its outgoing entry upgrades to array storage,
+        // with c deliberately in the middle so removing it forces a swap
+        a.Link<SingleIn>(t1);
+        a.Link<SingleIn>(c);
+        a.Link<SingleIn>(t2);
+
+        // b takes over c's single incoming slot, removing a's mirror out of a's large outgoing
+        b.Link<SingleIn>(c);
+
+        That(ValuesOutgoing<SingleIn>(a), Is.EqualTo(new[] { 10, 11 }));
+        That(ValuesIncoming<SingleIn>(c), Is.EqualTo(new[] { 2 }));
+        That(ValuesOutgoing<SingleIn>(b), Is.EqualTo(new[] { 3 }));
+
+        // t1 and t2 still see a as their incoming source through the fixed-up mirrors
+        That(ValuesIncoming<SingleIn>(t1), Is.EqualTo(new[] { 1 }));
+        That(ValuesIncoming<SingleIn>(t2), Is.EqualTo(new[] { 1 }));
+
+        a.Unlink<SingleIn>(t1);
+        a.Unlink<SingleIn>(t2);
+        That(ValuesOutgoing<SingleIn>(a), Is.Empty);
+    }
+
+    [Test]
+    public static void SingleBoth_ReplacesOnBothEnds()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2)); // a's original target
+        Entity c = world.Create(new Struct1(3)); // the new target
+        Entity e = world.Create(new Struct1(5)); // c's original source
+
+        a.Link<SingleBoth>(b);   // a -> b
+        e.Link<SingleBoth>(c);   // e -> c
+
+        // a -> c must replace a's single outgoing edge (was b) AND c's single incoming edge (was e)
+        a.Link<SingleBoth>(c);
+
+        That(ValuesOutgoing<SingleBoth>(a), Is.EqualTo(new[] { 3 }));
+        That(ValuesIncoming<SingleBoth>(c), Is.EqualTo(new[] { 1 }));
+
+        // b's stale incoming and e's stale outgoing are both cleared
+        That(ValuesIncoming<SingleBoth>(b), Is.Empty);
+        That(ValuesOutgoing<SingleBoth>(e), Is.Empty);
+        That(b.HasIncomingLink<SingleBoth>(), Is.False);
+        That(e.HasOutgoingLink<SingleBoth>(), Is.False);
+    }
+
+    [Test]
+    public static void SingleOutgoing_RelinkingSameTarget_Throws()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+
+        a.Link<SingleOut>(b);
+
+        // replacing with the *same* target is still a duplicate, not a silent no-op replace
+        Throws<InvalidOperationException>(() => a.Link<SingleOut>(b));
+        That(ValuesOutgoing<SingleOut>(a), Is.EqualTo(new[] { 2 }));
+        That(ValuesIncoming<SingleOut>(b), Is.EqualTo(new[] { 1 }));
+    }
+
+    [Test]
+    public static void SingleOutgoing_Replacement_RaisesUnlinkAndLinkWorldEvents()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        a.Link<SingleOut>(b);
+
+        List<(Entity, LinkID)> outgoingUnlinked = [];
+        List<(Entity, LinkID)> incomingUnlinked = [];
+        List<(Entity, LinkID)> outgoingLinked = [];
+        List<(Entity, LinkID)> incomingLinked = [];
+        world.OutgoingUnlinked += (e, l) => outgoingUnlinked.Add((e, l));
+        world.IncomingUnlinked += (e, l) => incomingUnlinked.Add((e, l));
+        world.OutgoingLinked += (e, l) => outgoingLinked.Add((e, l));
+        world.IncomingLinked += (e, l) => incomingLinked.Add((e, l));
+
+        a.Link<SingleOut>(c); // replaces a -> b with a -> c
+
+        // the displaced a -> b edge raises unlink on both of its ends
+        That(outgoingUnlinked, Is.EqualTo(new[] { (a, Link<SingleOut>.ID) }));
+        That(incomingUnlinked, Is.EqualTo(new[] { (b, Link<SingleOut>.ID) }));
+        // the new a -> c edge raises link on both of its ends
+        That(outgoingLinked, Is.EqualTo(new[] { (a, Link<SingleOut>.ID) }));
+        That(incomingLinked, Is.EqualTo(new[] { (c, Link<SingleOut>.ID) }));
+    }
+
+    [Test]
+    public static void SingleOutgoing_Replacement_RaisesEntityUnlinkEvents()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        a.Link<SingleOut>(b);
+
+        List<(Entity, LinkID)> aOutgoingUnlinked = [];
+        List<(Entity, LinkID)> bIncomingUnlinked = [];
+        a.OnOutgoingUnlinked += (e, l) => aOutgoingUnlinked.Add((e, l));
+        b.OnIncomingUnlinked += (e, l) => bIncomingUnlinked.Add((e, l));
+        // c is the new target; it must not see an unlink
+        c.OnIncomingUnlinked += (_, _) => Fail("c is the new target, not a displaced one");
+
+        a.Link<SingleOut>(c);
+
+        That(aOutgoingUnlinked, Is.EqualTo(new[] { (a, Link<SingleOut>.ID) }));
+        That(bIncomingUnlinked, Is.EqualTo(new[] { (b, Link<SingleOut>.ID) }));
+    }
+
+    [Test]
+    public static void SingleIncoming_Replacement_RaisesUnlinkEventsForOldEdge()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+        Entity c = world.Create(new Struct1(3));
+
+        a.Link<SingleIn>(c);
+
+        List<(Entity, LinkID)> outgoingUnlinked = [];
+        List<(Entity, LinkID)> incomingUnlinked = [];
+        world.OutgoingUnlinked += (e, l) => outgoingUnlinked.Add((e, l));
+        world.IncomingUnlinked += (e, l) => incomingUnlinked.Add((e, l));
+
+        b.Link<SingleIn>(c); // replaces a -> c with b -> c
+
+        // the displaced a -> c edge raises unlink on both of its ends
+        That(outgoingUnlinked, Is.EqualTo(new[] { (a, Link<SingleIn>.ID) }));
+        That(incomingUnlinked, Is.EqualTo(new[] { (c, Link<SingleIn>.ID) }));
+    }
+
+    [Test]
+    public static void SingleBoth_Replacement_RaisesUnlinkEventsForBothDisplacedEdges()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2)); // a's displaced target
+        Entity c = world.Create(new Struct1(3)); // the new target
+        Entity e = world.Create(new Struct1(5)); // c's displaced source
+
+        a.Link<SingleBoth>(b);
+        e.Link<SingleBoth>(c);
+
+        List<(Entity, LinkID)> outgoingUnlinked = [];
+        List<(Entity, LinkID)> incomingUnlinked = [];
+        world.OutgoingUnlinked += (en, l) => outgoingUnlinked.Add((en, l));
+        world.IncomingUnlinked += (en, l) => incomingUnlinked.Add((en, l));
+
+        a.Link<SingleBoth>(c); // displaces a -> b (outgoing side) and e -> c (incoming side)
+
+        That(outgoingUnlinked, Is.EquivalentTo(new[] { (a, Link<SingleBoth>.ID), (e, Link<SingleBoth>.ID) }));
+        That(incomingUnlinked, Is.EquivalentTo(new[] { (b, Link<SingleBoth>.ID), (c, Link<SingleBoth>.ID) }));
+    }
+
+    [Test]
+    public static void SingleLink_FreshLink_RaisesNoUnlinkEvents()
+    {
+        using World world = new();
+        Entity a = world.Create(new Struct1(1));
+        Entity b = world.Create(new Struct1(2));
+
+        int unlinkCount = 0;
+        world.OutgoingUnlinked += (_, _) => unlinkCount++;
+        world.IncomingUnlinked += (_, _) => unlinkCount++;
+
+        a.Link<SingleOut>(b); // fresh link, nothing displaced
+
+        That(unlinkCount, Is.Zero);
     }
 
     #endregion

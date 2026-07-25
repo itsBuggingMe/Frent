@@ -256,8 +256,11 @@ public class JsonWorldSerializer
                         entity.AddFromHandlesCore(components.Span[..index], callIniters: false);
 
                         foreach (var (linkKind, targets) in _links)
+                        {
                             foreach (int targetSerializedId in targets)
                                 entity.Link(linkKind, MapEntityRead(targetSerializedId));
+                            targets.Clear();
+                        }
                     }
                 }
 
