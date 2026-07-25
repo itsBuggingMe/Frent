@@ -1,4 +1,6 @@
 using Frent.Collections;
+using Frent.Components;
+using System.Runtime.CompilerServices;
 
 namespace Frent.Core;
 
@@ -61,7 +63,10 @@ public static class Link
             if (id == ushort.MaxValue)
                 throw new Exception("Exceeded max link count of 65535");
 
-            LinkID newID = new LinkID((ushort)id);
+            LinkID newID = new LinkID((ushort)id,
+                typeof(ISingleIncomingLink).IsAssignableFrom(type),
+                typeof(ISingleOutgoingLink).IsAssignableFrom(type));
+
             ExistingLinkIDs[type] = newID;
             ExistingLinkIDsByName[type.ToString()] = newID;
             LinkTable.Push(type);

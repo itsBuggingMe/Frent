@@ -16,16 +16,18 @@ Entity c = world.Create();
 Entity d = world.Create();
 Entity e = world.Create();
 
-a.Link<ChildOf>(b);
-a.Link<ChildOf>(c);
+b.Link<ChildOf>(a);
+c.Link<ChildOf>(a);
 
-c.Link<ChildOf>(d);
-c.Link<ChildOf>(e);
+d.Link<ChildOf>(c);
+e.Link<ChildOf>(c);
 
-foreach (Entity child in a.EnumerateOutgoingWithEntities<ChildOf>())
+foreach (Entity child in a.EnumerateIncomingWithEntities<ChildOf>())
 {
     // gets you b, c
 }
 
 struct ChildOf;
 ```
+
+Entities can be linked to any other entity with any type, including linked with itself.
