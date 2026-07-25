@@ -37,7 +37,7 @@ internal struct DependencyComponent : IUpdate<int>
     }
 }
 
-internal class ChildClass : BaseClass;
+internal class ChildClass : BaseClass, IComponentBase;
 internal class BaseClass;
 
 partial struct GenericComponent<T>() : IUpdate

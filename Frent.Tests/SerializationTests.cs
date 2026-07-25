@@ -243,6 +243,54 @@ internal class SerializationTests
         SerializableSparseInitComponent.InitCount = 0;
     }
 
+    [Test]
+    public void TestSerializationWithLinks()
+    {
+        using World world = new();
+        Entity a = world.Create<int>(1);
+        Entity b = world.Create<int>(2);
+        Entity c = world.Create<int>(3);
+        a.Link<LinkChild>(b);
+        a.Link<LinkChild>(c);
+        c.Link<LinkOwns>(a);
+
+        string json = JsonWorldSerializer.Default.Serialize(world);
+        using World deserialized = JsonWorldSerializer.Default.Deserialize(json);
+
+        Entity da = default, db = default, dc = default;
+        foreach (Entity e in deserialized.CreateQuery().Build().EnumerateWithEntities())
+        {
+            switch (e.Get<int>())
+            {
+                case 1: da = e; break;
+                case 2: db = e; break;
+                case 3: dc = e; break;
+            }
+        }
+
+        That(da.IsNull, Is.False);
+        That(db.IsNull, Is.False);
+        That(dc.IsNull, Is.False);
+
+        List<int> childTargets = [];
+        foreach (Entity t in da.EnumerateOutgoingWithEntities<LinkChild>())
+            childTargets.Add(t.Get<int>());
+        childTargets.Sort();
+        That(childTargets, Is.EqualTo(new[] { 2, 3 }));
+
+        List<int> ownsTargets = [];
+        foreach (Entity t in dc.EnumerateOutgoingWithEntities<LinkOwns>())
+            ownsTargets.Add(t.Get<int>());
+        That(ownsTargets, Is.EqualTo(new[] { 1 }));
+
+        That(db.HasIncomingLink<LinkChild>(), Is.True);
+        That(da.HasIncomingLink<LinkOwns>(), Is.True);
+        That(da.HasOutgoingLink<LinkOwns>(), Is.False);
+    }
+
+    internal struct LinkChild : ILink;
+    internal struct LinkOwns : ILink;
+
     private static Entity GetFirstEntity(Query query)
     {
         foreach (var entity in query.EnumerateWithEntities())
