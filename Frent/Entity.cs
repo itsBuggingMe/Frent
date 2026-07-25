@@ -114,13 +114,19 @@ public partial struct Entity : IEquatable<Entity>
         targetEloc.Flags |= EntityFlags.HasHadIncomingLinks;
 
         // record the outgoing link on this entity: this -> target
-        ref LinkTableEntry outgoing = ref MemoryHelpers.GetValueOrResize(ref links.OutgoingLinks, sourceLinkId);
-        if (!outgoing.AddLink(targetArchetype, targetEloc.Index))
+        ref LinkTableEntry outgoing = ref MemoryHelpers.GetValueOrResize(ref links.Outgoing, sourceLinkId);
+        int outIndex = outgoing.AddLinkChecked(targetArchetype, targetEloc.Index, targetLinkId, mapBack: -1);
+        if (outIndex < 0)
             return false;
 
         // record the matching incoming link on the target: target <- this
-        ref LinkTableEntry incoming = ref MemoryHelpers.GetValueOrResize(ref links.IncomingLinks, targetLinkId);
-        incoming.AddLink(sourceArchetype, eloc.Index);
+        ref LinkTableEntry incoming = ref MemoryHelpers.GetValueOrResize(ref links.Incoming, targetLinkId);
+        int inIndex = incoming.AddLinkUnchecked(sourceArchetype, eloc.Index, sourceLinkId, mapBack: outIndex);
+
+        outgoing.SetMapBack(outIndex, inIndex);
+
+        MemoryHelpers.GetValueOrResize(ref world.AssociatedLinks, sourceLinkId).Push(linkKind);
+        MemoryHelpers.GetValueOrResize(ref world.AssociatedLinks, targetLinkId).Push(linkKind);
 
         // events might cause structural changes, so read the flags before invoking anything
         EntityFlags sourceFlags = eloc.Flags;
@@ -149,18 +155,23 @@ public partial struct Entity : IEquatable<Entity>
         int targetLinkId = targetEloc.HasFlag(EntityFlags.HasHadLinks) ?
             targetArchetype.GetExistingLinkID(targetEloc.Index) : 0;
 
-        LinkTableEntry[] outgoingLinks = links.OutgoingLinks;
+        LinkTableEntry[] outgoingLinks = links.Outgoing;
         if (!((uint)sourceLinkId < (uint)outgoingLinks.Length))
             return false;
 
-        // remove the outgoing link on this entity: this -> target
-        if (!outgoingLinks[sourceLinkId].RemoveLink(targetArchetype, targetEloc.Index))
+        ref LinkTableEntry outgoing = ref outgoingLinks[sourceLinkId];
+        if (!outgoing.TryGetIndexByLinkedWorldId(targetLinkId, out int outIndex))
             return false;
 
+        int inIndex = outgoing.GetMapBack(outIndex);
+        LinkTableEntry[] incomingLinks = links.Incoming;
+
+        // remove the outgoing link on this entity: this -> target
+        outgoing.RemoveAt(outIndex, incomingLinks);
+
         // remove the matching incoming link on the target: target <- this
-        LinkTableEntry[] incomingLinks = links.IncomingLinks;
         if ((uint)targetLinkId < (uint)incomingLinks.Length)
-            incomingLinks[targetLinkId].RemoveLink(sourceArchetype, eloc.Index);
+            incomingLinks[targetLinkId].RemoveAt(inIndex, outgoingLinks);
 
         EntityFlags sourceFlags = eloc.Flags;
         EntityFlags targetFlags = targetEloc.Flags;
@@ -176,9 +187,9 @@ public partial struct Entity : IEquatable<Entity>
     /// <remarks>
     /// Counts exactly what enumeration would yield, so a link whose far end has since moved or died still counts.
     /// </remarks>
-    private static bool HasLinkCore(World world, LinkID linkKind, ref EntityLocation eloc, bool incoming)
+    private static bool HasLinkCore(World world, LinkID linkKind, ref EntityLocation eloc, int incoming)
     {
-        if (!eloc.HasFlag(incoming ? EntityFlags.HasHadIncomingLinks : EntityFlags.HasHadOutgoingLinks))
+        if (!eloc.HasFlag((EntityFlags)((ushort)EntityFlags.HasHadOutgoingLinks << incoming)))
             return false;
 
         return world.WorldLinkTable

@@ -42,7 +42,9 @@ public partial class World : IDisposable
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal ComponentSparseSetBase[] WorldSparseSetTable;
+    // linkID -> link table entry
     internal LinkTable[] WorldLinkTable = [];
+    internal FastStack<LinkID>[] AssociatedLinks = [];
 
     internal struct WorldArchetypeTableItem(Archetype archetype, Archetype temp)
     {
@@ -450,7 +452,9 @@ public partial class World : IDisposable
         Array.Resize(ref WorldLinkTable, newSize);
 
         for (int i = previousSize; i < WorldLinkTable.Length; i++)
+        {
             WorldLinkTable[i] = new LinkTable();
+        }
     }
 
     internal void EnterDisallowState()
@@ -786,7 +790,41 @@ public partial class World : IDisposable
             return;
         _recycledLinkIDs.Push(linkID);
     }
-    #endregion
+
+    internal void UpdateLinkReferences(int worldLinkId, Archetype archetype, int row)
+    {
+        LinkTable[] tables = WorldLinkTable;
+        
+        foreach (LinkID linkKind in AssociatedLinks[worldLinkId])
+        {
+            ref LinkTable table = ref tables.UnsafeArrayIndex(linkKind.RawValue);
+            LinkTableEntry[] outgoing = table.Outgoing;
+            LinkTableEntry[] incoming = table.Incoming;
+
+            outgoing.UnsafeArrayIndex(worldLinkId).UpdateMirrors(incoming, archetype, row);
+            incoming.UnsafeArrayIndex(worldLinkId).UpdateMirrors(outgoing, archetype, row);
+        }
+    }
+
+    internal void UnlinkAll(int worldLinkId)
+    {
+        LinkTable[] tables = WorldLinkTable;
+        
+        foreach (LinkID linkKind in AssociatedLinks[worldLinkId])
+        {
+            ref LinkTable linkTable = ref tables.UnsafeArrayIndex(linkKind.RawValue);
+            LinkTableEntry[] outgoing = linkTable.Outgoing;
+            LinkTableEntry[] incoming = linkTable.Incoming;
+
+            ref var entryo = ref outgoing.UnsafeArrayIndex(worldLinkId);
+            entryo.RemoveAllOpposing(incoming, outgoing);
+            entryo.Clear();
+            ref var entryi = ref incoming.UnsafeArrayIndex(worldLinkId);
+            entryi.RemoveAllOpposing(outgoing, incoming);
+            entryi.Clear();
+        }
+    }
+#endregion
 
     internal void InvokeEntityCreated(Entity entity)
     {

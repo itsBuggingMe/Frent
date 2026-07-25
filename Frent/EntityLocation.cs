@@ -83,8 +83,9 @@ internal enum EntityFlags : ushort
 
     HasHadSparseComponents = 1 << 8,
 
-    HasHadIncomingLinks = 1 << 9,
-    HasHadOutgoingLinks = 1 << 10,
+    // incoming has to be outgoing + 1
+    HasHadOutgoingLinks = 1 << 9,
+    HasHadIncomingLinks = 1 << 10,
 
     HasHadLinks = HasHadIncomingLinks | HasHadOutgoingLinks,
 

@@ -1,5 +1,6 @@
 using Frent.Core;
 using Frent.Core.Archetypes;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -8,13 +9,23 @@ namespace Frent.Collections;
 // world link id -> some collection of outgoing & incoming links
 internal struct LinkTable()
 {
-    // allocating a LinkTable array does not run these initalizers - World fills every slot with new LinkTable()
-    internal LinkTableEntry[] OutgoingLinks = [];
-    internal LinkTableEntry[] IncomingLinks = [];
 
-    public readonly bool HasLinks(int worldLinkId, bool incoming)
+#if NETSTANDARD
+    internal LinkTableEntry[] Outgoing = [];
+    internal LinkTableEntry[] Incoming = [];
+    public readonly LinkTableEntry[] GetLinkTable(int incoming) => incoming == 0 ? Outgoing : Incoming;
+#else
+    [UnscopedRef] internal ref LinkTableEntry[] Outgoing => ref GetLinkTable(0);
+    [UnscopedRef] internal ref LinkTableEntry[] Incoming => ref GetLinkTable(1);
+    [UnscopedRef] public ref LinkTableEntry[] GetLinkTable(int incoming) => ref ((Span<LinkTableEntry[]>)LinkTables).UnsafeSpanIndex(incoming);
+    internal InlineArray2<LinkTableEntry[]> LinkTables;
+#endif
+
+    // incoming: 0 -> outgoing table, 1 -> incoming table
+
+    public bool HasLinks(int worldLinkId, int incoming)
     {
-        LinkTableEntry[] entries = incoming ? IncomingLinks : OutgoingLinks;
+        LinkTableEntry[] entries = GetLinkTable(incoming);
 
         if (!((uint)worldLinkId < (uint)entries.Length))
             return false;
@@ -26,12 +37,12 @@ internal struct LinkTable()
     /// Gets the archetype and row of every entity on the other side of <paramref name="location"/>'s links of kind <paramref name="linkID"/>.
     /// </summary>
     /// <remarks>The spans point directly into link storage; they are invalidated by any link or structual change.</remarks>
-    internal static void GetLinkedSlots(World world, LinkID linkID, scoped ref EntityLocation location, bool incoming, out Span<Archetype> archetypes, out Span<int> rows)
+    internal static void GetLinkedSlots(World world, LinkID linkID, scoped ref EntityLocation location, int incoming, out Span<Archetype> archetypes, out Span<int> rows)
     {
         archetypes = default;
         rows = default;
 
-        if (!location.HasFlag(incoming ? EntityFlags.HasHadIncomingLinks : EntityFlags.HasHadOutgoingLinks))
+        if (!location.HasFlag((EntityFlags)((ushort)EntityFlags.HasHadOutgoingLinks << incoming)))
             return;
 
         LinkTable[] worldLinkTable = world.WorldLinkTable;
@@ -39,7 +50,7 @@ internal struct LinkTable()
             return;
 
         ref LinkTable table = ref worldLinkTable.UnsafeArrayIndex(linkID.RawValue);
-        LinkTableEntry[] entries = incoming ? table.IncomingLinks : table.OutgoingLinks;
+        LinkTableEntry[] entries = table.GetLinkTable(incoming);
 
         int worldLinkId = location.Archetype.GetExistingLinkID(location.Index);
 
@@ -54,168 +65,266 @@ internal struct LinkTable()
 // A small collection of entity rows and their archetypes
 internal struct LinkTableEntry
 {
-    // can be some number of Archetypes or Archetype[], int[]
-    public InlineArray2<object?> ArchetypesOrArrays;
-    // corresponding entity rows if ArchetypesOrArrays is Archetypes, Length otherwise
-    // CountOrEntityIDs[0] is count of entities in the arrays above
-    // CountOrEntityIDs[1] is used as a bloom filter where entity rows is directly used as a fast path for error checking
-    public InlineArray2<int> CountOrEntityRows;
+    // null | Archetype | LargeStorage
+    private object? _root;
 
-    public readonly bool Any => ArchetypesOrArrays[0] is not null;
+    // row | count
+    private int _row;
+    // unused when large :(
+    private int _mapBack;
+    private int _linkedWorldId;
+
+    public readonly bool Any => _root is not null;
+
+    private readonly int ElementCount => _root is null ? 0 : (_root is Archetype ? 1 : _row);
 
     public static void GetLinks(ref LinkTableEntry entry, out Span<Archetype> archetypes, out Span<int> rows)
     {
-        if (entry.ArchetypesOrArrays[0] is null)
+        if (entry._root is null)
         {
-            archetypes = default;
-            rows = default;
-            return;
+            archetypes = [];
+            rows = [];
         }
-
-        if (entry.ArchetypesOrArrays[0] is Archetype)
+        else if (entry._root is Archetype)
         {
-            int inlineCount = entry.ArchetypesOrArrays[1] is null ? 1 : 2;
-            archetypes = InlineArrayHelper.AsSpan(ref Unsafe.As<InlineArray2<object>, InlineArray2<Archetype>>(ref entry.ArchetypesOrArrays!))![..inlineCount];
-            rows = InlineArrayHelper.AsSpan(ref entry.CountOrEntityRows)[..inlineCount];
-            return;
+#if !NETSTANDARD
+            archetypes = MemoryMarshal.CreateSpan(ref Unsafe.As<object?, Archetype>(ref entry._root), 1);
+            rows = MemoryMarshal.CreateSpan(ref entry._row, 1);
+#else
+            archetypes = new Archetype[] { UnsafeExtensions.UnsafeCast<Archetype>(entry._root) };
+            rows = new int[] { entry._row };
+#endif
         }
+        else
+        {
+            LargeStorage s = UnsafeExtensions.UnsafeCast<LargeStorage>(entry._root);
 
-        int count = entry.CountOrEntityRows[0];
-        archetypes = UnsafeExtensions.UnsafeCast<Archetype[]>(entry.ArchetypesOrArrays[0]!).AsSpan(0, count);
-        rows = UnsafeExtensions.UnsafeCast<int[]>(entry.ArchetypesOrArrays[1]!).AsSpan(0, count);
+            archetypes = s.Archetypes.AsSpan(0, entry._row);
+            rows = s.Rows.AsSpan(0, entry._row);
+        }
     }
 
-    public bool RemoveLink(Archetype archetype, int row)
+    public int AddLinkChecked(Archetype archetype, int row, int linkedWorldId, int mapBack)
     {
-        if (ArchetypesOrArrays[0] is null)
-            return false;
-
-        if (ArchetypesOrArrays[1] is null)
+        if (_root is null)
         {
-            if (CountOrEntityRows[0] == row && ArchetypesOrArrays[0] == archetype)
+            SetSingle(archetype, row, linkedWorldId, mapBack);
+            return 0;
+        }
+
+        LargeStorage s;
+        if (_root is Archetype existing)
+        {
+            if (_linkedWorldId == linkedWorldId)
+                return -1;
+            s = UpgradeToLarge(existing);
+        }
+        else
+        {
+            s = UnsafeExtensions.UnsafeCast<LargeStorage>(_root);
+            int count = _row;
+            for (int i = 0; i < count; i++)
+                if (s.Follow[i].LinkedWorldID == linkedWorldId)
+                    return -1;
+        }
+        return AppendLarge(s, archetype, row, linkedWorldId, mapBack);
+    }
+
+    public int AddLinkUnchecked(Archetype archetype, int row, int linkedWorldId, int mapBack)
+    {
+        if (_root is null)
+        {
+            SetSingle(archetype, row, linkedWorldId, mapBack);
+            return 0;
+        }
+
+        LargeStorage s = _root is Archetype existing
+            ? UpgradeToLarge(existing)
+            : UnsafeExtensions.UnsafeCast<LargeStorage>(_root);
+        return AppendLarge(s, archetype, row, linkedWorldId, mapBack);
+    }
+
+    public readonly bool TryGetIndexByLinkedWorldId(int linkedWorldId, out int index)
+    {
+        if (_root is null)
+        {
+            index = -1;
+            return false;
+        }
+
+        if (_root is Archetype)
+        {
+            if (_linkedWorldId == linkedWorldId)
             {
-                //CountOrEntityIDs[0] = default;
-                ArchetypesOrArrays[0] = default;
+                index = 0;
                 return true;
             }
-
+            index = -1;
             return false;
         }
 
-        if (ArchetypesOrArrays[0] is Archetype)
+        LargeStorage s = UnsafeExtensions.UnsafeCast<LargeStorage>(_root);
+        int count = _row;
+        LinkFollowData[] follow = s.Follow;
+        for (int i = 0; i < count; i++)
         {
-            return RemoveElement(archetype, row, InlineArrayHelper.AsSpan(ref Unsafe.As<InlineArray2<object>, InlineArray2<Archetype>>(ref ArchetypesOrArrays!))!, InlineArrayHelper.AsSpan(ref CountOrEntityRows));
+            if (follow.UnsafeArrayIndex(i).LinkedWorldID == linkedWorldId)
+            {
+                index = i;
+                return true;
+            }
         }
-
-        int count = CountOrEntityRows[0];
-        bool removed = RemoveElement(
-            archetype,
-            row,
-            UnsafeExtensions.UnsafeCast<Archetype[]>(ArchetypesOrArrays[0]!).AsSpan(0, count),
-            UnsafeExtensions.UnsafeCast<int[]>(ArchetypesOrArrays[1]!).AsSpan(0, count));
-
-
-        if (removed)
-            CountOrEntityRows[0]--;
-
-        return removed;
+        index = -1;
+        return false;
     }
 
-    private static bool RemoveElement(Archetype archetype, int row, Span<Archetype> archetypes, Span<int> rows)
+    public readonly int GetMapBack(int index) => _root is Archetype
+        ? _mapBack
+        : UnsafeExtensions.UnsafeCast<LargeStorage>(_root!).Follow[index].MapBack;
+
+    public void SetMapBack(int index, int value)
     {
-        int index = GetIndexOfRow(archetype, row, archetypes, rows);
-
-        if (index == -1)
-            return false;
-
-        rows[index] = rows[^1];
-        archetypes[index] = archetypes[^1];
-        archetypes[^1] = default!;
-
-        return true;
+        if (_root is Archetype)
+            _mapBack = value;
+        else
+            UnsafeExtensions.UnsafeCast<LargeStorage>(_root!).Follow[index].MapBack = value;
     }
 
-    /// <summary>
-    /// True if there is not an existing duplicate, false if nothing changed since there was a dupe
-    /// </summary>
-    public bool AddLink(Archetype archetype, int row)
+    public void SetLocation(int index, Archetype archetype, int row)
     {
-        if (ArchetypesOrArrays[0] is null)
+        if (_root is Archetype)
         {
-            ArchetypesOrArrays[0] = archetype;
-            CountOrEntityRows[0] = row;
-            return true;
+            _root = archetype;
+            _row = row;
         }
-        if (ArchetypesOrArrays[1] is null)
+        else
         {
-            if (CountOrEntityRows[0] == row && ArchetypesOrArrays[0] == archetype)
-                return false;
-
-            ArchetypesOrArrays[1] = archetype;
-            CountOrEntityRows[1] = row;
-            return true;
+            LargeStorage s = UnsafeExtensions.UnsafeCast<LargeStorage>(_root!);
+            s.Archetypes.UnsafeArrayIndex(index) = archetype;
+            s.Rows.UnsafeArrayIndex(index) = row;
         }
-
-        if (ArchetypesOrArrays[0] is Archetype)
-        {
-            UpgradeStorage();
-        }
-
-        return AddLinkLarge(archetype, row);
     }
 
-    // unsafe!!! only call if known current storage mode is large
-    private bool AddLinkLarge(Archetype archetype, int row)
+    public void RemoveAt(int index, LinkTableEntry[] oppArray)
     {
-        int count = CountOrEntityRows[0];
-        int bloomBit = BloomBit(archetype, row);
-        if ((CountOrEntityRows[1] & bloomBit) != 0 &&
-            GetIndexOfRow(archetype, row, UnsafeExtensions.UnsafeCast<Archetype[]>(ArchetypesOrArrays[0]!).AsSpan(0, count), UnsafeExtensions.UnsafeCast<int[]>(ArchetypesOrArrays[1]!).AsSpan(0, count)) != -1)
-            return false;
+        if (_root is Archetype)
+        {
+            // single element (index is 0); nothing to move
+            _root = null;
+            return;
+        }
 
-        MemoryHelpers.GetValueOrResize(ref Unsafe.As<object, Archetype[]>(ref ArchetypesOrArrays[0]!), count)
-            = archetype;
-        MemoryHelpers.GetValueOrResize(ref Unsafe.As<object, int[]>(ref ArchetypesOrArrays[1]!), count)
-            = row;
-        CountOrEntityRows[0] = count + 1;
-        CountOrEntityRows[1] |= bloomBit;
+        LargeStorage s = UnsafeExtensions.UnsafeCast<LargeStorage>(_root!);
+        int last = _row - 1;
 
-        return true;
+        if (index != last)
+        {
+            LinkFollowData movedFollow = s.Follow.UnsafeArrayIndex(last);
+            s.Archetypes.UnsafeArrayIndex(index) = s.Archetypes.UnsafeArrayIndex(last);
+            s.Rows.UnsafeArrayIndex(index) = s.Rows.UnsafeArrayIndex(last);
+            s.Follow.UnsafeArrayIndex(index) = movedFollow;
+
+            oppArray.UnsafeArrayIndex(movedFollow.LinkedWorldID).SetMapBack(movedFollow.MapBack, index);
+        }
+
+        s.Archetypes.UnsafeArrayIndex(last) = null!;
+        _row = last;
+
+        if (last == 0)
+            _root = null;
+    }
+
+    public readonly void UpdateMirrors(LinkTableEntry[] oppArray, Archetype newArchetype, int newRow)
+    {
+        if (_root is null)
+            return;
+
+        if (_root is Archetype)
+        {
+            oppArray.UnsafeArrayIndex(_linkedWorldId).SetLocation(_mapBack, newArchetype, newRow);
+            return;
+        }
+
+        LargeStorage s = UnsafeExtensions.UnsafeCast<LargeStorage>(_root);
+        int count = _row;
+        for (int i = 0; i < count; i++)
+        {
+            ref LinkFollowData f = ref s.Follow.UnsafeArrayIndex(i);
+            oppArray.UnsafeArrayIndex(f.LinkedWorldID).SetLocation(f.MapBack, newArchetype, newRow);
+        }
+    }
+
+    public readonly void RemoveAllOpposing(LinkTableEntry[] oppArray, LinkTableEntry[] selfDirArray)
+    {
+        if (_root is null)
+            return;
+
+        if (_root is Archetype)
+        {
+            oppArray.UnsafeArrayIndex(_linkedWorldId).RemoveAt(_mapBack, selfDirArray);
+            return;
+        }
+
+        LargeStorage s = UnsafeExtensions.UnsafeCast<LargeStorage>(_root);
+        int count = _row;
+        for (int i = 0; i < count; i++)
+        {
+            ref LinkFollowData f = ref s.Follow.UnsafeArrayIndex(i);
+            oppArray.UnsafeArrayIndex(f.LinkedWorldID).RemoveAt(f.MapBack, selfDirArray);
+        }
+    }
+
+    public void Clear() => _root = null;
+
+    private void SetSingle(Archetype archetype, int row, int linkedWorldId, int mapBack)
+    {
+        _root = archetype;
+        _row = row;
+        _mapBack = mapBack;
+        _linkedWorldId = linkedWorldId;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private void UpgradeStorage()
+    private LargeStorage UpgradeToLarge(Archetype existing)
     {
-        Archetype archetype0 = UnsafeExtensions.UnsafeCast<Archetype>(ArchetypesOrArrays[0]!);
-        Archetype archetype1 = UnsafeExtensions.UnsafeCast<Archetype>(ArchetypesOrArrays[1]!);
-        int row0 = CountOrEntityRows[0];
-        int row1 = CountOrEntityRows[1];
+        LargeStorage s = new();
 
-        Archetype[] archetypes = [archetype0, archetype1, null!, null!];
-        int[] entityRows = [row0, row1, default, default];
+        s.Archetypes.UnsafeArrayIndex(0) = existing;
+        s.Rows.UnsafeArrayIndex(0) = _row;
+        s.Follow.UnsafeArrayIndex(0) = new LinkFollowData { MapBack = _mapBack, LinkedWorldID = _linkedWorldId };
 
-        ArchetypesOrArrays[0] = archetypes;
-        ArchetypesOrArrays[1] = entityRows;
-
-        CountOrEntityRows[0] = 2;
-        CountOrEntityRows[1] = BloomBit(archetype0, row0) | BloomBit(archetype1, row1);
+        _root = s;
+        _row = 1; // now a count
+        return s;
     }
 
-    private static int BloomBit(Archetype archetype, int row) => 1 << ((row ^ archetype.GetHashCode()) & 31);
-
-    private static int GetIndexOfRow(Archetype archetype, int row, Span<Archetype> archetypes, Span<int> rows)
+    private int AppendLarge(LargeStorage s, Archetype archetype, int row, int linkedWorldId, int mapBack)
     {
-        int index = -1;
-
-        for (int i = 0; i < rows.Length; i++)
+        ref int nextIndex = ref _row;
+        if (nextIndex == s.Archetypes.Length)
         {
-            if (rows[i] == row && archetypes[i] == archetype)
-            {
-                index = i;
-                break;
-            }
+            int newSize = nextIndex * 2;
+            Array.Resize(ref s.Archetypes, newSize);
+            Array.Resize(ref s.Rows, newSize);
+            Array.Resize(ref s.Follow, newSize);
         }
 
-        return index;
+        s.Archetypes.UnsafeArrayIndex(nextIndex) = archetype;
+        s.Rows.UnsafeArrayIndex(nextIndex) = row;
+        s.Follow.UnsafeArrayIndex(nextIndex) = new LinkFollowData { MapBack = mapBack, LinkedWorldID = linkedWorldId };
+        return nextIndex++;
+    }
+
+    private sealed class LargeStorage
+    {
+        internal Archetype[] Archetypes = new Archetype[4];
+        internal int[] Rows = new int[4];
+        internal LinkFollowData[] Follow = new LinkFollowData[4];
+    }
+
+    private struct LinkFollowData
+    {
+        public int MapBack;
+        public int LinkedWorldID;
     }
 }

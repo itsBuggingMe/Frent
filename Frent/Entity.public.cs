@@ -645,7 +645,7 @@ partial struct Entity
     public readonly bool HasOutgoingLink(LinkID linkKind)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out World world);
-        return HasLinkCore(world, linkKind, ref eloc, false);
+        return HasLinkCore(world, linkKind, ref eloc, 0);
     }
 
     /// <inheritdoc cref="HasIncomingLink{T}()"/>
@@ -653,7 +653,7 @@ partial struct Entity
     public readonly bool HasIncomingLink(LinkID linkKind)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out World world);
-        return HasLinkCore(world, linkKind, ref eloc, true);
+        return HasLinkCore(world, linkKind, ref eloc, 1);
     }
 
     /// <summary>
@@ -675,7 +675,7 @@ partial struct Entity
     public readonly bool TryHasOutgoingLink(LinkID linkKind)
     {
         ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
-        return alive && HasLinkCore(world, linkKind, ref eloc, false);
+        return alive && HasLinkCore(world, linkKind, ref eloc, 0);
     }
 
     /// <inheritdoc cref="TryHasIncomingLink{T}()"/>
@@ -683,7 +683,7 @@ partial struct Entity
     public readonly bool TryHasIncomingLink(LinkID linkKind)
     {
         ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
-        return alive && HasLinkCore(world, linkKind, ref eloc, true);
+        return alive && HasLinkCore(world, linkKind, ref eloc, 1);
     }
 
     /// <summary>
@@ -701,11 +701,11 @@ partial struct Entity
 
     /// <inheritdoc cref="EnumerateIncomingWithEntities{TLink}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
-    public readonly EntityLinkEnumerator.Enumerable EnumerateIncomingWithEntities(LinkID linkID) => new EntityLinkEnumerator.Enumerable(this, linkID, true);
+    public readonly EntityLinkEnumerator.Enumerable EnumerateIncomingWithEntities(LinkID linkID) => new EntityLinkEnumerator.Enumerable(this, linkID, 1);
 
     /// <inheritdoc cref="EnumerateOutgoingWithEntities{TLink}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
-    public readonly EntityLinkEnumerator.Enumerable EnumerateOutgoingWithEntities(LinkID linkID) => new EntityLinkEnumerator.Enumerable(this, linkID, false);
+    public readonly EntityLinkEnumerator.Enumerable EnumerateOutgoingWithEntities(LinkID linkID) => new EntityLinkEnumerator.Enumerable(this, linkID, 0);
     #endregion
 
     #region Tag

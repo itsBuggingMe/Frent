@@ -35,7 +35,7 @@ public ref struct LinkEnumerator<T>
     private ref ComponentSparseSetBase _sparseFirst;
 #endif
 
-    internal LinkEnumerator(Entity entity, LinkID linkID, bool incoming)
+    internal LinkEnumerator(Entity entity, LinkID linkID, int incoming)
     {
         ref EntityLocation location = ref entity.AssertIsAlive(out World world);
 
@@ -118,9 +118,9 @@ public readonly struct LinkEnumerable<T>
 {
     private readonly Entity _entity;
     private readonly LinkID _linkID;
-    private readonly bool _incoming;
+    private readonly int _incoming;
 
-    internal LinkEnumerable(Entity entity, LinkID linkID, bool incoming)
+    internal LinkEnumerable(Entity entity, LinkID linkID, int incoming)
     {
         _entity = entity;
         _linkID = linkID;

@@ -46,7 +46,7 @@ partial class World
 
         EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
-        Archetype.MoveLinks(from, destination, currentLookup.Index, deletedIndex, nextLocation.Index);
+        Archetype.MoveLinks(this, from, destination, currentLookup.Index, deletedIndex, nextLocation.Index);
 
         ComponentStorageRecord[] fromRunners = from.Components;
         ComponentStorageRecord[] destRunners = destination.Components;
@@ -99,7 +99,7 @@ partial class World
 
         EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
-        Archetype.MoveLinks(from, destination, currentLookup.Index, deletedIndex, nextLocation.Index);
+        Archetype.MoveLinks(this, from, destination, currentLookup.Index, deletedIndex, nextLocation.Index);
 
         ComponentStorageRecord[] fromRunners = from.Components;
         ComponentStorageRecord[] destRunners = destination.Components;
@@ -151,7 +151,7 @@ partial class World
 
         EntityIDOnly movedDown = from.DeleteEntityFromEntityArray(currentLookup.Index, out int deletedIndex);
 
-        Archetype.MoveLinks(from, destination, currentLookup.Index, deletedIndex, nextLocation.Index);
+        Archetype.MoveLinks(this, from, destination, currentLookup.Index, deletedIndex, nextLocation.Index);
 
         ComponentStorageRecord[] fromRunners = from.Components;
         ComponentStorageRecord[] destRunners = destination.Components;
@@ -210,8 +210,12 @@ partial class World
         // entity is guaranteed to be alive here
         // entity is alive; Archetype is not null
         if (currentLookup.HasFlag(EntityFlags.HasHadLinks))
-            RecycleLinkID(currentLookup.Archetype.GetExistingLinkID(currentLookup.Index));
-        EntityIDOnly replacedEntity = currentLookup.Archetype!.DeleteEntity(currentLookup.Index);
+        {
+            int worldLinkId = currentLookup.Archetype.GetExistingLinkID(currentLookup.Index);
+            UnlinkAll(worldLinkId);
+            RecycleLinkID(worldLinkId);
+        }
+        EntityIDOnly replacedEntity = currentLookup.Archetype!.DeleteEntity(this, currentLookup.Index);
 
         Debug.Assert(replacedEntity.ID < EntityTable._buffer.Length);
         Debug.Assert(entity.EntityID < EntityTable._buffer.Length);
@@ -236,8 +240,12 @@ partial class World
     internal void RemoveEntityPlaceholder(ref EntityLocation currentLookup)
     {
         if (currentLookup.HasFlag(EntityFlags.HasHadLinks))
-            RecycleLinkID(currentLookup.Archetype.GetExistingLinkID(currentLookup.Index));
-        EntityIDOnly replacedEntity = currentLookup.Archetype!.DeleteEntity(currentLookup.Index);
+        {
+            int worldLinkId = currentLookup.Archetype.GetExistingLinkID(currentLookup.Index);
+            UnlinkAll(worldLinkId);
+            RecycleLinkID(worldLinkId);
+        }
+        EntityIDOnly replacedEntity = currentLookup.Archetype!.DeleteEntity(this, currentLookup.Index);
 
         ref var replaced = ref EntityTable.UnsafeIndexNoResize(replacedEntity.ID);
         replaced.Index = currentLookup.Index;

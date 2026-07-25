@@ -250,7 +250,7 @@ internal sealed partial class Archetype
         return _entities.UnsafeArrayIndex(index) = _entities.UnsafeArrayIndex(NextComponentIndex);
     }
 
-    internal EntityIDOnly DeleteEntity(int index)
+    internal EntityIDOnly DeleteEntity(World world, int index)
     {
         NextComponentIndex--;
         Debug.Assert(NextComponentIndex >= 0);
@@ -303,7 +303,7 @@ internal sealed partial class Archetype
     end:
 
         CopyBitset(this, this, args.FromIndex, args.ToIndex);
-        MoveLinks(this, null, args.ToIndex, args.FromIndex, 0);
+        MoveLinks(world, this, null, args.ToIndex, args.FromIndex, 0);
         return _entities.UnsafeArrayIndex(args.ToIndex) = _entities.UnsafeArrayIndex(args.FromIndex);
     }
 

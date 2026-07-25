@@ -273,22 +273,22 @@ partial struct Entity
     /// <inheritdoc cref="EnumerateIncoming{TLink, T}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
     /// <variadic />
-    public readonly LinkEnumerable<T> EnumerateIncoming<T>(LinkID linkID) => new LinkEnumerable<T>(this, linkID, true);
+    public readonly LinkEnumerable<T> EnumerateIncoming<T>(LinkID linkID) => new(this, linkID, 1);
 
     /// <inheritdoc cref="EnumerateOutgoing{TLink, T}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
     /// <variadic />
-    public readonly LinkEnumerable<T> EnumerateOutgoing<T>(LinkID linkID) => new LinkEnumerable<T>(this, linkID, false);
+    public readonly LinkEnumerable<T> EnumerateOutgoing<T>(LinkID linkID) => new(this, linkID, 0);
 
     /// <inheritdoc cref="EnumerateIncomingWithEntities{TLink, T}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
     /// <variadic />
-    public readonly EntityLinkEnumerator<T>.Enumerable EnumerateIncomingWithEntities<T>(LinkID linkID) => new EntityLinkEnumerator<T>.Enumerable(this, linkID, true);
+    public readonly EntityLinkEnumerator<T>.Enumerable EnumerateIncomingWithEntities<T>(LinkID linkID) => new(this, linkID, 1);
 
     /// <inheritdoc cref="EnumerateOutgoingWithEntities{TLink, T}()"/>
     /// <param name="linkID">The kind of link to enumerate.</param>
     /// <variadic />
-    public readonly EntityLinkEnumerator<T>.Enumerable EnumerateOutgoingWithEntities<T>(LinkID linkID) => new EntityLinkEnumerator<T>.Enumerable(this, linkID, false);
+    public readonly EntityLinkEnumerator<T>.Enumerable EnumerateOutgoingWithEntities<T>(LinkID linkID) => new(this, linkID, 0);
 
     private static void InvokeComponentWorldEvents<T>(ref Event<ComponentID> @event, Entity entity)
     {
