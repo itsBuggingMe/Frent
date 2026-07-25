@@ -523,26 +523,26 @@ partial struct Entity
 
     #region Link
     /// <summary>
-    /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of type <typeparamref name="T"/>.
+    /// Links from this <see cref="Entity"/> outgoing to <paramref name="target"/> of type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type of link to create.</typeparam>
-    /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
+    /// <param name="target">The <see cref="Entity"/> the link should point to.</param>
     /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</exception>
     public readonly void Link<T>(Entity target) => Link(Core.Link<T>.ID, target);
 
     /// <summary>
-    /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of type <typeparamref name="T"/>, if it is possible to do so.
+    /// Links from this <see cref="Entity"/> outgoing to <paramref name="target"/> of type <typeparamref name="T"/>, if it is possible to do so.
     /// </summary>
     /// <typeparam name="T">The type of link to create.</typeparam>
-    /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
+    /// <param name="target">The <see cref="Entity"/> the link should point to.</param>
     /// <returns><see langword="true"/> when the link was created, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</returns>
     public readonly bool TryLink<T>(Entity target) => TryLink(Core.Link<T>.ID, target);
 
     /// <summary>
-    /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>.
+    /// Links from this <see cref="Entity"/> outgoing to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>.
     /// </summary>
     /// <param name="linkKind">The kind of link to create.</param>
-    /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
+    /// <param name="target">The <see cref="Entity"/> the link should point to.</param>
     /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</exception>
     public readonly void Link(LinkID linkKind, Entity target)
     {
@@ -555,10 +555,10 @@ partial struct Entity
     }
 
     /// <summary>
-    /// Links this <see cref="Entity"/> to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>, if it is possible to do so.
+    /// Links from this <see cref="Entity"/> outgoing to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>, if it is possible to do so.
     /// </summary>
     /// <param name="linkKind">The kind of link to create.</param>
-    /// <param name="target">The <see cref="Entity"/> this one should link to.</param>
+    /// <param name="target">The <see cref="Entity"/> the link should point to.</param>
     /// <returns><see langword="true"/> when the link was created, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</returns>
     public readonly bool TryLink(LinkID linkKind, Entity target)
     {
@@ -574,26 +574,26 @@ partial struct Entity
     }
 
     /// <summary>
-    /// Removes the link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>.
+    /// Removes the outgoing link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>.
     /// </summary>
     /// <typeparam name="T">The type of link to remove.</typeparam>
-    /// <param name="target">The <see cref="Entity"/> this one links to.</param>
+    /// <param name="target">The <see cref="Entity"/> the link points to.</param>
     /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</exception>
     public readonly void Unlink<T>(Entity target) => Unlink(Core.Link<T>.ID, target);
 
     /// <summary>
-    /// Removes the link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
+    /// Removes the outgoing link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
     /// </summary>
     /// <typeparam name="T">The type of link to remove.</typeparam>
-    /// <param name="target">The <see cref="Entity"/> this one links to.</param>
+    /// <param name="target">The <see cref="Entity"/> the link points to.</param>
     /// <returns><see langword="true"/> when the link was removed, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</returns>
     public readonly bool TryUnlink<T>(Entity target) => TryUnlink(Core.Link<T>.ID, target);
 
     /// <summary>
-    /// Removes the link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>.
+    /// Removes the outgoing link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>.
     /// </summary>
     /// <param name="linkKind">The kind of link to remove.</param>
-    /// <param name="target">The <see cref="Entity"/> this one links to.</param>
+    /// <param name="target">The <see cref="Entity"/> the link points to.</param>
     /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</exception>
     public readonly void Unlink(LinkID linkKind, Entity target)
     {
@@ -606,10 +606,10 @@ partial struct Entity
     }
 
     /// <summary>
-    /// Removes the link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
+    /// Removes the outgoing link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
     /// </summary>
     /// <param name="linkKind">The kind of link to remove.</param>
-    /// <param name="target">The <see cref="Entity"/> this one links to.</param>
+    /// <param name="target">The <see cref="Entity"/> the link points to.</param>
     /// <returns><see langword="true"/> when the link was removed, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</returns>
     public readonly bool TryUnlink(LinkID linkKind, Entity target)
     {
@@ -1115,7 +1115,7 @@ partial struct Entity
         }
     }
 
-    #endregion
+    #endregion 
 
     #region Misc
     /// <summary>
