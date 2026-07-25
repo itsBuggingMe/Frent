@@ -566,7 +566,7 @@ public partial class World : IDisposable
     public void Dispose()
     {
         if (_isDisposed)
-            throw new InvalidOperationException("World is already disposed!");
+            return;
         _isDisposed = true;
 
         Span<EntityLocation> tableItems = EntityTable.AsSpan();
@@ -801,6 +801,7 @@ public partial class World : IDisposable
     internal void RecycleLinkID(int linkID)
     {
         Debug.Assert(linkID != 0);
+        AssociatedLinks[linkID].Clear();
         _recycledLinkIDs.Push(linkID);
     }
 

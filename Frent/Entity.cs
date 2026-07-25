@@ -158,38 +158,9 @@ public partial struct Entity : IEquatable<Entity>
 
         static void PushIfNotExisting(ref FastStack<LinkID> links, LinkID kind)
         {
-            if(links.AsSpan().IndexOf(kind) == -1)
+            if (links.AsSpan().IndexOf(kind) == -1)
                 links.Push(kind);
         }
-    }
-
-    /// <summary>
-    /// we move from linkStart using incoming. linkStart must have a link id
-    /// </summary>
-    private static void EnsureNoSingleLink(int incoming, LinkID linkKind, Entity linkStart, int linkStartWorldLinkId, int newFarWorldLinkId, ref LinkTable links, scoped ref EntityLocation sourceOfLinkEloc, World world)
-    {
-        var arr = links.GetLinkTable(incoming);
-        if (!((uint)linkStartWorldLinkId < (uint)arr.Length))
-            return;
-
-        ref LinkTableEntry halfLinkEdge = ref arr[linkStartWorldLinkId];
-        if (!halfLinkEdge.Any)
-            return;
-
-        if (halfLinkEdge.SingleLinkedWorldID == newFarWorldLinkId)
-            return;
-
-        Entity otherEntity = halfLinkEdge.RootAsArchetype.GetEntitySpan().UnsafeSpanIndex(halfLinkEdge.SingleRow).ToEntity(world);
-        scoped ref EntityLocation targetEloc = ref world.EntityTable.UnsafeIndexNoResize(otherEntity.EntityID);
-        scoped ref EntityLocation tmp = ref Unsafe.NullRef<EntityLocation>();
-        if (incoming > 0)
-        {
-            (linkStart, otherEntity) = (otherEntity, linkStart);
-            tmp = ref sourceOfLinkEloc;
-            sourceOfLinkEloc = ref targetEloc;
-            targetEloc = ref tmp;
-        }
-        linkStart.UnlinkCore(linkKind, ref sourceOfLinkEloc, otherEntity, ref targetEloc, world);
     }
 
     /// <summary>
@@ -350,6 +321,42 @@ public partial struct Entity : IEquatable<Entity>
 
                 return components;
             }
+        }
+
+
+        public Dictionary<Type, List<Entity>> IncomingLinks =>
+            target.IsAlive ? GetLinks(incoming: 1) : [];
+
+        public Dictionary<Type, List<Entity>> OutgoingLinks =>
+            target.IsAlive ? GetLinks(incoming: 0) : [];
+
+        private Dictionary<Type, List<Entity>> GetLinks(int incoming)
+        {
+            ref EntityLocation lookup = ref target.AssertIsAlive(out World world);
+            EntityFlags linkFlag = (EntityFlags)((ushort)EntityFlags.HasHadOutgoingLinks << incoming);
+            if (!lookup.HasFlag(linkFlag))
+                return [];
+
+            int worldLinkID = lookup.Archetype.GetExistingLinkID(lookup.Index);
+            Span<LinkID> linkTypes = world.AssociatedLinks[worldLinkID].AsSpan();
+            Dictionary<Type, List<Entity>> links = [];
+            foreach (LinkID linkType in linkTypes)
+            {
+                if (!HasLinkCore(world, linkType, ref lookup, incoming))
+                    continue;
+
+                List<Entity> linkedEntities = [];
+                var enumerable = incoming != 0
+                    ? target.EnumerateIncomingWithEntities(linkType)
+                    : target.EnumerateOutgoingWithEntities(linkType);
+
+                foreach (Entity linkedEntity in enumerable)
+                    linkedEntities.Add(linkedEntity);
+
+                links.Add(linkType.Type, linkedEntities);
+            }
+
+            return links;
         }
     }
 

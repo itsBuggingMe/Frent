@@ -96,13 +96,13 @@ internal sealed class RefDictionary<TKey, TValue> where TKey : notnull
         Debug.Assert(BitOperations.PopCount((uint)entries.Length) == 1);
 #endif
 
-        int bucket = key.GetHashCode() & (entries.Length - 1);
+        int bucket = EqualityComparer<TKey>.Default.GetHashCode(key) & (entries.Length - 1);
         ref int connectedFrom = ref entries[bucket].BucketIndex;
 
         for (int next = connectedFrom; next >= 0;)
         {
             ref Entry current = ref entries[next];
-            if (current.Key.Equals(key))
+            if (EqualityComparer<TKey>.Default.Equals(current.Key, key))
             {
                 // relink linked list
                 // say that 3 times fast
@@ -157,13 +157,13 @@ internal sealed class RefDictionary<TKey, TValue> where TKey : notnull
         Debug.Assert(BitOperations.PopCount((uint)entries.Length) == 1);
 #endif
 
-        int bucket = key.GetHashCode() & (entries.Length - 1);
+        int bucket = EqualityComparer<TKey>.Default.GetHashCode(key) & (entries.Length - 1);
 
         for (int next = entries[bucket].BucketIndex; next >= 0;)
         {
             ref Entry current = ref entries[next];
 
-            if (current.Key.Equals(key))
+            if (EqualityComparer<TKey>.Default.Equals(current.Key, key))
             {
                 return ref current;
             }
@@ -192,7 +192,7 @@ internal sealed class RefDictionary<TKey, TValue> where TKey : notnull
             _free = DecodeFreeListNext(entries[next].NextIndex);
         }
 
-        ref Entry bucket = ref entries[key.GetHashCode() & (entries.Length - 1)];
+        ref Entry bucket = ref entries[EqualityComparer<TKey>.Default.GetHashCode(key) & (entries.Length - 1)];
         int oldBucketIndex = bucket.BucketIndex;
         // hash -> bucket (next entry)
         bucket.BucketIndex = next;

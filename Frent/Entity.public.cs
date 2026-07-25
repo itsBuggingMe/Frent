@@ -761,14 +761,14 @@ partial struct Entity
     {
         ref var lookup = ref AssertIsAlive(out var w);
 
+        if (lookup.Archetype.HasTag(tagID))
+            return false;
+
         if (!w.AllowStructualChanges)
         {
             w.WorldUpdateCommandBuffer.Tag(this, tagID);
             return !lookup.Archetype.HasTag(tagID);
         }
-
-        if (lookup.Archetype.HasTag(tagID))
-            return false;
 
         ArchetypeID archetype = w.AddTagLookup.FindAdjacentArchetypeID(tagID, lookup.Archetype.ID, World, ArchetypeEdgeType.AddTag);
         w.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(w));
@@ -830,7 +830,7 @@ partial struct Entity
             }
 
 
-            if (EntityLocation.HasEventFlag(flags, EntityFlags.Tagged))
+            if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.Tagged))
             {
                 var @event = w.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
                 foreach(var tag in tagIds)
@@ -1075,7 +1075,7 @@ partial struct Entity
         ref var record = ref world.EventLookup.GetValueRefOrAddDefault(EntityIDOnly, out bool exists);
 
         world.EntityTable[EntityID].Flags |= flag;
-        EventRecord.Initalize(exists, ref record!);
+        record ??= new();
 
         switch (flag)
         {

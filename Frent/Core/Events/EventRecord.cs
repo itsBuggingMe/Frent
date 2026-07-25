@@ -4,30 +4,13 @@ namespace Frent.Core.Events;
 
 internal class EventRecord
 {
-    internal TagEvent Tag;
-    internal TagEvent Detach;
-    internal ComponentEvent Add;
-    internal ComponentEvent Remove;
-    internal FrugalStack<Action<Entity>> Delete;
-    internal LinkEvent IncomingLinked;
-    internal LinkEvent OutgoingLinked;
-    internal LinkEvent IncomingUnlinked;
-    internal LinkEvent OutgoingUnlinked;
-
-    public static void Initalize(bool exists, ref EventRecord record)
-    {
-        if (!exists)
-        {
-            record = new EventRecord();
-            record.Tag = new TagEvent();
-            record.Detach = new TagEvent();
-            record.Add = new ComponentEvent();
-            record.Remove = new ComponentEvent();
-            record.Delete = new FrugalStack<Action<Entity>>();
-            record.IncomingLinked = new LinkEvent();
-            record.OutgoingLinked = new LinkEvent();
-            record.IncomingUnlinked = new LinkEvent();
-            record.OutgoingUnlinked = new LinkEvent();
-        }
-    }
+    internal TagEvent Tag = new TagEvent();
+    internal TagEvent Detach = new TagEvent();
+    internal ComponentEvent Add = new ComponentEvent();
+    internal ComponentEvent Remove = new ComponentEvent();
+    internal FrugalStack<Action<Entity>> Delete = new FrugalStack<Action<Entity>>();
+    internal LinkEvent IncomingLinked = new LinkEvent();
+    internal LinkEvent OutgoingLinked = new LinkEvent();
+    internal LinkEvent IncomingUnlinked = new LinkEvent();
+    internal LinkEvent OutgoingUnlinked = new LinkEvent();
 }
