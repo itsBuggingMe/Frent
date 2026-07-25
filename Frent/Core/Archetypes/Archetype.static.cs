@@ -73,6 +73,41 @@ partial class Archetype
             default;// implicit default(Bitset)
     }
 
+    internal static void MoveLinks(World world, Archetype from, Archetype? to, int fromIndex, int deletedIndex, int toIndex)
+    {
+        int[] linkIdsFrom = from._worldLinkIDs;
+
+        if (!((uint)fromIndex < (uint)linkIdsFrom.Length))
+            return;
+
+        ref int linkIdFrom = ref linkIdsFrom[fromIndex];
+        int movedLinkId = linkIdFrom;
+        int displacedLinkId = 0;
+
+        if ((uint)deletedIndex < (uint)linkIdsFrom.Length)
+        {
+            ref int deletedIndexFrom = ref linkIdsFrom[deletedIndex];
+            if (deletedIndex != fromIndex) // its possible for the displaced entity to be itself
+                displacedLinkId = deletedIndexFrom;
+            linkIdFrom = deletedIndexFrom;
+            deletedIndexFrom = 0;
+        }
+        else
+        {
+            linkIdFrom = 0;
+        }
+
+        if (movedLinkId != 0 && to is not null)
+        {
+            MemoryHelpers.GetValueOrResize(ref to._worldLinkIDs, toIndex) = movedLinkId;
+            // the leaving entity now lives at (to, toIndex)
+            world.UpdateLinkReferences(movedLinkId, to, toIndex);
+        }
+
+        if (displacedLinkId != 0)
+            world.UpdateLinkReferences(displacedLinkId, from, fromIndex);
+    }
+
     internal static Archetype CreateOrGetExistingArchetype(ReadOnlySpan<ComponentID> types, ReadOnlySpan<TagID> tagTypes, World world, ImmutableArray<ComponentID>? typeArray = null, ImmutableArray<TagID>? tagTypesArray = null)
     {
         ArchetypeID id = GetArchetypeID(types, tagTypes, typeArray, tagTypesArray);

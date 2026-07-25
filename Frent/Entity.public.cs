@@ -2,6 +2,7 @@
 using Frent.Core;
 using Frent.Core.Archetypes;
 using Frent.Core.Events;
+using Frent.Systems;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -54,7 +55,8 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity is alive and has a component of <paramref name="componentID"/>, otherwise <see langword="false"/>.</returns>
     public readonly bool TryHas(ComponentID componentID)
     {
-        if (InternalIsAlive(out World? world, out EntityLocation entityLocation))
+        ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool exists);
+        if (exists)
         {
             if (componentID.IsSparseComponent)
             {
@@ -76,7 +78,8 @@ partial struct Entity
     /// <returns><see langword="true"/> if the entity is alive and has a component of <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public readonly bool TryHas<T>()
     {
-        if (InternalIsAlive(out World? world, out EntityLocation entityLocation))
+        ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool exists);
+        if (exists)
         {
             if (Component<T>.IsSparseComponent)
             {
@@ -211,8 +214,31 @@ partial struct Entity
     /// <returns><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
     public readonly bool TryGet<T>(out Ref<T> value)
     {
-        value = TryGetCore<T>(out bool exists);
-        return exists;
+        ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool alive);
+        if (!alive)
+            goto doesntExist;
+
+        if (Component<T>.IsSparseComponent)
+        {
+            value = UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex))
+                .TryGet(EntityID, out bool exists);
+            return exists;
+        }
+
+        int compIndex = entityLocation.Archetype.GetComponentIndex<T>();
+
+        if (compIndex == 0)
+            goto doesntExist;
+
+        T[] storage = UnsafeExtensions.UnsafeCast<T[]>(
+            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex).Buffer);
+
+        value = new Ref<T>(storage, entityLocation.Index);
+        return true;
+
+    doesntExist:
+        value = default;
+        return false;
     }
 
     /// <summary>
@@ -495,6 +521,193 @@ partial struct Entity
     public readonly void Remove(Type type) => Remove(Component.GetComponentID(type));
     #endregion
 
+    #region Link
+    /// <summary>
+    /// Links from this <see cref="Entity"/> outgoing to <paramref name="target"/> of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of link to create.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> the link should point to.</param>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</exception>
+    public readonly void Link<T>(Entity target) => Link(Core.Link<T>.ID, target);
+
+    /// <summary>
+    /// Links from this <see cref="Entity"/> outgoing to <paramref name="target"/> of type <typeparamref name="T"/>, if it is possible to do so.
+    /// </summary>
+    /// <typeparam name="T">The type of link to create.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> the link should point to.</param>
+    /// <returns><see langword="true"/> when the link was created, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</returns>
+    public readonly bool TryLink<T>(Entity target) => TryLink(Core.Link<T>.ID, target);
+
+    /// <summary>
+    /// Links from this <see cref="Entity"/> outgoing to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>.
+    /// </summary>
+    /// <param name="linkKind">The kind of link to create.</param>
+    /// <param name="target">The <see cref="Entity"/> the link should point to.</param>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</exception>
+    public readonly void Link(LinkID linkKind, Entity target)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
+        if (otherWorld != world)
+            FrentExceptions.Throw_InvalidOperationException("This entity belongs to another world");
+        if (!LinkCore(linkKind, ref eloc, target, ref targetEloc, world)) // TODO: improve exceptions globally
+            FrentExceptions.Throw_InvalidOperationException("Link already exists");
+    }
+
+    /// <summary>
+    /// Links from this <see cref="Entity"/> outgoing to <paramref name="target"/> with a link of kind <paramref name="linkKind"/>, if it is possible to do so.
+    /// </summary>
+    /// <param name="linkKind">The kind of link to create.</param>
+    /// <param name="target">The <see cref="Entity"/> the link should point to.</param>
+    /// <returns><see langword="true"/> when the link was created, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link already exists.</returns>
+    public readonly bool TryLink(LinkID linkKind, Entity target)
+    {
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
+        if (!aliveThis)
+            return false;
+        ref EntityLocation targetEloc = ref target.InternalIsAlive(out World otherWorld, out bool aliveTarget);
+        if (!aliveTarget)
+            return false;
+        if (otherWorld != world)
+            return false;
+        return LinkCore(linkKind, ref eloc, target, ref targetEloc, world);
+    }
+
+    /// <summary>
+    /// Removes the outgoing link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of link to remove.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> the link points to.</param>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</exception>
+    public readonly void Unlink<T>(Entity target) => Unlink(Core.Link<T>.ID, target);
+
+    /// <summary>
+    /// Removes the outgoing link of type <typeparamref name="T"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
+    /// </summary>
+    /// <typeparam name="T">The type of link to remove.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> the link points to.</param>
+    /// <returns><see langword="true"/> when the link was removed, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</returns>
+    public readonly bool TryUnlink<T>(Entity target) => TryUnlink(Core.Link<T>.ID, target);
+
+    /// <summary>
+    /// Removes the outgoing link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>.
+    /// </summary>
+    /// <param name="linkKind">The kind of link to remove.</param>
+    /// <param name="target">The <see cref="Entity"/> the link points to.</param>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</exception>
+    public readonly void Unlink(LinkID linkKind, Entity target)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
+        if (otherWorld != world)
+            FrentExceptions.Throw_InvalidOperationException("This entity belongs to another world");
+        if (!UnlinkCore(linkKind, ref eloc, target, ref targetEloc, world)) // TODO: improve exceptions globally
+            FrentExceptions.Throw_InvalidOperationException("Link does not exist");
+    }
+
+    /// <summary>
+    /// Removes the outgoing link of kind <paramref name="linkKind"/> from this <see cref="Entity"/> to <paramref name="target"/>, if it exists.
+    /// </summary>
+    /// <param name="linkKind">The kind of link to remove.</param>
+    /// <param name="target">The <see cref="Entity"/> the link points to.</param>
+    /// <returns><see langword="true"/> when the link was removed, <see langword="false"/> when either <see cref="Entity"/> is dead, they belong to different worlds, or the link does not exist.</returns>
+    public readonly bool TryUnlink(LinkID linkKind, Entity target)
+    {
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
+        if (!aliveThis)
+            return false;
+        ref EntityLocation targetEloc = ref target.InternalIsAlive(out World otherWorld, out bool aliveTarget);
+        if (!aliveTarget)
+            return false;
+        if (otherWorld != world)
+            return false;
+        return UnlinkCore(linkKind, ref eloc, target, ref targetEloc, world);
+    }
+
+    /// <summary>
+    /// Checks whether this <see cref="Entity"/> links to anything with a link of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <returns><see langword="true"/> when this <see cref="Entity"/> is the source of at least one link of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    /// <exception cref="InvalidOperationException">This <see cref="Entity"/> is dead.</exception>
+    public readonly bool HasOutgoingLink<T>() => HasOutgoingLink(Core.Link<T>.ID);
+
+    /// <summary>
+    /// Checks whether anything links to this <see cref="Entity"/> with a link of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <returns><see langword="true"/> when this <see cref="Entity"/> is the target of at least one link of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    /// <exception cref="InvalidOperationException">This <see cref="Entity"/> is dead.</exception>
+    public readonly bool HasIncomingLink<T>() => HasIncomingLink(Core.Link<T>.ID);
+
+    /// <inheritdoc cref="HasOutgoingLink{T}()"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    public readonly bool HasOutgoingLink(LinkID linkKind)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        return HasLinkCore(world, linkKind, ref eloc, 0);
+    }
+
+    /// <inheritdoc cref="HasIncomingLink{T}()"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    public readonly bool HasIncomingLink(LinkID linkKind)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        return HasLinkCore(world, linkKind, ref eloc, 1);
+    }
+
+    /// <summary>
+    /// Checks whether this <see cref="Entity"/> links to anything with a link of type <typeparamref name="T"/>, without throwing when dead.
+    /// </summary>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <returns><see langword="true"/> when this <see cref="Entity"/> is alive and is the source of at least one link of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    public readonly bool TryHasOutgoingLink<T>() => TryHasOutgoingLink(Core.Link<T>.ID);
+
+    /// <summary>
+    /// Checks whether anything links to this <see cref="Entity"/> with a link of type <typeparamref name="T"/>, without throwing when dead.
+    /// </summary>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <returns><see langword="true"/> when this <see cref="Entity"/> is alive and is the target of at least one link of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    public readonly bool TryHasIncomingLink<T>() => TryHasIncomingLink(Core.Link<T>.ID);
+
+    /// <inheritdoc cref="TryHasOutgoingLink{T}()"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    public readonly bool TryHasOutgoingLink(LinkID linkKind)
+    {
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
+        return alive && HasLinkCore(world, linkKind, ref eloc, 0);
+    }
+
+    /// <inheritdoc cref="TryHasIncomingLink{T}()"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    public readonly bool TryHasIncomingLink(LinkID linkKind)
+    {
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
+        return alive && HasLinkCore(world, linkKind, ref eloc, 1);
+    }
+
+    /// <summary>
+    /// Enumerates every <see cref="Entity"/> that links to this one with a link of type <typeparamref name="TLink"/>.
+    /// </summary>
+    /// <typeparam name="TLink">The type of link to enumerate.</typeparam>
+    /// <exception cref="InvalidOperationException">This <see cref="Entity"/> is dead.</exception>
+    public readonly EntityLinkEnumerator.Enumerable EnumerateIncomingWithEntities<TLink>() => EnumerateIncomingWithEntities(Core.Link<TLink>.ID);
+
+    /// <summary>
+    /// Enumerates every <see cref="Entity"/> this one links to with a link of type <typeparamref name="TLink"/>.
+    /// </summary>
+    /// <inheritdoc cref="EnumerateIncomingWithEntities{TLink}()"/>
+    public readonly EntityLinkEnumerator.Enumerable EnumerateOutgoingWithEntities<TLink>() => EnumerateOutgoingWithEntities(Core.Link<TLink>.ID);
+
+    /// <inheritdoc cref="EnumerateIncomingWithEntities{TLink}()"/>
+    /// <param name="linkID">The kind of link to enumerate.</param>
+    public readonly EntityLinkEnumerator.Enumerable EnumerateIncomingWithEntities(LinkID linkID) => new EntityLinkEnumerator.Enumerable(this, linkID, 1);
+
+    /// <inheritdoc cref="EnumerateOutgoingWithEntities{TLink}()"/>
+    /// <param name="linkID">The kind of link to enumerate.</param>
+    public readonly EntityLinkEnumerator.Enumerable EnumerateOutgoingWithEntities(LinkID linkID) => new EntityLinkEnumerator.Enumerable(this, linkID, 0);
+    #endregion
+
     #region Tag
     /// <summary>
     /// Checks whether this <see cref="Entity"/> has a specific tag, using a <see cref="TagID"/> to represent the tag.
@@ -712,7 +925,8 @@ partial struct Entity
         set { /*the set is just to enable the += syntax*/ }
         get
         {
-            if (!InternalIsAlive(out var world, out _))
+            InternalIsAlive(out World world, out bool alive);
+            if (!alive)
                 return null;
             world.EntityTable[EntityID].Flags |= EntityFlags.AddGenericComp;
             return world.EventLookup.GetOrAddNew(EntityIDOnly).Add.GenericEvent ??= new();
@@ -727,7 +941,8 @@ partial struct Entity
         set { /*the set is just to enable the += syntax*/ }
         get
         {
-            if (!InternalIsAlive(out var world, out _))
+            InternalIsAlive(out World world, out bool alive);
+            if (!alive)
                 return null;
             world.EntityTable[EntityID].Flags |= EntityFlags.RemoveGenericComp;
             return world.EventLookup.GetOrAddNew(EntityIDOnly).Remove.GenericEvent ??= new();
@@ -752,9 +967,49 @@ partial struct Entity
         remove => UnsubscribeEvent(value, EntityFlags.Detach);
     }
 
+    /// <summary>
+    /// Raised when this entity becomes the target of a link
+    /// </summary>
+    public readonly event Action<Entity, LinkID> OnIncomingLinked
+    {
+        add => InitalizeEventRecord(value, EntityFlags.OnIncomingLinked);
+        remove => UnsubscribeEvent(value, EntityFlags.OnIncomingLinked);
+    }
+
+    /// <summary>
+    /// Raised when this entity becomes the source of a link
+    /// </summary>
+    public readonly event Action<Entity, LinkID> OnOutgoingLinked
+    {
+        add => InitalizeEventRecord(value, EntityFlags.OnOutgoingLinked);
+        remove => UnsubscribeEvent(value, EntityFlags.OnOutgoingLinked);
+    }
+
+    /// <summary>
+    /// Raised when an incoming link to this entity is removed
+    /// </summary>
+    public readonly event Action<Entity, LinkID> OnIncomingUnlinked
+    {
+        add => InitalizeEventRecord(value, EntityFlags.OnIncomingUnlinked);
+        remove => UnsubscribeEvent(value, EntityFlags.OnIncomingUnlinked);
+    }
+
+    /// <summary>
+    /// Raised when an outgoing link from this entity is removed
+    /// </summary>
+    public readonly event Action<Entity, LinkID> OnOutgoingUnlinked
+    {
+        add => InitalizeEventRecord(value, EntityFlags.OnOutgoingUnlinked);
+        remove => UnsubscribeEvent(value, EntityFlags.OnOutgoingUnlinked);
+    }
+
     private readonly void UnsubscribeEvent(object value, EntityFlags flag)
     {
-        if (value is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+        if (value is null)
+            return;
+
+        ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool alive);
+        if (!alive)
             return;
 
         ref var events = ref world.TryGetEventData(entityLocation, EntityIDOnly, flag, out bool exists);
@@ -785,6 +1040,22 @@ partial struct Entity
                     events!.Delete.Remove((Action<Entity>)value);
                     removeFlags = !events.Delete.Any;
                     break;
+                case EntityFlags.OnIncomingLinked:
+                    events!.IncomingLinked.Remove((Action<Entity, LinkID>)value);
+                    removeFlags = !events.IncomingLinked.HasListeners;
+                    break;
+                case EntityFlags.OnOutgoingLinked:
+                    events!.OutgoingLinked.Remove((Action<Entity, LinkID>)value);
+                    removeFlags = !events.OutgoingLinked.HasListeners;
+                    break;
+                case EntityFlags.OnIncomingUnlinked:
+                    events!.IncomingUnlinked.Remove((Action<Entity, LinkID>)value);
+                    removeFlags = !events.IncomingUnlinked.HasListeners;
+                    break;
+                case EntityFlags.OnOutgoingUnlinked:
+                    events!.OutgoingUnlinked.Remove((Action<Entity, LinkID>)value);
+                    removeFlags = !events.OutgoingUnlinked.HasListeners;
+                    break;
             }
 
             if (removeFlags)
@@ -794,7 +1065,11 @@ partial struct Entity
 
     private readonly void InitalizeEventRecord(object @delegate, EntityFlags flag, bool isGenericEvent = false)
     {
-        if (@delegate is null || !InternalIsAlive(out var world, out EntityLocation entityLocation))
+        if (@delegate is null)
+            return;
+
+        InternalIsAlive(out World world, out bool alive);
+        if (!alive)
             return;
 
         ref var record = ref world.EventLookup.GetValueRefOrAddDefault(EntityIDOnly, out bool exists);
@@ -825,10 +1100,22 @@ partial struct Entity
             case EntityFlags.OnDelete:
                 record.Delete.Push((Action<Entity>)@delegate);
                 break;
+            case EntityFlags.OnIncomingLinked:
+                record.IncomingLinked.Add((Action<Entity, LinkID>)@delegate);
+                break;
+            case EntityFlags.OnOutgoingLinked:
+                record.OutgoingLinked.Add((Action<Entity, LinkID>)@delegate);
+                break;
+            case EntityFlags.OnIncomingUnlinked:
+                record.IncomingUnlinked.Add((Action<Entity, LinkID>)@delegate);
+                break;
+            case EntityFlags.OnOutgoingUnlinked:
+                record.OutgoingUnlinked.Add((Action<Entity, LinkID>)@delegate);
+                break;
         }
     }
 
-    #endregion
+    #endregion 
 
     #region Misc
     /// <summary>
@@ -858,7 +1145,14 @@ partial struct Entity
     /// Checks to see if this <see cref="Entity"/> is still alive
     /// </summary>
     /// <returns><see langword="true"/> if this entity is still alive (not deleted), otherwise <see langword="false"/></returns>
-    public readonly bool IsAlive => InternalIsAlive(out _, out _);
+    public readonly bool IsAlive
+    {
+        get
+        {
+            InternalIsAlive(out _, out bool alive);
+            return alive;
+        }
+    }
 
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> instance is the null entity: <see langword="default"/>(<see cref="Entity"/>)

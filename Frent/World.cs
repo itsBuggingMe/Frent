@@ -42,6 +42,9 @@ public partial class World : IDisposable
     //archetype ID -> Archetype
     internal WorldArchetypeTableItem[] WorldArchetypeTable;
     internal ComponentSparseSetBase[] WorldSparseSetTable;
+    // linkID -> link table entry
+    internal LinkTable[] WorldLinkTable = [];
+    internal FastStack<LinkID>[] AssociatedLinks = [];
 
     internal struct WorldArchetypeTableItem(Archetype archetype, Archetype temp)
     {
@@ -100,6 +103,10 @@ public partial class World : IDisposable
     internal Event<ComponentID> ComponentRemovedEvent = new Event<ComponentID>();
     internal TagEvent Tagged = new TagEvent();
     internal TagEvent Detached = new TagEvent();
+    internal LinkEvent IncomingLinkedEvent = new LinkEvent();
+    internal LinkEvent OutgoingLinkedEvent = new LinkEvent();
+    internal LinkEvent IncomingUnlinkedEvent = new LinkEvent();
+    internal LinkEvent OutgoingUnlinkedEvent = new LinkEvent();
 
     //these lookups exists for programmical api optimization
     //normal <T1, T2...> methods use a shared global static cache
@@ -211,6 +218,42 @@ public partial class World : IDisposable
         remove => RemoveEvent(ref Detached, value, EntityFlags.Detach);
     }
 
+    /// <summary>
+    /// Invoked whenever an entity becomes the target of a link.
+    /// </summary>
+    public event Action<Entity, LinkID> IncomingLinked
+    {
+        add => AddEvent(ref IncomingLinkedEvent, value, EntityFlags.OnIncomingLinked);
+        remove => RemoveEvent(ref IncomingLinkedEvent, value, EntityFlags.OnIncomingLinked);
+    }
+
+    /// <summary>
+    /// Invoked whenever an entity becomes the source of a link.
+    /// </summary>
+    public event Action<Entity, LinkID> OutgoingLinked
+    {
+        add => AddEvent(ref OutgoingLinkedEvent, value, EntityFlags.OnOutgoingLinked);
+        remove => RemoveEvent(ref OutgoingLinkedEvent, value, EntityFlags.OnOutgoingLinked);
+    }
+
+    /// <summary>
+    /// Invoked whenever an incoming link is removed from an entity.
+    /// </summary>
+    public event Action<Entity, LinkID> IncomingUnlinked
+    {
+        add => AddEvent(ref IncomingUnlinkedEvent, value, EntityFlags.OnIncomingUnlinked);
+        remove => RemoveEvent(ref IncomingUnlinkedEvent, value, EntityFlags.OnIncomingUnlinked);
+    }
+
+    /// <summary>
+    /// Invoked whenever an outgoing link is removed from an entity.
+    /// </summary>
+    public event Action<Entity, LinkID> OutgoingUnlinked
+    {
+        add => AddEvent(ref OutgoingUnlinkedEvent, value, EntityFlags.OnOutgoingUnlinked);
+        remove => RemoveEvent(ref OutgoingUnlinkedEvent, value, EntityFlags.OnOutgoingUnlinked);
+    }
+
     private void AddEvent<T>(ref Event<T> @event, Action<Entity, T> action, EntityFlags flag)
     {
         @event.Add(action);
@@ -239,6 +282,7 @@ public partial class World : IDisposable
 
         WorldArchetypeTable = new WorldArchetypeTableItem[GlobalWorldTables.ComponentTagLocationTable.Length];
         WorldSparseSetTable = new ComponentSparseSetBase[Component.ComponentTableBySparseIndex.Count];
+        GrowLinkTable(Link.LinkTableBufferSize);
 
         for (int i = 1; i < WorldSparseSetTable.Length; i++)
             WorldSparseSetTable[i] = Component.ComponentTableBySparseIndex[i].Factory.CreateSparseSet();
@@ -400,6 +444,17 @@ public partial class World : IDisposable
         Array.Resize(ref WorldArchetypeTable, newSize);
 
         //World world = GlobalWorldTables.Worlds[WorldID];
+    }
+
+    internal void GrowLinkTable(int newSize)
+    {
+        int previousSize = WorldLinkTable.Length;
+        Array.Resize(ref WorldLinkTable, newSize);
+
+        for (int i = previousSize; i < WorldLinkTable.Length; i++)
+        {
+            WorldLinkTable[i] = new LinkTable();
+        }
     }
 
     internal void EnterDisallowState()
@@ -710,6 +765,88 @@ public partial class World : IDisposable
         }
 
     }
+
+    #region World Link IDs
+
+    // 0 is null link id
+    // this is different from LinkID
+    // LinkID is the type of the link
+    // this is an id assigned to an entity like EntityID
+    // that is used to get all link info
+    private int _nextLinkID = 1;
+    private FastStack<int> _recycledLinkIDs = FastStack<int>.Create(4);
+
+    internal int CreateLinkID()
+    {
+        if (_recycledLinkIDs.TryPop(out int recycled))
+            return recycled;
+
+        int newId = _nextLinkID++;
+        if (newId >= AssociatedLinks.Length)
+            GrowAssociatedLinkIDArray();
+        return newId;
+    }
+
+    private void GrowAssociatedLinkIDArray()
+    {
+        int oldLength = AssociatedLinks.Length;
+        Array.Resize(ref AssociatedLinks, Math.Max(1, oldLength) * 2);
+        var links = AssociatedLinks;
+        for (int i = oldLength; i < links.Length; i++)
+        {
+            links[i] = FastStack<LinkID>.Create(1);
+        }
+    }
+
+    internal void RecycleLinkID(int linkID)
+    {
+        Debug.Assert(linkID != 0);
+        _recycledLinkIDs.Push(linkID);
+    }
+
+    internal void UpdateLinkReferences(int worldLinkId, Archetype archetype, int row)
+    {
+        LinkTable[] tables = WorldLinkTable;
+
+        foreach (LinkID linkKind in AssociatedLinks[worldLinkId])
+        {
+            ref LinkTable table = ref tables.UnsafeArrayIndex(linkKind.RawValue);
+            LinkTableEntry[] outgoing = table.Outgoing;
+            LinkTableEntry[] incoming = table.Incoming;
+
+            if ((uint)worldLinkId < (uint)outgoing.Length)
+                outgoing[worldLinkId].UpdateMirrors(incoming, archetype, row);
+            if ((uint)worldLinkId < (uint)incoming.Length)
+                incoming[worldLinkId].UpdateMirrors(outgoing, archetype, row);
+        }
+    }
+
+    internal void UnlinkAll(int worldLinkId)
+    {
+        LinkTable[] tables = WorldLinkTable;
+
+        foreach (LinkID linkKind in AssociatedLinks[worldLinkId])
+        {
+            ref LinkTable table = ref tables.UnsafeArrayIndex(linkKind.RawValue);
+            LinkTableEntry[] outgoing = table.Outgoing;
+            LinkTableEntry[] incoming = table.Incoming;
+
+            if ((uint)worldLinkId < (uint)outgoing.Length)
+            {
+                ref LinkTableEntry entryo = ref outgoing[worldLinkId];
+                entryo.RemoveAllOpposing(incoming, outgoing);
+                entryo.Clear();
+            }
+
+            if ((uint)worldLinkId < (uint)incoming.Length)
+            {
+                ref LinkTableEntry entryi = ref incoming[worldLinkId];
+                entryi.RemoveAllOpposing(outgoing, incoming);
+                entryi.Clear();
+            }
+        }
+    }
+#endregion
 
     internal void InvokeEntityCreated(Entity entity)
     {

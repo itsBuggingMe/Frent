@@ -1,7 +1,9 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Frent.Collections;
 
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 internal struct InlineArray8<T>
 {
     public T _0;

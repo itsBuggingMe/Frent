@@ -1,6 +1,7 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Archetypes;
+using Frent.Core.Events;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -70,16 +71,17 @@ public partial struct Entity : IEquatable<Entity>
     #region Internal Helpers
 
     #region IsAlive
-    internal readonly bool InternalIsAlive([NotNullWhen(true)] out World? world, out EntityLocation entityLocation)
+    internal readonly ref EntityLocation InternalIsAlive(out World world, out bool exists)
     {
         world = GlobalWorldTables.Worlds.UnsafeIndexNoResize(WorldID);
         if (world is null)
         {
-            entityLocation = default;
-            return false;
+            exists = false;
+            return ref Unsafe.NullRef<EntityLocation>();
         }
-        entityLocation = world.EntityTable.UnsafeIndexNoResize(EntityID);
-        return entityLocation.Version == EntityVersion;
+        ref EntityLocation entityLocation = ref world.EntityTable.UnsafeIndexNoResize(EntityID);
+        exists = entityLocation.Version == EntityVersion;
+        return ref entityLocation;
     }
 
     /// <exception cref="InvalidOperationException">This <see cref="Entity"/> has been deleted.</exception>
@@ -95,38 +97,150 @@ public partial struct Entity : IEquatable<Entity>
 
     #endregion IsAlive
 
-    private readonly Ref<T> TryGetCore<T>(out bool exists)
+    /// <summary>
+    /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
+    /// </summary>
+    private readonly bool LinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
     {
-        if (!InternalIsAlive(out var world, out var entityLocation))
-            goto doesntExist;
+        ref LinkTable links = ref world.WorldLinkTable.UnsafeArrayIndex(linkKind.RawValue);
 
-        if (Component<T>.IsSparseComponent)
+        Archetype sourceArchetype = eloc.Archetype;
+        Archetype targetArchetype = targetEloc.Archetype;
+
+        int sourceLinkId = sourceArchetype.GetExistingOrCreateLinkID(world, eloc.Index);
+        int targetLinkId = targetArchetype.GetExistingOrCreateLinkID(world, targetEloc.Index);
+
+        eloc.Flags |= EntityFlags.HasHadOutgoingLinks;
+        targetEloc.Flags |= EntityFlags.HasHadIncomingLinks;
+
+        // record the outgoing link on this entity: this -> target
+        ref LinkTableEntry outgoing = ref MemoryHelpers.GetValueOrResize(ref links.Outgoing, sourceLinkId);
+        int outIndex = outgoing.AddLinkChecked(targetArchetype, targetEloc.Index, targetLinkId, mapBack: -1);
+        if (outIndex < 0)
+            return false;
+
+        // record the matching incoming link on the target: target <- this
+        ref LinkTableEntry incoming = ref MemoryHelpers.GetValueOrResize(ref links.Incoming, targetLinkId);
+        int inIndex = incoming.AddLinkUnchecked(sourceArchetype, eloc.Index, sourceLinkId, mapBack: outIndex);
+
+        outgoing.SetMapBack(outIndex, inIndex);
+
+        world.AssociatedLinks.UnsafeArrayIndex(sourceLinkId).Push(linkKind);
+        world.AssociatedLinks.UnsafeArrayIndex(targetLinkId).Push(linkKind);
+
+        // events might cause structural changes, so read the flags before invoking anything
+        EntityFlags sourceFlags = eloc.Flags;
+        EntityFlags targetFlags = targetEloc.Flags;
+        InvokeLinkEvents(world, this, sourceFlags, linkKind, EntityFlags.OnOutgoingLinked);
+        InvokeLinkEvents(world, target, targetFlags, linkKind, EntityFlags.OnIncomingLinked);
+
+        return true;
+    }
+
+    /// <summary>
+    /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
+    /// </summary>
+    private readonly bool UnlinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
+    {
+        if (!eloc.HasFlag(EntityFlags.HasHadOutgoingLinks))
+            return false;
+
+        ref LinkTable links = ref world.WorldLinkTable.UnsafeArrayIndex(linkKind.RawValue);
+
+        Archetype sourceArchetype = eloc.Archetype;
+        Archetype targetArchetype = targetEloc.Archetype;
+
+        // we know link id exists since HasHadOutgoingLinks is true
+        int sourceLinkId = sourceArchetype.GetExistingLinkID(eloc.Index);
+        int targetLinkId = targetEloc.HasFlag(EntityFlags.HasHadLinks) ?
+            targetArchetype.GetExistingLinkID(targetEloc.Index) : 0;
+
+        LinkTableEntry[] outgoingLinks = links.Outgoing;
+        if (!((uint)sourceLinkId < (uint)outgoingLinks.Length))
+            return false;
+
+        ref LinkTableEntry outgoing = ref outgoingLinks[sourceLinkId];
+        if (!outgoing.TryGetIndexByLinkedWorldId(targetLinkId, out int outIndex))
+            return false;
+
+        int inIndex = outgoing.GetMapBack(outIndex);
+        LinkTableEntry[] incomingLinks = links.Incoming;
+
+        // remove the outgoing link on this entity: this -> target
+        outgoing.RemoveAt(outIndex, incomingLinks);
+
+        // remove the matching incoming link on the target: target <- this
+        if ((uint)targetLinkId < (uint)incomingLinks.Length)
+            incomingLinks[targetLinkId].RemoveAt(inIndex, outgoingLinks);
+
+        EntityFlags sourceFlags = eloc.Flags;
+        EntityFlags targetFlags = targetEloc.Flags;
+        InvokeLinkEvents(world, this, sourceFlags, linkKind, EntityFlags.OnOutgoingUnlinked);
+        InvokeLinkEvents(world, target, targetFlags, linkKind, EntityFlags.OnIncomingUnlinked);
+
+        return true;
+    }
+
+    /// <summary>
+    /// Assumes <paramref name="eloc"/> belongs to a live entity of <paramref name="world"/>.
+    /// </summary>
+    /// <remarks>
+    /// Counts exactly what enumeration would yield, so a link whose far end has since moved or died still counts.
+    /// </remarks>
+    private static bool HasLinkCore(World world, LinkID linkKind, ref EntityLocation eloc, int incoming)
+    {
+        if (!eloc.HasFlag((EntityFlags)((ushort)EntityFlags.HasHadOutgoingLinks << incoming)))
+            return false;
+
+        return world.WorldLinkTable
+            .UnsafeArrayIndex(linkKind.RawValue)
+            .HasLinks(eloc.Archetype.GetExistingLinkID(eloc.Index), incoming);
+    }
+
+    /// <summary>
+    /// Invokes the world level and per entity link event identified by <paramref name="eventFlag"/> on <paramref name="entity"/>.
+    /// </summary>
+    private static void InvokeLinkEvents(World world, Entity entity, EntityFlags flags, LinkID linkKind, EntityFlags eventFlag)
+    {
+        if (!EntityLocation.HasEventFlag(flags | world.WorldEventFlags, eventFlag))
+            return;
+
+        ref EventRecord record = ref Unsafe.NullRef<EventRecord>();
+        if (EntityLocation.HasEventFlag(flags, eventFlag))
+            record = ref world.EventLookup.GetValueRefOrNullRef(entity.EntityIDOnly);
+
+        bool hasRecord = !Unsafe.IsNullRef(ref record);
+
+        switch (eventFlag)
         {
-            return UnsafeExtensions.UnsafeCast<ComponentSparseSet<T>>(world.WorldSparseSetTable.UnsafeArrayIndex(Component<T>.SparseSetComponentIndex))
-                .TryGet(EntityID, out exists);
+            case EntityFlags.OnOutgoingLinked:
+                world.OutgoingLinkedEvent.Invoke(entity, linkKind);
+                if (hasRecord)
+                    record.OutgoingLinked.Invoke(entity, linkKind);
+                break;
+            case EntityFlags.OnIncomingLinked:
+                world.IncomingLinkedEvent.Invoke(entity, linkKind);
+                if (hasRecord)
+                    record.IncomingLinked.Invoke(entity, linkKind);
+                break;
+            case EntityFlags.OnOutgoingUnlinked:
+                world.OutgoingUnlinkedEvent.Invoke(entity, linkKind);
+                if (hasRecord)
+                    record.OutgoingUnlinked.Invoke(entity, linkKind);
+                break;
+            case EntityFlags.OnIncomingUnlinked:
+                world.IncomingUnlinkedEvent.Invoke(entity, linkKind);
+                if (hasRecord)
+                    record.IncomingUnlinked.Invoke(entity, linkKind);
+                break;
         }
-
-        int compIndex = entityLocation.Archetype.GetComponentIndex<T>();
-
-        if (compIndex == 0)
-            goto doesntExist;
-
-        exists = true;
-        T[] storage = UnsafeExtensions.UnsafeCast<T[]>(
-            entityLocation.Archetype.Components.UnsafeArrayIndex(compIndex).Buffer);
-
-        return new Ref<T>(storage, entityLocation.Index);
-
-    doesntExist:
-        exists = false;
-        return default;
     }
 
     [DoesNotReturn]
     private static void Throw_EntityIsDead() => throw new InvalidOperationException(EntityIsDeadMessage);
 
     //captial N null to distinguish between actual null and default
-    internal string DebuggerDisplayString => IsNull ? "Null" : InternalIsAlive(out _, out _) ? $"World: {WorldID}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
+    internal string DebuggerDisplayString => IsNull ? "Null" : IsAlive ? $"World: {WorldID}, ID: {EntityID}, Version {EntityVersion}" : EntityIsDeadMessage;
     internal const string EntityIsDeadMessage = "Entity is dead.";
     internal const string DoesNotHaveTagMessage = "This entity does not have this tag";
 
@@ -140,7 +254,7 @@ public partial struct Entity : IEquatable<Entity>
         {
             get
             {
-                if (!target.InternalIsAlive(out World? world, out var eloc))
+                if (!target.IsAlive)
                     return [];
 
                 Dictionary<Type, object> components = [];
@@ -158,7 +272,8 @@ public partial struct Entity : IEquatable<Entity>
 
     private readonly ImmutableArray<ComponentID> AllocateComponentTypeArray()
     {
-        if (!InternalIsAlive(out var world, out var location))
+        ref EntityLocation location = ref InternalIsAlive(out _, out bool alive);
+        if (!alive)
             Throw_EntityIsDead();
         if (!location.HasFlag(EntityFlags.HasHadSparseComponents))
             return location.Archetype.ArchetypeTypeArray;
@@ -198,7 +313,8 @@ public partial struct Entity : IEquatable<Entity>
 
         internal EntityComponentIDEnumerator(Entity entity)
         {
-            if (!entity.InternalIsAlive(out World? world, out EntityLocation entityLocation))
+            ref EntityLocation entityLocation = ref entity.InternalIsAlive(out World world, out bool alive);
+            if (!alive)
                 Throw_EntityIsDead();
 
             _archetypical = entityLocation.ArchetypeID.Types.AsSpan();
@@ -238,7 +354,7 @@ public partial struct Entity : IEquatable<Entity>
 
             int? found = _bitset.TryFindIndexOfBitGreaterThanOrEqualTo(_index + 1);
 
-            if (found is { } x)
+            if (found is int x)
             {
                 _index = x;
                 _current = Component.ComponentTableBySparseIndex[_index].ComponentID;

@@ -7,13 +7,14 @@ using System.Runtime.InteropServices;
 namespace Frent.Collections;
 
 //[DebuggerTypeProxy(typeof(RefDictionary<,>.RefDictionaryDebugView))]
-internal class RefDictionary<TKey, TValue> where TKey : notnull
+internal sealed class RefDictionary<TKey, TValue> where TKey : notnull
 {
     private const int EndOfChain = -1;
     private const int InactiveEntry = -2;
 
-    public RefDictionary()
+    public RefDictionary(int capacity = 4)
     {
+        _entries = new Entry[capacity];
         foreach (ref var entry in _entries.AsSpan())
         {
             entry.NextIndex = InactiveEntry;
@@ -21,7 +22,7 @@ internal class RefDictionary<TKey, TValue> where TKey : notnull
         }
     }
 
-    private Entry[] _entries = new Entry[4];
+    private Entry[] _entries;
     private int _next;
     private int _free = EndOfChain;
 

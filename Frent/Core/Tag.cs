@@ -2,6 +2,8 @@
 
 namespace Frent.Core;
 
+// Check if changes here also need to be made in Link.cs!
+
 /// <summary>
 /// Holds the static <see cref="TagID"/> instance for the type <typeparamref name="T"/>
 /// </summary>

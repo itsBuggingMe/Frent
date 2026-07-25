@@ -23,12 +23,17 @@ partial class Archetype(ArchetypeID archetypeID, ComponentStorageRecord[] compon
     //saves a lookup on hot paths
     internal byte[] ComponentTagTable = GlobalWorldTables.ComponentTagLocationTable[archetypeID.RawIndex];
 
+
     // 8
     // lazy per entity data on what sparse components an entity has based on sparse index.
     // we store this here since it's used in entity filtering in systems
     // also get to save some memory
     // even if it does increase archetype overhead a bit
     private Bitset[] _sparseBits = [];
+    // lazy per entity data on an entity's world link table id
+    // entities do not have a link id until a link is created which is permanent after it is set
+    // Usage is roughly World.LinkTables[LinkID][_globalLinkIDs[Archetype Row]];
+    private int[] _worldLinkIDs = [];
     //2
     private readonly ArchetypeID _archetypeID = archetypeID;
     //4

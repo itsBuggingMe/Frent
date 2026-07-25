@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Frent.Core;
+using Frent.Marshalling;
 
 namespace Frent.Fuzzing.Runner;
 
@@ -112,6 +113,7 @@ internal partial class WorldState
         {
             _componentValues.Remove(toDelete);
             _tagValues.Remove(toDelete);
+            _links.RemoveWhere(l => l.Source == toDelete || l.Target == toDelete);
             _dead.Add(toDelete)
                 .Assert(this);
         });
@@ -320,6 +322,73 @@ internal partial class WorldState
             _componentValues[e] = componentHandles.Where(h => h.ComponentID != handle.ComponentID).Append(handle).ToList();
         });
     }
+    private StepRecord Link()
+    {
+        if (!TryPickEntity(out Entity source) || !TryPickEntity(out Entity target))
+            return SkipRecord();
+
+        LinkID kind = _linkKinds[_random.Next(_linkKinds.Length)];
+        bool alreadyLinked = _links.Contains((source, target, kind));
+
+        if (_random.Next(2) == 0)
+        {
+            bool created = source.TryLink(kind, target);
+            Assert(created == !alreadyLinked);
+        }
+        else if (alreadyLinked)
+        {
+            Assert(!source.TryLink(kind, target));
+        }
+        else
+        {
+            source.Link(kind, target);
+        }
+
+        return new StepRecord(source, new { Link = kind.Type, Target = EntityMarshal.EntityID(target), New = !alreadyLinked }, () =>
+        {
+            _links.Add((source, target, kind));
+        });
+    }
+
+    private StepRecord Unlink()
+    {
+        Entity source, target;
+        LinkID kind;
+        bool exists;
+
+        if (_links.Count != 0 && _random.Next(4) != 0)
+        {
+            (source, target, kind) = _links.ElementAt(_random.Next(_links.Count));
+            exists = true;
+        }
+        else
+        {
+            if (!TryPickEntity(out source) || !TryPickEntity(out target))
+                return SkipRecord();
+            kind = _linkKinds[_random.Next(_linkKinds.Length)];
+            exists = _links.Contains((source, target, kind));
+        }
+
+        if (_random.Next(2) == 0)
+        {
+            bool removed = source.TryUnlink(kind, target);
+            Assert(removed == exists);
+        }
+        else if (exists)
+        {
+            source.Unlink(kind, target);
+        }
+        else
+        {
+            Assert(source.TryUnlink(kind, target) == false);
+        }
+
+        return new StepRecord(source, new { Unlink = kind.Type, Target = EntityMarshal.EntityID(target), Existed = exists }, () =>
+        {
+            _links.Remove((source, target, kind));
+        });
+    }
+
     private bool HasComponent(Entity entity, ComponentID componentId)
     {
         return _componentValues[entity].Any(c => c.ComponentID == componentId);

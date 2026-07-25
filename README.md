@@ -51,6 +51,7 @@ Frent is a lot faster than most C# ECS implementations - [Benchmark](https://git
 - [x]  `struct` & `class` as components
 - [x]  Pass in uniform data automatically e.g., `deltaTime`
 - [x]  AOT Compatible & Zero reflection
+- [x]  Links (Entity relationships)
 - [x]  Tags
 - [x]  Events
 - [x]  Command buffer

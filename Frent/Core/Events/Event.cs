@@ -1,4 +1,5 @@
 ﻿global using TagEvent = Frent.Core.Events.Event<Frent.Core.TagID>;
+global using LinkEvent = Frent.Core.Events.Event<Frent.Core.LinkID>;
 using Frent.Collections;
 
 namespace Frent.Core.Events;
