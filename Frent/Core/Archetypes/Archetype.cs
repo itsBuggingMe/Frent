@@ -149,6 +149,7 @@ internal sealed partial class Archetype
     {
         Debug.Assert(deferredCreationArchetype._archetypeID == _archetypeID);
         Debug.Assert(deferredCreationArchetype.DeferredEntityCount != 0);
+        Debug.Assert(deferredCreationArchetype._worldLinkIDs.Length == 0);
         int deltaFromMaxDeferredInPlace = -(_entities.Length - (NextComponentIndex + deferredCreationArchetype.DeferredEntityCount));
         int previousComponentCount = NextComponentIndex;
 
@@ -184,33 +185,6 @@ internal sealed partial class Archetype
 
             deferredCreationArchetype._sparseBits.AsSpan(0, numBitsetsToCopy)
                 .CopyTo(_sparseBits.AsSpan(oldEntitiesLen));
-
-            int[] deferredLinkIds = deferredCreationArchetype._worldLinkIDs;
-            int linkIdsToMove = Math.Min(deltaFromMaxDeferredInPlace, deferredLinkIds.Length);
-
-            int existingDestinationLinkIds = Math.Min(
-                deltaFromMaxDeferredInPlace,
-                Math.Max(0, _worldLinkIDs.Length - oldEntitiesLen));
-            if (existingDestinationLinkIds != 0)
-                _worldLinkIDs.AsSpan(oldEntitiesLen, existingDestinationLinkIds).Clear();
-
-            if (linkIdsToMove != 0)
-            {
-                int destinationLength = oldEntitiesLen + linkIdsToMove;
-                if (_worldLinkIDs.Length < destinationLength)
-                    Array.Resize(ref _worldLinkIDs, destinationLength);
-
-                for (int i = 0; i < linkIdsToMove; i++)
-                {
-                    int worldLinkId = deferredLinkIds[i];
-                    deferredLinkIds[i] = 0;
-                    _worldLinkIDs[oldEntitiesLen + i] = worldLinkId;
-
-                    if (worldLinkId != 0)
-                        world.UpdateLinkReferences(worldLinkId, this, oldEntitiesLen + i);
-                }
-            }
-
         }
 
         NextComponentIndex += deferredCreationArchetype.DeferredEntityCount;

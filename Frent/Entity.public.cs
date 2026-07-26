@@ -578,7 +578,7 @@ partial struct Entity
         if (!world.AllowStructualChanges)
         {
             world.WorldUpdateCommandBuffer.Link(this, linkKind, target);
-            return true;
+            return !HasLinkCore(world, linkKind, ref eloc, ref targetEloc);
         }
         return LinkCore(linkKind, ref eloc, target, ref targetEloc, world);
     }
@@ -639,7 +639,7 @@ partial struct Entity
         if (!world.AllowStructualChanges)
         {
             world.WorldUpdateCommandBuffer.Unlink(this, linkKind, target);
-            return true;
+            return HasLinkCore(world, linkKind, ref eloc, ref targetEloc);
         }
         return UnlinkCore(linkKind, ref eloc, target, ref targetEloc, world);
     }
@@ -662,18 +662,36 @@ partial struct Entity
 
     /// <inheritdoc cref="HasOutgoingLink{T}()"/>
     /// <param name="linkKind">The kind of link to check for.</param>
-    public readonly bool HasOutgoingLink(LinkID linkKind)
-    {
-        ref EntityLocation eloc = ref AssertIsAlive(out World world);
-        return HasLinkCore(world, linkKind, ref eloc, 0);
-    }
+    public readonly bool HasOutgoingLink(LinkID linkKind) => HasLinkGeneral(linkKind, 0);
 
     /// <inheritdoc cref="HasIncomingLink{T}()"/>
     /// <param name="linkKind">The kind of link to check for.</param>
-    public readonly bool HasIncomingLink(LinkID linkKind)
+    public readonly bool HasIncomingLink(LinkID linkKind) => HasLinkGeneral(linkKind, 1);
+
+    /// <summary>
+    /// Checks whether this <see cref="Entity"/> links to <paramref name="target"/> with a link of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <remarks>
+    /// There is no incoming counterpart taking an <see cref="Entity"/>, since links are stored in both directions:
+    /// ask whether <c>source</c> links to this <see cref="Entity"/> with <c>source.HasOutgoingLink&lt;T&gt;(this)</c>.
+    /// </remarks>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> the link would point to.</param>
+    /// <returns><see langword="true"/> when a link of type <typeparamref name="T"/> goes from this <see cref="Entity"/> to <paramref name="target"/>, otherwise <see langword="false"/>.</returns>
+    /// <exception cref="InvalidOperationException">Either <see cref="Entity"/> is dead.</exception>
+    /// <exception cref="ArgumentException">The entities belong to different worlds.</exception>
+    public readonly bool HasOutgoingLink<T>(Entity target) => HasOutgoingLink(Core.Link<T>.ID, target);
+
+    /// <inheritdoc cref="HasOutgoingLink{T}(Entity)"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    /// <param name="target">The <see cref="Entity"/> the link would point to.</param>
+    public readonly bool HasOutgoingLink(LinkID linkKind, Entity target)
     {
         ref EntityLocation eloc = ref AssertIsAlive(out World world);
-        return HasLinkCore(world, linkKind, ref eloc, 1);
+        ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
+        if (otherWorld != world)
+            FrentExceptions.Throw_ArgumentException("Target must be from the same world!");
+        return HasLinkCore(world, linkKind, ref eloc, ref targetEloc);
     }
 
     /// <summary>
@@ -692,18 +710,35 @@ partial struct Entity
 
     /// <inheritdoc cref="TryHasOutgoingLink{T}()"/>
     /// <param name="linkKind">The kind of link to check for.</param>
-    public readonly bool TryHasOutgoingLink(LinkID linkKind)
-    {
-        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
-        return alive && HasLinkCore(world, linkKind, ref eloc, 0);
-    }
+    public readonly bool TryHasOutgoingLink(LinkID linkKind) => TryHasLinkGeneral(linkKind, 0);
 
     /// <inheritdoc cref="TryHasIncomingLink{T}()"/>
     /// <param name="linkKind">The kind of link to check for.</param>
-    public readonly bool TryHasIncomingLink(LinkID linkKind)
+    public readonly bool TryHasIncomingLink(LinkID linkKind) => TryHasLinkGeneral(linkKind, 1);
+
+    /// <summary>
+    /// Checks whether this <see cref="Entity"/> links to <paramref name="target"/> with a link of type <typeparamref name="T"/>, without throwing when dead.
+    /// </summary>
+    /// <inheritdoc cref="HasOutgoingLink{T}(Entity)" path="/remarks"/>
+    /// <typeparam name="T">The type of link to check for.</typeparam>
+    /// <param name="target">The <see cref="Entity"/> the link would point to.</param>
+    /// <returns><see langword="true"/> when both entities are alive and a link of type <typeparamref name="T"/> goes from this <see cref="Entity"/> to <paramref name="target"/>, otherwise <see langword="false"/>.</returns>
+    public readonly bool TryHasOutgoingLink<T>(Entity target) => TryHasOutgoingLink(Core.Link<T>.ID, target);
+
+    /// <inheritdoc cref="TryHasOutgoingLink{T}(Entity)"/>
+    /// <param name="linkKind">The kind of link to check for.</param>
+    /// <param name="target">The <see cref="Entity"/> the link would point to.</param>
+    public readonly bool TryHasOutgoingLink(LinkID linkKind, Entity target)
     {
-        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
-        return alive && HasLinkCore(world, linkKind, ref eloc, 1);
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool aliveThis);
+        if (!aliveThis)
+            return false;
+        ref EntityLocation targetEloc = ref target.InternalIsAlive(out World otherWorld, out bool aliveTarget);
+        if (!aliveTarget)
+            return false;
+        if (otherWorld != world)
+            return false;
+        return HasLinkCore(world, linkKind, ref eloc, ref targetEloc);
     }
 
     /// <summary>

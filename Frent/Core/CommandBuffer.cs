@@ -486,7 +486,7 @@ public class CommandBuffer
         while (_linkBuffer.TryPop(out var command))
         {
             ref var recordSource = ref _world.EntityTable[command.Source.EntityID];
-            ref var recordTarget = ref _world.EntityTable[command.Source.EntityID];
+            ref var recordTarget = ref _world.EntityTable[command.Target.EntityID];
 
             if (recordSource.Version == command.Source.EntityVersion &&
                 recordTarget.Version == command.Target.EntityVersion)
@@ -498,7 +498,7 @@ public class CommandBuffer
         while (_unlinkBuffer.TryPop(out var command))
         {
             ref var recordSource = ref _world.EntityTable[command.Source.EntityID];
-            ref var recordTarget = ref _world.EntityTable[command.Source.EntityID];
+            ref var recordTarget = ref _world.EntityTable[command.Target.EntityID];
 
             if (recordSource.Version == command.Source.EntityVersion &&
                 recordTarget.Version == command.Target.EntityVersion)

@@ -236,6 +236,18 @@ public partial struct Entity : IEquatable<Entity>
         return true;
     }
 
+    internal readonly bool HasLinkGeneral(LinkID linkKind, int incoming)
+    {
+        ref EntityLocation eloc = ref AssertIsAlive(out World world);
+        return HasLinkCore(world, linkKind, ref eloc, incoming);
+    }
+
+    internal readonly bool TryHasLinkGeneral(LinkID linkKind, int incoming)
+    {
+        ref EntityLocation eloc = ref InternalIsAlive(out World world, out bool alive);
+        return alive && HasLinkCore(world, linkKind, ref eloc, incoming);
+    }
+
     /// <summary>
     /// Assumes <paramref name="eloc"/> belongs to a live entity of <paramref name="world"/>.
     /// </summary>
@@ -252,11 +264,14 @@ public partial struct Entity : IEquatable<Entity>
             .HasLinks(eloc.Archetype.GetExistingLinkID(eloc.Index), incoming);
     }
 
-    private static bool HasLinkCore(World world, LinkID linkKind, ref EntityLocation from, ref EntityLocation to, int incoming)
+    /// <summary>
+    /// Whether <paramref name="from"/> links to <paramref name="to"/>; both must be live entities of <paramref name="world"/>.
+    /// </summary>
+    private static bool HasLinkCore(World world, LinkID linkKind, ref EntityLocation from, ref EntityLocation to)
     {
-        if (!from.HasFlag((EntityFlags)((ushort)EntityFlags.HasHadOutgoingLinks << incoming)))
+        if (!from.HasFlag(EntityFlags.HasHadOutgoingLinks))
             return false;
-        if(!to.HasFlag((EntityFlags)((ushort)EntityFlags.HasHadIncomingLinks >> incoming)))
+        if (!to.HasFlag(EntityFlags.HasHadIncomingLinks))
             return false;
 
         int sourceLinkId = from.Archetype.GetExistingLinkID(from.Index);
@@ -264,7 +279,7 @@ public partial struct Entity : IEquatable<Entity>
 
         LinkTableEntry[] outgoing = world.WorldLinkTable
             .UnsafeArrayIndex(linkKind.RawValue)
-            .GetLinkTable(incoming);
+            .Outgoing;
 
         return (uint)sourceLinkId < (uint)outgoing.Length &&
             outgoing[sourceLinkId].TryGetIndexByLinkedWorldId(targetLinkId, out _);
