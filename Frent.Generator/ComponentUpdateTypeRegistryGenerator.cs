@@ -92,6 +92,12 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
                 flags |= UpdateModelFlags.IsTag;
             }
 
+            if (potentialInterface.IsLink())
+            {
+                needsRegistering = true;
+                flags |= UpdateModelFlags.IsLink;
+            }
+
             if (!potentialInterface.IsOrExtendsIComponentBase())
                 continue;
 
@@ -192,9 +198,15 @@ public class ComponentUpdateTypeRegistryGenerator : IIncrementalGenerator
 
         var nestTypes = GetContainingTypes();
 
-        bool isAcc = componentTypeSymbol.DeclaredAccessibility is Accessibility.Internal or Accessibility.Public;
+        bool isAccessible = true;
+        for (INamedTypeSymbol? type = componentTypeSymbol; type is not null; type = type.ContainingType)
+        {
+            isAccessible &= type.DeclaredAccessibility is Accessibility.Internal
+                or Accessibility.Public
+                or Accessibility.ProtectedOrInternal;
+        }
 
-        if ((nestTypes.Length != 0 && !isAcc) || flags.HasFlag(UpdateModelFlags.IsGeneric))
+        if (!isAccessible || flags.HasFlag(UpdateModelFlags.IsGeneric))
             flags |= UpdateModelFlags.IsSelfInit;
 
         return new ComponentUpdateItemModel(

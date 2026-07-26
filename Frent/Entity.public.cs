@@ -550,6 +550,11 @@ partial struct Entity
         ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
         if (otherWorld != world)
             FrentExceptions.Throw_InvalidOperationException("This entity belongs to another world");
+        if (!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.Link(this, linkKind, target);
+            return;
+        }
         if (!LinkCore(linkKind, ref eloc, target, ref targetEloc, world)) // TODO: improve exceptions globally
             FrentExceptions.Throw_InvalidOperationException("Link already exists");
     }
@@ -570,6 +575,11 @@ partial struct Entity
             return false;
         if (otherWorld != world)
             return false;
+        if (!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.Link(this, linkKind, target);
+            return true;
+        }
         return LinkCore(linkKind, ref eloc, target, ref targetEloc, world);
     }
 
@@ -601,6 +611,11 @@ partial struct Entity
         ref EntityLocation targetEloc = ref target.AssertIsAlive(out World otherWorld);
         if (otherWorld != world)
             FrentExceptions.Throw_InvalidOperationException("This entity belongs to another world");
+        if (!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.Unlink(this, linkKind, target);
+            return;
+        }
         if (!UnlinkCore(linkKind, ref eloc, target, ref targetEloc, world)) // TODO: improve exceptions globally
             FrentExceptions.Throw_InvalidOperationException("Link does not exist");
     }
@@ -621,6 +636,11 @@ partial struct Entity
             return false;
         if (otherWorld != world)
             return false;
+        if (!world.AllowStructualChanges)
+        {
+            world.WorldUpdateCommandBuffer.Unlink(this, linkKind, target);
+            return true;
+        }
         return UnlinkCore(linkKind, ref eloc, target, ref targetEloc, world);
     }
 

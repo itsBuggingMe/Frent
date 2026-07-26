@@ -82,6 +82,7 @@ public class JsonWorldSerializer
         _options.Converters.Add(new EntityJsonConverter(this));
         _options.Converters.Add(TagIDJsonConverter.Instance);
         _options.Converters.Add(ComponentIDJsonConverter.Instance);
+        _options.Converters.Add(LinkIDJsonConverter.Instance);
         _options.Converters.Add(ArchetypeIDJsonConverter.Instance);
         
         if(addGeneratedTypeInfoResolvers)
@@ -539,6 +540,12 @@ public class JsonWorldSerializer
 
     private int MapEntityWrite(Entity entity)
     {
+        if (entity.IsNull)
+            return -1;
+
+        if (_activeWorld is not World activeWorld || entity.WorldID != activeWorld.WorldID)
+            FrentExceptions.Throw_InvalidOperationException("Cannot serialize an entity reference belonging to another world.");
+
         if (!entity.IsAlive)
             return -1;
 
@@ -609,7 +616,8 @@ public class JsonWorldSerializer
         Type? type = 
             GenerationServices.SerializableTypesMap.GetValueOrDefault(name) ?? 
             Component.GetComponentByString(name)?.Type ??
-            Tag.GetTagType(name)?.Type;
+            Tag.GetTagType(name)?.Type ??
+            Link.GetLinkType(name)?.Type;
         return type is null ? throw new SerializationException($"Type {name} not marked as serializable.") : type;
     }
 
@@ -661,6 +669,15 @@ public class JsonWorldSerializer
         public override ComponentID Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
             Component.GetComponentID(ReadSerializableType(ref reader));
         public override void Write(Utf8JsonWriter writer, ComponentID value, JsonSerializerOptions _) =>
+            writer.WriteStringValue(value.Type.ToString());
+    }
+
+    private class LinkIDJsonConverter : JsonConverter<LinkID>
+    {
+        internal static LinkIDJsonConverter Instance { get; } = new();
+        public override LinkID Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+            Link.GetLinkID(ReadSerializableType(ref reader));
+        public override void Write(Utf8JsonWriter writer, LinkID value, JsonSerializerOptions _) =>
             writer.WriteStringValue(value.Type.ToString());
     }
 

@@ -101,14 +101,14 @@ public partial struct Entity : IEquatable<Entity>
         get
         {
             ref EntityLocation eloc = ref AssertIsAlive(out _);
-            return eloc.HasFlag(EntityFlags.HasHadIncomingLinks) ? eloc.Archetype.GetExistingLinkID(eloc.Index) : 0;
+            return eloc.HasFlag(EntityFlags.HasHadLinks) ? eloc.Archetype.GetExistingLinkID(eloc.Index) : 0;
         }
     }
 
     /// <summary>
     /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
     /// </summary>
-    private readonly bool LinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
+    internal readonly bool LinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
     {
         ref LinkTable links = ref world.WorldLinkTable.UnsafeArrayIndex(linkKind.RawValue);
 
@@ -195,7 +195,7 @@ public partial struct Entity : IEquatable<Entity>
     /// <summary>
     /// Assumes both this entity and the target are alive and belong to <paramref name="world"/>.
     /// </summary>
-    private readonly bool UnlinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
+    internal readonly bool UnlinkCore(LinkID linkKind, ref EntityLocation eloc, Entity target, ref EntityLocation targetEloc, World world)
     {
         if (!eloc.HasFlag(EntityFlags.HasHadOutgoingLinks))
             return false;
@@ -252,10 +252,28 @@ public partial struct Entity : IEquatable<Entity>
             .HasLinks(eloc.Archetype.GetExistingLinkID(eloc.Index), incoming);
     }
 
+    private static bool HasLinkCore(World world, LinkID linkKind, ref EntityLocation from, ref EntityLocation to, int incoming)
+    {
+        if (!from.HasFlag((EntityFlags)((ushort)EntityFlags.HasHadOutgoingLinks << incoming)))
+            return false;
+        if(!to.HasFlag((EntityFlags)((ushort)EntityFlags.HasHadIncomingLinks >> incoming)))
+            return false;
+
+        int sourceLinkId = from.Archetype.GetExistingLinkID(from.Index);
+        int targetLinkId = to.Archetype.GetExistingLinkID(to.Index);
+
+        LinkTableEntry[] outgoing = world.WorldLinkTable
+            .UnsafeArrayIndex(linkKind.RawValue)
+            .GetLinkTable(incoming);
+
+        return (uint)sourceLinkId < (uint)outgoing.Length &&
+            outgoing[sourceLinkId].TryGetIndexByLinkedWorldId(targetLinkId, out _);
+    }
+
     /// <summary>
     /// Invokes the world level and per entity link event identified by <paramref name="eventFlag"/> on <paramref name="entity"/>.
     /// </summary>
-    private static void InvokeLinkEvents(World world, Entity entity, EntityFlags flags, LinkID linkKind, EntityFlags eventFlag)
+    internal static void InvokeLinkEvents(World world, Entity entity, EntityFlags flags, LinkID linkKind, EntityFlags eventFlag)
     {
         if (!EntityLocation.HasEventFlag(flags | world.WorldEventFlags, eventFlag))
             return;

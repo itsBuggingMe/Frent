@@ -10,6 +10,8 @@ Some operations are structural changes, which means that the internal data struc
 | Remove Component | Auto Deferred   |
 | Tag Tag          | Auto Deferred   |
 | Detach Tag       | Auto Deferred   |
+| Link Entities    | Auto Deferred   |
+| Unlink Entities  | Auto Deferred   |
 
 \* May have support in the future. 
 

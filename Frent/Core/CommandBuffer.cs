@@ -15,6 +15,8 @@ public class CommandBuffer
     internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(2);
     internal FastStack<TagCommand> _tagEntityBuffer = FastStack<TagCommand>.Create(2);
     internal FastStack<TagCommand> _detachTagEntityBuffer = FastStack<TagCommand>.Create(2);
+    internal FastStack<LinkCommand> _linkBuffer = FastStack<LinkCommand>.Create(2);
+    internal FastStack<LinkCommand> _unlinkBuffer = FastStack<LinkCommand>.Create(2);
 
     internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(2);
     internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(2);
@@ -90,7 +92,7 @@ public class CommandBuffer
     {
         SetIsActive();
         AssertEntityFromWorld(entity);
-        _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, ComponentHandle.Create(component)));
+        _addComponentBuffer.Push(new AddComponent(entity, ComponentHandle.Create(component)));
     }
 
     /// <summary>
@@ -102,7 +104,7 @@ public class CommandBuffer
     {
         SetIsActive();
         AssertEntityFromWorld(entity);
-        _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, component));
+        _addComponentBuffer.Push(new AddComponent(entity, component));
     }
 
     /// <summary>
@@ -116,7 +118,7 @@ public class CommandBuffer
     {
         SetIsActive();
         AssertEntityFromWorld(entity);
-        _addComponentBuffer.Push(new AddComponent(entity.EntityIDOnly, ComponentHandle.CreateFromBoxed(componentID, component)));
+        _addComponentBuffer.Push(new AddComponent(entity, ComponentHandle.CreateFromBoxed(componentID, component)));
     }
 
     /// <summary>
@@ -171,6 +173,24 @@ public class CommandBuffer
         SetIsActive();
         AssertEntityFromWorld(entity);
         _detachTagEntityBuffer.Push(new(entity.EntityIDOnly, tagID));
+    }
+    #endregion
+
+    #region Links
+    internal void Link(Entity source, LinkID linkKind, Entity target)
+    {
+        SetIsActive();
+        AssertEntityFromWorld(source);
+        AssertEntityFromWorld(target);
+        _linkBuffer.Push(new(source, target, linkKind));
+    }
+
+    internal void Unlink(Entity source, LinkID linkKind, Entity target)
+    {
+        SetIsActive();
+        AssertEntityFromWorld(source);
+        AssertEntityFromWorld(target);
+        _unlinkBuffer.Push(new(source, target, linkKind));
     }
     #endregion
 
@@ -242,7 +262,7 @@ public class CommandBuffer
         //CreateCommand points to a segment of the _createEntityComponents stack
         var e = _world.CreateEntityWithoutEvent();
         _createEntityBuffer.Push(new CreateCommand(
-            e.EntityIDOnly,
+            e,
             _lastCreateEntityComponentsBufferIndex,
             _createEntityComponents.Count - _lastCreateEntityComponentsBufferIndex));
         _lastCreateEntityComponentsBufferIndex = -1;
@@ -264,10 +284,10 @@ public class CommandBuffer
         while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
             var item = createCommand.Entity;
-            ref var record = ref _world.EntityTable[item.ID];
-            if (record.Version == item.Version)
+            ref var record = ref _world.EntityTable[item.EntityID];
+            if (record.Version == item.EntityVersion)
             {
-                _world.DeleteEntityWithoutEvents(item.ToEntity(_world), ref record);
+                _world.DeleteEntityWithoutEvents(item, ref record);
             }
         }
 
@@ -280,6 +300,8 @@ public class CommandBuffer
         _removeComponentBuffer.Clear();
         _tagEntityBuffer.Clear();
         _detachTagEntityBuffer.Clear();
+        _linkBuffer.Clear();
+        _unlinkBuffer.Clear();
         _deleteEntityBuffer.Clear();
     }
 
@@ -297,20 +319,21 @@ public class CommandBuffer
     internal bool PlaybackInternal()
     {
         bool hasItems =
-            _createEntityBuffer.Count > 0 ||
-            _deleteEntityBuffer.Count > 0 ||
-            _addComponentBuffer.Count > 0 ||
-            _removeComponentBuffer.Count > 0 ||
-            _tagEntityBuffer.Count > 0 ||
-            _detachTagEntityBuffer.Count > 0
-            ;
+        _createEntityBuffer.Count > 0 ||
+        _deleteEntityBuffer.Count > 0 ||
+        _addComponentBuffer.Count > 0 ||
+        _removeComponentBuffer.Count > 0 ||
+        _tagEntityBuffer.Count > 0 ||
+        _detachTagEntityBuffer.Count > 0 ||
+        _linkBuffer.Count > 0 ||
+        _unlinkBuffer.Count > 0;
 
         if (!hasItems)
             return hasItems;
 
         while (_createEntityBuffer.TryPop(out CreateCommand createCommand))
         {
-            Entity concrete = createCommand.Entity.ToEntity(_world);
+            Entity concrete = createCommand.Entity;
             ref EntityLocation lookup = ref _world.EntityTable.UnsafeIndexNoResize(concrete.EntityID);
             if (lookup.Archetype is null /*the user created the entity, then deleted it before playback*/)
                 continue;
@@ -370,10 +393,10 @@ public class CommandBuffer
 
         while (_addComponentBuffer.TryPop(out var command))
         {
-            Entity concrete = command.Entity.ToEntity(_world);
+            Entity concrete = command.Entity;
             ref var record = ref _world.EntityTable[concrete.EntityID];
 
-            if (record.Version == command.Entity.Version)
+            if (record.Version == concrete.EntityVersion)
             {
                 using ComponentHandle componentHandle = command.ComponentHandle;
 
@@ -406,7 +429,7 @@ public class CommandBuffer
 
                 if (record.HasFlag(EntityFlags.AddComp | EntityFlags.AddGenericComp))
                 {
-                    ref var events = ref _world.EventLookup.GetValueRefOrNullRef(command.Entity);
+                    ref var events = ref _world.EventLookup.GetValueRefOrNullRef(command.Entity.EntityIDOnly);
 
                     if (events.Add.GenericEvent is not null)
                     {
@@ -457,6 +480,30 @@ public class CommandBuffer
                 {
                     _world.EventLookup.GetValueRefOrNullRef(command.Entity).Detach.Invoke(concrete, command.TagID);
                 }
+            }
+        }
+
+        while (_linkBuffer.TryPop(out var command))
+        {
+            ref var recordSource = ref _world.EntityTable[command.Source.EntityID];
+            ref var recordTarget = ref _world.EntityTable[command.Source.EntityID];
+
+            if (recordSource.Version == command.Source.EntityVersion &&
+                recordTarget.Version == command.Target.EntityVersion)
+            {
+                command.Source.LinkCore(command.LinkKind, ref recordSource, command.Target, ref recordTarget, _world);
+            }
+        }
+
+        while (_unlinkBuffer.TryPop(out var command))
+        {
+            ref var recordSource = ref _world.EntityTable[command.Source.EntityID];
+            ref var recordTarget = ref _world.EntityTable[command.Source.EntityID];
+
+            if (recordSource.Version == command.Source.EntityVersion &&
+                recordTarget.Version == command.Target.EntityVersion)
+            {
+                command.Source.UnlinkCore(command.LinkKind, ref recordSource, command.Target, ref recordTarget, _world);
             }
         }
 

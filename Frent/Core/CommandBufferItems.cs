@@ -41,6 +41,7 @@ internal struct EntityIDOnly(int id, ushort version) : IEquatable<EntityIDOnly>
     public override int GetHashCode() => ID ^ (Version << 16);
 }
 internal record struct DeleteComponent(EntityIDOnly Entity, ComponentID ComponentID);
-internal record struct AddComponent(EntityIDOnly Entity, ComponentHandle ComponentHandle);
+internal record struct AddComponent(Entity Entity, ComponentHandle ComponentHandle);
 internal record struct TagCommand(EntityIDOnly Entity, TagID TagID);
-internal record struct CreateCommand(EntityIDOnly Entity, int BufferIndex, int BufferLength);
+internal record struct CreateCommand(Entity Entity, int BufferIndex, int BufferLength);
+internal record struct LinkCommand(Entity Source, Entity Target, LinkID LinkKind);

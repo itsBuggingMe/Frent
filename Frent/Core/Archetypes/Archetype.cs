@@ -185,6 +185,32 @@ internal sealed partial class Archetype
             deferredCreationArchetype._sparseBits.AsSpan(0, numBitsetsToCopy)
                 .CopyTo(_sparseBits.AsSpan(oldEntitiesLen));
 
+            int[] deferredLinkIds = deferredCreationArchetype._worldLinkIDs;
+            int linkIdsToMove = Math.Min(deltaFromMaxDeferredInPlace, deferredLinkIds.Length);
+
+            int existingDestinationLinkIds = Math.Min(
+                deltaFromMaxDeferredInPlace,
+                Math.Max(0, _worldLinkIDs.Length - oldEntitiesLen));
+            if (existingDestinationLinkIds != 0)
+                _worldLinkIDs.AsSpan(oldEntitiesLen, existingDestinationLinkIds).Clear();
+
+            if (linkIdsToMove != 0)
+            {
+                int destinationLength = oldEntitiesLen + linkIdsToMove;
+                if (_worldLinkIDs.Length < destinationLength)
+                    Array.Resize(ref _worldLinkIDs, destinationLength);
+
+                for (int i = 0; i < linkIdsToMove; i++)
+                {
+                    int worldLinkId = deferredLinkIds[i];
+                    deferredLinkIds[i] = 0;
+                    _worldLinkIDs[oldEntitiesLen + i] = worldLinkId;
+
+                    if (worldLinkId != 0)
+                        world.UpdateLinkReferences(worldLinkId, this, oldEntitiesLen + i);
+                }
+            }
+
         }
 
         NextComponentIndex += deferredCreationArchetype.DeferredEntityCount;
