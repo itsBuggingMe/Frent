@@ -6,6 +6,9 @@ namespace Frent.Core;
 /// A wrapper ref struct over a reference to a <typeparamref name="T"/>
 /// </summary>
 /// <typeparam name="T">The type this <see cref="Ref{T}"/> wraps over</typeparam>
+/// <remarks>
+/// Could become invalid after a structural change to a world.
+/// </remarks>
 public ref struct Ref<T>
 {
 #if NET7_0_OR_GREATER

@@ -109,6 +109,9 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <exception cref="NullReferenceException"><see cref="Entity"/> does not have component of type <typeparamref name="T"/>.</exception>
     /// <returns>A reference to the component in memory.</returns>
+    /// <remarks>
+    /// The returned reference could become invalid after a structural change to a world.
+    /// </remarks>
     [SkipLocalsInit]
     public readonly ref T Get<T>()
     {
@@ -212,6 +215,10 @@ partial struct Entity
     /// <typeparam name="T">The type of component.</typeparam>
     /// <param name="value">A wrapper over a reference to the component when <see langword="true"/>.</param>
     /// <returns><see langword="true"/> if this entity has a component of type <typeparamref name="T"/>, otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// When this method returns <see langword="true"/>, <paramref name="value"/> points directly into component storage. Treat it as invalid after a
+    /// structural change in the same <see cref="World"/> and retrieve the component again.
+    /// </remarks>
     public readonly bool TryGet<T>(out Ref<T> value)
     {
         ref EntityLocation entityLocation = ref InternalIsAlive(out World world, out bool alive);
