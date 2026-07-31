@@ -31,7 +31,7 @@ world.Update();
 Console.WriteLine(entity.Get<Position>());
 
 record struct Position(Vector2 Value);
-record struct Velocity(Vector2 Delta) : IComponent<Position>
+record struct Velocity(Vector2 Delta) : IUpdate<Position>
 {
     public void Update(ref Position position) => position.Value += Delta;
 }
