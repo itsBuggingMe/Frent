@@ -2,7 +2,7 @@
 
 <br/>
 
-The `Entity` struct is a powerful struct for getting accessing data about an entity.
+The `Entity` struct provides access to an entity's components, tags, links, and lifetime.
 
 Components are explored in depth on the [component composition](/cookbook/component-composition.html) page.
 
@@ -18,5 +18,5 @@ What if you wanted to have a component as a marker, but not to actually hold any
 <iframe src="https://itsbuggingme.github.io/InteractiveDocHosting/?code=using%20World%20world%20%3D%20new%28%29%3B%0AEntity%20e%20%3D%20world.Create%28%29%3B%0Ae.Tag%3CMyTag%3E%28%29%3B%0AConsole.WriteLine%28e.Tagged%3CMyTag%3E%28%29%29%3B%0A%0Ae.Detach%3CMyTag%3E%28%29%3B%0AConsole.WriteLine%28e.Tagged%3CMyTag%3E%28%29%29%3B%0A%0Astruct%20MyTag%3B&spans=5%7Ckeyword%7C1%7Cwhitespace%7C5%7Cclass-name%7C1%7Cwhitespace%7C5%7Clocal-name%7C1%7Cwhitespace%7C1%7Coperator%7C1%7Cwhitespace%7C3%7Ckeyword%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cwhitespace%7C6%7Cstruct-name%7C1%7Cwhitespace%7C1%7Clocal-name%7C1%7Cwhitespace%7C1%7Coperator%7C1%7Cwhitespace%7C5%7Clocal-name%7C1%7Coperator%7C6%7Cmethod-name%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cwhitespace%7C1%7Clocal-name%7C1%7Coperator%7C3%7Cmethod-name%7C1%7Cpunctuation%7C5%7Cstruct-name%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cwhitespace%7C7%7Cclass-name%7C1%7Coperator%7C9%7Cmethod-name%7C1%7Cpunctuation%7C1%7Clocal-name%7C1%7Coperator%7C6%7Cmethod-name%7C1%7Cpunctuation%7C5%7Cstruct-name%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C2%7Cwhitespace%7C1%7Clocal-name%7C1%7Coperator%7C6%7Cmethod-name%7C1%7Cpunctuation%7C5%7Cstruct-name%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cwhitespace%7C7%7Cclass-name%7C1%7Coperator%7C9%7Cmethod-name%7C1%7Cpunctuation%7C1%7Clocal-name%7C1%7Coperator%7C6%7Cmethod-name%7C1%7Cpunctuation%7C5%7Cstruct-name%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C1%7Cpunctuation%7C2%7Cwhitespace%7C6%7Ckeyword%7C1%7Cwhitespace%7C5%7Cstruct-name%7C1%7Cpunctuation&output=True%0AFalse%0A" onload='javascript:(function(o){window.addEventListener("message", function(event){if(event.data.type=="setHeight"){o.style.height=event.data.height+"px";}});}(this));' style="height:200px;width:100%;border:none;overflow:hidden;"></iframe>
 
 > [!TIP]
-> See the [API Reference](/api/Frent.Entity.html) for all `Entity` apis.
-> Unfamilar with `ref`? See the [csharp language reference](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/ref).
+> See the [API Reference](/api/Frent.Entity.html) for all `Entity` APIs.
+> Unfamiliar with `ref`? See the [C# language reference](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/ref).

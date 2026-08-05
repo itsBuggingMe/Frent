@@ -4,10 +4,10 @@
 
 Queries allow you to, well, query a subset of entities from a world, just like in a traditional ECS.
 
-Queries are made from `World.CreateQuery`, which returns a `QueryBuilder`. You then apply filters, which are `With<T>`, `Without<T>`, `Tagged<T>`, and `Untagged<T>`.
+Queries are created with `World.CreateQuery()`, which returns a `QueryBuilder`. You can then apply the `With<T>`, `Without<T>`, `Tagged<T>`, and `Untagged<T>` filters.
 
 `With<T>` includes all entities with a component of type `T`.<br/>
-`Without<T>` excludes all entities without a component of type `T`.<br/>
+`Without<T>` excludes all entities with a component of type `T`.<br/>
 `Tagged<T>` includes all entities with a tag of type `T`.<br/>
 `Untagged<T>` excludes all entities with a tag of type `T`.<br/>
 

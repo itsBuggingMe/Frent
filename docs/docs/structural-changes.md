@@ -1,6 +1,6 @@
 # Structural Changes
 
-Some operations are structural changes, which means that the internal data structures may be altered. To ensure safety, there is different behavior if a `Update` call or system is currently active.
+Some operations are structural changes, which means that Frent's internal data structures may be altered. To ensure safety, these operations behave differently while a `World.Update` call or system is active.
 
 | Action           | Behavior        |
 |------------------|-----------------|
@@ -13,11 +13,9 @@ Some operations are structural changes, which means that the internal data struc
 | Link Entities    | Auto Deferred   |
 | Unlink Entities  | Auto Deferred   |
 
-\* May have support in the future. 
+Creating entities is fully supported during systems and updates. To update entities during the same `World.Update` call in which they are created, set `World.UpdateDeferredCreationEntities` to `true` or pass `updateDeferredCreationEntities: true` to the `World` constructor.
 
-Creating entities is fully supported during systems and updates. When creating entities during a `World.Update`, you can require the components on these entities to be updated by setting `Config.UpdateDeferredCreationEntities` to true and passing a config into the world.
-
-In addition, since structural changes may change internal structures, all `ref`s and `Ref<T>`s should be treated as outdated after making a call that causes a structural change.
+Because structural changes may reorganize internal storage, treat every `ref T` and `Ref<T>` from that world as outdated after making a structural change. Retrieve the component again before using it.
 
 Structural changes that are auto deferred are saved and only applied once all systems and `Update` methods finish.
 
