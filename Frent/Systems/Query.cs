@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 namespace Frent.Systems;
 
 /// <summary>
-/// Represents a set of entities from a world which can have systems applied to
+/// Represents a set of entities from a world which can have systems applied to.
 /// </summary>
 public partial class Query
 {
@@ -122,6 +122,14 @@ partial class Query
     /// </summary>
     /// <variadic />
     public ChunkQueryEnumerator<T>.Enumerable EnumerateChunks<T>() => new(this);
+}
+
+/// <inheritdoc cref="Query" />
+/// <variadic />
+[Variadic("<T>", "<|T$, |>")]
+public partial class TQuery<T>(Query query)
+{
+    internal Query BaseQuery {get;} = query;
 }
 
 partial class Query

@@ -72,7 +72,22 @@ to:
 |        events.GenericEvent!.Invoke(entity, ref component$);
 |
 
-
+from:
+in T c1 = default
+to:
+|in T$ c$ = default, |
+from:
+where T : struct
+to:
+|where T$ : struct |
+from:
+AddDef<T>
+to:
+AddDef<|T$, |>
+from:
+Add(c1)
+to:
+Add(|c$, |)
 
 from:
 in T c1

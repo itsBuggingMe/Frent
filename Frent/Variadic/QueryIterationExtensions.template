@@ -77,6 +77,10 @@ from:
 to:
 <|T$, |>
 from:
+{T}
+to:
+{|T$, |}
+from:
 <TAction, T>
 to:
 <TAction, |T$, |>

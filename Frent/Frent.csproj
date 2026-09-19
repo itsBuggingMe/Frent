@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>Latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">

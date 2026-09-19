@@ -21,6 +21,9 @@ public static partial class QueryIterationExtensions
     /// <variadic />
     public static void Delegate<T>(this Query query, QueryDelegates.Query<T> action) => Inline<Bridge<T>, T>(query, new(action));
 
+    ///<inheritdoc cref="Delegate{T}(Query, QueryDelegates.Query{T})"/>
+    public static void Delegate<T>(this TQuery<T> query, QueryDelegates.Query<T> action) => query.BaseQuery.Delegate(action);
+
     private struct Bridge<T>(QueryDelegates.Query<T> q) : IAction<T>
     {
         public void Run(ref T arg) => q.Invoke(ref arg);

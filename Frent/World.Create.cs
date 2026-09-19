@@ -1,7 +1,6 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Archetypes;
-using Frent.Systems;
 using Frent.Updating;
 using Frent.Variadic.Generator;
 using System.Runtime.CompilerServices;
@@ -80,4 +79,9 @@ partial class World
 
         return concreteEntity;
     }
+
+    /// <inheritdoc cref="Create{T}" />
+    /// <variadic />
+    [SkipLocalsInit]
+    public Entity CreateDef<T>(in T comp = default) where T : struct => Create(comp); // T is struct so default can never be null
 }

@@ -19,9 +19,25 @@ y<T>
 to:
 y<|T$, |>
 from:
+(in T comp = default)
+to:
+(|in T$ comp$ = default, |)
+from:
 in T comp
 to:
 |in T$ comp$, |
+from:
+where T : struct
+to:
+|where T$ : struct |
+from:
+CreateDef<T>
+to:
+CreateDef<|T$, |>
+from:
+Create(comp)
+to:
+Create(|comp$, |)
 from:
 !Component<T>.IsSparseComponent &&
 to:
@@ -38,3 +54,7 @@ from:
 to:
 |            if (Component<T$>.IsSparseComponent) bitset.Set(Component<T$>.SparseSetComponentIndex);
 |
+from:
+{T}
+to:
+{|T$, |}

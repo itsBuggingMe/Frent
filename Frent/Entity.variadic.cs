@@ -166,6 +166,11 @@ partial struct Entity
         }
     }
 
+    /// <inheritdoc cref="Add{T}(in T)"/>
+    /// <variadic />
+    [SkipLocalsInit]
+    public void AddDef<T>(in T c1 = default) where T : struct => Add(c1);
+
     /// <summary>
     /// Adds a tag to this <see cref="Entity"/>
     /// </summary>
