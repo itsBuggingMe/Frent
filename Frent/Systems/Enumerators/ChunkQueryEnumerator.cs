@@ -19,12 +19,12 @@ public ref struct ChunkQueryEnumerator<T>
     private int _archetypeIndex;
     internal ChunkQueryEnumerator(Query query)
     {
-        if (query.HasSparseRules)
+        if (query.Impl.HasSparseRules)
             throw new NotSupportedException("Cannot enumerate chunks over sparse components!");
 
-        _world = query.World;
+        _world = query.Impl.World;
         _world.EnterDisallowState();
-        _archetypes = query.AsSpan();
+        _archetypes = query.Impl.AsSpan();
         _archetypeIndex = -1;
     }
 
