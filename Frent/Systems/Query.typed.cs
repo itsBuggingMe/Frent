@@ -1,12 +1,4 @@
-﻿using Frent.Collections;
-using Frent.Core;
-using Frent.Core.Archetypes;
-using Frent.Variadic.Generator;
-
-#if !NETSTANDARD
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-#endif
+﻿using Frent.Variadic.Generator;
 
 namespace Frent.Systems;
 
@@ -14,8 +6,8 @@ namespace Frent.Systems;
 /// A query over entities with the specified component types, which can be enumerated directly in foreach loops.
 /// </summary>
 /// <variadic />
-[Variadic("SingleQueryEnumerator", "QueryEnumerator<|T$, |>")]
-[Variadic("<T>", "<|T$, |>")]
+[Variadic("SingleQueryEnumerator", "QueryEnumerator<|T$, |>", 8)]
+[Variadic("<T>", "<|T$, |>", 8)]
 public partial class Query<T> : Query
 {
     internal Query(QueryImpl impl) : base(impl)
@@ -41,147 +33,27 @@ partial class Query<T>
     /// </summary>
     public ref struct SingleQueryEnumerator
     {
-        private readonly World _world;
-        private Span<Bitset> _archetypeBitsets;
-        private Span<Archetype> _archetypes;
-        private Span<EntityIDOnly> _entities;
-        private int _archetypeIndex;
-        private int _entityIndex;
+        private QueryEnumerator<T> _inner;
 
-        private int _currentEntityID;
-
-#if NETSTANDARD
-        private Span<T> _c1Span;
-#else
-
-#endif
-
-#if NETSTANDARD
-        private Span<ComponentSparseSetBase> _sparseSets;
-#else
-        private ref T _base;
-
-        private ref ComponentSparseSetBase _sparseFirst;
-#endif
-
-
-#if NETSTANDARD
-    private readonly Bitset _include;
-    private readonly Bitset _exclude;
-#else
-        private readonly System.Runtime.Intrinsics.Vector256<ulong> _include;
-        private readonly System.Runtime.Intrinsics.Vector256<ulong> _exclude;
-#endif
-
-        private bool _hasSparseRules;
-
-#pragma warning disable CS8618
         internal SingleQueryEnumerator(QueryImpl query)
-#pragma warning restore CS8618
         {
-            query.AssertHasSparseComponent<T>();
-
-            _world = query.World;
-
-#if NETSTANDARD
-        _sparseSets = query.World.WorldSparseSetTable;
-#else
-            _sparseFirst = ref MemoryMarshal.GetArrayDataReference(query.World.WorldSparseSetTable);
-#endif
-            _world.EnterDisallowState();
-
-            if (query.HasSparseRules)
-            {
-                _hasSparseRules = true;
-
-#if NETSTANDARD
-            _include = query.IncludeMask;
-            _exclude = query.ExcludeMask;
-#else
-                _include = query.IncludeMask.AsVector();
-                _exclude = query.ExcludeMask.AsVector();
-#endif
-            }
-
-            _archetypes = query.AsSpan();
-            _entityIndex = int.MaxValue - 1;
-            _archetypeIndex = -1;
+            _inner = new(query);
         }
 
         /// <summary>
-        /// The current tuple of component references.
+        /// A reference to the current component.
         /// </summary>
-        public readonly ref T Current =>
-#if NETSTANDARD
-            ref Component<T>.IsSparseComponent ?
-                ref MemoryHelpers.GetSparseSet<T>(ref MemoryMarshal.GetReference(_sparseSets)).GetUnsafe(_currentEntityID).Value :
-                ref _c1Span.UnsafeSpanIndex(_entityIndex)
-#else
-            ref Component<T>.IsSparseComponent ?
-                ref MemoryHelpers.GetSparseSet<T>(ref _sparseFirst).GetUnsafe(_currentEntityID).RawRef :
-                ref Unsafe.Add(ref _base, _entityIndex)
-#endif
-            ;
+        public ref T Current => ref _inner.Current.Item1.Value;
 
         /// <summary>
         /// Indicates to the world that this enumeration is finished; the world might allow structual changes after this.
         /// </summary>
-        public void Dispose()
-        {
-            _world.ExitDisallowState(null);
-        }
+        public void Dispose() => _inner.Dispose();
 
         /// <summary>
-        /// Moves to the next component tuple in this enumeration.
+        /// Moves to the next component in this enumeration.
         /// </summary>
         /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
-        public bool MoveNext()
-        {
-        BeginConsumeEntities:
-
-            while ((uint)++_entityIndex < (uint)_entities.Length)
-            {// a okay
-
-                if (_hasSparseRules)
-                {
-                    ref Bitset set = ref (uint)_entityIndex < (uint)_archetypeBitsets.Length
-                        ? ref _archetypeBitsets[_entityIndex]
-                        : ref Bitset.Zero;
-
-                    if (!Bitset.Filter(ref set, _include, _exclude))
-                        continue;
-                }
-
-                _currentEntityID = _entities[_entityIndex].ID;
-
-                return true;
-            }
-
-            if ((uint)++_archetypeIndex < (uint)_archetypes.Length)
-            {
-                var currentArchetype = _archetypes[_archetypeIndex];
-                _entities = currentArchetype.GetEntitySpan();
-                _entityIndex = -1;
-
-                if (_hasSparseRules)
-                {
-                    _archetypeBitsets = currentArchetype.SparseBitsetSpan();
-                }
-
-#if NETSTANDARD
-            _c1Span = Component<T>.IsSparseComponent ?
-                MemoryHelpers.GetSparseSet<T>(ref MemoryMarshal.GetReference(_sparseSets)).Dense :
-                currentArchetype.GetComponentSpan<T>();
-#else
-                _base = ref Component<T>.IsSparseComponent ?
-                    ref MemoryHelpers.GetSparseSet<T>(ref _sparseFirst).GetComponentDataReference() :
-                    ref currentArchetype.GetComponentDataReference<T>();
-#endif
-
-                goto BeginConsumeEntities;
-            }
-
-            return false;
-        }
+        public bool MoveNext() => _inner.MoveNext();
     }
 }

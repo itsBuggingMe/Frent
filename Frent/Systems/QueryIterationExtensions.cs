@@ -19,9 +19,9 @@ public static partial class QueryIterationExtensions
     /// <param name="query">The query to iterate over.</param>
     /// <param name="action">The behavior to execute on every component set.</param>
     /// <variadic />
-    public static void Delegate<T>(this Query query, QueryDelegates.Query<T> action) => Inline<Bridge<T>, T>(query, new(action));
+    public static void Delegate<T>(this Query query, QueryDelegates.Execute<T> action) => Inline<Bridge<T>, T>(query, new(action));
 
-    private struct Bridge<T>(QueryDelegates.Query<T> q) : IAction<T>
+    private struct Bridge<T>(QueryDelegates.Execute<T> q) : IAction<T>
     {
         public void Run(ref T arg) => q.Invoke(ref arg);
     }
