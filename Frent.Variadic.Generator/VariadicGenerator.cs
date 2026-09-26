@@ -22,9 +22,9 @@ namespace Frent.Variadic.Generator
             context.RegisterPostInitializationOutput(
                 ctx => ctx.AddSource("VariadicAttribute.g.cs", Helpers.AttributeString));
 
-            var t = context.SyntaxProvider.ForAttributeWithMetadataName<(ISymbol Symbol, SyntaxNode Node, SemanticModel Model)>(Helpers.AttributeMetadataString,
+            var t = context.SyntaxProvider.ForAttributeWithMetadataName<(INamedTypeSymbol Symbol, SyntaxNode Node, SemanticModel Model)>(Helpers.AttributeMetadataString,
                 [method: DebuggerHidden] (_, _) => true,
-                (t, ct) => (t.TargetSymbol, t.TargetNode, t.SemanticModel))
+                (t, ct) => ((INamedTypeSymbol)t.TargetSymbol, t.TargetNode, t.SemanticModel))
                 .Collect()
                 .Combine(context.AdditionalTextsProvider.Collect())
                 .SelectMany(GroupAttributesIntoModels)
@@ -35,11 +35,11 @@ namespace Frent.Variadic.Generator
         }
 
         [ThreadStatic]
-        private static Dictionary<(TypeDeclarationSyntax, ISymbol), (string From, string Pattern, int Count)[]> _classTable = new();
+        private static Dictionary<(TypeDeclarationSyntax, INamedTypeSymbol), (string From, string Pattern, int Count)[]> _classTable = new();
 
         private static readonly string[] ToSplit = ["to:\n"];
         private static readonly string[] FromSplit = ["from:\n"];
-        static ImmutableArray<GenerationModel> GroupAttributesIntoModels((ImmutableArray<(ISymbol Symbol, SyntaxNode Node, SemanticModel Model)> Data, ImmutableArray<AdditionalText> AdditionText) variadics, CancellationToken ct)
+        static ImmutableArray<GenerationModel> GroupAttributesIntoModels((ImmutableArray<(INamedTypeSymbol Symbol, SyntaxNode Node, SemanticModel Model)> Data, ImmutableArray<AdditionalText> AdditionText) variadics, CancellationToken ct)
         {
             _classTable ??= new();
             var table = _classTable;
@@ -102,7 +102,7 @@ namespace Frent.Variadic.Generator
                 var str = cb.ToString();
 
 
-                string fileSafeTypeName = kvp.Key.Item2.Name;
+                string fileSafeTypeName = kvp.Key.Item2.TypeArguments.Length > 0 ? $"{kvp.Key.Item2.Name}`{kvp.Key.Item2.TypeArguments.Length}" : kvp.Key.Item2.Name;
                 if (fileSafeTypeName.IndexOf('<') is { } t && t != -1)
                     fileSafeTypeName = fileSafeTypeName.Substring(0, t);
 

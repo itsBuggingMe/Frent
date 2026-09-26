@@ -19,7 +19,10 @@ public partial class Query
         Impl = impl;
     }
 
-    public EntityQueryEnumerator Entities => new(this);
+    /// <summary>
+    /// Enumerates <see cref="Entity"/> instances for all entities in this query. Intended for use in foreach loops.
+    /// </summary>
+    public EntityQueryEnumerator.Enumerable Entities => new(this);
 }
 
 /// <variadic />

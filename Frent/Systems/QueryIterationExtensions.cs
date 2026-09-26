@@ -35,15 +35,17 @@ public static partial class QueryIterationExtensions
     public static void Inline<TAction, T>(this Query query, TAction action)
         where TAction : IAction<T>
     {
-        query.AssertHasSparseComponent<T>();
+        QueryImpl impl = query.Impl;
+
+        impl.AssertHasSparseComponent<T>();
 
     try
     {
-        query.World.EnterDisallowState();
+        impl.World.EnterDisallowState();
 
-        if (!query.HasSparseRules)
+        if (!impl.HasSparseRules)
         {
-            foreach (var archetype in query.AsSpan())
+            foreach (var archetype in impl.AsSpan())
             {
                 //use ref instead of span to avoid extra locals
                 ref T c1 = ref archetype.GetComponentDataReference<T>();
@@ -58,17 +60,17 @@ public static partial class QueryIterationExtensions
         }
         else
         {// do extra work for sparse includes and excludes
-            ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(query.World.WorldSparseSetTable);
-            InlineSparseRuleImpl<TAction, T>(ref first, query, action);
+            ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(impl.World.WorldSparseSetTable);
+            InlineSparseRuleImpl<TAction, T>(ref first, impl, action);
         }
     }
     finally
     {
-        query.World.ExitDisallowState(null);
+        impl.World.ExitDisallowState(null);
     }
     }
 
-    internal static void InlineSparseRuleImpl<TAction, T>(ref ComponentSparseSetBase first, Query query, TAction action)
+    internal static void InlineSparseRuleImpl<TAction, T>(ref ComponentSparseSetBase first, QueryImpl query, TAction action)
         where TAction : IAction<T>
     {
         Bitset includeBits = query.IncludeMask;

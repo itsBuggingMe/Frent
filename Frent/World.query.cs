@@ -15,5 +15,5 @@ public static partial class WorldQueryExtensions
     /// <summary>
     /// Creates a query that includes all entities with the specified component(s).
     /// </summary>
-    public static Query Query<T>(this World world) => new QueryBuilder(world).With<T>().Build();
+    public static Query<T> Query<T>(this World world) => (Query<T>)new QueryBuilder(world).With<T>().Build(static i => new Query<T>(i));
 }

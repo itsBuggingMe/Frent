@@ -84,7 +84,7 @@ public partial class World : IDisposable
         _worldUpdateMethodCalled = false;
     }
 
-    internal FastStack<Query> QueryCache = new FastStack<Query>(4);
+    internal FastStack<QueryImpl> QueryCache = new FastStack<QueryImpl>(4);
     private Action<ushort>? _queryDisposeCallbacks;
     internal CountdownEvent SharedCountdown => _sharedCountdown;
     private CountdownEvent _sharedCountdown = new(0);
@@ -392,16 +392,17 @@ public partial class World : IDisposable
     /// <param name="rules">The rules to filter entities by.</param>
     /// <remarks>The created query is not cached; it is reccomended to avoid duplicate query objects.</remarks>
     /// <returns>A query that represents entities that fullfill the ruleset.</returns>
-    public Query CreateQuery(ImmutableArray<Rule> rules)
+    public Query CreateQuery(ImmutableArray<Rule> rules) => new(CreateQueryImpl(rules));
+
+    internal QueryImpl CreateQueryImpl(ImmutableArray<Rule> rules)
     {
-        Query q = new Query(this, rules);
+        QueryImpl q = new QueryImpl(this, rules);
         QueryCache.Push(q);
         foreach (ref var element in WorldArchetypeTable.AsSpan())
             if (element.Archetype is not null)
                 q.TryAttachArchetype(element.Archetype);
         return q;
     }
-
 
     /// <summary>
     /// Returns a query builder that can be used to create a query with the specified rules.
@@ -410,15 +411,20 @@ public partial class World : IDisposable
 
     internal Query CreateQueryFromSpan(ReadOnlySpan<Rule> rules) => CreateQuery(MemoryHelpers.ReadOnlySpanToImmutableArray(rules));
 
-    internal Query BuildQuery<T>()
+    internal Query BuildQuery<T>(Func<QueryImpl, Query>? typedQueryFactory = null)
         where T : struct, IQueryBuilder
     {
         ref Query query = ref QueryInfo<T>.Queries[WorldID];
         if(query is null)
         {
-            query = QueryInfo<T>.Build(this);
-
+            QueryImpl queryImpl = QueryInfo<T>.Build(this);
+            query = typedQueryFactory?.Invoke(queryImpl) ?? new Query(queryImpl);
             _queryDisposeCallbacks += QueryInfo<T>.Queries.Remove;
+        }
+        else if(typedQueryFactory is not null && query.GetType() == typeof(Query))
+        {
+            // upgrade cache
+            query = typedQueryFactory.Invoke(query.Impl);
         }
         return query;
     }
@@ -429,11 +435,11 @@ public partial class World : IDisposable
         public static readonly ShortSparseSet<Query> Queries = new();
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        public static Query Build(World world)
+        public static QueryImpl Build(World world)
         {
             List<Rule> rules = [];
             default(T).AddRules(rules);
-            return world.CreateQuery(rules.ToImmutableArray());
+            return world.CreateQueryImpl(rules.ToImmutableArray());
         }
     }
 

@@ -517,7 +517,7 @@ public class JsonWorldSerializer
     {
         if (query is null)
             return;
-        if (world != query.World)
+        if (world != query.Impl.World)
             FrentExceptions.Throw_InvalidOperationException("Query does not belong to this world.");
     }
     #endregion

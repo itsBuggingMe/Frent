@@ -46,7 +46,7 @@ public ref struct QueryEnumerator<T>
 
     private bool _hasSparseRules;
 
-    internal QueryEnumerator(Query query)
+    internal QueryEnumerator(QueryImpl query)
     {
         query.AssertHasSparseComponent<T>();
 
@@ -162,6 +162,6 @@ public ref struct QueryEnumerator<T>
         /// <summary>
         /// Gets the enumerator over a query.
         /// </summary>
-        public readonly QueryEnumerator<T> GetEnumerator() => new(q);
+        public readonly QueryEnumerator<T> GetEnumerator() => new(q.Impl);
     }
 }
