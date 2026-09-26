@@ -2,7 +2,9 @@
 
 Links let you build a directed graph where you connect entities with links.
 
-![Directed Graph Example](../images/directed-graph.png)
+<div style="margin: 2rem; display: flex; justify-content: center;">
+    <img src="../images/directed-graph.png" style="width:300px;" />
+</div>
 
 For example, the following code could be used to build the graph above:
 

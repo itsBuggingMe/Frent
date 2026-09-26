@@ -1,16 +1,21 @@
-- name: EC/ECS
-  href: ecf.md
-- name: Events
-  href: events.md
-- name: Uniforms
-  href: uniforms.md
-- name: Identities
-  href: id.md
-- name: Structural Changes
-  href: structural-changes.md
-- name: Limitations
-  href: limitations.md
-- name: Sparse Components
-  href: sparse-components.md
-- name: Links
-  href: link.md
+- name: Get started
+- href: ../index.md
+- href: installation.md
+- href: limitations.md
+
+- name: Frent
+- href: ecf.md
+- href: world.md
+- href: entity.md
+- href: component.md
+- href: sparse-components.md
+- href: filter-update.md
+- href: queries.md
+- href: systems.md
+
+- name: Advanced
+- href: events.md
+- href: uniforms.md
+- href: identities.md
+- href: structural-changes.md
+- href: link.md
