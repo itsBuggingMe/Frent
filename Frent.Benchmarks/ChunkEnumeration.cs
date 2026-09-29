@@ -39,6 +39,20 @@ internal class ChunkEnumeration
     }
 
     [Benchmark]
+    public long ChunkIDs()
+    {
+        long acc = 0;
+        foreach (var chunk in World.Query<BenchPosition, BenchVelocity>().EnumerateChunks<BenchPosition, BenchVelocity>())
+        {
+            chunk.Deconstruct(out var positions, out var velocities);
+            var ids = chunk.IDs;
+            for (int i = 0; i < positions.Length; i++)
+                acc += (int)positions[i].X + ids[i];
+        }
+        return acc;
+    }
+
+    [Benchmark]
     public long ChunkEntities()
     {
         long acc = 0;

@@ -36,9 +36,11 @@ public ref struct ChunkQueryEnumerator<T>
         get
         {
             Archetype cur = _archetypes[_archetypeIndex];
+            Span<EntityIDOnly> entities = cur.GetEntitySpan();
             return new()
             {
-                Entities = new EntityEnumerator(_world, cur.GetEntitySpan()),
+                Entities = new EntityEnumerator(_world, entities),
+                IDs = new EntityIDSpan(entities),
                 Span = cur.GetComponentSpan<T>(),
             };
         }

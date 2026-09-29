@@ -71,6 +71,11 @@ public ref struct ChunkTuple<T>
     /// An enumerator that can be used to enumerate individual <see cref="Entity"/> instances.
     /// </summary>
     public EntityEnumerator Entities;
+
+    /// <summary>
+    /// The raw ids of the entities in this chunk, without constructing <see cref="Entity"/> instances.
+    /// </summary>
+    public EntityIDSpan IDs;
     public Span<T> Span;
 
     /// <summary>
