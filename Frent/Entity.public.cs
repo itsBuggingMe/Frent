@@ -1219,7 +1219,7 @@ partial struct Entity
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> instance is the null entity: <see langword="default"/>(<see cref="Entity"/>)
     /// </summary>
-    public readonly bool IsNull => PackedValue == 0;
+    public readonly bool IsNull => EntityID == 0 && EntityVersion == 0 && WorldID == 0;
 
     /// <summary>
     /// Gets the world this entity belongs to
