@@ -25,8 +25,9 @@ internal static class FrentMultithread
         private ArraySegment<SparseUpdateMethod> _update;
         private StrongBox<int>? _counter;
         private Stack<Exception>? _exceptions;
+        private ManualResetEventSlim? _doneEvent;
 
-        public static void UnsafeQueueWork(World world, ArraySegment<SparseUpdateMethod> method, StrongBox<int> counter, Stack<Exception> exceptions)
+        public static void UnsafeQueueWork(World world, ArraySegment<SparseUpdateMethod> method, StrongBox<int> counter, Stack<Exception> exceptions, ManualResetEventSlim doneEvent)
         {
             if (method.Count == 0)
                 return;
@@ -44,6 +45,7 @@ internal static class FrentMultithread
             workItem._update = method;
             workItem._counter = counter;
             workItem._exceptions = exceptions;
+            workItem._doneEvent = doneEvent;
 
             ThreadPool.UnsafeQueueUserWorkItem(static o =>
             {
@@ -69,13 +71,15 @@ internal static class FrentMultithread
                 }
                 finally
                 {
-                    Interlocked.Decrement(ref workItem._counter!.Value);
+                    if (Interlocked.Decrement(ref workItem._counter!.Value) == 0)
+                        workItem._doneEvent!.Set();
                 }
 
                 workItem._world = default;
                 workItem._update = default;
                 workItem._counter = default;
                 workItem._exceptions = default;
+                workItem._doneEvent = default;
 
                 lock (s_poolLock)
                 {
@@ -101,8 +105,9 @@ internal static class FrentMultithread
         private ArchetypeUpdateMethod[]? _componentStorageBases;
         private StrongBox<int>? _counter;
         private Stack<Exception>? _exceptions;
+        private ManualResetEventSlim? _doneEvent;
 
-        public static void UnsafeQueueWork(World world, Stack<ArchetypeUpdateSpan> archetypes, ArchetypeUpdateMethod[] componentStorageBases, StrongBox<int> counter, Stack<Exception> exceptions)
+        public static void UnsafeQueueWork(World world, Stack<ArchetypeUpdateSpan> archetypes, ArchetypeUpdateMethod[] componentStorageBases, StrongBox<int> counter, Stack<Exception> exceptions, ManualResetEventSlim doneEvent)
         {
             Interlocked.Increment(ref counter.Value);
 
@@ -118,6 +123,7 @@ internal static class FrentMultithread
             workItem._world = world;
             workItem._counter = counter;
             workItem._exceptions = exceptions;
+            workItem._doneEvent = doneEvent;
 
             ThreadPool.UnsafeQueueUserWorkItem(static o =>
             {
@@ -151,7 +157,8 @@ internal static class FrentMultithread
                 }
                 finally
                 {
-                    Interlocked.Decrement(ref workItem._counter!.Value);
+                    if (Interlocked.Decrement(ref workItem._counter!.Value) == 0)
+                        workItem._doneEvent!.Set();
                 }
 
                 workItem._archetypes = default;
@@ -159,6 +166,7 @@ internal static class FrentMultithread
                 workItem._world = default;
                 workItem._counter = default;
                 workItem._exceptions = default;
+                workItem._doneEvent = default;
 
                 lock (s_poolLock)
                 {
@@ -184,6 +192,7 @@ internal static class FrentMultithread
         private ArchetypeUpdateMethod[]? _components;
         private StrongBox<int>? _counter;
         private Stack<Exception>? _exceptions;
+        private ManualResetEventSlim? _doneEvent;
         private int _start;
         private int _count;
 
@@ -193,6 +202,7 @@ internal static class FrentMultithread
             ArchetypeUpdateMethod[] componentStorageBases,
             StrongBox<int> counter,
             Stack<Exception> exceptions,
+            ManualResetEventSlim doneEvent,
             int start,
             int count)
         {
@@ -210,6 +220,7 @@ internal static class FrentMultithread
             workItem._world = world;
             workItem._counter = counter;
             workItem._exceptions = exceptions;
+            workItem._doneEvent = doneEvent;
             workItem._start = start;
             workItem._count = count;
 
@@ -249,7 +260,8 @@ internal static class FrentMultithread
                 }
                 finally
                 {
-                    Interlocked.Decrement(ref frentMultithreadWorkItem._counter!.Value);
+                    if (Interlocked.Decrement(ref frentMultithreadWorkItem._counter!.Value) == 0)
+                        frentMultithreadWorkItem._doneEvent!.Set();
                 }
 
                 frentMultithreadWorkItem._archetypeRecord = default;
@@ -257,6 +269,7 @@ internal static class FrentMultithread
                 frentMultithreadWorkItem._world = default;
                 frentMultithreadWorkItem._counter = default;
                 frentMultithreadWorkItem._exceptions = default;
+                frentMultithreadWorkItem._doneEvent = default;
 
                 lock (s_poolLock)
                 {

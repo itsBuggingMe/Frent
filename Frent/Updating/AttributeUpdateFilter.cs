@@ -36,6 +36,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private ulong _componentBloomFilter;
 
     private readonly StrongBox<int>? _updateCount;
+    private readonly ManualResetEventSlim? _updateDone;
     private readonly Stack<ArchetypeUpdateSpan>? _smallArchetypeUpdateRecords;
     private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
     private readonly Stack<Exception>? _mulithreadedExceptions;
@@ -55,6 +56,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         if (_isMultithread)
         {
             _updateCount = new StrongBox<int>();
+            _updateDone = new ManualResetEventSlim();
             _smallArchetypeUpdateRecords = new Stack<ArchetypeUpdateSpan>();
             _largeArchetypeRecords = new Stack<ArchetypeUpdateSpan>();
             _mulithreadedExceptions = new Stack<Exception>();
@@ -150,6 +152,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         _updateCount!.Value = 0;
         _mulithreadedExceptions!.Clear();
+        _updateDone!.Reset();
 
         var archetypes = _matchedArchetypes.AsSpan();
 
@@ -173,20 +176,49 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        FrentMultithread.MultipleArchetypeWorkItem.UnsafeQueueWork(
-            _world, _smallArchetypeUpdateRecords!, _methods, _updateCount, _mulithreadedExceptions);
+        if (_smallArchetypeUpdateRecords!.Count != 0)
+            FrentMultithread.MultipleArchetypeWorkItem.UnsafeQueueWork(
+                _world, _smallArchetypeUpdateRecords, _methods, _updateCount, _mulithreadedExceptions, _updateDone);
 
         int maxChunkSize = Math.Max(largeCount / Environment.ProcessorCount, 256);
 
         while (_largeArchetypeRecords!.TryPop(out var archetypeRecord))
         {
-            int entityCount = archetypeRecord.Archetype.EntityCount;
-            for (int i = 0; i < entityCount; i += maxChunkSize)
+            Archetype archetype = archetypeRecord.Archetype;
+            int entityCount = archetype.EntityCount;
+
+            int i = 0;
+            for (; i + maxChunkSize < entityCount; i += maxChunkSize)
             {
                 FrentMultithread.SingleArchetypeWorkItem.UnsafeQueueWork(
-                    _world, archetypeRecord, _methods, _updateCount, _mulithreadedExceptions,
+                    _world, archetypeRecord, _methods, _updateCount, _mulithreadedExceptions, _updateDone,
                     start: i,
-                    count: Math.Min(maxChunkSize, entityCount - i));
+                    count: maxChunkSize);
+            }
+
+            // run the last chunk on this thread
+            int remaining = entityCount - i;
+            if (remaining > 0)
+            {
+                Span<ArchetypeUpdateMethod> methods = _methods.AsSpan(archetypeRecord.Start, archetypeRecord.Length);
+                ref ComponentStorageRecord storageStart = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
+
+                try
+                {
+                    foreach (var method in methods)
+                    {
+                        method.Runner.RunArchetypical(
+                            Unsafe.Add(ref storageStart, method.Index).Buffer,
+                            archetype, _world, i, remaining);
+                    }
+                }
+                catch (Exception e)
+                {
+                    lock (_mulithreadedExceptions)
+                    {
+                        _mulithreadedExceptions.Push(e);
+                    }
+                }
             }
         }
 
@@ -208,14 +240,17 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             } while (i < sparseMethods.Length && set == sparseMethods[i].SparseSet);
 
             ArraySegment<SparseUpdateMethod> methods = new(_sparseMethods, start, i - start);
-            FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, _updateCount, _mulithreadedExceptions);
+            FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, _updateCount, _mulithreadedExceptions, _updateDone);
         }
 
         SpinWait spinWait = new();
-        while (Volatile.Read(ref _updateCount.Value) != 0)
+        while (Volatile.Read(ref _updateCount.Value) != 0 && !spinWait.NextSpinWillYield)
         {
             spinWait.SpinOnce();
         }
+
+        if (Volatile.Read(ref _updateCount.Value) != 0)
+            _updateDone.Wait();
 
         if (_mulithreadedExceptions.Count != 0)
         {
