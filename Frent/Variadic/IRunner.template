@@ -72,6 +72,10 @@ from:
 to:
                     fastComp.Update(|ref fastArg$, |);
 from:
+                    fastComp.Update(fastUniform, ref fastArg);
+to:
+                    fastComp.Update(fastUniform, |ref fastArg$, |);
+from:
                     fastArg = ref Unsafe.Add(ref fastArg, 1);
 to:
 |                    fastArg$ = ref Unsafe.Add(ref fastArg$, 1);

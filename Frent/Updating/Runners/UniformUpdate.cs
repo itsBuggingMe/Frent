@@ -15,10 +15,23 @@ public sealed class UniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
+        TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
+
+        // specialize no filter predicate:
+        if (typeof(TPredicate) == typeof(NonePredicate))
+        {
+            ref TComp fastComp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
+
+            for (int i = length; i > 0; i--, fastComp = ref Unsafe.Add(ref fastComp, 1))
+            {
+                fastComp.Update(uniform);
+            }
+
+            return;
+        }
+
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
-
-        TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
         for (int i = length; i > 0; i--, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
         {
@@ -84,6 +97,30 @@ public sealed class UniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Deleg
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
+        // specialize no sparse components and filter predicates:
+        if (typeof(TPredicate) == typeof(NonePredicate))
+        {
+            if (Component<TArg>.IsSparseComponent)
+            {
+                // at least one sparse argument - the general loop below handles it
+            }
+            else
+            {
+                ref TComp fastComp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
+                ref TArg fastArg = ref VariadicHelpers.ArchetypeRefOrNullRef<TArg>(b, start);
+
+                TUniform fastUniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
+
+                for (int i = length; i > 0; i--, fastComp = ref Unsafe.Add(ref fastComp, 1))
+                {
+                    fastComp.Update(fastUniform, ref fastArg);
+                    fastArg = ref Unsafe.Add(ref fastArg, 1);
+                }
+
+                return;
+            }
+        }
+
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
