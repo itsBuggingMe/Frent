@@ -63,6 +63,24 @@ ref arg);
 to:
 |ref arg$, |);
 from:
+                ref TArg fastArg = ref VariadicHelpers.ArchetypeRefOrNullRef<TArg>(b, start);
+to:
+|                ref TArg$ fastArg$ = ref VariadicHelpers.ArchetypeRefOrNullRef<TArg$>(b, start);
+|
+from:
+                    fastComp.Update(ref fastArg);
+to:
+                    fastComp.Update(|ref fastArg$, |);
+from:
+                    fastComp.Update(fastUniform, ref fastArg);
+to:
+                    fastComp.Update(fastUniform, |ref fastArg$, |);
+from:
+                    fastArg = ref Unsafe.Add(ref fastArg, 1);
+to:
+|                    fastArg$ = ref Unsafe.Add(ref fastArg$, 1);
+|
+from:
 TArg>
 to:
 |TArg$, |>

@@ -15,6 +15,19 @@ public sealed class UpdateRunner<TPredicate, TComp>(Delegate? f) : RunnerBase(f)
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
+        // specialize no filter predicate:
+        if (typeof(TPredicate) == typeof(NonePredicate))
+        {
+            ref TComp fastComp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
+
+            for (int i = length; i > 0; i--, fastComp = ref Unsafe.Add(ref fastComp, 1))
+            {
+                fastComp.Update();
+            }
+
+            return;
+        }
+
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
@@ -78,6 +91,28 @@ public sealed class UpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerB
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
+        // specialize no sparse components and filter predicates:
+        if (typeof(TPredicate) == typeof(NonePredicate))
+        {
+            if (Component<TArg>.IsSparseComponent)
+            {
+                // at least one sparse argument - the general loop below handles it
+            }
+            else
+            {
+                ref TComp fastComp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
+                ref TArg fastArg = ref VariadicHelpers.ArchetypeRefOrNullRef<TArg>(b, start);
+
+                for (int i = length; i > 0; i--, fastComp = ref Unsafe.Add(ref fastComp, 1))
+                {
+                    fastComp.Update(ref fastArg);
+                    fastArg = ref Unsafe.Add(ref fastArg, 1);
+                }
+
+                return;
+            }
+        }
+
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
