@@ -2,7 +2,6 @@
 using Frent.Core;
 using Frent.Core.Archetypes;
 using Frent.Updating.Runners;
-using Frent.Updating.Threading;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -35,10 +34,13 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private readonly Dictionary<ComponentID, MatchedMethodData> _matchedArchetypicalComponentMethods = [];
     private ulong _componentBloomFilter;
 
-    private readonly StrongBox<int>? _updateCount;
+
+    private readonly List<MultithreadWorkItem>? _multithreadWorkItems;
     private readonly Stack<ArchetypeUpdateSpan>? _smallArchetypeUpdateRecords;
     private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
     private readonly Stack<Exception>? _mulithreadedExceptions;
+    private readonly Action<int>? _executeWorkItem;
+
     private readonly bool _isMultithread;
     private readonly bool _matchAll;
 
@@ -54,10 +56,11 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
         if (_isMultithread)
         {
-            _updateCount = new StrongBox<int>();
             _smallArchetypeUpdateRecords = new Stack<ArchetypeUpdateSpan>();
             _largeArchetypeRecords = new Stack<ArchetypeUpdateSpan>();
             _mulithreadedExceptions = new Stack<Exception>();
+            _multithreadWorkItems = new List<MultithreadWorkItem>();
+            _executeWorkItem = ExecuteWorkItem;
         }
     }
 
@@ -148,7 +151,6 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     {
         const int LargeArchetypeThreshold = 16;
 
-        _updateCount!.Value = 0;
         _mulithreadedExceptions!.Clear();
 
         var archetypes = _matchedArchetypes.AsSpan();
@@ -173,8 +175,9 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        FrentMultithread.MultipleArchetypeWorkItem.UnsafeQueueWork(
-            _world, _smallArchetypeUpdateRecords!, _methods, _updateCount, _mulithreadedExceptions);
+        var workItemsList = _multithreadWorkItems!;
+
+        workItemsList.Add(new MultithreadWorkItem(_smallArchetypeUpdateRecords!));
 
         int maxChunkSize = Math.Max(largeCount / Environment.ProcessorCount, 256);
 
@@ -183,10 +186,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             int entityCount = archetypeRecord.Archetype.EntityCount;
             for (int i = 0; i < entityCount; i += maxChunkSize)
             {
-                FrentMultithread.SingleArchetypeWorkItem.UnsafeQueueWork(
-                    _world, archetypeRecord, _methods, _updateCount, _mulithreadedExceptions,
-                    start: i,
-                    count: Math.Min(maxChunkSize, entityCount - i));
+                workItemsList.Add(new MultithreadWorkItem(archetypeRecord, i, Math.Min(maxChunkSize, entityCount - i)));
             }
         }
 
@@ -208,18 +208,82 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             } while (i < sparseMethods.Length && set == sparseMethods[i].SparseSet);
 
             ArraySegment<SparseUpdateMethod> methods = new(_sparseMethods, start, i - start);
-            FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, _updateCount, _mulithreadedExceptions);
+            workItemsList.Add(new MultithreadWorkItem(methods));
         }
 
-        SpinWait spinWait = new();
-        while (Volatile.Read(ref _updateCount.Value) != 0)
+        try
         {
-            spinWait.SpinOnce();
+            Parallel.For(0, workItemsList.Count, _executeWorkItem!);
         }
-
-        if (_mulithreadedExceptions.Count != 0)
+        finally
         {
-            throw new AggregateException(_mulithreadedExceptions);
+            workItemsList.Clear();
+        }
+    }
+
+    private void ExecuteWorkItem(int workItemIndex)
+    {
+        MultithreadWorkItem workItem = _multithreadWorkItems![workItemIndex];
+        switch (workItem.Type)
+        {
+            case MultithreadWorkItemType.Chunk:
+            {
+                World world = _world;
+                (Archetype archetype, int start, int count) = workItem.Chunk;
+                Span<ArchetypeUpdateMethod> methods = _methods.AsSpan(start, count);
+
+                int archetypeStart = workItem.ChunkStart;
+                int archetypeCount = workItem.ChunkLength;
+
+                ref ComponentStorageRecord storageStart = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
+
+                foreach (var method in methods)
+                {
+                    Debug.Assert(method.Index < archetype.Components.Length);
+
+                    method.Runner.RunArchetypical(
+                        Unsafe.Add(ref storageStart, method.Index).Buffer,
+                        archetype,
+                        world,
+                        archetypeStart,
+                        archetypeCount);
+                }
+                }
+            break;
+            case MultithreadWorkItemType.ChunkCollection:
+            {
+                World world = _world;
+
+                while (workItem.ChunkCollection!.TryPop(out var record))
+                {
+                    (Archetype archetype, int start, int count) = record;
+
+                    Span<ArchetypeUpdateMethod> methods = _methods.AsSpan(start, count);
+                    ref ComponentStorageRecord storageStart = ref MemoryMarshal.GetArrayDataReference(archetype.Components);
+
+                    foreach (var method in methods)
+                    {
+                        Debug.Assert(method.Index < archetype.Components.Length);
+
+                        method.Runner.RunArchetypical(Unsafe.Add(ref storageStart, method.Index).Buffer, archetype, world, 0, archetype.EntityCount);
+                    }
+                }
+            }
+            break;
+            case MultithreadWorkItemType.SparseComponentCollection:
+            {
+                Span<SparseUpdateMethod> methods = workItem.SparseUpdateMethods;
+                ComponentSparseSetBase set = methods[0].SparseSet;
+
+                foreach (SparseUpdateMethod method in methods)
+                {
+                    int entityId = 0;
+                    method.Runner.RunSparse(set, _world, ref entityId);
+                }
+            }
+            break;
+            default:
+                throw new InvalidOperationException($"Unknown work item type: {workItem.Type}");
         }
     }
 
