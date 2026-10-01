@@ -35,7 +35,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private ulong _componentBloomFilter;
 
 
-    private readonly List<MultithreadWorkItem>? _multithreadWorkItems;
+    private FastStack<MultithreadWorkItem> _multithreadWorkItems;
     private readonly Stack<ArchetypeUpdateSpan>? _smallArchetypeUpdateRecords;
     private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
     private readonly Stack<Exception>? _mulithreadedExceptions;
@@ -59,7 +59,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             _smallArchetypeUpdateRecords = new Stack<ArchetypeUpdateSpan>();
             _largeArchetypeRecords = new Stack<ArchetypeUpdateSpan>();
             _mulithreadedExceptions = new Stack<Exception>();
-            _multithreadWorkItems = new List<MultithreadWorkItem>();
+            _multithreadWorkItems = new FastStack<MultithreadWorkItem>(4);
             _executeWorkItem = ExecuteWorkItem;
         }
     }
@@ -175,9 +175,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             }
         }
 
-        var workItemsList = _multithreadWorkItems!;
-
-        workItemsList.Add(new MultithreadWorkItem(_smallArchetypeUpdateRecords!));
+        _multithreadWorkItems.Push(new MultithreadWorkItem(_smallArchetypeUpdateRecords!));
 
         int maxChunkSize = Math.Max(largeCount / Environment.ProcessorCount, 256);
 
@@ -186,7 +184,7 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             int entityCount = archetypeRecord.Archetype.EntityCount;
             for (int i = 0; i < entityCount; i += maxChunkSize)
             {
-                workItemsList.Add(new MultithreadWorkItem(archetypeRecord, i, Math.Min(maxChunkSize, entityCount - i)));
+                _multithreadWorkItems.Push(new MultithreadWorkItem(archetypeRecord, i, Math.Min(maxChunkSize, entityCount - i)));
             }
         }
 
@@ -208,22 +206,22 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
             } while (i < sparseMethods.Length && set == sparseMethods[i].SparseSet);
 
             ArraySegment<SparseUpdateMethod> methods = new(_sparseMethods, start, i - start);
-            workItemsList.Add(new MultithreadWorkItem(methods));
+            _multithreadWorkItems.Push(new MultithreadWorkItem(methods));
         }
 
         try
         {
-            Parallel.For(0, workItemsList.Count, _executeWorkItem!);
+            Parallel.For(0, _multithreadWorkItems.Count, _executeWorkItem!);
         }
         finally
         {
-            workItemsList.Clear();
+            _multithreadWorkItems.Clear();
         }
     }
 
     private void ExecuteWorkItem(int workItemIndex)
     {
-        MultithreadWorkItem workItem = _multithreadWorkItems![workItemIndex];
+        ref MultithreadWorkItem workItem = ref _multithreadWorkItems[workItemIndex];
         switch (workItem.Type)
         {
             case MultithreadWorkItemType.Chunk:
