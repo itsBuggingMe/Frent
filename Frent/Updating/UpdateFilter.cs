@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
 
-internal class AttributeUpdateFilter : IComponentUpdateFilter
+internal class UpdateFilter : IComponentUpdateFilter
 {
     /*  In each world, there are n archetype that match the filter, where n >= 0.
      *  In each archetype there are m component types that match the filter, where m >= 0.
@@ -42,14 +42,14 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private readonly Action<int>? _executeWorkItem;
 
     private readonly bool _isMultithread;
-    private readonly bool _matchAll;
+    private readonly UpdateFilterMode _mode;
 
-    public AttributeUpdateFilter(World world, Type attributeType, bool overrideMatchAll)
+    public UpdateFilter(World world, Type attributeType, UpdateFilterMode mode)
     {
         _isMultithread = typeof(MultithreadUpdateTypeAttribute).IsAssignableFrom(attributeType);
         _attributeType = attributeType;
         _world = world;
-        _matchAll = overrideMatchAll;
+        _mode = mode;
 
         foreach (var archetype in world.EnabledArchetypes.AsSpan())
             ArchetypeAdded(archetype.Archetype(world)!);
@@ -299,7 +299,13 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
             for (int j = 0; j < methods.Length; j++)
             {
-                if (_matchAll || methods[j].AttributeIsDefined(_attributeType))
+                if (_mode switch
+                {
+                    UpdateFilterMode.Attribute => methods[j].AttributeIsDefined(_attributeType),
+                    UpdateFilterMode.Exclusive => methods[j] is { Attributes.Length: 0},
+                    UpdateFilterMode.AllMethods => true,
+                    _ => throw new InvalidOperationException(),
+                })
                 {
                     matchedMethodsCount++;
                     matchedMethods |= 1UL << j;
@@ -381,7 +387,13 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private MissingComponentException? CreateExceptionSparse(int entityId, int recordId)
     {
         SparseUpdateMethod sparseMethod = _sparseMethods[recordId];
-        return FrentExceptions.CreateExceptionSparse(_world, sparseMethod.SparseSet, entityId, u => _matchAll || u.AttributeIsDefined(_attributeType));
+        return FrentExceptions.CreateExceptionSparse(_world, sparseMethod.SparseSet, entityId, u => _mode switch
+        {
+            UpdateFilterMode.Attribute => u.AttributeIsDefined(_attributeType),
+            UpdateFilterMode.Exclusive => u is { Attributes.Length: 0 },
+            UpdateFilterMode.AllMethods => true,
+            _ => throw new InvalidOperationException()
+        });
     }
     internal void ArchetypeAdded(Archetype archetype)
     {
