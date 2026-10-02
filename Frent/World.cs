@@ -62,7 +62,7 @@ public partial class World : IDisposable
 
     private int _freeListCount;
 
-    private RefDictionary<Type, AttributeUpdateFilter> _updatesByAttributes = new();
+    private RefDictionary<Type, UpdateFilter> _updatesByAttributes = new();
     private RefDictionary<ComponentID, SingleComponentUpdateFilter> _singleComponentUpdates = new();
     internal int NextEntityID;
 
@@ -308,14 +308,15 @@ public partial class World : IDisposable
     /// <summary>
     /// Updates all component instances in the world that implement a component interface, e.g., <see cref="IUpdate"/>
     /// </summary>
-    public void Update()
+    public void Update(bool exclusiveUpdate = false)
     {
         EnterWorldUpdateMethod();
         EnterDisallowState();
-        AttributeUpdateFilter? appliesTo = default;
+        UpdateFilter? appliesTo = default;
         try
         {
-            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(typeof(void), out _) ??= new AttributeUpdateFilter(this, typeof(void), true);
+            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(exclusiveUpdate ? typeof(ExclusiveUpdate) : typeof(void), out _)
+                ??= new UpdateFilter(this, typeof(void), exclusiveUpdate ? UpdateFilterMode.Exclusive : UpdateFilterMode.AllMethods);
             appliesTo.Update();
         }
         finally
@@ -339,10 +340,10 @@ public partial class World : IDisposable
     {
         EnterWorldUpdateMethod();
         EnterDisallowState();
-        AttributeUpdateFilter? appliesTo = default;
+        UpdateFilter? appliesTo = default;
         try
         {
-            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(attributeType, out _) ??= new AttributeUpdateFilter(this, attributeType, false);
+            appliesTo = _updatesByAttributes.GetValueRefOrAddDefault(attributeType, out _) ??= new UpdateFilter(this, attributeType, UpdateFilterMode.Attribute);
             appliesTo.Update();
         }
         finally
@@ -886,4 +887,6 @@ public partial class World : IDisposable
             throw new InvalidOperationException("Initialize the world with an IUniformProvider in order to use uniforms");
         }
     }
+
+    private sealed class ExclusiveUpdate;
 }

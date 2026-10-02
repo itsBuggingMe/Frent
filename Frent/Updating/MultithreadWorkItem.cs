@@ -1,4 +1,4 @@
-﻿using static Frent.Updating.AttributeUpdateFilter;
+﻿using static Frent.Updating.UpdateFilter;
 
 namespace Frent.Updating;
 
