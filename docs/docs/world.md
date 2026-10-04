@@ -1,7 +1,5 @@
 # World
 
-<br />
-
 In Frent, every entity, component, query, archetype and other EC/ECS objects lives inside a `World` object. It is also responsible for creating, updating and destroying the entities you manage in your project. Therefore, it's a good idea to have one! 😁
 
 Here, let's create one:
@@ -68,4 +66,7 @@ And that's it!
 
 > [!TIP]
 > Don't forget to call `Dispose()` on your world object when you're done using it.
+
+> [!TIP]
+> If you demand greater control over which update methods are called when, consider taking a look at [Filtering Updates](filter-update.md)
 
