@@ -64,7 +64,6 @@ public partial struct Entity : IEquatable<Entity>
     }
 
     internal readonly EntityIDOnly EntityIDOnly => Unsafe.As<Entity, EntityWorldInfoAccess>(ref Unsafe.AsRef(in this)).EntityIDOnly;
-    internal readonly long PackedValue => Unsafe.As<Entity, long>(ref Unsafe.AsRef(in this));
     internal readonly int EntityLow => Unsafe.As<Entity, EntityHighLow>(ref Unsafe.AsRef(in this)).EntityLow;
     #endregion
 
@@ -603,12 +602,12 @@ public partial struct Entity : IEquatable<Entity>
     /// </summary>
     /// <param name="other">The entity to compare with the current entity.</param>
     /// <returns><see langword="true"/> if the specified entity is equal to the current entity; otherwise, <see langword="false"/>.</returns>
-    public bool Equals(Entity other) => other.PackedValue == PackedValue;
+    public bool Equals(Entity other) => other.EntityID == EntityID && other.EntityVersion == EntityVersion && other.WorldID == WorldID;
 
     /// <summary>
     /// Serves as the default hash function.
     /// </summary>
     /// <returns>A hash code for the current <see cref="Entity"/>.</returns>
-    public override int GetHashCode() => PackedValue.GetHashCode();
+    public override int GetHashCode() => EntityID ^ (EntityVersion << 16) ^ WorldID;
     #endregion
 }

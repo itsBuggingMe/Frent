@@ -57,7 +57,7 @@ internal class MissingComponentExceptions
 
         MissingComponentException? exception = Throws<MissingComponentException>(kind switch
         {
-            UpdateKind.Normal => world.Update,
+            UpdateKind.Normal => () => world.Update(),
             UpdateKind.Component => () => world.UpdateComponent(Component<TComponent>.ID),
             UpdateKind.Multithread => world.Update<MultithreadedUpdate>,
             _ => throw new UnreachableException(),
