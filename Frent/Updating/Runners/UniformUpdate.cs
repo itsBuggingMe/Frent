@@ -30,12 +30,11 @@ public sealed class UniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f
             return;
         }
 
-        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
-        for (int i = length; i > 0; i--, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
+        for (int i = length, row = start; i > 0; i--, row++, comp = ref Unsafe.Add(ref comp, 1))
         {
-            if (!NonePredicate.ApplyPredicate<TPredicate>(world, entityIds.ID))
+            if (!NonePredicate.ApplyPredicate<TPredicate>(b, row))
                 continue;
 
             comp.Update(uniform);
@@ -157,7 +156,7 @@ public sealed class UniformUpdateRunner<TPredicate, TComp, TUniform, TArg>(Deleg
                     FrentExceptions.Throw_NullReferenceException();
                 }
             }
-            else if (!NonePredicate.ApplyPredicate<TPredicate>(world, entityId))
+            else if (!NonePredicate.ApplyPredicate<TPredicate>(b, i))
             {
                 shouldRun = false;
             }
