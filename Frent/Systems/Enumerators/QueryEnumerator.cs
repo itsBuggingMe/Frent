@@ -20,6 +20,7 @@ public ref struct QueryEnumerator<T>
     private Span<EntityIDOnly> _entities;
     private int _archetypeIndex;
     private int _entityIndex;
+    private int _entityCount;
 
     private int _currentEntityID;
 
@@ -105,11 +106,12 @@ public ref struct QueryEnumerator<T>
     /// Moves to the next component tuple in this enumeration.
     /// </summary>
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool MoveNext()
     {
     BeginConsumeEntities:
 
-        while ((uint)++_entityIndex < (uint)_entities.Length)
+        while ((uint)++_entityIndex < (uint)_entityCount)
         {// a okay
 
             if (_hasSparseRules)
@@ -122,7 +124,8 @@ public ref struct QueryEnumerator<T>
                     continue;
             }
 
-            _currentEntityID = _entities[_entityIndex].ID;
+            if (Component<T>.IsSparseComponent)
+                _currentEntityID = _entities[_entityIndex].ID;
 
             return true;
         }
@@ -130,7 +133,9 @@ public ref struct QueryEnumerator<T>
         if ((uint)++_archetypeIndex < (uint)_archetypes.Length)
         {
             var currentArchetype = _archetypes[_archetypeIndex];
-            _entities = currentArchetype.GetEntitySpan();
+            if (Component<T>.IsSparseComponent)
+                _entities = currentArchetype.GetEntitySpan();
+            _entityCount = currentArchetype.EntityCount;
             _entityIndex = -1;
 
             if (_hasSparseRules)
