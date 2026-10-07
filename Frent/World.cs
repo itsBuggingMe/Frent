@@ -306,6 +306,77 @@ public partial class World : IDisposable
     }
 
     /// <summary>
+    /// Copies the entity at <paramref name="sourceLocation"/> from <paramref name="sourceWorld"/> into this world.
+    /// </summary>
+    internal Entity CopyEntityFrom(World sourceWorld, EntityLocation sourceLocation, int sourceEntityId, bool callIniters, bool callEvents)
+    {
+        WorldArchetypeTableItem archetypes = Archetype.CreateOrGetExistingArchetype(sourceLocation.ArchetypeID, this);
+
+        ref EntityLocation eloc = ref FindNewEntityLocation(out int id);
+
+        ref var record = ref Unsafe.NullRef<EntityIDOnly>();
+        ComponentStorageRecord[] write;
+        Archetype inserted;
+
+        if (AllowStructualChanges)
+        {
+            inserted = archetypes.Archetype;
+            write = archetypes.Archetype.Components;
+            record = ref archetypes.Archetype.CreateEntityLocation(EntityFlags.None, out eloc);
+        }
+        else
+        {
+            // we don't need to manually set flags, they are already zeroed
+            record = ref archetypes.Archetype.CreateDeferredEntityLocation(this, archetypes.DeferredCreationArchetype,
+                ref eloc,
+                out write,
+                out inserted);
+            DeferredCreationEntities.Push(id);
+        }
+
+        Entity entity = new Entity(WorldID, eloc.Version, id);
+        record.Init(entity);
+
+        //read source buffers after reserving - the reservation may have resized them
+        for (int i = 1; i < write.Length; i++)
+            Array.Copy(sourceLocation.Archetype.Components[i].Buffer, sourceLocation.Index, write[i].Buffer, eloc.Index, 1);
+
+        if (sourceLocation.HasFlag(EntityFlags.HasHadSparseComponents))
+        {
+            eloc.Flags |= EntityFlags.HasHadSparseComponents;
+            Bitset sourceBits = sourceLocation.Archetype.GetBitsetNoLazy(sourceLocation.Index);
+            inserted.GetBitset(eloc.Index) = sourceBits;
+
+            foreach (int sparseComponentId in sourceBits)
+            {
+                sourceWorld.WorldSparseSetTable.UnsafeArrayIndex(sparseComponentId)
+                    .CopyTo(sourceEntityId, WorldSparseSetTable.UnsafeArrayIndex(sparseComponentId), id);
+            }
+
+            if (callIniters)
+            {
+                foreach (int sparseComponentId in sourceBits)
+                    WorldSparseSetTable.UnsafeArrayIndex(sparseComponentId).Init(entity);
+            }
+        }
+        else
+        {
+            inserted.ClearBitset(eloc.Index);
+        }
+
+        if (callIniters)
+        {
+            for (int i = 1; i < write.Length; i++)
+                write[i].CallIniter(entity, eloc.Index);
+        }
+
+        if (callEvents)
+            EntityCreatedEvent.Invoke(entity);
+
+        return entity;
+    }
+
+    /// <summary>
     /// Updates all component instances in the world that implement a component interface, e.g., <see cref="IUpdate"/>
     /// </summary>
     public void Update(bool exclusiveUpdate = false)

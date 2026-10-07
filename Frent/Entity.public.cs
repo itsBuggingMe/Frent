@@ -1204,6 +1204,22 @@ partial struct Entity
     }
 
     /// <summary>
+    /// Creates a new entity with the same components, component values, tags, and sparse components as this entity.
+    /// </summary>
+    /// <remarks>
+    /// Component values are copied shallowly; class components and reference fields are shared with the source entity.
+    /// Links and entity-specific event subscriptions are not copied.
+    /// If structural changes are disallowed, the clone is deferred like <see cref="World.Create()"/>.
+    /// </remarks>
+    /// <returns>The cloned entity.</returns>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    public readonly Entity Clone()
+    {
+        EntityLocation source = AssertIsAlive(out World world);
+        return world.CopyEntityFrom(world, source, EntityID, callIniters: true, callEvents: true);
+    }
+
+    /// <summary>
     /// Checks to see if this <see cref="Entity"/> is still alive
     /// </summary>
     /// <returns><see langword="true"/> if this entity is still alive (not deleted), otherwise <see langword="false"/></returns>
