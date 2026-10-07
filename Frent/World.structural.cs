@@ -1,6 +1,8 @@
 ﻿using Frent.Collections;
 using Frent.Core;
 using Frent.Core.Archetypes;
+using Frent.Core.Events;
+using Frent.Systems;
 using Frent.Updating;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -250,6 +252,205 @@ partial class World
         ref var replaced = ref EntityTable.UnsafeIndexNoResize(replacedEntity.ID);
         replaced.Index = currentLookup.Index;
         // replaced.Archetype = currentLookup.Archetype;
+    }
+
+    /// <summary>
+    /// Adds component <typeparamref name="T"/> to every entity that matches <paramref name="query"/>.
+    /// </summary>
+    /// <remarks>
+    /// Entities that already have the component are skipped. All matching entities are moved
+    /// at once per archetype instead of one at a time.
+    /// </remarks>
+    public void AddComponent<T>(Query query) => AddComponentCore<T>(query, default!, false);
+
+    /// <inheritdoc cref="AddComponent{T}(Query)"/>
+    /// <param name="component">The component value to add to every entity.</param>
+    public void AddComponent<T>(Query query, in T component) => AddComponentCore(query, component, true);
+
+    /// <summary>
+    /// Removes component <typeparamref name="T"/> from every entity that matches <paramref name="query"/>.
+    /// </summary>
+    /// <inheritdoc cref="AddComponent{T}(Query)" path="/remarks"/>
+    public void RemoveComponent<T>(Query query)
+    {
+        if (query.World != this)
+            FrentExceptions.Throw_ArgumentException("The query was created on a different world.");
+
+        ComponentID compId = Component<T>.ID;
+        int sparseIndex = compId.SparseIndex;
+
+        if (!AllowStructualChanges)
+        {
+            if (sparseIndex != 0)
+            {
+                ComponentSparseSetBase sparseSet = WorldSparseSetTable.UnsafeArrayIndex(sparseIndex);
+                foreach (var arch in query.AsSpan())
+                {
+                    Span<EntityIDOnly> entities = arch.GetEntitySpan();
+                    for (int i = 0; i < entities.Length; i++)
+                    {
+                        if (sparseSet.Has(entities[i].ID))
+                            WorldUpdateCommandBuffer.RemoveComponent(entities[i].ToEntity(this), compId);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var arch in query.AsSpan())
+                {
+                    if ((arch.ComponentTagTable.UnsafeArrayIndex(compId.RawIndex) & GlobalWorldTables.IndexBits) == 0)
+                        continue;
+
+                    Span<EntityIDOnly> entities = arch.GetEntitySpan();
+                    for (int i = 0; i < entities.Length; i++)
+                        WorldUpdateCommandBuffer.RemoveComponent(entities[i].ToEntity(this), compId);
+                }
+            }
+            return;
+        }
+
+        if (sparseIndex != 0)
+        {
+            ComponentSparseSetBase sparseSet = WorldSparseSetTable.UnsafeArrayIndex(sparseIndex);
+            foreach (var arch in query.AsSpan())
+            {
+                Span<EntityIDOnly> entities = arch.GetEntitySpan();
+                for (int i = 0; i < entities.Length; i++)
+                {
+                    if (sparseSet.Has(entities[i].ID))
+                        entities[i].ToEntity(this).Remove(compId);
+                }
+            }
+            return;
+        }
+
+        foreach (var from in query.AsSpan())
+        {
+            if ((from.ComponentTagTable.UnsafeArrayIndex(compId.RawIndex) & GlobalWorldTables.IndexBits) == 0)
+                continue;
+
+            int count = from.EntityCount;
+            ComponentStorageRecord storage = from.GetComponentStorage(compId);
+            EntityIDOnly[] ids = from.EntityIDArray;
+            for (int r = 0; r < count; r++)
+            {
+                EntityIDOnly eid = ids.UnsafeArrayIndex(r);
+                Entity e = eid.ToEntity(this);
+
+                ref EntityLocation loc = ref EntityTable.UnsafeIndexNoResize(eid.ID);
+                EntityFlags flags = loc.Flags;
+                if (!EntityLocation.HasEventFlag(flags | WorldEventFlags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
+                    continue;
+
+                ComponentRemovedEvent.Invoke(e, compId);
+
+                if (!EntityLocation.HasEventFlag(flags, EntityFlags.RemoveComp | EntityFlags.RemoveGenericComp))
+                    continue;
+
+                ref EventRecord events = ref EventLookup.GetValueRefOrNullRef(eid);
+                events.Remove.NormalEvent.Invoke(e, compId);
+                if (events.Remove.GenericEvent is { } generic)
+                    storage.InvokeGenericActionWith(generic, e, r);
+            }
+
+            Archetype dest = RemoveComponentLookup.FindAdjacentArchetypeID(compId, from.ID, this, ArchetypeEdgeType.RemoveComponent).Archetype(this);
+            from.DrainEntitiesInto(this, dest);
+        }
+    }
+
+    private void AddComponentCore<T>(Query query, in T component, bool hasValue)
+    {
+        if (query.World != this)
+            FrentExceptions.Throw_ArgumentException("The query was created on a different world.");
+
+        ComponentID compId = Component<T>.ID;
+        int sparseIndex = compId.SparseIndex;
+
+        if (!AllowStructualChanges)
+        {
+            if (sparseIndex != 0)
+            {
+                ComponentSparseSetBase sparseSet = WorldSparseSetTable.UnsafeArrayIndex(sparseIndex);
+                foreach (var arch in query.AsSpan())
+                {
+                    Span<EntityIDOnly> entities = arch.GetEntitySpan();
+                    for (int i = 0; i < entities.Length; i++)
+                    {
+                        if (!sparseSet.Has(entities[i].ID))
+                            WorldUpdateCommandBuffer.AddComponent(entities[i].ToEntity(this), component);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var arch in query.AsSpan())
+                {
+                    if ((arch.ComponentTagTable.UnsafeArrayIndex(compId.RawIndex) & GlobalWorldTables.IndexBits) != 0)
+                        continue;
+
+                    Span<EntityIDOnly> entities = arch.GetEntitySpan();
+                    for (int i = 0; i < entities.Length; i++)
+                        WorldUpdateCommandBuffer.AddComponent(entities[i].ToEntity(this), component);
+                }
+            }
+            return;
+        }
+
+        if (sparseIndex != 0)
+        {
+            ComponentSparseSetBase sparseSet = WorldSparseSetTable.UnsafeArrayIndex(sparseIndex);
+            foreach (var arch in query.AsSpan())
+            {
+                Span<EntityIDOnly> entities = arch.GetEntitySpan();
+                for (int i = 0; i < entities.Length; i++)
+                {
+                    if (!sparseSet.Has(entities[i].ID))
+                        entities[i].ToEntity(this).Add(component);
+                }
+            }
+            return;
+        }
+
+        foreach (var from in query.AsSpan())
+        {
+            if ((from.ComponentTagTable.UnsafeArrayIndex(compId.RawIndex) & GlobalWorldTables.IndexBits) != 0)
+                continue;
+
+            Archetype dest = AddComponentLookup.FindAdjacentArchetypeID(compId, from.ID, this, ArchetypeEdgeType.AddComponent).Archetype(this);
+            int count = from.EntityCount;
+            int start = dest.EntityCount;
+            from.DrainEntitiesInto(this, dest);
+
+            ComponentStorageRecord col = dest.Components.UnsafeArrayIndex(dest.GetComponentIndex(compId));
+            if (hasValue)
+                UnsafeExtensions.UnsafeCast<T[]>(col.Buffer).AsSpan(start, count).Fill(component);
+
+            bool hasIniter = Component<T>.Initer is not null;
+            Span<EntityIDOnly> moved = dest.EntityIDArray.AsSpan(start, count);
+            for (int i = 0; i < moved.Length; i++)
+            {
+                ref EntityLocation loc = ref EntityTable.UnsafeIndexNoResize(moved[i].ID);
+                EntityFlags flags = loc.Flags;
+                if (!hasIniter && !EntityLocation.HasEventFlag(flags | WorldEventFlags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+                    continue;
+
+                Entity e = moved[i].ToEntity(this);
+                int index = start + i;
+
+                if (hasIniter)
+                    col.CallIniter(e, index);
+
+                ComponentAddedEvent.Invoke(e, compId);
+
+                if (!EntityLocation.HasEventFlag(flags, EntityFlags.AddComp | EntityFlags.AddGenericComp))
+                    continue;
+
+                ref EventRecord events = ref EventLookup.GetValueRefOrNullRef(moved[i]);
+                events.Add.NormalEvent.Invoke(e, compId);
+                if (events.Add.GenericEvent is { } generic)
+                    col.InvokeGenericActionWith(generic, e, index);
+            }
+        }
     }
 
     internal void CleanupSparseComponents(Entity entity, ref EntityLocation currentLookup)

@@ -239,6 +239,75 @@ internal sealed partial class Archetype
     }
 
     /// <summary>
+    /// Moves every entity in this archetype into <paramref name="to"/>, which is expected to be
+    /// an adjacent archetype (same component and tag set plus or minus one element).
+    /// Does not invoke component events.
+    /// </summary>
+    internal void DrainEntitiesInto(World world, Archetype to)
+    {
+        int n = NextComponentIndex;
+        if (n == 0)
+            return;
+
+        int toStart = to.NextComponentIndex;
+        while (to._entities.Length - toStart < n)
+            to.Resize(to._entities.Length * 2);
+
+        EntityIDOnly[] src = _entities;
+        EntityIDOnly[] dst = to._entities;
+        for (int r = 0; r < n; r++)
+        {
+            EntityIDOnly e = src[r];
+            dst.UnsafeArrayIndex(toStart + r) = e;
+            ref EntityLocation loc = ref world.EntityTable.UnsafeIndexNoResize(e.ID);
+            loc.Archetype = to;
+            loc.Index = toStart + r;
+        }
+
+        Bitset[] srcBits = _sparseBits;
+        int bitRows = Math.Min(n, srcBits.Length);
+        if (bitRows != 0)
+        {
+            MemoryHelpers.GetValueOrResize(ref to._sparseBits, toStart + n - 1);
+            Array.Copy(srcBits, 0, to._sparseBits, toStart, bitRows);
+            Array.Clear(srcBits, 0, bitRows);
+        }
+
+        int[] linkIds = _worldLinkIDs;
+        int linkRows = Math.Min(n, linkIds.Length);
+        for (int r = 0; r < linkRows; r++)
+        {
+            int id = linkIds[r];
+            if (id != 0)
+            {
+                MemoryHelpers.GetValueOrResize(ref to._worldLinkIDs, toStart + r) = id;
+                world.UpdateLinkReferences(id, to, toStart + r);
+                linkIds[r] = 0;
+            }
+        }
+
+        ComponentStorageRecord[] fromComps = Components;
+        ComponentStorageRecord[] toComps = to.Components;
+        byte[] fromMap = ComponentTagTable;
+        ImmutableArray<ComponentID> destTypes = to.ArchetypeTypeArray;
+        for (int i = 0; i < destTypes.Length;)
+        {
+            int fromIndex = fromMap.UnsafeArrayIndex(destTypes[i].RawIndex) & GlobalWorldTables.IndexBits;
+            i++;
+            if (fromIndex == 0)
+                Array.Clear(toComps.UnsafeArrayIndex(i).Buffer, toStart, n);
+            else
+                Array.Copy(fromComps.UnsafeArrayIndex(fromIndex).Buffer, 0, toComps.UnsafeArrayIndex(i).Buffer, toStart, n);
+        }
+
+        for (int i = 1; i < fromComps.Length; i++)
+            Array.Clear(fromComps.UnsafeArrayIndex(i).Buffer, 0, n);
+
+        to.NextComponentIndex = toStart + n;
+        NextComponentIndex = 0;
+    }
+
+    /// <summary>
     /// This method doesn't modify component storages
     /// </summary>
     internal EntityIDOnly DeleteEntityFromEntityArray(int index, out int deletedIndex)
