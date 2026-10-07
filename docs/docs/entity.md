@@ -1,7 +1,5 @@
 # Entity
 
-<br/>
-
 The `Entity` struct provides access to an entity's components, tags, links, and lifetime.
 
 Components are explored in depth on the [component](component.md) page.
@@ -11,7 +9,11 @@ Components are explored in depth on the [component](component.md) page.
 > [!CAUTION]
 > References returned by `Get<T>()`, including `Ref<T>` values from `TryGet<T>()`, point directly into component storage. Treat them as invalid after a [structural change](/docs/structural-changes.html).
 
+
 ### Tags
+
+<!-- TODO: Move this "Tags" section into its own file eventually. Tags aren't well documented, and I don't have
+much time left to work on writing its page...  -->
 
 What if you wanted to have a component as a marker, but not to actually hold any data or behavior? This is where tags come in. Tags are any type `T` that you can add to/detach from an entity. To check if an entity has a tag, use the `Tagged` method.
 
@@ -20,3 +22,21 @@ What if you wanted to have a component as a marker, but not to actually hold any
 > [!TIP]
 > See the [API Reference](/api/Frent.Entity.html) for all `Entity` APIs.
 > Unfamiliar with `ref`? See the [C# language reference](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/ref).
+
+### Liveness check
+
+You can check if an entity is alive or not explicitely or implicitely:
+
+```csharp
+// Explicit check
+if (entity.IsAlive)
+{
+    // The entity is alive!
+}
+
+// Implicit check
+if (entity)
+{
+    // The entity is also alive!
+}
+```

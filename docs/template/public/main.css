@@ -1,0 +1,8 @@
+:is(h1):not(.alert *) {
+    margin-bottom: 2rem !important;
+}
+
+:is(h2, h3, h4, h5, h6):not(.alert *) {
+    margin-top: 2rem !important;
+    margin-bottom: 2rem !important;
+}
