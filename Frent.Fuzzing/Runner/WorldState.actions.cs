@@ -389,6 +389,22 @@ internal partial class WorldState
         });
     }
 
+    private StepRecord Clone()
+    {
+        if (!TryPickEntity(out Entity source))
+            return SkipRecord();
+
+        Entity clone = source.Clone();
+        var handles = _componentValues[source].Select(h => h.Duplicate()).ToList();
+        var tags = _tagValues[source].ToList();
+
+        return new StepRecord(clone, new { Source = EntityMarshal.EntityID(source) }, () =>
+        {
+            _componentValues[clone] = handles;
+            _tagValues[clone] = tags;
+        });
+    }
+
     private bool HasComponent(Entity entity, ComponentID componentId)
     {
         return _componentValues[entity].Any(c => c.ComponentID == componentId);
