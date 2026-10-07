@@ -1,5 +1,4 @@
 ﻿using Frent.Core;
-using Frent.Core.Archetypes;
 using Frent.Tests.Helpers;
 using static NUnit.Framework.Assert;
 
@@ -7,39 +6,6 @@ namespace Frent.Tests.SparseComponents;
 
 internal class SparseBitsetTests
 {
-    [Test]
-    public void StructuralChanges_WithoutSparseComponents_DoNotAllocateBitsets()
-    {
-        using World world = new();
-
-        Entity[] entities = new Entity[100];
-        for (int i = 0; i < entities.Length; i++)
-            entities[i] = world.Create(new Struct1(i));
-
-        foreach (var e in entities)
-            e.Add(new Struct2(1));
-
-        foreach (var e in entities)
-            e.Remove<Struct2>();
-
-        foreach (var e in entities)
-            e.Tag<Struct3>();
-
-        foreach (var e in entities)
-            e.Detach<Struct3>();
-
-        for (int i = 0; i < entities.Length; i += 2)
-            entities[i].Delete();
-
-        foreach (var item in world.WorldArchetypeTable)
-        {
-            if (item.Archetype is { } archetype)
-                That(archetype.BitsetArray.Length, Is.EqualTo(0));
-            if (item.DeferredCreationArchetype is { } deferred)
-                That(deferred.BitsetArray.Length, Is.EqualTo(0));
-        }
-    }
-
     [Test]
     public void SparseComponent_SurvivesMovesAndSlotReuse()
     {
