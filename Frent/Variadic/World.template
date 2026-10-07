@@ -38,3 +38,55 @@ from:
 to:
 |            if (Component<T$>.IsSparseComponent) bitset.Set(Component<T$>.SparseSetComponentIndex);
 |
+
+from:
+CreateEntities<T>
+to:
+CreateEntities<|T$, |>
+from:
+= Create(comp);
+to:
+= Create(|comp$, |);
+from:
+CreateEntities(entities, default(T))
+to:
+CreateEntities(entities, |default(T$), |)
+from:
+                if (Component<T>.IsSparseComponent)
+                    bits.Set(Component<T>.SparseSetComponentIndex);
+to:
+|                if (Component<T$>.IsSparseComponent)
+                    bits.Set(Component<T$>.SparseSetComponentIndex);
+|
+from:
+            if (Component<T>.IsSparseComponent)
+                MemoryHelpers.GetSparseSet<T>(ref sparseTable)[id] = comp;
+to:
+|            if (Component<T$>.IsSparseComponent)
+                MemoryHelpers.GetSparseSet<T$>(ref sparseTable)[id] = comp$;
+|
+from:
+        if (!Component<T>.IsSparseComponent)
+        {
+            archetype.GetComponentSpan<T>().Slice(start, count).Fill(comp);
+        }
+to:
+|        if (!Component<T$>.IsSparseComponent)
+        {
+            archetype.GetComponentSpan<T$>().Slice(start, count).Fill(comp$);
+        }
+|
+from:
+Component<T>.Initer is null &&
+to:
+|Component<T$>.Initer is null &&
+            |
+from:
+                Component<T>.Initer?.Invoke(entity, ref Component<T>.IsSparseComponent
+                    ? ref MemoryHelpers.GetSparseSet<T>(ref sparseTable)[entity.EntityID]
+                    : ref archetype.GetComponentSpan<T>()[start + i]);
+to:
+|                Component<T$>.Initer?.Invoke(entity, ref Component<T$>.IsSparseComponent
+                    ? ref MemoryHelpers.GetSparseSet<T$>(ref sparseTable)[entity.EntityID]
+                    : ref archetype.GetComponentSpan<T$>()[start + i]);
+|
