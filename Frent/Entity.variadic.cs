@@ -399,6 +399,15 @@ partial struct Entity
                         archetypicals[index++] = maybeDelta;
                 archetypicals = archetypicals.Slice(0, index);
 
+                if (index == 1)
+                {
+                    ArchetypeID destination = add
+                        ? world.AddComponentLookup.FindAdjacentArchetypeID(archetypicals[0], archetypeFromID, world, ArchetypeEdgeType.AddComponent)
+                        : world.RemoveComponentLookup.FindAdjacentArchetypeID(archetypicals[0], archetypeFromID, world, ArchetypeEdgeType.RemoveComponent);
+                    cache.Set(archetypeFromID.RawIndex, destination.RawIndex);
+                    return destination.Archetype(world);
+                }
+
                 componentIDs = add ? MemoryHelpers.Concat(componentIDs, archetypicals)
                     : MemoryHelpers.Remove(componentIDs, archetypicals);
             }
@@ -406,6 +415,16 @@ partial struct Entity
             {
                 Span<TagID> delta = stackalloc TagID[8];
                 default(TEdge).WriteTagIDs(ref delta);
+
+                if (delta.Length == 1)
+                {
+                    ArchetypeID destination = add
+                        ? world.AddTagLookup.FindAdjacentArchetypeID(delta[0], archetypeFromID, world, ArchetypeEdgeType.AddTag)
+                        : world.RemoveTagLookup.FindAdjacentArchetypeID(delta[0], archetypeFromID, world, ArchetypeEdgeType.RemoveTag);
+                    cache.Set(archetypeFromID.RawIndex, destination.RawIndex);
+                    return destination.Archetype(world);
+                }
+
                 tagIDs = add ? MemoryHelpers.Concat(tagIDs, delta)
                     : MemoryHelpers.Remove(tagIDs, delta);
             }

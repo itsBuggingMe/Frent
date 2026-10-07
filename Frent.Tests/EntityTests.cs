@@ -493,6 +493,154 @@ internal class EntityTests
         That(e.Tagged(tag), Is.True);
     }
 
+    [Test]
+    public void GenericAddRemove_MoreSourceArchetypesThanCache()
+    {
+        using World world = new();
+        Entity[] entities = CreateMarkerSpread(world, 64);
+
+        for (int round = 0; round < 3; round++)
+        {
+            for (int i = 0; i < entities.Length; i++)
+                entities[i].Add(new AddedComponent { V = i + round });
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                That(entities[i].Has<AddedComponent>(), Is.True);
+                That(entities[i].Get<AddedComponent>().V, Is.EqualTo(i + round));
+                AssertMarkerEntity(entities[i], i);
+            }
+
+            for (int i = 0; i < entities.Length; i++)
+                entities[i].Remove<AddedComponent>();
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                That(entities[i].Has<AddedComponent>(), Is.False);
+                AssertMarkerEntity(entities[i], i);
+            }
+        }
+    }
+
+    [Test]
+    public void GenericAddRemove_MoreSourceArchetypesThanCache_TwoWorlds()
+    {
+        using World world1 = new();
+        using World world2 = new();
+        Entity[] first = CreateMarkerSpread(world1, 64);
+        Entity[] second = CreateMarkerSpread(world2, 64);
+
+        for (int round = 0; round < 3; round++)
+        {
+            for (int i = 0; i < first.Length; i++)
+            {
+                first[i].Add(new AddedComponent { V = i + round });
+                second[i].Add(new AddedComponent { V = i + round + 1000 });
+            }
+
+            for (int i = 0; i < first.Length; i++)
+            {
+                That(first[i].Has<AddedComponent>(), Is.True);
+                That(first[i].Get<AddedComponent>().V, Is.EqualTo(i + round));
+                That(second[i].Has<AddedComponent>(), Is.True);
+                That(second[i].Get<AddedComponent>().V, Is.EqualTo(i + round + 1000));
+                AssertMarkerEntity(first[i], i);
+                AssertMarkerEntity(second[i], i);
+            }
+
+            for (int i = 0; i < first.Length; i++)
+            {
+                first[i].Remove<AddedComponent>();
+                second[i].Remove<AddedComponent>();
+            }
+
+            for (int i = 0; i < first.Length; i++)
+            {
+                That(first[i].Has<AddedComponent>(), Is.False);
+                That(second[i].Has<AddedComponent>(), Is.False);
+                AssertMarkerEntity(first[i], i);
+                AssertMarkerEntity(second[i], i);
+            }
+        }
+    }
+
+    [Test]
+    public void GenericTagDetach_MoreSourceArchetypesThanCache()
+    {
+        using World world = new();
+        Entity[] entities = CreateMarkerSpread(world, 64);
+
+        for (int round = 0; round < 3; round++)
+        {
+            for (int i = 0; i < entities.Length; i++)
+                entities[i].Tag<CacheTag>();
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                That(entities[i].Tagged<CacheTag>(), Is.True);
+                AssertMarkerEntity(entities[i], i);
+            }
+
+            for (int i = 0; i < entities.Length; i++)
+                entities[i].Detach<CacheTag>();
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                That(entities[i].Tagged<CacheTag>(), Is.False);
+                AssertMarkerEntity(entities[i], i);
+            }
+        }
+    }
+
+    private static Entity[] CreateMarkerSpread(World world, int count)
+    {
+        Entity[] entities = new Entity[count];
+        for (int i = 0; i < entities.Length; i++)
+        {
+            CommonComponent common = new(i);
+            entities[i] = (i % 8) switch
+            {
+                0 => world.Create(common, new Marker0()),
+                1 => world.Create(common, new Marker1()),
+                2 => world.Create(common, new Marker2()),
+                3 => world.Create(common, new Marker3()),
+                4 => world.Create(common, new Marker4()),
+                5 => world.Create(common, new Marker5()),
+                6 => world.Create(common, new Marker6()),
+                _ => world.Create(common, new Marker7()),
+            };
+        }
+        return entities;
+    }
+
+    private static void AssertMarkerEntity(Entity e, int i)
+    {
+        That(e.Get<CommonComponent>().Value, Is.EqualTo(i));
+        That((i % 8) switch
+        {
+            0 => e.Has<Marker0>(),
+            1 => e.Has<Marker1>(),
+            2 => e.Has<Marker2>(),
+            3 => e.Has<Marker3>(),
+            4 => e.Has<Marker4>(),
+            5 => e.Has<Marker5>(),
+            6 => e.Has<Marker6>(),
+            _ => e.Has<Marker7>(),
+        }, Is.True);
+    }
+
+    private struct AddedComponent { public int V; }
+    private record struct CommonComponent(int Value);
+    private struct Marker0;
+    private struct Marker1;
+    private struct Marker2;
+    private struct Marker3;
+    private struct Marker4;
+    private struct Marker5;
+    private struct Marker6;
+    private struct Marker7;
+    private struct CacheTag;
+
     internal class GenericAction(Action<Type, object?> onAction) : IGenericAction<Entity>, IGenericAction
     {
         public void Invoke<T>(Entity e, ref T type) => onAction(typeof(T), type);
