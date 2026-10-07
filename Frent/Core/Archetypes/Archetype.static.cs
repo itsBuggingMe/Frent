@@ -68,9 +68,10 @@ partial class Archetype
     {
         var sparseBits = from.BitsetArray;
 
-        to.GetBitset(toIndex) = (uint)fromIndex < (uint)sparseBits.Length ?
-            sparseBits[fromIndex] :
-            default;// implicit default(Bitset)
+        if ((uint)fromIndex < (uint)sparseBits.Length && !sparseBits[fromIndex].IsDefault)
+            to.GetBitset(toIndex) = sparseBits[fromIndex];
+        else
+            to.ClearBitset(toIndex);
     }
 
     internal static void MoveLinks(World world, Archetype from, Archetype? to, int fromIndex, int deletedIndex, int toIndex)
