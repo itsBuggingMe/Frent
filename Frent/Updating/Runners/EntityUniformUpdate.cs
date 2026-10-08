@@ -22,11 +22,11 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Deleg
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
-        for (int i = 0; i < length; i++, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
+        for (int row = start, end = start + length; row < end; row++, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
         {
             entityIds.SetEntity(ref entity);
 
-            if (!NonePredicate.ApplyPredicate<TPredicate>(world, entity.EntityID))
+            if (!NonePredicate.ApplyPredicate<TPredicate>(b, row))
                 continue;
 
             comp.Update(entity, uniform);
@@ -139,7 +139,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform, TArg>
                 }
             }
             // get bitset manually
-            else if (!NonePredicate.ApplyPredicate<TPredicate>(world, entity.EntityID))
+            else if (!NonePredicate.ApplyPredicate<TPredicate>(b, i))
             {
                 shouldRun = false;
             }
