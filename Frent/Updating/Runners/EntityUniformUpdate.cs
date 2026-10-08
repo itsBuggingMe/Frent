@@ -22,7 +22,7 @@ public sealed class EntityUniformUpdateRunner<TPredicate, TComp, TUniform>(Deleg
         Entity entity = world.DefaultWorldEntity;
         TUniform uniform = GetUniformOrValueTuple<TUniform>(world.UniformProvider);
 
-        for (int i = 0, row = start; i < length; i++, row++, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
+        for (int row = start, end = start + length; row < end; row++, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
         {
             entityIds.SetEntity(ref entity);
 

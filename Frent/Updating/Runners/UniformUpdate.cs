@@ -32,7 +32,7 @@ public sealed class UniformUpdateRunner<TPredicate, TComp, TUniform>(Delegate? f
 
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
-        for (int i = length, row = start; i > 0; i--, row++, comp = ref Unsafe.Add(ref comp, 1))
+        for (int row = start, end = start + length; row < end; row++, comp = ref Unsafe.Add(ref comp, 1))
         {
             if (!NonePredicate.ApplyPredicate<TPredicate>(b, row))
                 continue;
