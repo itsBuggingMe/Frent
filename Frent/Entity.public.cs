@@ -1204,12 +1204,10 @@ partial struct Entity
     }
 
     /// <summary>
-    /// Creates a new entity with the same components, component values, tags, and sparse components as this entity.
+    /// Creates a new entity with the same components and tags as this entity. Links and events are not copied.
     /// </summary>
     /// <remarks>
-    /// Component values are copied shallowly; class components and reference fields are shared with the source entity.
-    /// Links and entity-specific event subscriptions are not copied.
-    /// If structural changes are disallowed, the clone is deferred like <see cref="World.Create()"/>.
+    /// If structural changes are disallowed, the clone is deferred like <see cref="World.Create()"/>. Initers and events are called.
     /// </remarks>
     /// <returns>The cloned entity.</returns>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
