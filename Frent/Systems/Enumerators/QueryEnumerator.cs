@@ -125,7 +125,7 @@ public ref struct QueryEnumerator<T>
             }
 
             if (Component<T>.IsSparseComponent)
-                _currentEntityID = _entities[_entityIndex].ID;
+                _currentEntityID = _entities.UnsafeSpanIndex(_entityIndex).ID;
 
             return true;
         }
