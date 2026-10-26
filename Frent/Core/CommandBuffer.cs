@@ -20,7 +20,6 @@ public class CommandBuffer
 
     internal FastStack<CreateCommand> _createEntityBuffer = FastStack<CreateCommand>.Create(2);
     internal FastStack<ComponentHandle> _createEntityComponents = FastStack<ComponentHandle>.Create(2);
-    private readonly ComponentStorageRecord[] _componentRunnerBuffer = new ComponentStorageRecord[MemoryHelpers.MaxComponentCount];
     internal FastStack<EntityIDOnly> _deleteEntityBuffer = FastStack<EntityIDOnly>.Create(2);
 
     internal readonly World _world;
