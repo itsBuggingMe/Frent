@@ -902,14 +902,14 @@ partial struct Entity
     }
     #endregion
 
-    #region Detach
+    #region Untag
     /// <summary>
     /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
     /// </summary>
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
     /// <param name="type">The type of tag to remove.</param>
-    public readonly bool Detach(Type type) => Detach(Core.Tag.GetTagID(type));
+    public readonly bool Untag(Type type) => Untag(Core.Tag.GetTagID(type));
 
     /// <summary>
     /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
@@ -917,7 +917,7 @@ partial struct Entity
     /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
     /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
     /// <param name="tagID">The type of tag to remove.</param>
-    public readonly bool Detach(TagID tagID)
+    public readonly bool Untag(TagID tagID)
     {
         ref var lookup = ref AssertIsAlive(out var world);
         if (!lookup.Archetype.HasTag(tagID))
@@ -925,7 +925,7 @@ partial struct Entity
 
         if (!world.AllowStructualChanges)
         {
-            world.WorldUpdateCommandBuffer.Detach(this, tagID);
+            world.WorldUpdateCommandBuffer.Untag(this, tagID);
             return true;
         }
 
@@ -933,22 +933,40 @@ partial struct Entity
         world.MoveEntityToArchetypeIso(this, ref lookup, archetype.Archetype(world));
 
         EntityFlags flags = lookup.Flags | world.WorldEventFlags;
-        if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
+        if (EntityLocation.HasEventFlag(flags, EntityFlags.Untagged))
         {
-            world.Detached.Invoke(this, tagID);
+            world.Untagged.Invoke(this, tagID);
 
-            if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
+            if (EntityLocation.HasEventFlag(flags, EntityFlags.Untagged))
             {
                 ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
-                if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.Detach))
+                if (EntityLocation.HasEventFlag(lookup.Flags, EntityFlags.Untagged))
                 {
-                    events.Detach.Invoke(this, tagID);
+                    events.Untag.Invoke(this, tagID);
                 }
             }
         }
 
         return true;
     }
+
+    /// <summary>
+    /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
+    /// <param name="type">The type of tag to remove.</param>
+    [Obsolete("Method is renamed to Untag.", false)]
+    public readonly bool Detach(Type type) => Untag(type);
+
+    /// <summary>
+    /// Removes a tag from this <see cref="Entity"/>. Tags are like components but do not take up extra memory.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    /// <returns><see langword="true"/> if the Tag was removed successfully, <see langword="false"/> when the <see cref="Entity"/> doesn't have the component</returns>
+    /// <param name="tagID">The type of tag to remove.</param>
+    [Obsolete("Method is renamed to Untag.", false)]
+    public readonly bool Detach(TagID tagID) => Untag(tagID);
     #endregion
 
     #region Events
@@ -1021,12 +1039,22 @@ partial struct Entity
     }
 
     /// <summary>
+    /// Raised when a tag is untagged from the entity
+    /// </summary>
+    public readonly event Action<Entity, TagID> OnUntagged
+    {
+        add => InitalizeEventRecord(value, EntityFlags.Untagged);
+        remove => UnsubscribeEvent(value, EntityFlags.Untagged);
+    }
+
+    /// <summary>
     /// Raised when a tag is detached from the entity
     /// </summary>
+    [Obsolete("Event is renamed to OnUntagged.", false)]
     public readonly event Action<Entity, TagID> OnDetach
     {
-        add => InitalizeEventRecord(value, EntityFlags.Detach);
-        remove => UnsubscribeEvent(value, EntityFlags.Detach);
+        add => InitalizeEventRecord(value, EntityFlags.Untagged);
+        remove => UnsubscribeEvent(value, EntityFlags.Untagged);
     }
 
     /// <summary>
@@ -1094,9 +1122,9 @@ partial struct Entity
                     events!.Tag.Remove((Action<Entity, TagID>)value);
                     removeFlags = !events.Tag.HasListeners;
                     break;
-                case EntityFlags.Detach:
-                    events!.Detach.Remove((Action<Entity, TagID>)value);
-                    removeFlags = !events.Detach.HasListeners;
+                case EntityFlags.Untagged:
+                    events!.Untag.Remove((Action<Entity, TagID>)value);
+                    removeFlags = !events.Untag.HasListeners;
                     break;
                 case EntityFlags.OnDelete:
                     events!.Delete.Remove((Action<Entity>)value);
@@ -1156,8 +1184,8 @@ partial struct Entity
             case EntityFlags.Tagged:
                 record.Tag.Add((Action<Entity, TagID>)@delegate);
                 break;
-            case EntityFlags.Detach:
-                record.Detach.Add((Action<Entity, TagID>)@delegate);
+            case EntityFlags.Untagged:
+                record.Untag.Add((Action<Entity, TagID>)@delegate);
                 break;
             case EntityFlags.OnDelete:
                 record.Delete.Push((Action<Entity>)@delegate);

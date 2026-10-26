@@ -102,7 +102,7 @@ public partial class World : IDisposable
     internal Event<ComponentID> ComponentAddedEvent = new Event<ComponentID>();
     internal Event<ComponentID> ComponentRemovedEvent = new Event<ComponentID>();
     internal TagEvent Tagged = new TagEvent();
-    internal TagEvent Detached = new TagEvent();
+    internal TagEvent Untagged = new TagEvent();
     internal LinkEvent IncomingLinkedEvent = new LinkEvent();
     internal LinkEvent OutgoingLinkedEvent = new LinkEvent();
     internal LinkEvent IncomingUnlinkedEvent = new LinkEvent();
@@ -212,10 +212,20 @@ public partial class World : IDisposable
     /// <summary>
     /// Invoked whenever a tag is removed from an entity.
     /// </summary>
+    public event Action<Entity, TagID> TagUntagged
+    {
+        add => AddEvent(ref Untagged, value, EntityFlags.Untagged);
+        remove => RemoveEvent(ref Untagged, value, EntityFlags.Untagged);
+    }
+
+    /// <summary>
+    /// Invoked whenever a tag is removed from an entity.
+    /// </summary>
+    [Obsolete("Event is renamed to TagUntagged.", false)]
     public event Action<Entity, TagID> TagDetached
     {
-        add => AddEvent(ref Detached, value, EntityFlags.Detach);
-        remove => RemoveEvent(ref Detached, value, EntityFlags.Detach);
+        add => AddEvent(ref Untagged, value, EntityFlags.Untagged);
+        remove => RemoveEvent(ref Untagged, value, EntityFlags.Untagged);
     }
 
     /// <summary>

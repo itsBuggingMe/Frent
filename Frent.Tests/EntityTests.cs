@@ -145,14 +145,14 @@ internal class EntityTests
     }
 
     [Test]
-    public void OnDetach_Invoked()
+    public void OnUntagged_Invoked()
     {
         using World world = new();
         CallHelper call = new();
         var entity = world.Create(1);
-        entity.OnDetach += (a, b) => call.Call();
+        entity.OnUntagged += (a, b) => call.Call();
         entity.Tag<int>();
-        entity.Detach<int>();
+        entity.Untag<int>();
         call.AssertCalled();
     }
 
@@ -257,7 +257,7 @@ internal class EntityTests
     }
 
     [Test]
-    public void Detach_RemovesTag()
+    public void Untag_RemovesTag()
     {
         using World world = new();
         var e = world.Create(0, 0.0, "0");
@@ -265,15 +265,48 @@ internal class EntityTests
         e.Tag<Struct2>();
         e.Tag<Struct3>();
 
-        e.Detach<Struct1>();
-        e.Detach<Struct2>();
-        e.Detach<Struct3>();
+        e.Untag<Struct1>();
+        e.Untag<Struct2>();
+        e.Untag<Struct3>();
 
         That(e.TagTypes, Is.Empty);
     }
 
     [Test]
-    public void DetachNonGeneric_DuringEnumeration_Defers()
+    public void UntagMultiple_RemovesTags()
+    {
+        using World world = new();
+        var e = world.Create(0, 0.0, "0");
+        e.Tag<Struct1, Struct2, Struct3>();
+
+        e.Untag<Struct1, Struct2>();
+
+        That(e.Tagged<Struct1>(), Is.False);
+        That(e.Tagged<Struct2>(), Is.False);
+        That(e.Tagged<Struct3>(), Is.True);
+    }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+    [Test]
+    public void Detach_ObsoleteAliases_ForwardToUntag()
+    {
+        using World world = new();
+        CallHelper call = new();
+        var e = world.Create();
+        e.OnDetach += (a, b) => call.Call();
+        e.Tag<Struct1, Struct2, Struct3>();
+
+        e.Detach<Struct1>();
+        That(e.Detach(Tag<Struct2>.ID), Is.True);
+        That(e.Detach(typeof(Struct3)), Is.True);
+
+        That(e.TagTypes, Is.Empty);
+        call.AssertCalled(3);
+    }
+#pragma warning restore CS0618 // Type or member is obsolete
+
+    [Test]
+    public void UntagNonGeneric_DuringEnumeration_Defers()
     {
         using World world = new();
         var e = world.Create();
@@ -281,7 +314,7 @@ internal class EntityTests
 
         foreach (var _ in world.CreateQuery().Build().EnumerateWithEntities())
         {
-            That(e.Detach(Tag<Struct1>.ID), Is.True);
+            That(e.Untag(Tag<Struct1>.ID), Is.True);
             That(e.Tagged<Struct1>(), Is.True);
         }
 

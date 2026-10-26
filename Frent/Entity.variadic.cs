@@ -210,37 +210,45 @@ partial struct Entity
     /// <inheritdoc cref="Add{T}(in T)"/>
     /// <variadic />
     [SkipLocalsInit]
-    public void Detach<T>()
+    public void Untag<T>()
     {
         ref EntityLocation thisLookup = ref AssertIsAlive(out World world);
 
         if (!world.AllowStructualChanges)
         {
-            world.WorldUpdateCommandBuffer.Detach<T>(this);
+            world.WorldUpdateCommandBuffer.Untag<T>(this);
             return;
         }
 
         Archetype to = TraverseThroughCacheOrCreate<TagID, NeighborCache<T>>(
             world,
-            ref NeighborCache<T>.Detach.Lookup,
+            ref NeighborCache<T>.Untag.Lookup,
             ref thisLookup,
             false);
 
         world.MoveEntityToArchetypeIso(this, ref thisLookup, to);
 
         EntityFlags flags = thisLookup.Flags | world.WorldEventFlags;
-        if (EntityLocation.HasEventFlag(flags, EntityFlags.Detach))
+        if (EntityLocation.HasEventFlag(flags, EntityFlags.Untagged))
         {
-            if (world.Detached.HasListeners)
-                InvokeTagWorldEvents<T>(ref world.Detached, this);
+            if (world.Untagged.HasListeners)
+                InvokeTagWorldEvents<T>(ref world.Untagged, this);
 
             ref EventRecord events = ref world.EventLookup.GetValueRefOrNullRef(EntityIDOnly);
             if (!Unsafe.IsNullRef(ref events))
             {
-                InvokePerEntityTagEvents<T>(this, ref events.Detach);
+                InvokePerEntityTagEvents<T>(this, ref events.Untag);
             }
         }
     }
+
+    /// <summary>
+    /// Removes a tag from this <see cref="Entity"/>
+    /// </summary>
+    /// <inheritdoc cref="Add{T}(in T)"/>
+    /// <variadic />
+    [Obsolete("Method is renamed to Untag.", false)]
+    public void Detach<T>() => Untag<T>();
 
     /// <summary>
     /// Enumerates the components of every <see cref="Entity"/> that links to this one with a link of type <typeparamref name="TLink"/>.
@@ -351,7 +359,7 @@ partial struct Entity
             internal static ArchetypeNeighborCache Lookup;
         }
 
-        internal static class Detach
+        internal static class Untag
         {
             internal static ArchetypeNeighborCache Lookup;
         }
