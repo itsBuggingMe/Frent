@@ -9,7 +9,7 @@ Some operations are structural changes, which means that Frent's internal data s
 | Add Component    | Auto Deferred   |
 | Remove Component | Auto Deferred   |
 | Tag Tag          | Auto Deferred   |
-| Detach Tag       | Auto Deferred   |
+| Untag Tag        | Auto Deferred   |
 | Link Entities    | Auto Deferred   |
 | Unlink Entities  | Auto Deferred   |
 
