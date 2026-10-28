@@ -30,6 +30,8 @@ internal enum WorldActions
 
     [Weight(2)] Link,
     Unlink,
+
+    [Weight(2)] Clone,
 }
 
 internal static class WorldActionsHelper

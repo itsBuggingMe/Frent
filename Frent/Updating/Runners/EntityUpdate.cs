@@ -20,11 +20,11 @@ public sealed class EntityUpdateRunner<TPredicate, TComp>(Delegate? f) : RunnerB
 
         Entity entity = world.DefaultWorldEntity;
 
-        for (int i = length; i > 0; i--, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
+        for (int row = start, end = start + length; row < end; row++, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
         {
             entityIds.SetEntity(ref entity);
 
-            if (!NonePredicate.ApplyPredicate<TPredicate>(world, entity.EntityID))
+            if (!NonePredicate.ApplyPredicate<TPredicate>(b, row))
                 continue;
 
             comp.Update(entity);
@@ -131,7 +131,7 @@ public sealed class EntityUpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : R
                     FrentExceptions.Throw_NullReferenceException();
                 }
             }
-            else if (!NonePredicate.ApplyPredicate<TPredicate>(world, entity.EntityID))
+            else if (!NonePredicate.ApplyPredicate<TPredicate>(b, i))
             {
                 shouldRun = false;
             }

@@ -15,12 +15,24 @@ public sealed class UpdateRunner<TPredicate, TComp>(Delegate? f) : RunnerBase(f)
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
-        ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
+        // specialize no filter predicate:
+        if (typeof(TPredicate) == typeof(NonePredicate))
+        {
+            ref TComp fastComp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
+
+            for (int i = length; i > 0; i--, fastComp = ref Unsafe.Add(ref fastComp, 1))
+            {
+                fastComp.Update();
+            }
+
+            return;
+        }
+
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
-        for (int i = length; i > 0; i--, entityIds = ref Unsafe.Add(ref entityIds, 1), comp = ref Unsafe.Add(ref comp, 1))
+        for (int row = start, end = start + length; row < end; row++, comp = ref Unsafe.Add(ref comp, 1))
         {
-            if (!NonePredicate.ApplyPredicate<TPredicate>(world, entityIds.ID))
+            if (!NonePredicate.ApplyPredicate<TPredicate>(b, row))
                 continue;
 
             comp.Update();
@@ -78,6 +90,28 @@ public sealed class UpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerB
 {
     void IRunner.RunArchetypical(Array array, Archetype b, World world, int start, int length)
     {
+        // specialize no sparse components and filter predicates:
+        if (typeof(TPredicate) == typeof(NonePredicate))
+        {
+            if (Component<TArg>.IsSparseComponent)
+            {
+                // at least one sparse argument - the general loop below handles it
+            }
+            else
+            {
+                ref TComp fastComp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
+                ref TArg fastArg = ref VariadicHelpers.ArchetypeRefOrNullRef<TArg>(b, start);
+
+                for (int i = length; i > 0; i--, fastComp = ref Unsafe.Add(ref fastComp, 1))
+                {
+                    fastComp.Update(ref fastArg);
+                    fastArg = ref Unsafe.Add(ref fastArg, 1);
+                }
+
+                return;
+            }
+        }
+
         ref EntityIDOnly entityIds = ref Unsafe.Add(ref b.GetEntityDataReference(), start);
         ref TComp comp = ref Unsafe.Add(ref IRunner.GetComponentStorageDataReference<TComp>(array), start);
 
@@ -112,7 +146,7 @@ public sealed class UpdateRunner<TPredicate, TComp, TArg>(Delegate? f) : RunnerB
                     FrentExceptions.Throw_NullReferenceException();
                 }
             }
-            else if (!NonePredicate.ApplyPredicate<TPredicate>(world, entityId))
+            else if (!NonePredicate.ApplyPredicate<TPredicate>(b, i))
             {
                 shouldRun = false;
             }

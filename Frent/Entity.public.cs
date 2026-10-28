@@ -1204,6 +1204,20 @@ partial struct Entity
     }
 
     /// <summary>
+    /// Creates a new entity with the same components and tags as this entity. Links and events are not copied.
+    /// </summary>
+    /// <remarks>
+    /// If structural changes are disallowed, the clone is deferred like <see cref="World.Create()"/>. Initers and events are called.
+    /// </remarks>
+    /// <returns>The cloned entity.</returns>
+    /// <exception cref="InvalidOperationException"><see cref="Entity"/> is dead.</exception>
+    public readonly Entity Clone()
+    {
+        EntityLocation source = AssertIsAlive(out World world);
+        return world.CopyEntityFrom(world, source, EntityID, callIniters: true, callEvents: true);
+    }
+
+    /// <summary>
     /// Checks to see if this <see cref="Entity"/> is still alive
     /// </summary>
     /// <returns><see langword="true"/> if this entity is still alive (not deleted), otherwise <see langword="false"/></returns>
@@ -1219,7 +1233,7 @@ partial struct Entity
     /// <summary>
     /// Checks to see if this <see cref="Entity"/> instance is the null entity: <see langword="default"/>(<see cref="Entity"/>)
     /// </summary>
-    public readonly bool IsNull => PackedValue == 0;
+    public readonly bool IsNull => EntityID == 0 && EntityVersion == 0 && WorldID == 0;
 
     /// <summary>
     /// Gets the world this entity belongs to

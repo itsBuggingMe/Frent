@@ -20,4 +20,4 @@ Because structural changes may reorganize internal storage, treat every `ref T` 
 Structural changes that are auto deferred are saved and only applied once all systems and `Update` methods finish.
 
 > [!CAUTION]
-> Missing an enumerator dispose when enumerating a query can cause the world to be stuck in a state where it never applies structural changes. It is reccomended to stick to the `foreach` syntax and let C# generate the dispose call itself.
+> Missing an enumerator dispose when enumerating a query can cause the world to be stuck in a state where it never applies structural changes. It is recommended to stick to the `foreach` syntax and let C# generate the dispose call itself.

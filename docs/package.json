@@ -1,0 +1,32 @@
+{
+    "name": "docs",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "serve": "dotnet docfx docfx.json --serve",
+        "watch": "npm-watch serve"
+    },
+    "watch": {
+        "serve": {
+            "patterns": [
+                ".",
+                "docs"
+            ],
+            "extensions": "md,yml",
+            "ignore": [
+                "_site",
+                "_site/**",
+                "api",
+                "api/**",
+                ".git",
+                "node_modules"
+            ],
+            "runAtStart": true,
+            "quiet": false,
+            "delay": "500"
+        }
+    },
+    "devDependencies": {
+        "npm-watch": "^0.13.0"
+    }
+}

@@ -38,6 +38,7 @@ public ref struct ChunkQueryEnumerator<T>
             Archetype cur = _archetypes[_archetypeIndex];
             return new()
             {
+                Entities = new EntityEnumerator(_world, cur.GetEntitySpan()),
                 Span = cur.GetComponentSpan<T>(),
             };
         }

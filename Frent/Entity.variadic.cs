@@ -399,6 +399,18 @@ partial struct Entity
                         archetypicals[index++] = maybeDelta;
                 archetypicals = archetypicals.Slice(0, index);
 
+                //measured crossover: dictionary hops beat a rehash for up to 4 deltas, beyond it the rehash wins
+                if (index <= 4)
+                {
+                    ArchetypeID destination = archetypeFromID;
+                    foreach (var delta in archetypicals)
+                        destination = add
+                            ? world.AddComponentLookup.FindAdjacentArchetypeID(delta, destination, world, ArchetypeEdgeType.AddComponent)
+                            : world.RemoveComponentLookup.FindAdjacentArchetypeID(delta, destination, world, ArchetypeEdgeType.RemoveComponent);
+                    cache.Set(archetypeFromID.RawIndex, destination.RawIndex);
+                    return destination.Archetype(world);
+                }
+
                 componentIDs = add ? MemoryHelpers.Concat(componentIDs, archetypicals)
                     : MemoryHelpers.Remove(componentIDs, archetypicals);
             }
@@ -406,6 +418,18 @@ partial struct Entity
             {
                 Span<TagID> delta = stackalloc TagID[8];
                 default(TEdge).WriteTagIDs(ref delta);
+
+                if (delta.Length <= 4)
+                {
+                    ArchetypeID destination = archetypeFromID;
+                    foreach (var d in delta)
+                        destination = add
+                            ? world.AddTagLookup.FindAdjacentArchetypeID(d, destination, world, ArchetypeEdgeType.AddTag)
+                            : world.RemoveTagLookup.FindAdjacentArchetypeID(d, destination, world, ArchetypeEdgeType.RemoveTag);
+                    cache.Set(archetypeFromID.RawIndex, destination.RawIndex);
+                    return destination.Archetype(world);
+                }
+
                 tagIDs = add ? MemoryHelpers.Concat(tagIDs, delta)
                     : MemoryHelpers.Remove(tagIDs, delta);
             }

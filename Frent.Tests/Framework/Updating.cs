@@ -315,6 +315,17 @@ internal class Updating
 
         That(c.Count, Is.EqualTo(1));
     }
+
+    [Test]
+    public void ExculsiveUpdate_DoesntUpdateMethodsWithAttribute()
+    {
+        using World world = new();
+        int count = 0;
+        world.Create(new DelegateBehavior(() => count++));
+        world.Create(new FilteredBehavior1(() => count++));
+        world.Update(exclusiveUpdate: true);
+        That(count, Is.EqualTo(1));
+    }
 }
 
 internal abstract class InheritanceBase : IUpdate, IEntityUpdate

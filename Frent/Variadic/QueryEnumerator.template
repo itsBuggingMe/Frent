@@ -64,6 +64,10 @@ to:
 |        query.AssertHasSparseComponent<T$>();
 |
 from:
+            if (Component<T>.IsSparseComponent)
+to:
+            if (|Component<T$>.IsSparseComponent || | false)
+from:
 <T>
 to:
 <|T$, |>

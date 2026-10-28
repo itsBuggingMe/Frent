@@ -29,6 +29,11 @@ public ref struct EntityEnumerator
     public Entity Current => _entities[_index].ToEntity(_world);
 
     /// <summary>
+    /// Gets the <see cref="Entity"/> at the given index, aligned with any component spans enumerated alongside it.
+    /// </summary>
+    public readonly Entity this[int index] => _entities[index].ToEntity(_world);
+
+    /// <summary>
     /// Gets the enumerator over a query.
     /// </summary>
     public EntityEnumerator GetEnumerator() => new(_world, _entities);

@@ -2,7 +2,6 @@
 using Frent.Core;
 using Frent.Core.Archetypes;
 using Frent.Updating.Runners;
-using Frent.Updating.Threading;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -10,7 +9,7 @@ using System.Runtime.InteropServices;
 
 namespace Frent.Updating;
 
-internal class AttributeUpdateFilter : IComponentUpdateFilter
+internal partial class UpdateFilter : IComponentUpdateFilter
 {
     /*  In each world, there are n archetype that match the filter, where n >= 0.
      *  In each archetype there are m component types that match the filter, where m >= 0.
@@ -35,29 +34,22 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private readonly Dictionary<ComponentID, MatchedMethodData> _matchedArchetypicalComponentMethods = [];
     private ulong _componentBloomFilter;
 
-    private readonly StrongBox<int>? _updateCount;
-    private readonly Stack<ArchetypeUpdateSpan>? _smallArchetypeUpdateRecords;
-    private readonly Stack<ArchetypeUpdateSpan>? _largeArchetypeRecords;
-    private readonly Stack<Exception>? _mulithreadedExceptions;
-    private readonly bool _isMultithread;
-    private readonly bool _matchAll;
+    private UpdateFilterMode _mode;
 
-    public AttributeUpdateFilter(World world, Type attributeType, bool overrideMatchAll)
+    private UpdateFilterParallelManager? _parallel;
+
+    public UpdateFilter(World world, Type attributeType, UpdateFilterMode mode)
     {
-        _isMultithread = typeof(MultithreadUpdateTypeAttribute).IsAssignableFrom(attributeType);
         _attributeType = attributeType;
         _world = world;
-        _matchAll = overrideMatchAll;
+        _mode = mode;
 
         foreach (var archetype in world.EnabledArchetypes.AsSpan())
             ArchetypeAdded(archetype.Archetype(world)!);
 
-        if (_isMultithread)
+        if (typeof(MultithreadUpdateTypeAttribute).IsAssignableFrom(attributeType))
         {
-            _updateCount = new StrongBox<int>();
-            _smallArchetypeUpdateRecords = new Stack<ArchetypeUpdateSpan>();
-            _largeArchetypeRecords = new Stack<ArchetypeUpdateSpan>();
-            _mulithreadedExceptions = new Stack<Exception>();
+            _parallel = new UpdateFilterParallelManager(this);
         }
     }
 
@@ -66,9 +58,9 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         if (_lastRegisteredComponentID < Component.ComponentTable.Count)
             RegisterNewComponents();
 
-        if (_isMultithread)
+        if (_parallel is { } inst)
         {
-            MultiThreadedUpdate();
+            inst.Update();
         }
         else
         {
@@ -144,85 +136,6 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
         }
     }
 
-    private void MultiThreadedUpdate()
-    {
-        const int LargeArchetypeThreshold = 16;
-
-        _updateCount!.Value = 0;
-        _mulithreadedExceptions!.Clear();
-
-        var archetypes = _matchedArchetypes.AsSpan();
-
-        int largeCount = 0;
-
-        for (int i = 0; i < archetypes.Length; i++)
-        {
-            var record = archetypes[i];
-            if (record.Archetype.EntityCount == 0)
-            {
-                continue;
-            }
-            else if (record.Archetype.EntityCount > LargeArchetypeThreshold)
-            {
-                _largeArchetypeRecords!.Push(record);
-                largeCount += record.Archetype.EntityCount;
-            }
-            else
-            {
-                _smallArchetypeUpdateRecords!.Push(record);
-            }
-        }
-
-        FrentMultithread.MultipleArchetypeWorkItem.UnsafeQueueWork(
-            _world, _smallArchetypeUpdateRecords!, _methods, _updateCount, _mulithreadedExceptions);
-
-        int maxChunkSize = Math.Max(largeCount / Environment.ProcessorCount, 256);
-
-        while (_largeArchetypeRecords!.TryPop(out var archetypeRecord))
-        {
-            int entityCount = archetypeRecord.Archetype.EntityCount;
-            for (int i = 0; i < entityCount; i += maxChunkSize)
-            {
-                FrentMultithread.SingleArchetypeWorkItem.UnsafeQueueWork(
-                    _world, archetypeRecord, _methods, _updateCount, _mulithreadedExceptions,
-                    start: i,
-                    count: Math.Min(maxChunkSize, entityCount - i));
-            }
-        }
-
-        Span<SparseUpdateMethod> sparseMethods = _sparseMethods.AsSpan(0, _sparseMethodsCount);
-
-        for (int i = 0; i < sparseMethods.Length;)
-        {
-            ComponentSparseSetBase set = sparseMethods[i].SparseSet;
-            if (set.Count == 0)
-            {
-                i++;
-                continue;
-            }
-
-            int start = i;
-            do
-            {
-                i++;
-            } while (i < sparseMethods.Length && set == sparseMethods[i].SparseSet);
-
-            ArraySegment<SparseUpdateMethod> methods = new(_sparseMethods, start, i - start);
-            FrentMultithread.SparseSetWorkItem.UnsafeQueueWork(_world, methods, _updateCount, _mulithreadedExceptions);
-        }
-
-        SpinWait spinWait = new();
-        while (Volatile.Read(ref _updateCount.Value) != 0)
-        {
-            spinWait.SpinOnce();
-        }
-
-        if (_mulithreadedExceptions.Count != 0)
-        {
-            throw new AggregateException(_mulithreadedExceptions);
-        }
-    }
-
     private void RegisterNewComponents()
     {
         for (ref int i = ref _lastRegisteredComponentID; i < Component.ComponentTable.Count; i++)
@@ -237,7 +150,13 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
 
             for (int j = 0; j < methods.Length; j++)
             {
-                if (_matchAll || methods[j].AttributeIsDefined(_attributeType))
+                if (_mode switch
+                {
+                    UpdateFilterMode.Attribute => methods[j].AttributeIsDefined(_attributeType),
+                    UpdateFilterMode.Exclusive => methods[j] is { Attributes.Length: 0},
+                    UpdateFilterMode.AllMethods => true,
+                    _ => throw new InvalidOperationException(),
+                })
                 {
                     matchedMethodsCount++;
                     matchedMethods |= 1UL << j;
@@ -319,7 +238,13 @@ internal class AttributeUpdateFilter : IComponentUpdateFilter
     private MissingComponentException? CreateExceptionSparse(int entityId, int recordId)
     {
         SparseUpdateMethod sparseMethod = _sparseMethods[recordId];
-        return FrentExceptions.CreateExceptionSparse(_world, sparseMethod.SparseSet, entityId, u => _matchAll || u.AttributeIsDefined(_attributeType));
+        return FrentExceptions.CreateExceptionSparse(_world, sparseMethod.SparseSet, entityId, u => _mode switch
+        {
+            UpdateFilterMode.Attribute => u.AttributeIsDefined(_attributeType),
+            UpdateFilterMode.Exclusive => u is { Attributes.Length: 0 },
+            UpdateFilterMode.AllMethods => true,
+            _ => throw new InvalidOperationException()
+        });
     }
     internal void ArchetypeAdded(Archetype archetype)
     {

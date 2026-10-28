@@ -18,6 +18,7 @@ public ref struct EntityQueryEnumerator
     private Span<EntityIDOnly> _entities;
     private int _archetypeIndex;
     private int _entityIndex;
+    private int _entityCount;
 
     private Entity _current;
 
@@ -84,11 +85,12 @@ public ref struct EntityQueryEnumerator
     /// Moves to the next component tuple in this enumeration.
     /// </summary>
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool MoveNext()
     {
     BeginConsumeEntities:
 
-        while ((uint)++_entityIndex < (uint)_entities.Length)
+        while ((uint)++_entityIndex < (uint)_entityCount)
         {// a okay
 
             if (_hasSparseRules)
@@ -110,6 +112,7 @@ public ref struct EntityQueryEnumerator
         {
             var currentArchetype = _archetypes[_archetypeIndex];
             _entities = currentArchetype.GetEntitySpan();
+            _entityCount = _entities.Length;
             _entityIndex = -1;
 
             if (_hasSparseRules)
@@ -148,6 +151,7 @@ public ref struct EntityQueryEnumerator<T>
     private Span<EntityIDOnly> _entities;
     private int _archetypeIndex;
     private int _entityIndex;
+    private int _entityCount;
 
     private Entity _current;
 
@@ -234,11 +238,12 @@ public ref struct EntityQueryEnumerator<T>
     /// Moves to the next component tuple in this enumeration.
     /// </summary>
     /// <returns><see langword="true"/> when its possible to enumerate further, otherwise <see langword="false"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool MoveNext()
     {
     BeginConsumeEntities:
 
-        while ((uint)++_entityIndex < (uint)_entities.Length)
+        while ((uint)++_entityIndex < (uint)_entityCount)
         {// a okay
 
             if (_hasSparseRules)
@@ -260,6 +265,7 @@ public ref struct EntityQueryEnumerator<T>
         {
             var currentArchetype = _archetypes[_archetypeIndex];
             _entities = currentArchetype.GetEntitySpan();
+            _entityCount = _entities.Length;
             _entityIndex = -1;
 
             if (_hasSparseRules)

@@ -72,9 +72,9 @@ internal partial class WorldState : IDisposable
         _random = new Random(seed);
         _worldState = new();
 
-        _expectedEventTable = new EventRecord[13];
-        _expectedEventSubscriptions = new int[13];
-        _actualEventTable = new EventRecord[13];
+        _expectedEventTable = new EventRecord[14];
+        _expectedEventSubscriptions = new int[14];
+        _actualEventTable = new EventRecord[14];
 
         Component.RegisterComponent<object>();
     }
@@ -154,6 +154,7 @@ internal partial class WorldState : IDisposable
                 WorldActions.Set => Set(),
                 WorldActions.Link => Link(),
                 WorldActions.Unlink => Unlink(),
+                WorldActions.Clone => Clone(),
                 _ => throw new ArgumentOutOfRangeException(nameof(thisAction), thisAction, null)
             };
         }
@@ -289,7 +290,7 @@ internal partial class WorldState : IDisposable
     public void Subscribe(Entity? entity, WorldActions eventKind)
     {
         ArgumentOutOfRangeException.ThrowIfNegative((int)eventKind);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((int)eventKind, 12);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((int)eventKind, 13);
     }
 
     public void Dispose()

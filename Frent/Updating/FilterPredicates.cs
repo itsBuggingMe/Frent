@@ -51,6 +51,18 @@ public readonly struct NonePredicate : IFilterPredicate
         }
         return true;
     }
+
+    /// <inheritdoc cref="ApplyPredicate{TPredicate}(World, int)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool ApplyPredicate<TPredicate>(Archetype archetype, int index)
+        where TPredicate : IFilterPredicate
+    {
+        if (typeof(TPredicate) != typeof(NonePredicate))
+        {
+            return !default(TPredicate)!.SkipEntity(ref MemoryMarshal.GetArrayDataReference(archetype.ComponentTagTable), in archetype.GetBitsetNoLazy(index));
+        }
+        return true;
+    }
 }
 
 /// <inheritdoc cref="GenerationServices"/>

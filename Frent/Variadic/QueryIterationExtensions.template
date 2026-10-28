@@ -96,3 +96,7 @@ from:
 action.Run(ref c1);
 to:
 action.Run(|ref c$, |);
+from:
+action.Run(entity.ToEntity(world), ref c1);
+to:
+action.Run(entity.ToEntity(world), |ref c$, |);

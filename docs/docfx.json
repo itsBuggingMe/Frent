@@ -10,7 +10,7 @@
           ]
         }
       ],
-      "dest": "api"
+      "output": "api"
     }
   ],
   "build": {
@@ -42,6 +42,11 @@
       "_appTitle": "Frent",
       "_enableSearch": true,
       "pdf": false
+    },
+    "markdownEngineProperties": {
+      "markdigExtensions": [
+        "GridTables"
+      ]
     }
   }
 }

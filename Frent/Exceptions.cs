@@ -5,7 +5,7 @@ using Frent.Updating;
 using Frent.Updating.Runners;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using static Frent.Updating.AttributeUpdateFilter;
+using static Frent.Updating.UpdateFilter;
 
 namespace Frent;
 

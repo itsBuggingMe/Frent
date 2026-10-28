@@ -1,9 +1,5 @@
-- name: Installation
-  href: installation.md
 - name: Docs
   href: docs/
-- name: Cookbook
-  href: cookbook/
 - name: API
   href: api/
 - name: Demo

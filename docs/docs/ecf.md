@@ -1,6 +1,6 @@
-# Introduction to Entity Component Frameworks
+# Introduction to ECFs
 
-What's an EC (Entity Component) framework?
+What's an ECF? Expanding the acronym, it becomes **E**ntity **C**omponent **F**ramework.
 
 > An EC framework is where you create *entities* which are made of *components* inside a *framework*.
 
@@ -8,11 +8,11 @@ That definition wasn't too useful. Lets zoom in.
 
 ### What is an entity?
 
-Entities themselves do not do anything - you can think of them as just IDs. Instead, an entity has its own components which do the heavy lifting.
+[Entities](entity.md) themselves do not do anything - you can think of them as just IDs. Instead, an entity has its own components which do the heavy lifting.
 
 ### What is a component?
 
-Components can contain data and behavior about your game. You can have a component with only data or a component with only behavior. For example, a `Location` component might just contain data in the form of a `X` and `Y` coordinate, while a `Velocity` component might contain a `DX` and `DY` fields as well as behavior to change the `Location` coordinate.
+[Components](component.md) can contain data and behavior about your game. You can have a component with only data or a component with only behavior. For example, a `Location` component might just contain data in the form of a `X` and `Y` coordinate, while a `Velocity` component might contain a `DX` and `DY` fields as well as behavior to change the `Location` coordinate.
 
 ```csharp
 //only contains X and Y
