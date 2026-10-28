@@ -36,9 +36,9 @@ to:
                 }
 |
 from:
-        query.AssertHasSparseComponent<T>();
+        impl.AssertHasSparseComponent<T>();
 to:
-|        query.AssertHasSparseComponent<T$>();
+|        impl.AssertHasSparseComponent<T$>();
 |
 from:
             ref T sparseFirst = ref IRunner.InitSparse<T>(ref first, out Span<int> sparseArgArray);
