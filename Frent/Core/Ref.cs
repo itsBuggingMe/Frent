@@ -37,41 +37,8 @@ public ref struct Ref<T>
         return Value?.ToString();
     }
 #elif NETSTANDARD2_1
-    internal Ref(T[] compArr, int index)
-    {
-        _data = compArr;
-        _offset = index;
-    }
-    internal Ref(Span<T> compSpan, int index)
-    {
-        _data = compSpan;
-        _offset = index;
-    }
-
-    private Span<T> _data;
-    private int _offset;
-
-    /// <summary>
-    /// The wrapped reference to <typeparamref name="T"/>
-    /// </summary>
-    public readonly ref T Value => ref _data.UnsafeSpanIndex(_offset);
-    /// <summary>
-    /// Extracts the wrapped <typeparamref name="T"/> from this <see cref="Ref{T}"/>
-    /// </summary>
-    public static implicit operator T(Ref<T> @ref) => @ref.Value;
-    /// <summary>
-    /// Calls the wrapped <typeparamref name="T"/>'s ToString() function, or returns null.
-    /// </summary>
-    /// <returns>A string representation of the wrapped <typeparamref name="T"/>'s</returns>
-    public override readonly string? ToString()
-    {
-        if (_data.IsEmpty)
-            return null;
-        return Value?.ToString();
-    }
-#else
-    internal Ref(T[] compArr, int index) => RawRef = MemoryMarshal.CreateSpan(ref compArr.UnsafeArrayIndex(index), 1);
-    internal Ref(Span<T> compSpan, int index) => RawRef = MemoryMarshal.CreateSpan(ref compSpan.UnsafeSpanIndex(index), 1);
+    internal Ref(T[] compArr, int index) => RawRef = compArr.AsSpan().Slice(index, 1);
+    internal Ref(Span<T> compSpan, int index) => RawRef = compSpan.Slice(index);
 
     private Span<T> RawRef;
 
