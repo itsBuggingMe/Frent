@@ -64,7 +64,7 @@ internal enum EntityFlags : ushort
     None = 0,
 
     Tagged = 1 << 0,
-    Detach = 1 << 1,
+    Untagged = 1 << 1,
 
     AddComp = 1 << 2,
 
@@ -78,7 +78,7 @@ internal enum EntityFlags : ushort
 
     WorldCreate = 1 << 7,
 
-    Events = Tagged | Detach | AddComp | RemoveComp | OnDelete | WorldCreate
+    Events = Tagged | Untagged | AddComp | RemoveComp | OnDelete | WorldCreate
         | OnIncomingLinked | OnOutgoingLinked | OnIncomingUnlinked | OnOutgoingUnlinked,
 
     HasHadSparseComponents = 1 << 8,

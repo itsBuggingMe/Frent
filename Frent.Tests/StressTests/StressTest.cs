@@ -31,7 +31,7 @@ internal class WorldState : IDisposable
     // [x] Add
     // [x] Remove
     // [ ] Tag
-    // [ ] Detach
+    // [ ] Untag
 
     private readonly List<Entity> _allDeletedEntities = [];
     private readonly Dictionary<Entity, List<ComponentHandle>> _componentValues = [];
@@ -80,7 +80,7 @@ internal class WorldState : IDisposable
             case 2: AddComponent(); break;
             case 3: RemoveComponent(); break;
             case 4: Tag(); break;
-            case 5: Detach(); break;
+            case 5: Untag(); break;
 
             default: throw new NotImplementedException();
         }
@@ -178,7 +178,7 @@ internal class WorldState : IDisposable
         }
     }
 
-    public void Detach()
+    public void Untag()
     {
         if (_componentValues.Count == 0)
             return;
@@ -190,9 +190,9 @@ internal class WorldState : IDisposable
 
         if (entity.Tagged(tag))
         {
-            entity.Detach(tag);
+            entity.Untag(tag);
 
-            _actions.Add(new StressTestAction(StressTestActionType.Detach, entity, tag.Type));
+            _actions.Add(new StressTestAction(StressTestActionType.Untag, entity, tag.Type));
         }
     }
 
@@ -304,6 +304,6 @@ internal class WorldState : IDisposable
         Add,
         Remove,
         Tag,
-        Detach,
+        Untag,
     }
 }

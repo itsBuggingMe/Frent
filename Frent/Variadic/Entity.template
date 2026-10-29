@@ -50,9 +50,9 @@ to:
 |
 
 from:
-            world.WorldUpdateCommandBuffer.Detach<T>(this);
+            world.WorldUpdateCommandBuffer.Untag<T>(this);
 to:
-|            world.WorldUpdateCommandBuffer.Detach<T$>(this);
+|            world.WorldUpdateCommandBuffer.Untag<T$>(this);
 |
 
 from:
@@ -198,6 +198,11 @@ from:
 Detach<T>
 to:
 Detach<|T$, |>
+
+from:
+Untag<T>
+to:
+Untag<|T$, |>
 
 from:
             ids = ids.Slice(0, 1);

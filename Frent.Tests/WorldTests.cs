@@ -158,11 +158,11 @@ internal class WorldTests
         using World world = new();
         CallHelper call = new();
 
-        world.TagDetached += (e, t) => call.Call();
+        world.TagUntagged += (e, t) => call.Call();
 
         var e = world.Create();
         e.Tag<Struct1>();
-        e.Detach<Struct1>();
+        e.Untag<Struct1>();
 
         call.AssertCalled();
     }

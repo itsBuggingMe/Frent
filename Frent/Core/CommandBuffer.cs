@@ -14,7 +14,7 @@ public class CommandBuffer
     internal FastStack<AddComponent> _addComponentBuffer = FastStack<AddComponent>.Create(2);
     internal FastStack<DeleteComponent> _removeComponentBuffer = FastStack<DeleteComponent>.Create(2);
     internal FastStack<TagCommand> _tagEntityBuffer = FastStack<TagCommand>.Create(2);
-    internal FastStack<TagCommand> _detachTagEntityBuffer = FastStack<TagCommand>.Create(2);
+    internal FastStack<TagCommand> _untagEntityBuffer = FastStack<TagCommand>.Create(2);
     internal FastStack<LinkCommand> _linkBuffer = FastStack<LinkCommand>.Create(2);
     internal FastStack<LinkCommand> _unlinkBuffer = FastStack<LinkCommand>.Create(2);
 
@@ -157,22 +157,37 @@ public class CommandBuffer
     }
 
     /// <summary>
+    /// Untags a tag from an entity when <see cref="Playback"/> is called.
+    /// </summary>
+    /// <typeparam name="T">The type of tag to untag.</typeparam>
+    /// <param name="entity">The entity to untag from.</param>
+    public void Untag<T>(Entity entity) => Untag(entity, Core.Tag<T>.ID);
+    /// <summary>
+    /// Untags a tag from an entity when <see cref="Playback"/> is called.
+    /// </summary>
+    /// <param name="entity">The entity to untag from.</param>
+    /// <param name="tagID">The ID of the tag type to untag from the entity.</param>
+    public void Untag(Entity entity, TagID tagID)
+    {
+        SetIsActive();
+        AssertEntityFromWorld(entity);
+        _untagEntityBuffer.Push(new(entity.EntityIDOnly, tagID));
+    }
+
+    /// <summary>
     /// Detaches a tag from an entity when <see cref="Playback"/> is called.
     /// </summary>
     /// <typeparam name="T">The type of tag to detach.</typeparam>
     /// <param name="entity">The entity to detach from.</param>
-    public void Detach<T>(Entity entity) => Detach(entity, Core.Tag<T>.ID);
+    [Obsolete("Method is renamed to Untag.", false)]
+    public void Detach<T>(Entity entity) => Untag<T>(entity);
     /// <summary>
     /// Detaches a tag from an entity when <see cref="Playback"/> is called.
     /// </summary>
     /// <param name="entity">The entity to detach from.</param>
     /// <param name="tagID">The ID of the tag type to detach from the entity.</param>
-    public void Detach(Entity entity, TagID tagID)
-    {
-        SetIsActive();
-        AssertEntityFromWorld(entity);
-        _detachTagEntityBuffer.Push(new(entity.EntityIDOnly, tagID));
-    }
+    [Obsolete("Method is renamed to Untag.", false)]
+    public void Detach(Entity entity, TagID tagID) => Untag(entity, tagID);
     #endregion
 
     #region Links
@@ -298,7 +313,7 @@ public class CommandBuffer
         _addComponentBuffer.Clear();
         _removeComponentBuffer.Clear();
         _tagEntityBuffer.Clear();
-        _detachTagEntityBuffer.Clear();
+        _untagEntityBuffer.Clear();
         _linkBuffer.Clear();
         _unlinkBuffer.Clear();
         _deleteEntityBuffer.Clear();
@@ -323,7 +338,7 @@ public class CommandBuffer
         _addComponentBuffer.Count > 0 ||
         _removeComponentBuffer.Count > 0 ||
         _tagEntityBuffer.Count > 0 ||
-        _detachTagEntityBuffer.Count > 0 ||
+        _untagEntityBuffer.Count > 0 ||
         _linkBuffer.Count > 0 ||
         _unlinkBuffer.Count > 0;
 
@@ -464,7 +479,7 @@ public class CommandBuffer
             }
         }
 
-        while (_detachTagEntityBuffer.TryPop(out var command))
+        while (_untagEntityBuffer.TryPop(out var command))
         {
             ref var record = ref _world.EntityTable[command.Entity.ID];
             Entity concrete = command.Entity.ToEntity(_world);
@@ -474,10 +489,10 @@ public class CommandBuffer
                 _world.MoveEntityToArchetypeIso(command.Entity.ToEntity(_world), ref record,
                     Archetype.GetAdjacentArchetypeLookup(_world, ArchetypeEdgeKey.Tag(command.TagID, record.Archetype.ID, ArchetypeEdgeType.RemoveTag)));
 
-                _world.Detached.Invoke(concrete, command.TagID);
-                if (record.HasFlag(EntityFlags.Detach))
+                _world.Untagged.Invoke(concrete, command.TagID);
+                if (record.HasFlag(EntityFlags.Untagged))
                 {
-                    _world.EventLookup.GetValueRefOrNullRef(command.Entity).Detach.Invoke(concrete, command.TagID);
+                    _world.EventLookup.GetValueRefOrNullRef(command.Entity).Untag.Invoke(concrete, command.TagID);
                 }
             }
         }

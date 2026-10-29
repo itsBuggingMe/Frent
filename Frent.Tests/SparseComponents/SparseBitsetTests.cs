@@ -28,7 +28,7 @@ internal class SparseBitsetTests
         That(a.Has<SimpleSparseComponent>(), Is.True);
         That(a.Get<SimpleSparseComponent>().Value, Is.EqualTo(42));
 
-        a.Detach<Struct3>();
+        a.Untag<Struct3>();
         That(a.Has<SimpleSparseComponent>(), Is.True);
         That(a.Get<SimpleSparseComponent>().Value, Is.EqualTo(42));
 
