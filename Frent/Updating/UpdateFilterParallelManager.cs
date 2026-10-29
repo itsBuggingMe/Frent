@@ -109,11 +109,9 @@ internal partial class UpdateFilter
 
         internal void Work()
         {
-            ThreadPool.GetMaxThreads(out int maxWorkers, out _);
+            Volatile.Write(ref _workIndex, _multithreadWorkItems.Count);
 
-            _workIndex = _multithreadWorkItems.Count;
-
-            for (int i = 0; i < maxWorkers && i < _multithreadWorkItems.Count - 1; i++)
+            for (int i = 0; i < Environment.ProcessorCount - 1 && i < _multithreadWorkItems.Count - 1; i++)
             {
 #if !NETSTANDARD
                 ThreadPool.UnsafeQueueUserWorkItem(this, false);
