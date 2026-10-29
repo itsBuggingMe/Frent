@@ -71,6 +71,7 @@ public struct QueryWith<T, TRest>(World world) : IQueryBuilder
 
     /// <inheritdoc cref="IQueryBuilder"/>
     public readonly Query Build() => World.BuildQuery<QueryWith<T, TRest>>();
+    internal readonly Query Build(Func<QueryImpl, Query>? typedQueryFactory = null) => World.BuildQuery<QueryWith<T, TRest>>(typedQueryFactory);
 }
 
 /// <inheritdoc cref="IQueryBuilder"/>

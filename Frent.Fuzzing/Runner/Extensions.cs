@@ -40,8 +40,8 @@ internal static class Extensions
     public static IEnumerable<T> AsEnumerable<T>(this QueryEnumerator<T>.Enumerable enumerator)
     {
         List<T> items = [];
-        foreach (var tup in enumerator)
-            items.Add(tup.Item1.Value);
+        foreach (var item in enumerator)
+            items.Add(item);
         return items;
     }
 

@@ -17,7 +17,7 @@ public ref struct ChunkQueryEnumerator<T>
     private World _world;
     private Span<Archetype> _archetypes;
     private int _archetypeIndex;
-    internal ChunkQueryEnumerator(Query query)
+    internal ChunkQueryEnumerator(QueryImpl query)
     {
         if (query.HasSparseRules)
             throw new NotSupportedException("Cannot enumerate chunks over sparse components!");
@@ -66,6 +66,6 @@ public ref struct ChunkQueryEnumerator<T>
         /// <summary>
         /// Gets the enumerator over a query.
         /// </summary>
-        public readonly ChunkQueryEnumerator<T> GetEnumerator() => new(q);
+        public readonly ChunkQueryEnumerator<T> GetEnumerator() => new(q.Impl);
     }
 }

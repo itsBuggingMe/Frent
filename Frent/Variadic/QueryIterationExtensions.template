@@ -36,9 +36,9 @@ to:
                 }
 |
 from:
-        query.AssertHasSparseComponent<T>();
+        impl.AssertHasSparseComponent<T>();
 to:
-|        query.AssertHasSparseComponent<T$>();
+|        impl.AssertHasSparseComponent<T$>();
 |
 from:
             ref T sparseFirst = ref IRunner.InitSparse<T>(ref first, out Span<int> sparseArgArray);
@@ -96,3 +96,7 @@ from:
 action.Run(ref c1);
 to:
 action.Run(|ref c$, |);
+from:
+action.Run(entity.ToEntity(world), ref c1);
+to:
+action.Run(entity.ToEntity(world), |ref c$, |);

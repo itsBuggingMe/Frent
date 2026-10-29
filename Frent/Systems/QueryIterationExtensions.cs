@@ -19,11 +19,24 @@ public static partial class QueryIterationExtensions
     /// <param name="query">The query to iterate over.</param>
     /// <param name="action">The behavior to execute on every component set.</param>
     /// <variadic />
-    public static void Delegate<T>(this Query query, QueryDelegates.Query<T> action) => Inline<Bridge<T>, T>(query, new(action));
+    public static void Delegate<T>(this Query query, QueryDelegates.Execute<T> action) => Inline<Bridge<T>, T>(query, new(action));
 
-    private struct Bridge<T>(QueryDelegates.Query<T> q) : IAction<T>
+    private struct Bridge<T>(QueryDelegates.Execute<T> q) : IAction<T>
     {
-        public void Run(ref T arg) => q.Invoke(ref arg);
+        public readonly void Run(ref T arg) => q.Invoke(ref arg);
+    }
+
+    /// <summary>
+    /// Executes a delegate for every entity in a query, using the specified component types.
+    /// </summary>
+    /// <param name="query">The query to iterate over.</param>
+    /// <param name="action">The behavior to execute on every component set.</param>
+    /// <variadic />
+    public static void Delegate<T>(this Query query, QueryDelegates.EntityExecute<T> action) => InlineWithEntities<EntityBridge<T>, T>(query, new(action));
+
+    private struct EntityBridge<T>(QueryDelegates.EntityExecute<T> q) : IEntityAction<T>
+    {
+        public readonly void Run(Entity e, ref T arg) => q.Invoke(e, ref arg);
     }
 
     /// <summary>
@@ -35,15 +48,17 @@ public static partial class QueryIterationExtensions
     public static void Inline<TAction, T>(this Query query, TAction action)
         where TAction : IAction<T>
     {
-        query.AssertHasSparseComponent<T>();
+        QueryImpl impl = query.Impl;
+
+        impl.AssertHasSparseComponent<T>();
 
     try
     {
-        query.World.EnterDisallowState();
+        impl.World.EnterDisallowState();
 
-        if (!query.HasSparseRules)
+        if (!impl.HasSparseRules)
         {
-            foreach (var archetype in query.AsSpan())
+            foreach (var archetype in impl.AsSpan())
             {
                 //use ref instead of span to avoid extra locals
                 ref T c1 = ref archetype.GetComponentDataReference<T>();
@@ -58,17 +73,17 @@ public static partial class QueryIterationExtensions
         }
         else
         {// do extra work for sparse includes and excludes
-            ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(query.World.WorldSparseSetTable);
-            InlineSparseRuleImpl<TAction, T>(ref first, query, action);
+            ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(impl.World.WorldSparseSetTable);
+            InlineSparseRuleImpl<TAction, T>(ref first, impl, action);
         }
     }
     finally
     {
-        query.World.ExitDisallowState(null);
+        impl.World.ExitDisallowState(null);
     }
     }
 
-    internal static void InlineSparseRuleImpl<TAction, T>(ref ComponentSparseSetBase first, Query query, TAction action)
+    internal static void InlineSparseRuleImpl<TAction, T>(ref ComponentSparseSetBase first, QueryImpl query, TAction action)
         where TAction : IAction<T>
     {
         Bitset includeBits = query.IncludeMask;
@@ -106,6 +121,100 @@ public static partial class QueryIterationExtensions
                 }
 
                 action.Run(ref c1);
+
+            NextEntity:
+                entity = ref Unsafe.Add(ref entity, 1);
+                if (!Component<T>.IsSparseComponent) c1 = ref Unsafe.Add(ref c1, 1);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Executes a inlinable struct instance method for every entity in a query, using the specified component types.
+    /// </summary>
+    /// <param name="query">The query to iterate over.</param>
+    /// <param name="action">The struct behavior to execute on every component set.</param>
+    /// <variadic />
+    public static void InlineWithEntities<TAction, T>(this Query query, TAction action)
+        where TAction : IEntityAction<T>
+    {
+        QueryImpl impl = query.Impl;
+        impl.AssertHasSparseComponent<T>();
+
+        try
+        {
+            impl.World.EnterDisallowState();
+
+            if (!impl.HasSparseRules)
+            {
+                World world = impl.World;
+                foreach (var archetype in impl.AsSpan())
+                {
+                    //use ref instead of span to avoid extra locals
+                    ref EntityIDOnly entity = ref archetype.GetEntityDataReference();
+                    ref T c1 = ref archetype.GetComponentDataReference<T>();
+
+                    for (int i = 0; i < archetype.EntityCount; i++)
+                    {
+                        action.Run(entity.ToEntity(world), ref c1);
+
+                        entity = ref Unsafe.Add(ref entity, 1);
+                        c1 = ref Unsafe.Add(ref c1, 1);
+                    }
+                }
+            }
+            else
+            {// do extra work for sparse includes and excludes
+                ref ComponentSparseSetBase first = ref MemoryMarshal.GetArrayDataReference(impl.World.WorldSparseSetTable);
+                InlineSparseRuleImplEntity<TAction, T>(ref first, impl, action);
+            }
+        }
+        finally
+        {
+            impl.World.ExitDisallowState(null);
+        }
+    }
+
+    internal static void InlineSparseRuleImplEntity<TAction, T>(ref ComponentSparseSetBase first, QueryImpl query, TAction action)
+        where TAction : IEntityAction<T>
+    {
+        Bitset includeBits = query.IncludeMask;
+        Bitset excludeBits = query.ExcludeMask;
+
+        World world = query.World;
+
+        ref T sparseFirst = ref IRunner.InitSparse<T>(ref first, out Span<int> sparseArgArray);
+
+        foreach (var archetype in query.AsSpan())
+        {
+            Span<Bitset> bitset = archetype.SparseBitsetSpan();
+
+            //use ref instead of span to avoid extra locals
+            scoped ref T c1 = ref Component<T>.IsSparseComponent ?
+                ref Unsafe.NullRef<T>() :
+                ref archetype.GetComponentDataReference<T>();
+
+            ref EntityIDOnly entity = ref archetype.GetEntityDataReference();
+
+            for (int i = 0; i < archetype.EntityCount; i++)
+            {
+                int id = entity.ID;
+                ref Bitset sparseBits = ref (uint)i < (uint)bitset.Length
+                    ? ref bitset[i]
+                    : ref Bitset.Zero;
+
+                if (!Bitset.Filter(ref sparseBits, includeBits.AsVector(), excludeBits.AsVector()))
+                    goto NextEntity;
+
+                if (Component<T>.IsSparseComponent)
+                {
+                    if (!((uint)id < (uint)sparseArgArray.Length)) goto NextEntity;
+                    int index = sparseArgArray[id];
+                    if (index < 0) goto NextEntity;
+                    c1 = ref Unsafe.Add(ref sparseFirst, index);
+                }
+
+                action.Run(entity.ToEntity(world), ref c1);
 
             NextEntity:
                 entity = ref Unsafe.Add(ref entity, 1);

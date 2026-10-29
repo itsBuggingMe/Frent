@@ -102,7 +102,7 @@ namespace Frent.Variadic.Generator
                 var str = cb.ToString();
 
 
-                string fileSafeTypeName = kvp.Key.Item2.Name;
+                string fileSafeTypeName = kvp.Key.Item2.MetadataName;
                 if (fileSafeTypeName.IndexOf('<') is { } t && t != -1)
                     fileSafeTypeName = fileSafeTypeName.Substring(0, t);
 

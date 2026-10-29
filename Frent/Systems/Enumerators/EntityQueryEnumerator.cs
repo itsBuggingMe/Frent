@@ -39,7 +39,7 @@ public ref struct EntityQueryEnumerator
 
     private bool _hasSparseRules;
 
-    internal EntityQueryEnumerator(Query query)
+    internal EntityQueryEnumerator(QueryImpl query)
     {
         _world = query.World;
 
@@ -134,7 +134,7 @@ public ref struct EntityQueryEnumerator
         /// <summary>
         /// Gets the enumerator over a query.
         /// </summary>
-        public readonly EntityQueryEnumerator GetEnumerator() => new(q);
+        public readonly EntityQueryEnumerator GetEnumerator() => new(q.Impl);
     }
 }
 
@@ -178,7 +178,7 @@ public ref struct EntityQueryEnumerator<T>
 
     private bool _hasSparseRules;
 
-    internal EntityQueryEnumerator(Query query)
+    internal EntityQueryEnumerator(QueryImpl query)
     {
         query.AssertHasSparseComponent<T>();
 
@@ -297,6 +297,6 @@ public ref struct EntityQueryEnumerator<T>
         /// <summary>
         /// Gets the enumerator over a query.
         /// </summary>
-        public readonly EntityQueryEnumerator<T> GetEnumerator() => new(q);
+        public readonly EntityQueryEnumerator<T> GetEnumerator() => new(q.Impl);
     }
 }

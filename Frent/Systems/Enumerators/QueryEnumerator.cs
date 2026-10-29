@@ -47,7 +47,7 @@ public ref struct QueryEnumerator<T>
 
     private bool _hasSparseRules;
 
-    internal QueryEnumerator(Query query)
+    internal QueryEnumerator(QueryImpl query)
     {
         query.AssertHasSparseComponent<T>();
 
@@ -79,9 +79,11 @@ public ref struct QueryEnumerator<T>
     }
 
     /// <summary>
-    /// The current tuple of component references.
+    /// A reference to the current component.
     /// </summary>
-    public RefTuple<T> Current => new()
+    public ref T Current => ref CurrentTuple.Item1.Value;
+
+    private RefTuple<T> CurrentTuple => new()
     {
 #if NETSTANDARD
         Item1 = Component<T>.IsSparseComponent ?
@@ -167,6 +169,6 @@ public ref struct QueryEnumerator<T>
         /// <summary>
         /// Gets the enumerator over a query.
         /// </summary>
-        public readonly QueryEnumerator<T> GetEnumerator() => new(q);
+        public readonly QueryEnumerator<T> GetEnumerator() => new(q.Impl);
     }
 }

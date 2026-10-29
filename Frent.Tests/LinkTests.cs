@@ -26,7 +26,7 @@ internal class LinkTests
     {
         List<int> values = [];
         foreach (var linked in entity.EnumerateOutgoing<TLink, Struct1>())
-            values.Add(linked.Item1.Value.Value);
+            values.Add(linked.Value);
         values.Sort();
         return values;
     }
@@ -35,7 +35,7 @@ internal class LinkTests
     {
         List<int> values = [];
         foreach (var linked in entity.EnumerateIncoming<TLink, Struct1>())
-            values.Add(linked.Item1.Value.Value);
+            values.Add(linked.Value);
         values.Sort();
         return values;
     }
@@ -379,11 +379,11 @@ internal class LinkTests
 
         List<int> outgoing = [];
         foreach (var linked in a.EnumerateOutgoing<Struct1>(Link<ChildOf>.ID))
-            outgoing.Add(linked.Item1.Value.Value);
+            outgoing.Add(linked.Value);
 
         List<int> incoming = [];
         foreach (var linked in b.EnumerateIncoming<Struct1>(Link<ChildOf>.ID))
-            incoming.Add(linked.Item1.Value.Value);
+            incoming.Add(linked.Value);
 
         That(outgoing, Is.EqualTo(new[] { 2 }));
         That(incoming, Is.EqualTo(new[] { 1 }));
@@ -524,8 +524,8 @@ internal class LinkTests
         Entity child = world.Create(new Struct1(20));
         child.Link<ChildOf>(parent);
 
-        foreach (var linked in parent.EnumerateIncoming<ChildOf, Struct1>())
-            linked.Item1.Value.Value = 99;
+        foreach (ref var linked in parent.EnumerateIncoming<ChildOf, Struct1>())
+            linked.Value = 99;
 
         That(child.Get<Struct1>().Value, Is.EqualTo(99));
     }
@@ -577,7 +577,7 @@ internal class LinkTests
 
         List<int> found = [];
         foreach (var linked in source.EnumerateOutgoing<ChildOf, SimpleSparseComponent>())
-            found.Add(linked.Item1.Value.Value);
+            found.Add(linked.Value);
 
         That(found, Is.EqualTo(new[] { 42 }));
     }

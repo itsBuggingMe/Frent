@@ -1,4 +1,5 @@
-﻿using Frent.Sample.Asteroids;
+﻿using Frent.Core;
+using Frent.Sample.Asteroids;
 using System.Reflection;
 
 namespace Frent.Sample;

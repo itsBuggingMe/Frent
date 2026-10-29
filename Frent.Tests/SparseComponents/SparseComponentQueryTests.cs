@@ -138,9 +138,9 @@ internal class SparseComponentQueryTests
         var query = world.CreateQuery().With<SparseQueryComponent>().Build();
         
         var values = new List<int>();
-        foreach (var componentRef in query.Enumerate<SparseQueryComponent>())
+        foreach (var component in query.Enumerate<SparseQueryComponent>())
         {
-            values.Add(componentRef.Item1.Value.Value);
+            values.Add(component.Value);
         }
         
         CollectionAssert.Contains(values, 10);
