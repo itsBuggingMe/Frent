@@ -79,9 +79,11 @@ public ref struct QueryEnumerator<T>
     }
 
     /// <summary>
-    /// The current tuple of component references.
+    /// A reference to the current component.
     /// </summary>
-    public RefTuple<T> Current => new()
+    public ref T Current => ref CurrentTuple.Item1.Value;
+
+    private RefTuple<T> CurrentTuple => new()
     {
 #if NETSTANDARD
         Item1 = Component<T>.IsSparseComponent ?
