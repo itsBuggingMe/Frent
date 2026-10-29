@@ -15,7 +15,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>gamedev;monogame;ecs;entity-component-system;entity-component-framework;.net10;.net9;.net8;netstandard</PackageTags>
     <PackageDescription>A High Performance ECF/ECS</PackageDescription>
-    <Version>0.9.0-beta</Version>
+    <Version>0.9.1-beta</Version>
     <RepositoryUrl>https://github.com/itsBuggingMe/Frent</RepositoryUrl>
   </PropertyGroup>
   
