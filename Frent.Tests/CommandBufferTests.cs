@@ -92,7 +92,7 @@ internal class CommandBufferTests
         var e = world.Create();
         commandBuffer.AddComponent(e, new Class1());
         commandBuffer.Tag<Struct1>(e);
-        commandBuffer.Detach<Struct1>(e);
+        commandBuffer.Untag<Struct1>(e);
 
         commandBuffer.Clear();
 

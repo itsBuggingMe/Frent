@@ -23,8 +23,8 @@ internal enum WorldActions
     TagGeneric,
     TagType,
 
-    DetachGeneric,
-    DetachType,
+    UntagGeneric,
+    UntagType,
 
     Set,
 

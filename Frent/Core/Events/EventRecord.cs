@@ -5,7 +5,7 @@ namespace Frent.Core.Events;
 internal class EventRecord
 {
     internal TagEvent Tag = new TagEvent();
-    internal TagEvent Detach = new TagEvent();
+    internal TagEvent Untag = new TagEvent();
     internal ComponentEvent Add = new ComponentEvent();
     internal ComponentEvent Remove = new ComponentEvent();
     internal FrugalStack<Action<Entity>> Delete = new FrugalStack<Action<Entity>>();

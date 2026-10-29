@@ -37,10 +37,10 @@ internal partial class WorldState
         .Where(m => m.IsGenericMethod)
         .ToArray();
 
-    private static readonly MethodInfo[] _detach =
+    private static readonly MethodInfo[] _untag =
         typeof(Entity)
         .GetMethods()
-        .Where(m => m.Name == nameof(Entity.Detach))
+        .Where(m => m.Name == nameof(Entity.Untag))
         .Where(m => m.IsGenericMethod)
         .ToArray();
 
@@ -267,7 +267,7 @@ internal partial class WorldState
         return new(e, new { Tag = tag.Type }, () => _tagValues[e].Add(tag));
     }
 
-    private StepRecord DetachGeneric()
+    private StepRecord UntagGeneric()
     {
         if (!TryPickEntity(out var e))
             return SkipRecord();
@@ -281,13 +281,13 @@ internal partial class WorldState
         if (types.Length == 0)
             return new(e, new { Skip = "None selected to remove." });
 
-        MethodInfo detachMethod = _detach[types.Length - 1].MakeGenericMethod(types);
-        detachMethod.Invoke(e, null);
+        MethodInfo untagMethod = _untag[types.Length - 1].MakeGenericMethod(types);
+        untagMethod.Invoke(e, null);
 
-        return new(e, new { Detached = types }, () => _tagValues[e].RemoveAll(p => types.Any(t => p.Type == t)));
+        return new(e, new { Untagged = types }, () => _tagValues[e].RemoveAll(p => types.Any(t => p.Type == t)));
     }
 
-    private StepRecord DetachType()
+    private StepRecord UntagType()
     {
         if (!TryPickEntity(out var e))
             return SkipRecord();
@@ -297,9 +297,9 @@ internal partial class WorldState
         if (!e.Tagged(tag))
             return new(e, new { Skip = "Does not have tag" });
 
-        e.Detach(tag.Type);
+        e.Untag(tag.Type);
 
-        return new(e, new { Detach = tag.Type }, () => _tagValues[e].Remove(tag));
+        return new(e, new { Untag = tag.Type }, () => _tagValues[e].Remove(tag));
     }
 
     private StepRecord Set()
