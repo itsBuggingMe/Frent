@@ -113,8 +113,10 @@ public class JsonWorldSerializer
         lock(_lock)
         {
             _entityMap.Clear();
+            _nextEntityId = 0;
 
             World? world = null;
+
             try
             {
                 world = _activeWorld = new(uniformProvider);
@@ -226,6 +228,9 @@ public class JsonWorldSerializer
                         }
 
                         // components
+                        if (_componentMetadataNames.Count > 127)
+                            FrentExceptions.Throw_InvalidOperationException($"Component count {_componentMetadataNames.Count} exceeds maximum of 127 components per entity.");
+
                         int index = 0;
                         using ComponentHandleArray components = stackalloc ComponentHandle[_componentMetadataNames.Count];
 
@@ -547,7 +552,7 @@ public class JsonWorldSerializer
             FrentExceptions.Throw_InvalidOperationException("Cannot serialize an entity reference belonging to another world.");
 
         if (!entity.IsAlive)
-            return -1;
+            return -2; // dead, null and dead, or alive 
 
         ref int serializeId = ref _entityMap.GetValueRefOrAddDefault(entity.EntityID, out bool exists);
         if(!exists)
@@ -560,17 +565,18 @@ public class JsonWorldSerializer
     {
         if (serializedId == -1)
             return Entity.Null;
+        // note: strongly coupled with the behavior
+        // in the world ctor where the entity id 0, version 0 is dead.
+        if (serializedId <= -2)
+            return new Entity(_activeWorld!.WorldID, 0, 0);
 
         ref int entityId = ref _entityMap.GetValueRefOrAddDefault(serializedId, out bool exists);
 
         if (exists)
-            return new Entity(_activeWorld!.WorldID, 0, entityId); // point to existing entity
+            return new Entity(_activeWorld!.WorldID, entityId == 0 ? (ushort)1 : (ushort)0, entityId); // point to existing entity
 
-        Entity created = WorldMarshal.CreateEntityWithID(_activeWorld!, serializedId);
-
-        entityId = serializedId;
-
-        return created;
+        entityId = _nextEntityId++;
+        return WorldMarshal.CreateEntityWithID(_activeWorld!, entityId);
     }
 
     private struct OnDeserializedIniterInvokerState(Entity self) : IGenericAction

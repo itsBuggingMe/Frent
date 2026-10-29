@@ -291,6 +291,10 @@ public partial class World : IDisposable
 
         WorldUpdateCommandBuffer = new CommandBuffer(this);
         DefaultArchetype = Archetype.CreateOrGetExistingArchetype([], [], this, ImmutableArray<ComponentID>.Empty, ImmutableArray<TagID>.Empty);
+        // kill entity (version: 0, entity id: 0) so we can use this value
+        // when deserializing from json
+        // since entities can be differenciated into alive, dead, and null (also dead)
+        EntityTable[0].Version++;
     }
 
     internal Entity CreateEntityFromLocation(EntityLocation entityLocation)
