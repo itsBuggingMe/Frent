@@ -7,7 +7,7 @@ using System.Threading;
 namespace Frent.Variadic.Generator;
 internal class CodeBuilder
 {
-    private StringBuilder _builder;
+    private readonly StringBuilder _builder;
     public CodeBuilder(int arity)
     {
         _builder = new StringBuilder();

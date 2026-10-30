@@ -37,7 +37,7 @@ namespace System.Runtime.CompilerServices
         {
             if (!type.IsValueType)
                 return true;
-            if (type.IsPrimitive || type.IsPointer || type.IsPointer)
+            if (type.IsPrimitive || type.IsPointer)
                 return false;
 
             return type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
