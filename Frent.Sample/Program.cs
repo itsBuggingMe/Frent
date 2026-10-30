@@ -1,5 +1,7 @@
 ﻿using Frent.Core;
 using Frent.Sample.Asteroids;
+using Frent.Systems;
+using MonoGame.Extended.ECS;
 using System.Reflection;
 
 namespace Frent.Sample;
@@ -7,6 +9,18 @@ internal class Program
 {
     static void Main(string[] args)
     {
+        World world = new();
+        Entity empty = world.Create();
+        Entity a = default;
+        Entity b = default;
+        foreach (var e in world.CreateQuery()
+            .Build()
+            .EnumerateWithEntities())
+        {
+            a = empty.Clone(); b = world.Create();
+        }
+        a.Delete();
+        return;
         MethodInfo[] methods = typeof(Samples).GetMethods().Where(m => m.GetCustomAttribute<SampleAttribute>() is not null).ToArray();
         Console.WriteLine($"Pick a sample: 0-{methods.Length + 1}");
         Console.WriteLine("[0] Asteroids");

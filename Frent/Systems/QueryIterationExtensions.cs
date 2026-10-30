@@ -47,6 +47,9 @@ public static partial class QueryIterationExtensions
     /// <variadic />
     public static void Inline<TAction, T>(this Query query, TAction action)
         where TAction : IAction<T>
+#if NET9_0_OR_GREATER
+        , allows ref struct
+#endif
     {
         QueryImpl impl = query.Impl;
 
@@ -85,6 +88,9 @@ public static partial class QueryIterationExtensions
 
     internal static void InlineSparseRuleImpl<TAction, T>(ref ComponentSparseSetBase first, QueryImpl query, TAction action)
         where TAction : IAction<T>
+#if NET9_0_OR_GREATER
+        , allows ref struct
+#endif
     {
         Bitset includeBits = query.IncludeMask;
         Bitset excludeBits = query.ExcludeMask;
@@ -137,6 +143,9 @@ public static partial class QueryIterationExtensions
     /// <variadic />
     public static void InlineWithEntities<TAction, T>(this Query query, TAction action)
         where TAction : IEntityAction<T>
+#if NET9_0_OR_GREATER
+        , allows ref struct
+#endif
     {
         QueryImpl impl = query.Impl;
         impl.AssertHasSparseComponent<T>();
@@ -177,6 +186,9 @@ public static partial class QueryIterationExtensions
 
     internal static void InlineSparseRuleImplEntity<TAction, T>(ref ComponentSparseSetBase first, QueryImpl query, TAction action)
         where TAction : IEntityAction<T>
+#if NET9_0_OR_GREATER
+        , allows ref struct
+#endif
     {
         Bitset includeBits = query.IncludeMask;
         Bitset excludeBits = query.ExcludeMask;
