@@ -21,6 +21,8 @@ public static partial class QueryIterationExtensions
     /// <variadic />
     public static void Delegate<T>(this Query query, QueryDelegates.Execute<T> action) => Inline<Bridge<T>, T>(query, new(action));
 
+    public static void Delegate<T>(this Query<T> typedQuery, QueryDelegates.Execute<T> action) => Inline<Bridge<T>, T>(typedQuery, new(action));
+
     private struct Bridge<T>(QueryDelegates.Execute<T> q) : IAction<T>
     {
         public readonly void Run(ref T arg) => q.Invoke(ref arg);
@@ -46,10 +48,14 @@ public static partial class QueryIterationExtensions
     /// <param name="action">The struct behavior to execute on every component set.</param>
     /// <variadic />
     public static void Inline<TAction, T>(this Query query, TAction action)
+        where TAction : IAction<T> => DoInline<TAction, T>(query.Impl, action);
+
+    public static void Inline<TAction, T>(this Query<T> query, TAction action)
+        where TAction : IAction<T> => DoInline<TAction, T>(query.Impl, action);
+
+    private static void DoInline<TAction, T>(QueryImpl impl, TAction action)
         where TAction : IAction<T>
     {
-        QueryImpl impl = query.Impl;
-
         impl.AssertHasSparseComponent<T>();
 
     try
